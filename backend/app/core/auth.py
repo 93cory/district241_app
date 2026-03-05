@@ -308,22 +308,42 @@ def require_roles(*allowed: Role):
 # ---------------------------------------------------------------------------
 
 def enforce_security_prerequisites() -> None:
-    if settings.env != "production":
-        return
+    import logging
+    _logger = logging.getLogger("pnpi.security")
 
-    if settings.secret_key == "change-me-in-production":
-        raise RuntimeError("PNPI_SECRET_KEY / PNPI_SECRET_KEY doit etre personnalisee en production.")
+    is_prod = settings.env == "production"
 
     defaults = {
+        "PNPI_SECRET_KEY": "change-me-in-production",
         "PNPI_ADMIN_PASSWORD": "admin-dev-password",
         "PNPI_MINISTRE_PASSWORD": "ministre-dev-password",
+        "PNPI_DIRECTEUR_PASSWORD": "directeur-dev-password",
+        "PNPI_INSTRUCTEUR_PASSWORD": "instructeur-dev-password",
         "PNPI_OPERATEUR_PASSWORD": "operateur-dev-password",
         "PNPI_INSPECTEUR_PASSWORD": "inspecteur-dev-password",
     }
+
+    insecure: list[str] = []
     for env_name, fallback in defaults.items():
         value = os.getenv(env_name, fallback)
         if value == fallback:
-            raise RuntimeError(f"{env_name} utilise encore la valeur de developpement.")
-        policy_error = validate_password_policy(value)
-        if policy_error:
-            raise RuntimeError(f"{env_name} non conforme a la politique mot de passe: {policy_error}")
+            insecure.append(env_name)
+
+    if insecure:
+        msg = (
+            f"SECURITE: {len(insecure)} variable(s) utilisent les valeurs par defaut: "
+            + ", ".join(insecure)
+            + ". Changez-les avant toute mise en production."
+        )
+        if is_prod:
+            raise RuntimeError(msg)
+        _logger.warning(f"[PNPI] {msg}")
+
+    if is_prod:
+        for env_name, fallback in defaults.items():
+            if env_name == "PNPI_SECRET_KEY":
+                continue
+            value = os.getenv(env_name, fallback)
+            policy_error = validate_password_policy(value)
+            if policy_error:
+                raise RuntimeError(f"{env_name} non conforme a la politique mot de passe: {policy_error}")
