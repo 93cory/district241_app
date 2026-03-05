@@ -28,13 +28,29 @@ services:
         condition: service_healthy
     environment:
       PNPI_SECRET_KEY: replace-with-strong-secret
+      PNPI_ADMIN_PASSWORD: admin-dev-password
       PNPI_MINISTRE_PASSWORD: ministre-dev-password
       PNPI_OPERATEUR_PASSWORD: operateur-dev-password
       PNPI_INSPECTEUR_PASSWORD: inspecteur-dev-password
       PNPI_DATABASE_URL: postgresql://pnpi_user:pnpi_password@postgres:5432/pnpi
+      PNPI_ENV: development
     ports:
       - "8000:8000"
 
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: pnpi-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: http://backend:8000
+      PNPI_BACKEND_USERNAME: ministre
+      PNPI_BACKEND_PASSWORD: ministre-dev-password
+    ports:
+      - "3000:3000"
+
 volumes:
   pnpi_postgres_data:
-
