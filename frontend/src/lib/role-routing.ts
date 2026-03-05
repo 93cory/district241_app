@@ -8,8 +8,6 @@ export const getDefaultRouteForRoles = (roles: string[]): string => {
   if (hasRole(roles, "instructeur")) return "/pnpi";
   if (hasRole(roles, "operateur")) return "/pnpi/guichet";
   if (hasRole(roles, "inspecteur")) return "/inspecteur";
-  // Legacy PNPI
-  if (hasRole(roles, "ministere")) return "/pilotage";
   return "/";
 };
 
@@ -40,6 +38,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi", "Dashboard Ministériel");
     add("/pnpi/stats", "Statistiques PNPI");
     add("/pnpi/briefing", "Briefing PNPI");
+    add("/pilotage", "Pilotage industriel");
+    add("/briefing", "Briefing");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -59,22 +59,10 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/guichet", "Mon espace");
   }
 
-  // Legacy PNPI roles
-  if (hasRole(roles, "ministere")) {
-    add("/pilotage", "Pilotage industriel");
-    add("/briefing", "Briefing");
-    add("/", "Tableau de bord");
-  }
-
   if (hasRole(roles, "inspecteur")) {
     add("/inspecteur", "Mon espace");
     add("/pnpi/inspections", "Inspections");
     add("/pnpi/ati", "Dossiers ATI");
-  }
-
-  if (hasRole(roles, "industriel")) {
-    add("/", "Tableau de bord");
-    add("/briefing", "Briefing");
   }
 
   if (links.length > 0) {

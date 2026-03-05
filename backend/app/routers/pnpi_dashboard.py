@@ -43,7 +43,7 @@ def _ati_is_overdue(ati: AgrementTechniqueIndustrielORM) -> bool:
 
 @router.get("/dashboard/kpis", response_model=PNPIDashboardKpis)
 async def pnpi_dashboard_kpis(
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> PNPIDashboardKpis:
     now = now_utc()
@@ -110,7 +110,7 @@ async def pnpi_dashboard_kpis(
 
 @router.get("/dashboard/carte", response_model=List[OperateurGeoPoint])
 async def pnpi_dashboard_carte(
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> List[OperateurGeoPoint]:
     operateurs = db.execute(
@@ -151,7 +151,7 @@ async def pnpi_dashboard_carte(
 
 @router.get("/dashboard/secteurs", response_model=List[SecteurStats])
 async def pnpi_dashboard_secteurs(
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> List[SecteurStats]:
     operateurs = db.execute(select(OperateurIndustrielORM)).scalars().all()
@@ -188,7 +188,7 @@ async def pnpi_dashboard_secteurs(
 
 @router.get("/dashboard/provinces", response_model=List[ProvinceStats])
 async def pnpi_dashboard_provinces(
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> List[ProvinceStats]:
     operateurs = db.execute(select(OperateurIndustrielORM)).scalars().all()
@@ -219,7 +219,7 @@ async def pnpi_dashboard_provinces(
 
 @router.get("/dashboard/pipeline", response_model=ATIPipelineStats)
 async def pnpi_dashboard_pipeline(
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> ATIPipelineStats:
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
@@ -238,7 +238,7 @@ async def pnpi_dashboard_pipeline(
 
 @router.get("/dashboard/tendances", response_model=List[MensuelStats])
 async def pnpi_dashboard_tendances(
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> List[MensuelStats]:
     now = now_utc()
@@ -280,7 +280,7 @@ async def pnpi_dashboard_tendances(
 
 @router.get("/dashboard/recents", response_model=List[ATIResume])
 async def pnpi_dashboard_recents(
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> List[ATIResume]:
     atis = db.execute(
@@ -324,7 +324,7 @@ class SearchResult(PydanticBaseModel):
 @router.get("/dashboard/search", response_model=List[SearchResult])
 async def pnpi_search(
     q: str = Query(..., min_length=2, max_length=100),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[SearchResult]:
     """Recherche globale dans les ATIs et opérateurs."""

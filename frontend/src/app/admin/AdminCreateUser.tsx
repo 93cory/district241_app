@@ -1,15 +1,14 @@
 "use client";
 import { useState, FormEvent } from "react";
 
-const PNPI_ROLES = ["admin", "ministre", "directeur", "instructeur", "inspecteur", "operateur", "ministere", "industriel"];
+const PNPI_ROLES = ["admin", "ministre", "directeur", "instructeur", "inspecteur", "operateur"];
 const ROLE_LABELS: Record<string, string> = {
   admin: "Administrateur", ministre: "Ministre", directeur: "Directeur",
   instructeur: "Instructeur", inspecteur: "Inspecteur", operateur: "Operateur",
-  ministere: "Ministere (legacy)", industriel: "Industriel (legacy)",
 };
 const ROLE_COLORS: Record<string, string> = {
   admin: "#7c3aed", ministre: "#003F8F", directeur: "#1d4ed8", instructeur: "#0284c7",
-  inspecteur: "#059669", operateur: "#d97706", ministere: "#6b7280", industriel: "#6b7280",
+  inspecteur: "#059669", operateur: "#d97706",
 };
 
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";

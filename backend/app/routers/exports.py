@@ -39,7 +39,7 @@ def _filter_pilotage_transitions(rows, *, dossier_id, changed_by, date_from, dat
 
 @router.get("/exports/indicators.csv")
 async def export_indicators_csv(
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
     from ..main import _compute_sector_indicators
@@ -65,7 +65,7 @@ async def export_indicators_csv(
 
 @router.get("/exports/dashboard.pdf")
 async def export_dashboard_pdf(
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
     from ..main import _compute_sector_indicators
@@ -100,7 +100,7 @@ async def export_dashboard_pdf(
 
 @router.get("/exports/inspectors-briefing.pdf")
 async def export_inspectors_briefing_pdf(
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
     field_reports = (
@@ -138,7 +138,7 @@ async def export_pilotage_transitions_csv(
     changed_by: Optional[str] = Query(default=None),
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
     if date_from and date_to and date_from > date_to:
@@ -213,7 +213,7 @@ async def export_pilotage_transitions_pdf(
     changed_by: Optional[str] = Query(default=None),
     date_from: Optional[date] = Query(default=None),
     date_to: Optional[date] = Query(default=None),
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
     if date_from and date_to and date_from > date_to:
@@ -270,7 +270,7 @@ async def export_pilotage_transitions_pdf(
 async def export_ati_csv(
     statut: Optional[str] = Query(default=None),
     secteur: Optional[str] = Query(default=None),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> Response:
     atis = db.execute(
@@ -304,7 +304,7 @@ async def export_ati_csv(
 @router.get("/pnpi/exports/operateurs.csv")
 async def export_operateurs_csv(
     secteur: Optional[str] = Query(default=None),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> Response:
     ops = db.execute(

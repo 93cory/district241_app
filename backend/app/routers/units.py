@@ -84,7 +84,7 @@ def _to_field_report_read(row: FieldReportORM) -> dict:
 
 @router.get("/units")
 async def list_units(
-    _: User = Depends(require_roles(Role.ministere, Role.industriel, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     rows = db.execute(select(UnitORM)).scalars().unique().all()
@@ -94,7 +94,7 @@ async def list_units(
 @router.get("/units/{unit_id}")
 async def get_unit(
     unit_id: str,
-    _: User = Depends(require_roles(Role.ministere, Role.industriel, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     unit = db.get(UnitORM, unit_id.upper())
@@ -106,7 +106,7 @@ async def get_unit(
 @router.post("/units", status_code=status.HTTP_201_CREATED)
 async def create_unit(
     payload: dict,
-    current_user: User = Depends(require_roles(Role.ministere)),
+    current_user: User = Depends(require_roles(Role.ministre)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -131,7 +131,7 @@ async def create_unit(
 async def add_declaration(
     unit_id: str,
     payload: dict,
-    current_user: User = Depends(require_roles(Role.industriel, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -162,7 +162,7 @@ async def add_declaration(
 
 @router.get("/declarations")
 async def list_declarations(
-    _: User = Depends(require_roles(Role.ministere, Role.industriel, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     rows = db.execute(select(DeclarationORM)).scalars().all()
@@ -173,7 +173,7 @@ async def list_declarations(
 async def validate_declaration(
     declaration_id: str,
     payload: dict,
-    current_user: User = Depends(require_roles(Role.ministere, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -197,7 +197,7 @@ async def validate_declaration(
 
 @router.get("/batches")
 async def list_batches(
-    _: User = Depends(require_roles(Role.ministere, Role.industriel, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     rows = db.execute(select(TraceBatchORM).order_by(TraceBatchORM.timestamp.desc())).scalars().all()
@@ -207,7 +207,7 @@ async def list_batches(
 @router.post("/batches", status_code=status.HTTP_201_CREATED)
 async def create_batch(
     payload: dict,
-    current_user: User = Depends(require_roles(Role.ministere)),
+    current_user: User = Depends(require_roles(Role.ministre)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -236,7 +236,7 @@ async def create_batch(
 @router.get("/batches/{batch_id}")
 async def get_batch(
     batch_id: str,
-    _: User = Depends(require_roles(Role.ministere, Role.industriel, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     row = db.get(TraceBatchORM, batch_id)
@@ -250,7 +250,7 @@ async def get_batch(
 # ---------------------------------------------------------------------------
 
 @router.get("/logs")
-async def read_logs(_: User = Depends(require_roles(Role.admin, Role.ministere))):
+async def read_logs(_: User = Depends(require_roles(Role.admin, Role.ministre))):
     from ..main import log_entries
     return log_entries
 
@@ -261,7 +261,7 @@ async def read_logs(_: User = Depends(require_roles(Role.admin, Role.ministere))
 
 @router.get("/field-reports")
 async def list_field_reports(
-    _: User = Depends(require_roles(Role.ministere, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     rows = (
@@ -276,7 +276,7 @@ async def list_field_reports(
 @router.post("/field-reports", status_code=status.HTTP_201_CREATED)
 async def create_field_report(
     payload: dict,
-    current_user: User = Depends(require_roles(Role.ministere, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -315,7 +315,7 @@ async def create_field_report(
 async def update_field_report_status(
     report_id: str,
     payload: dict,
-    current_user: User = Depends(require_roles(Role.ministere, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -328,7 +328,7 @@ async def update_field_report_status(
     if not row:
         raise HTTPException(status_code=404, detail="Rapport terrain introuvable.")
 
-    if Role.ministere not in current_user.roles and row.created_by != current_user.username:
+    if Role.ministre not in current_user.roles and row.created_by != current_user.username:
         raise HTTPException(status_code=403, detail="Acces refuse pour ce rapport.")
 
     previous_status = row.status
@@ -349,7 +349,7 @@ async def update_field_report_status(
 @router.delete("/field-reports/{report_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_field_report(
     report_id: str,
-    current_user: User = Depends(require_roles(Role.ministere, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -358,7 +358,7 @@ async def delete_field_report(
     if not row:
         raise HTTPException(status_code=404, detail="Rapport terrain introuvable.")
 
-    if Role.ministere not in current_user.roles and row.created_by != current_user.username:
+    if Role.ministre not in current_user.roles and row.created_by != current_user.username:
         raise HTTPException(status_code=403, detail="Acces refuse pour ce rapport.")
 
     write_audit_event(
@@ -380,7 +380,7 @@ async def delete_field_report(
 
 @router.get("/audit/events")
 async def list_audit_events(
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
     rows = db.execute(select(AuditEventORM).order_by(AuditEventORM.timestamp.desc())).scalars().all()

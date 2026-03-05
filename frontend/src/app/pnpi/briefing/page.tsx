@@ -7,7 +7,7 @@ import {
 import { fetchBackendProfile } from "../../../lib/backend";
 import { PrintActions } from "../../briefing/PrintActions";
 
-const ALLOWED = new Set(["admin", "ministre", "directeur", "ministere"]);
+const ALLOWED = new Set(["admin", "ministre", "directeur"]);
 
 const STATUT_LABELS: Record<string, string> = {
   soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation",

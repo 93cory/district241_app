@@ -55,7 +55,7 @@ export default async function PilotagePage() {
     redirect("/connexion");
   }
   const roles = profile.roles ?? [];
-  const allowed = roles.includes("admin") || roles.includes("ministere") || roles.includes("inspecteur");
+  const allowed = roles.includes("admin") || roles.includes("ministre") || roles.includes("inspecteur");
   if (!allowed) {
     redirect("/");
   }

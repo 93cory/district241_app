@@ -5,7 +5,7 @@ import { fetchBackendProfile } from "../../../lib/backend";
 import { OperateursFiltersClient } from "./components/OperateursFiltersClient";
 import { OperateurCreateForm } from "./components/OperateurCreateForm";
 
-const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur", "ministere"]);
+const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const SECTEUR_LABELS: Record<string, string> = { bois: "Bois", mines: "Mines", agroalimentaire: "Agro", btp: "BTP", petrole: "Petrole", services: "Services" };
 const SECTEUR_COLORS: Record<string, string> = { bois: "#16a34a", mines: "#d97706", agroalimentaire: "#059669", btp: "#2563eb", petrole: "#7c3aed", services: "#0284c7" };
 

@@ -375,7 +375,7 @@ def _filter_pilotage_transitions(rows, *, dossier_id, changed_by, date_from, dat
 
 @router.get("/pilotage/dossiers")
 async def list_project_dossiers(
-    _: User = Depends(require_roles(Role.admin, Role.ministere, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     rows = (
@@ -389,7 +389,7 @@ async def list_project_dossiers(
 
 @router.get("/pilotage/sla-policy")
 async def get_pilotage_sla_policy(
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
 ):
     return {
         "low": _sla_policy_days["low"],
@@ -401,7 +401,7 @@ async def get_pilotage_sla_policy(
 @router.patch("/pilotage/sla-policy")
 async def update_pilotage_sla_policy(
     payload: dict,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
     values = {
@@ -427,7 +427,7 @@ async def update_pilotage_sla_policy(
 @router.post("/pilotage/dossiers", status_code=status.HTTP_201_CREATED)
 async def create_project_dossier(
     payload: dict,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -482,7 +482,7 @@ async def create_project_dossier(
         title="Nouveau dossier industriel",
         message=f"{row.id} a ete soumis par {current_user.username}.",
         severity="high",
-        target_role=Role.ministere,
+        target_role=Role.ministre,
         notification_key=f"dossier-created:{row.id}",
     )
     if row.assigned_role and row.assigned_role in Role._value2member_map_:
@@ -511,7 +511,7 @@ async def create_project_dossier(
 async def update_project_dossier(
     dossier_id: str,
     payload: dict,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
@@ -620,7 +620,7 @@ async def update_project_dossier(
             title="Changement de statut dossier",
             message=f"{row.id}: {previous_status} -> {row.status}",
             severity="high" if row.status in {"approved", "rejected"} else "info",
-            target_role=Role.ministere,
+            target_role=Role.ministre,
             notification_key=f"dossier-status:{row.id}:{row.status}:{row.updated_at.date().isoformat()}",
         )
     if row.assigned_role and row.assigned_role != previous_assigned_role and row.assigned_role in Role._value2member_map_:
@@ -655,7 +655,7 @@ async def update_project_dossier(
 
 @router.get("/pilotage/kpis")
 async def pilotage_kpis(
-    _: User = Depends(require_roles(Role.admin, Role.ministere, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     return _compute_pilotage_kpis(db)
@@ -664,7 +664,7 @@ async def pilotage_kpis(
 @router.get("/pilotage/dossiers/{dossier_id}/history")
 async def dossier_history(
     dossier_id: str,
-    _: User = Depends(require_roles(Role.ministere, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     dossier = db.get(ProjectDossierORM, dossier_id)
@@ -685,7 +685,7 @@ async def dossier_history(
 
 @router.get("/pilotage/queue")
 async def pilotage_queue(
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     roles = {role.value for role in current_user.roles}
@@ -700,7 +700,7 @@ async def pilotage_queue(
         for row in rows
         if row.assigned_role is None
         or row.assigned_role in roles
-        or Role.ministere.value in roles
+        or Role.ministre.value in roles
         or Role.admin.value in roles
     ]
     return [to_project_dossier_read(row) for row in filtered]
@@ -708,7 +708,7 @@ async def pilotage_queue(
 
 @router.get("/pilotage/executive-dashboard")
 async def pilotage_executive_dashboard(
-    _: User = Depends(require_roles(Role.admin, Role.ministere, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     _emit_sla_notifications(db)
@@ -719,7 +719,7 @@ async def pilotage_executive_dashboard(
 @router.get("/pilotage/dossiers/{dossier_id}/decision-document.pdf")
 async def export_dossier_decision_document(
     dossier_id: str,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
     row = db.get(ProjectDossierORM, dossier_id)
@@ -788,7 +788,7 @@ async def export_dossier_decision_document(
 
 @router.get("/dashboard/indicators")
 async def dashboard_metrics(
-    _: User = Depends(require_roles(Role.ministere, Role.industriel)),
+    _: User = Depends(require_roles(Role.ministre, Role.operateur)),
     db: Session = Depends(get_db),
 ):
     from ..main import _compute_sector_indicators, _compute_forecast_from_db
@@ -818,7 +818,7 @@ async def dashboard_metrics(
 
 @router.get("/dashboard/forecast")
 async def dashboard_forecast(
-    _: User = Depends(require_roles(Role.ministere, Role.industriel)),
+    _: User = Depends(require_roles(Role.ministre, Role.operateur)),
     db: Session = Depends(get_db),
 ):
     from ..main import _compute_forecast_from_db
@@ -827,7 +827,7 @@ async def dashboard_forecast(
 
 @router.get("/dashboard/alerts")
 async def dashboard_alerts(
-    _: User = Depends(require_roles(Role.ministere, Role.industriel, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     from ..main import _compute_dashboard_alerts

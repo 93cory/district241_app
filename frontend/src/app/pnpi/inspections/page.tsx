@@ -5,7 +5,7 @@ import { fetchBackendProfile } from "../../../lib/backend";
 import { InspectionCreateForm } from "./components/InspectionCreateForm";
 import { InspectionsFiltersClient } from "./components/InspectionsFiltersClient";
 
-const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur", "ministere"]);
+const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { conforme: "Conforme", non_conforme: "Non conforme", partiel: "Partiel" };
 const STATUT_COLORS: Record<string, string> = { conforme: "#10b981", non_conforme: "#ef4444", partiel: "#f59e0b" };
 

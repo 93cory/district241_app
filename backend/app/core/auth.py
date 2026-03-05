@@ -28,13 +28,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 class Role(str, Enum):
     admin = "admin"
-    ministere = "ministere"
-    industriel = "industriel"
-    inspecteur = "inspecteur"
-    # PNPI-specific roles
     ministre = "ministre"
     directeur = "directeur"
     instructeur = "instructeur"
+    inspecteur = "inspecteur"
     operateur = "operateur"
 
 
@@ -145,7 +142,7 @@ def get_fake_users_db() -> Dict[str, UserInDB]:
                 "ministre",
                 os.getenv("PNPI_MINISTRE_PASSWORD", "ministre-dev-password"),
                 "Ministre de l'Industrie",
-                [Role.ministre, Role.ministere],
+                [Role.ministre],
             ),
             "directeur": build_user(
                 "directeur",
@@ -169,7 +166,7 @@ def get_fake_users_db() -> Dict[str, UserInDB]:
                 "operateur",
                 os.getenv("PNPI_OPERATEUR_PASSWORD", "operateur-dev-password"),
                 "Opérateur Industriel Demo",
-                [Role.operateur, Role.industriel],
+                [Role.operateur],
             ),
         }
     return _fake_users_db
@@ -319,8 +316,8 @@ def enforce_security_prerequisites() -> None:
 
     defaults = {
         "PNPI_ADMIN_PASSWORD": "admin-dev-password",
-        "PNPI_MINISTERE_PASSWORD": "ministere-dev-password",
-        "PNPI_INDUSTRIEL_PASSWORD": "industriel-dev-password",
+        "PNPI_MINISTRE_PASSWORD": "ministre-dev-password",
+        "PNPI_OPERATEUR_PASSWORD": "operateur-dev-password",
         "PNPI_INSPECTEUR_PASSWORD": "inspecteur-dev-password",
     }
     for env_name, fallback in defaults.items():

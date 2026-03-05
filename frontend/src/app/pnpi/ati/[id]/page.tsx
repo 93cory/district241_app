@@ -6,7 +6,7 @@ import { WorkflowButtons } from "../components/WorkflowButton";
 import { DocumentUpload } from "../components/DocumentUpload";
 import { AssignInstructeur } from "../components/AssignInstructeur";
 
-const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur", "ministere"]);
+const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
 const STATUT_COLORS: Record<string, string> = { soumis: "#f59e0b", en_instruction: "#3b82f6", en_validation: "#8b5cf6", approuve: "#10b981", rejete: "#ef4444", expire: "#9ca3af" };
 const ETAPES = ["reception", "instruction", "validation", "decision"];

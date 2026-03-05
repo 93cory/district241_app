@@ -53,7 +53,7 @@ async def list_inspections(
     statut_conformite: Optional[str] = Query(default=None),
     inspecteur_username: Optional[str] = Query(default=None),
     limit: int = Query(default=50, le=200),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[InspectionRead]:
     query = select(InspectionConformiteORM)
@@ -107,7 +107,7 @@ async def create_inspection(
 @router.get("/inspections/{inspection_id}", response_model=InspectionRead)
 async def get_inspection(
     inspection_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> InspectionRead:
     insp = db.get(InspectionConformiteORM, inspection_id)
@@ -140,7 +140,7 @@ async def update_inspection(
 @router.get("/inspections/{inspection_id}/pdf")
 async def download_inspection_pdf(
     inspection_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> FastAPIResponse:
     from reportlab.lib.pagesizes import A4

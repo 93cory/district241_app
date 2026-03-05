@@ -84,7 +84,7 @@ def add_demo_units_and_declarations() -> None:
             jobs=295,
             validated=True,
             submitted_at=datetime(2026, 3, 28, tzinfo=timezone.utc),
-            submitted_by="industriel",
+            submitted_by="operateur",
         ),
         DeclarationORM(
             id="PD-UI102-202603",
@@ -94,7 +94,7 @@ def add_demo_units_and_declarations() -> None:
             jobs=250,
             validated=True,
             submitted_at=datetime(2026, 3, 27, tzinfo=timezone.utc),
-            submitted_by="industriel",
+            submitted_by="operateur",
         ),
         DeclarationORM(
             id="PD-UI103-202603",
@@ -114,7 +114,7 @@ def add_demo_units_and_declarations() -> None:
             jobs=165,
             validated=True,
             submitted_at=datetime(2026, 3, 26, tzinfo=timezone.utc),
-            submitted_by="industriel",
+            submitted_by="operateur",
         ),
         DeclarationORM(
             id="PD-UI105-202603",
@@ -173,7 +173,7 @@ def add_demo_units_and_declarations() -> None:
         ),
         NotificationORM(
             id="N-DEMO-002",
-            target_role="ministere",
+            target_role="ministre",
             title="Ecart import agroalimentaire",
             message="Consolider plan de substitution sur 2 trimestres.",
             severity="high",

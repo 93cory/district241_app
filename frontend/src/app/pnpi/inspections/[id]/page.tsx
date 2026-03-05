@@ -3,7 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { fetchPNPIInspection } from "../../../../../lib/api";
 import { fetchBackendProfile } from "../../../../../lib/backend";
 
-const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur", "ministere"]);
+const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const CONF_LABELS: Record<string, string> = { conforme: "Conforme", non_conforme: "Non conforme", partiel: "Partiel" };
 const CONF_COLORS: Record<string, string> = { conforme: "#10b981", non_conforme: "#ef4444", partiel: "#f59e0b" };
 const CONF_BG: Record<string, string> = { conforme: "#f0fdf4", non_conforme: "#fef2f2", partiel: "#fefce8" };

@@ -82,7 +82,7 @@ async def list_operateurs(
     secteur: Optional[str] = Query(default=None),
     province: Optional[str] = Query(default=None),
     is_active: Optional[bool] = Query(default=None),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[OperateurBrief]:
     query = select(OperateurIndustrielORM)
@@ -100,7 +100,7 @@ async def list_operateurs(
 @router.post("/operateurs", response_model=OperateurRead, status_code=status.HTTP_201_CREATED)
 async def create_operateur(
     payload: OperateurCreate,
-    current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> OperateurRead:
     # Check NIF uniqueness
@@ -142,7 +142,7 @@ async def create_operateur(
 @router.get("/operateurs/{operateur_id}", response_model=OperateurRead)
 async def get_operateur(
     operateur_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> OperateurRead:
     op = db.get(OperateurIndustrielORM, operateur_id)
@@ -154,7 +154,7 @@ async def get_operateur(
 @router.get("/operateurs/{operateur_id}/ati", response_model=List[ATIBrief])
 async def list_operateur_atis(
     operateur_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[ATIBrief]:
     op = db.get(OperateurIndustrielORM, operateur_id)

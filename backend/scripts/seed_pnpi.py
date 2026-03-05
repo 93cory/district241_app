@@ -67,11 +67,11 @@ def nif_gabon(digits: str, letter: str) -> str:
 
 USERS_DATA = [
     {"username": "admin",       "full_name": "Jean-Baptiste MOUSSAVOU",    "roles_csv": "admin",       "password": "Admin@PNPI2026!",       "email_hint": "admin@pnpi-gabon.ga"},
-    {"username": "ministre",    "full_name": "Dr. Euloge NKOGHE BEKALE",   "roles_csv": "ministere",   "password": "Ministre@PNPI2026!",    "email_hint": "ministre@industrie.ga"},
+    {"username": "ministre",    "full_name": "Dr. Euloge NKOGHE BEKALE",   "roles_csv": "ministre",    "password": "Ministre@PNPI2026!",    "email_hint": "ministre@industrie.ga"},
     {"username": "directeur",   "full_name": "Pierre NGUEMA ONDO",         "roles_csv": "directeur",   "password": "Directeur@PNPI2026!",   "email_hint": "directeur@pnpi-gabon.ga"},
     {"username": "instructeur", "full_name": "Sylvie BONGO ONDO",          "roles_csv": "instructeur", "password": "Instructeur@PNPI2026!", "email_hint": "instructeur@pnpi-gabon.ga"},
     {"username": "inspecteur",  "full_name": "Marie OBAME MVOME",          "roles_csv": "inspecteur",  "password": "Inspecteur@PNPI2026!",  "email_hint": "inspecteur@pnpi-gabon.ga"},
-    {"username": "industriel",  "full_name": "Jean-Claude MOUSSAVOU",      "roles_csv": "industriel",  "password": "Industriel@PNPI2026!",  "email_hint": "industriel@pnpi-gabon.ga"},
+    {"username": "operateur",   "full_name": "Jean-Claude MOUSSAVOU",      "roles_csv": "operateur",   "password": "Operateur@PNPI2026!",   "email_hint": "operateur@pnpi-gabon.ga"},
 ]
 
 # ---------------------------------------------------------------------------
@@ -357,7 +357,7 @@ def main() -> None:
                 motif_rejet               = motif,
                 numero_reference_decision = num_ref,
                 observations              = None,
-                created_by                = "industriel",
+                created_by                = "operateur",
                 updated_at                = soumis_at,
             )
             db.add(ati)
@@ -433,7 +433,7 @@ def main() -> None:
             if not db.query(NotificationORM).filter(NotificationORM.notification_key == notif_key).first():
                 db.add(NotificationORM(
                     id               = uid("N"),
-                    target_role      = "ministere",
+                    target_role      = "ministre",
                     title            = f"ALERTE SLA : {len(hors_sla)} ATI(s) hors delai",
                     message          = f"{len(hors_sla)} dossier(s) ATI depassent leur delai SLA.",
                     severity         = "high",

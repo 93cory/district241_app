@@ -41,7 +41,7 @@ def _to_notification_read(row: NotificationORM) -> dict:
 
 @router.get("/admin/users")
 async def list_user_accounts(
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
     rows = db.execute(select(UserAccountORM).order_by(UserAccountORM.created_at.desc())).scalars().all()
@@ -51,7 +51,7 @@ async def list_user_accounts(
 @router.post("/admin/users", status_code=status.HTTP_201_CREATED)
 async def create_user_account(
     payload: dict,
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
     existing = db.get(UserAccountORM, payload["username"])
@@ -142,7 +142,7 @@ async def delete_user_account(
 
 @router.get("/admin/notifications")
 async def list_notifications(
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere, Role.industriel, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     role_values = [role.value for role in current_user.roles]
@@ -152,7 +152,7 @@ async def list_notifications(
         for row in rows
         if row.target_role is None
         or row.target_role in role_values
-        or Role.ministere.value in role_values
+        or Role.ministre.value in role_values
         or Role.admin.value in role_values
     ]
     return [_to_notification_read(row) for row in filtered]
@@ -161,7 +161,7 @@ async def list_notifications(
 @router.post("/admin/notifications", status_code=status.HTTP_201_CREATED)
 async def create_notification(
     payload: dict,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
     import uuid
@@ -199,7 +199,7 @@ async def create_notification(
 async def mark_notification_read(
     notification_id: str,
     payload: dict,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere, Role.industriel, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
     row = db.get(NotificationORM, notification_id)
@@ -207,7 +207,7 @@ async def mark_notification_read(
         raise HTTPException(status_code=404, detail="Notification introuvable.")
 
     role_values = {role.value for role in current_user.roles}
-    is_ministere_or_admin = Role.ministere.value in role_values or Role.admin.value in role_values
+    is_ministere_or_admin = Role.ministre.value in role_values or Role.admin.value in role_values
     if not is_ministere_or_admin:
         if row.target_role is not None and row.target_role not in role_values:
             raise HTTPException(status_code=403, detail="Acces refuse pour cette notification.")

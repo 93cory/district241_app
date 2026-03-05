@@ -30,7 +30,7 @@ async def health() -> Dict[str, str]:
 
 @router.get("/health/detailed")
 async def health_detailed(
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Dict[str, object]:
     try:
@@ -64,7 +64,7 @@ async def health_detailed(
 
 @router.get("/metrics")
 async def metrics(
-    _: User = Depends(require_roles(Role.admin, Role.ministere)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Dict[str, object]:
     from ..main import _request_metrics, _request_duration_ms, _compute_error_rate, _rate_limit_store
@@ -103,7 +103,7 @@ async def metrics(
 
 @router.post("/ops/alerts/check")
 async def ops_alerts_check(
-    current_user: User = Depends(require_roles(Role.admin, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Dict[str, object]:
     from ..main import _build_ops_alerts_payload, _send_ops_alert_webhook, _compute_error_rate

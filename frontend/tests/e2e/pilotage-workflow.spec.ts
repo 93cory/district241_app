@@ -24,6 +24,6 @@ test.describe("Pilotage Workflow UI", () => {
     const historySelect = page.locator("#history-dossier");
     await historySelect.selectOption("DOS-E2E-0002");
     await expect(page.getByText("Decision finale")).toBeVisible();
-    await expect(page.getByRole("cell", { name: "ministere", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "ministre", exact: true })).toBeVisible();
   });
 });

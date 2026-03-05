@@ -40,7 +40,7 @@ const dossiers: ProjectDossier[] = [
     updated_at: now,
     decision_at: now,
     assigned_to: "Direction B",
-    assigned_role: "ministere",
+    assigned_role: "ministre",
     decision_reason: "Conforme",
     decision_reference: "ARR-DEMO-01",
     age_days: 22,
@@ -53,7 +53,7 @@ const transitions: Record<string, ProjectDossierTransition[]> = {
     {
       id: "TR-E2E-1",
       dossier_id: "DOS-E2E-0001",
-      changed_by: "ministere",
+      changed_by: "ministre",
       previous_status: "submitted",
       new_status: "under_review",
       previous_stage: "reception",
@@ -66,7 +66,7 @@ const transitions: Record<string, ProjectDossierTransition[]> = {
     {
       id: "TR-E2E-2",
       dossier_id: "DOS-E2E-0002",
-      changed_by: "ministere",
+      changed_by: "ministre",
       previous_status: "interministerial",
       new_status: "approved",
       previous_stage: "validation",

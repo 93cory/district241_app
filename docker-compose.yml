@@ -28,8 +28,8 @@ services:
         condition: service_healthy
     environment:
       PNPI_SECRET_KEY: replace-with-strong-secret
-      PNPI_MINISTERE_PASSWORD: ministere-dev-password
-      PNPI_INDUSTRIEL_PASSWORD: industriel-dev-password
+      PNPI_MINISTRE_PASSWORD: ministre-dev-password
+      PNPI_OPERATEUR_PASSWORD: operateur-dev-password
       PNPI_INSPECTEUR_PASSWORD: inspecteur-dev-password
       PNPI_DATABASE_URL: postgresql://pnpi_user:pnpi_password@postgres:5432/pnpi
     ports:

@@ -4,7 +4,7 @@ import { CSSProperties, FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const severityOptions = ["info", "medium", "high", "critical"] as const;
-const roleOptions = ["ministere", "industriel", "inspecteur"] as const;
+const roleOptions = ["ministre", "directeur", "instructeur", "inspecteur", "operateur"] as const;
 
 export const AdminActions = () => {
   const router = useRouter();

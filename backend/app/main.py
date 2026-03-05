@@ -958,15 +958,15 @@ def seed_if_empty(db: Session) -> None:
 
     seeded_declarations = [
         DeclarationORM(id="PD-UI001-202512", unit_id="UI001", month=date(2025, 12, 1), volume_tons=380, jobs=220,
-                       validated=True, submitted_at=datetime(2026, 1, 5, tzinfo=timezone.utc), submitted_by="industriel"),
+                       validated=True, submitted_at=datetime(2026, 1, 5, tzinfo=timezone.utc), submitted_by="operateur"),
         DeclarationORM(id="PD-UI001-202601", unit_id="UI001", month=date(2026, 1, 1), volume_tons=410, jobs=230,
-                       validated=True, submitted_at=datetime(2026, 2, 2, tzinfo=timezone.utc), submitted_by="industriel"),
+                       validated=True, submitted_at=datetime(2026, 2, 2, tzinfo=timezone.utc), submitted_by="operateur"),
         DeclarationORM(id="PD-UI002-202601", unit_id="UI002", month=date(2026, 1, 1), volume_tons=265, jobs=145,
-                       validated=True, submitted_at=datetime(2026, 2, 3, tzinfo=timezone.utc), submitted_by="industriel"),
+                       validated=True, submitted_at=datetime(2026, 2, 3, tzinfo=timezone.utc), submitted_by="operateur"),
         DeclarationORM(id="PD-UI003-202512", unit_id="UI003", month=date(2025, 12, 1), volume_tons=120, jobs=65,
                        validated=False, submitted_at=datetime(2026, 1, 12, tzinfo=timezone.utc), submitted_by="inspecteur"),
         DeclarationORM(id="PD-UI004-202602", unit_id="UI004", month=date(2026, 2, 1), volume_tons=325, jobs=190,
-                       validated=True, submitted_at=datetime(2026, 2, 12, tzinfo=timezone.utc), submitted_by="industriel"),
+                       validated=True, submitted_at=datetime(2026, 2, 12, tzinfo=timezone.utc), submitted_by="operateur"),
     ]
     db.add_all(seeded_declarations)
 
@@ -1037,14 +1037,14 @@ def seed_project_dossiers(db: Session) -> None:
                           status="interministerial", stage="validation", priority="high", sla_days=45,
                           submitted_at=datetime(2026, 1, 7, tzinfo=timezone.utc),
                           updated_at=datetime(2026, 2, 17, tzinfo=timezone.utc),
-                          assigned_to="Cellule interministerielle", assigned_role=Role.ministere.value),
+                          assigned_to="Cellule interministerielle", assigned_role=Role.ministre.value),
         ProjectDossierORM(id="DOS-2026-0004", company_name="Cacao Excellence SA",
                           project_title="Atelier de fermentation et conditionnement cacao", sector="Cacao", location="Woleu-Ntem",
                           status="approved", stage="decision", priority="medium", sla_days=30,
                           submitted_at=datetime(2026, 1, 4, tzinfo=timezone.utc),
                           updated_at=datetime(2026, 1, 30, tzinfo=timezone.utc),
                           decision_at=datetime(2026, 1, 30, tzinfo=timezone.utc),
-                          assigned_to="Cabinet technique", assigned_role=Role.ministere.value,
+                          assigned_to="Cabinet technique", assigned_role=Role.ministre.value,
                           decision_reason="Conformite reglementaire et capacite technique validees.",
                           decision_reference="ARR-2026-APP-001"),
         ProjectDossierORM(id="DOS-2026-0005", company_name="Libreville Packaging",
@@ -1053,7 +1053,7 @@ def seed_project_dossiers(db: Session) -> None:
                           submitted_at=datetime(2025, 12, 28, tzinfo=timezone.utc),
                           updated_at=datetime(2026, 1, 29, tzinfo=timezone.utc),
                           decision_at=datetime(2026, 1, 29, tzinfo=timezone.utc),
-                          assigned_to="Direction juridique", assigned_role=Role.ministere.value,
+                          assigned_to="Direction juridique", assigned_role=Role.ministre.value,
                           decision_reason="Pieces obligatoires manquantes et non-conformites juridiques.",
                           decision_reference="ARR-2026-REJ-001"),
     ]

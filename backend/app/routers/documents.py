@@ -59,7 +59,7 @@ def _to_doc_read(doc: DocumentDossierORM) -> DocumentRead:
 @router.get("/ati/{ati_id}/documents", response_model=List[DocumentRead])
 async def list_ati_documents(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[DocumentRead]:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
@@ -119,7 +119,7 @@ async def upload_ati_document(
 @router.get("/documents/{doc_id}/download")
 async def download_document(
     doc_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> FileResponse:
     doc = db.get(DocumentDossierORM, doc_id)

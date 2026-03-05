@@ -106,7 +106,7 @@ async def list_atis(
     province: Optional[str] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=500),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[ATIRead]:
     query = select(AgrementTechniqueIndustrielORM)
@@ -125,7 +125,7 @@ async def list_atis(
 @router.post("/ati", response_model=ATIRead, status_code=status.HTTP_201_CREATED)
 async def create_ati(
     payload: ATICreate,
-    current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> ATIRead:
     operateur = db.get(OperateurIndustrielORM, payload.operateur_id)
@@ -181,7 +181,7 @@ async def create_ati(
 @router.get("/ati/{ati_id}", response_model=ATIRead)
 async def get_ati(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> ATIRead:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
@@ -194,7 +194,7 @@ async def get_ati(
 async def update_ati_statut(
     ati_id: str,
     payload: ATIStatusUpdate,
-    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur, Role.ministere)),
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> ATIRead:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
@@ -283,7 +283,7 @@ async def update_ati_statut(
 @router.get("/ati/{ati_id}/historique", response_model=List[ATITransitionRead])
 async def ati_historique(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[ATITransitionRead]:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
@@ -315,7 +315,7 @@ async def ati_historique(
 @router.get("/ati/{ati_id}/qrcode")
 async def download_ati_qrcode(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> FastAPIResponse:
     import qrcode  # type: ignore
@@ -339,7 +339,7 @@ async def download_ati_qrcode(
 @router.get("/ati/{ati_id}/pdf")
 async def download_ati_pdf(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministere, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> FastAPIResponse:
     from reportlab.lib.pagesizes import A4

@@ -10,7 +10,7 @@ import {
 } from "../../../lib/api";
 import { fetchBackendProfile } from "../../../lib/backend";
 
-const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur", "ministere"]);
+const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 
 const SecteurBarChart = dynamic(() => import("../components/SecteurChart"), { ssr: false });
 const TendanceLine = dynamic(() => import("../components/TendanceChart"), { ssr: false });

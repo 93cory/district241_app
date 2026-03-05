@@ -12,7 +12,7 @@ interface Props {
 const statusOptions = ["submitted", "under_review", "interministerial", "approved", "rejected"] as const;
 const stageOptions = ["reception", "instruction", "validation", "decision"] as const;
 const priorityOptions = ["low", "medium", "high"] as const;
-const roleOptions = ["inspecteur", "ministere", "admin"] as const;
+const roleOptions = ["inspecteur", "ministre", "admin"] as const;
 
 const statusLabel: Record<(typeof statusOptions)[number], string> = {
   submitted: "Soumis",

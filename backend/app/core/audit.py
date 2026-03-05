@@ -79,7 +79,7 @@ def _emit_sla_notifications(db: Session) -> None:
                 title="Dossier hors SLA",
                 message=f"{dossier.id} depasse le delai SLA ({dossier.sla_days} jours).",
                 severity="critical",
-                target_role=Role.ministere,
+                target_role=Role.ministre,
                 notification_key=f"sla-overdue:{dossier.id}:{now_utc().date().isoformat()}",
             )
 

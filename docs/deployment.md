@@ -9,8 +9,8 @@ Ce document synthétise les pratiques de mise en production pour backend (FastAP
 - `PNPI_SECRET_KEY`
 - `PNPI_ENV` (`development`/`production`)
 - `PNPI_ADMIN_PASSWORD`
-- `PNPI_MINISTERE_PASSWORD`
-- `PNPI_INDUSTRIEL_PASSWORD`
+- `PNPI_MINISTRE_PASSWORD`
+- `PNPI_OPERATEUR_PASSWORD`
 - `PNPI_INSPECTEUR_PASSWORD`
 
 ### Demarrage
