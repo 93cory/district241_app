@@ -122,6 +122,33 @@ class AppNotification {
       );
 }
 
+class PnpiAlert {
+  final String type;
+  final String severity;
+  final String title;
+  final String message;
+  final String targetId;
+  final DateTime createdAt;
+
+  const PnpiAlert({
+    required this.type,
+    required this.severity,
+    required this.title,
+    required this.message,
+    required this.targetId,
+    required this.createdAt,
+  });
+
+  factory PnpiAlert.fromJson(Map<String, dynamic> json) => PnpiAlert(
+        type: json['type'] as String? ?? '',
+        severity: json['severity'] as String? ?? 'info',
+        title: json['title'] as String? ?? '',
+        message: json['message'] as String? ?? '',
+        targetId: json['target_id'] as String? ?? '',
+        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
+      );
+}
+
 class AuditEvent {
   final String id;
   final DateTime timestamp;
@@ -799,6 +826,24 @@ class ApiService {
       isRead: true,
     ),
   ];
+
+  // ── PNPI Alerts ───────────────────────────────────────────────────────
+  Future<List<PnpiAlert>> fetchPnpiAlerts() async {
+    try {
+      await _ensureToken();
+      final response = await _client.get(
+        Uri.parse('$_backendUrl/pnpi/alerts'),
+        headers: _authHeaders,
+      );
+      if (response.statusCode != 200) throw Exception('Erreur');
+      return (jsonDecode(response.body) as List<dynamic>)
+          .map((e) => PnpiAlert.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      if (_strictBackend) rethrow;
+      return [];
+    }
+  }
 
   Future<void> markNotificationRead(String notificationId) async {
     await _ensureToken();

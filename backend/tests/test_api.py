@@ -1011,3 +1011,80 @@ class TestInspections:
     def test_requires_auth(self) -> None:
         response = client.get("/pnpi/inspections")
         assert response.status_code == 401
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PNPI — Alertes et historique (lot 5-6)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPNPIAlerts:
+    def test_list_alerts(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+        response = client.get("/pnpi/alerts", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        for alert in data:
+            assert "type" in alert
+            assert "severity" in alert
+            assert "title" in alert
+            assert alert["severity"] in ("critical", "high", "medium", "info")
+
+    def test_alerts_requires_auth(self) -> None:
+        response = client.get("/pnpi/alerts")
+        assert response.status_code == 401
+
+
+class TestPNPIHistorique:
+    def test_list_historique(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+        response = client.get("/pnpi/historique", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+
+    def test_historique_filter_by_actor(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+        response = client.get("/pnpi/historique?changed_by=admin", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+
+    def test_historique_limit(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+        response = client.get("/pnpi/historique?limit=5", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)
+        assert len(data) <= 5
+
+    def test_historique_requires_auth(self) -> None:
+        response = client.get("/pnpi/historique")
+        assert response.status_code == 401
+
+
+class TestPNPIHealth:
+    def test_health_check(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+        response = client.get("/pnpi/dashboard/health", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "ok"
+        assert data["database"] == "connected"
+        assert "counts" in data
+        assert "atis" in data["counts"]
+        assert "operateurs" in data["counts"]
+        assert "inspections" in data["counts"]
+
+    def test_health_requires_auth(self) -> None:
+        response = client.get("/pnpi/dashboard/health")
+        assert response.status_code == 401
+
+
+class TestSearchInspections:
+    def test_search_inspections(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+        response = client.get("/pnpi/dashboard/search?q=INS", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data, list)

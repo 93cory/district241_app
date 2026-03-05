@@ -365,4 +365,60 @@ async def pnpi_search(
             href=f"/pnpi/ati/{a.id}",
         ))
 
+    # Search inspections
+    insps = db.execute(
+        select(InspectionConformiteORM).where(
+            (InspectionConformiteORM.id.ilike(term)) |
+            (InspectionConformiteORM.inspecteur_username.ilike(term)) |
+            (InspectionConformiteORM.observations.ilike(term))
+        ).limit(5)
+    ).scalars().all()
+    for insp in insps:
+        results.append(SearchResult(
+            type="inspection",
+            id=insp.id,
+            title=insp.id,
+            subtitle=f"{insp.statut_conformite} · {insp.inspecteur_username} · {insp.date_inspection.strftime('%d/%m/%Y') if insp.date_inspection else ''}",
+            statut=insp.statut_conformite,
+            href=f"/pnpi/inspections/{insp.id}",
+        ))
+
     return results[:15]
+
+
+@router.get("/dashboard/health", summary="Health-check PNPI")
+async def pnpi_health(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Statut de sante de la plateforme PNPI."""
+    atis_total = db.execute(select(func.count(AgrementTechniqueIndustrielORM.id))).scalar_one()
+    ops_total = db.execute(select(func.count(OperateurIndustrielORM.id))).scalar_one()
+    inspections_total = db.execute(select(func.count(InspectionConformiteORM.id))).scalar_one()
+
+    latest_ati = db.execute(
+        select(AgrementTechniqueIndustrielORM.date_soumission)
+        .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    latest_inspection = db.execute(
+        select(InspectionConformiteORM.date_inspection)
+        .order_by(InspectionConformiteORM.date_inspection.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    return {
+        "status": "ok",
+        "timestamp": now_utc().isoformat(),
+        "database": "connected",
+        "counts": {
+            "atis": atis_total,
+            "operateurs": ops_total,
+            "inspections": inspections_total,
+        },
+        "latest_activity": {
+            "derniere_soumission_ati": latest_ati.isoformat() if latest_ati else None,
+            "derniere_inspection": latest_inspection.isoformat() if latest_inspection else None,
+        },
+    }

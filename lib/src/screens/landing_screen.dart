@@ -16,6 +16,7 @@ import 'operateurs_screen.dart';
 import 'pilotage_workflow_screen.dart';
 import 'pnpi_dashboard_screen.dart';
 import 'profile_screen.dart';
+import 'pnpi_alerts_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'traceability_screen.dart';
 import 'units_screen.dart';
@@ -146,6 +147,16 @@ class _LandingScreenState extends State<LandingScreen> {
                 ),
               ),
             ),
+          ),
+          IconButton(
+            tooltip: 'Alertes PNPI',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PnpiAlertsScreen()),
+              );
+            },
+            icon: const Icon(Icons.warning_amber_rounded),
           ),
           IconButton(
             tooltip: 'Scanner QR',

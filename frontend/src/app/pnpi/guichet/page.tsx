@@ -33,6 +33,49 @@ export default async function GuichetPage() {
           <Link href="/pnpi" style={{ color: "#6b7280", textDecoration: "none" }}>← Dashboard</Link>
           <Link href="/pnpi/profil" style={{ color: "#003F8F", textDecoration: "none", fontWeight: 600 }}>Mon profil</Link>
         </div>
+        {/* KPIs */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.75rem", marginBottom: "1.25rem" }}>
+          <div className="chart-card" style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
+            <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#003F8F" }}>{myATIs.length}</div>
+            <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>Mes demandes</div>
+          </div>
+          {(["soumis", "en_instruction", "en_validation", "approuve", "rejete"] as const).map(s => {
+            const count = myATIs.filter(a => a.statut === s).length;
+            return (
+              <div key={s} className="chart-card" style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
+                <div style={{ fontSize: "1.5rem", fontWeight: 800, color: STATUT_COLORS[s] }}>{count}</div>
+                <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>{STATUT_LABELS[s]}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Pipeline tracker */}
+        <div className="chart-card" style={{ padding: "1rem 1.25rem", marginBottom: "1.25rem" }}>
+          <h3 style={{ margin: "0 0 0.75rem", color: "#003F8F", fontSize: "0.9rem" }}>Parcours de votre demande ATI</h3>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", padding: "0 1rem" }}>
+            {/* Background line */}
+            <div style={{ position: "absolute", top: "50%", left: "1rem", right: "1rem", height: "3px", background: "#e5e7eb", transform: "translateY(-50%)", zIndex: 0 }} />
+            {[
+              { label: "Soumission", icon: "1", color: "#f59e0b" },
+              { label: "Instruction", icon: "2", color: "#3b82f6" },
+              { label: "Validation", icon: "3", color: "#8b5cf6" },
+              { label: "Decision", icon: "4", color: "#10b981" },
+            ].map((step) => (
+              <div key={step.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 1 }}>
+                <div style={{
+                  width: "32px", height: "32px", borderRadius: "50%",
+                  background: step.color, color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontWeight: 800, fontSize: "0.8rem",
+                  border: "3px solid #fff", boxShadow: `0 0 0 2px ${step.color}`,
+                }}>{step.icon}</div>
+                <span style={{ fontSize: "0.7rem", color: "#374151", fontWeight: 600, marginTop: "0.4rem" }}>{step.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
           {/* Form */}
           <div style={{ flex: "1 1 380px" }}>
