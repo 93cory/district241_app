@@ -17,6 +17,7 @@ from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
     ATITransitionORM,
+    InspectionConformiteORM,
     OperateurIndustrielORM,
 )
 from ..schemas.pnpi import ATIBrief, ATICreate, ATIRead, ATIStatusUpdate, ATITransitionRead
@@ -522,3 +523,98 @@ async def bulk_assign_ati(
     db.commit()
 
     return {"assigned": assigned, "skipped": len(atis) - assigned, "instructeur": payload.instructeur_username}
+
+
+@router.get("/alerts", summary="Alertes PNPI auto-generees")
+async def list_pnpi_alerts(
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> list:
+    """Genere dynamiquement des alertes a partir des donnees PNPI."""
+    alerts = []
+    now = now_utc()
+
+    # 1. ATIs en retard SLA
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    for a in all_atis:
+        if a.statut in _TERMINAL_STATUTS:
+            continue
+        age = max((now.date() - a.date_soumission.date()).days, 0)
+        if age > a.sla_jours:
+            alerts.append({
+                "type": "sla_overdue",
+                "severity": "high" if age > a.sla_jours * 1.5 else "medium",
+                "title": f"ATI {a.numero_ati} en retard SLA",
+                "message": f"Age: {age}j / SLA: {a.sla_jours}j — {a.type_activite}",
+                "target_id": a.id,
+                "created_at": now.isoformat(),
+            })
+
+    # 2. Inspections non conformes recentes (30 derniers jours)
+    cutoff = now - timedelta(days=30)
+    recent_inspections = db.execute(
+        select(InspectionConformiteORM)
+        .where(InspectionConformiteORM.statut_conformite == "non_conforme")
+        .where(InspectionConformiteORM.date_inspection >= cutoff)
+        .order_by(InspectionConformiteORM.date_inspection.desc())
+    ).scalars().all()
+    for insp in recent_inspections:
+        alerts.append({
+            "type": "non_conforme",
+            "severity": "high",
+            "title": f"Inspection non conforme — {insp.operateur_id}",
+            "message": insp.observations[:120] if insp.observations else "",
+            "target_id": insp.id,
+            "created_at": insp.date_inspection.isoformat(),
+        })
+
+    # 3. ATIs expirant dans les 90 prochains jours
+    horizon = now.date() + timedelta(days=90)
+    for a in all_atis:
+        if a.statut == "approuve" and a.date_expiration:
+            days_left = (a.date_expiration.date() - now.date()).days
+            if 0 < days_left <= 90:
+                sev = "critical" if days_left <= 30 else "medium"
+                alerts.append({
+                    "type": "expiring_soon",
+                    "severity": sev,
+                    "title": f"ATI {a.numero_ati} expire dans {days_left}j",
+                    "message": f"Expiration: {a.date_expiration.date().isoformat()} — {a.type_activite}",
+                    "target_id": a.id,
+                    "created_at": now.isoformat(),
+                })
+
+    # Sort by severity (critical > high > medium > info)
+    severity_order = {"critical": 0, "high": 1, "medium": 2, "info": 3}
+    alerts.sort(key=lambda x: severity_order.get(x["severity"], 9))
+
+    return alerts
+
+
+@router.get("/historique", summary="Historique global des transitions ATI")
+async def list_all_transitions(
+    limit: int = Query(default=100, le=500),
+    changed_by: Optional[str] = Query(default=None),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+) -> list:
+    query = select(ATITransitionORM).order_by(ATITransitionORM.changed_at.desc())
+    if changed_by:
+        query = query.where(ATITransitionORM.changed_by == changed_by)
+    query = query.limit(limit)
+    transitions = db.execute(query).scalars().all()
+
+    return [
+        {
+            "id": t.id,
+            "ati_id": t.ati_id,
+            "changed_by": t.changed_by,
+            "previous_statut": t.previous_statut,
+            "new_statut": t.new_statut,
+            "previous_etape": t.previous_etape,
+            "new_etape": t.new_etape,
+            "note": t.note,
+            "changed_at": t.changed_at.isoformat(),
+        }
+        for t in transitions
+    ]

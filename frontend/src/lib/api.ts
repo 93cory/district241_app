@@ -432,3 +432,43 @@ export interface DocumentRead {
 
 export const fetchPNPIATIDocuments = async (atiId: string): Promise<DocumentRead[]> =>
   request<DocumentRead[]>(`/pnpi/ati/${encodeURIComponent(atiId)}/documents`);
+
+// ---------------------------------------------------------------------------
+// PNPI Alerts / Notifications
+// ---------------------------------------------------------------------------
+
+export interface PNPIAlert {
+  type: string;
+  severity: string;
+  title: string;
+  message: string;
+  target_id: string;
+  created_at: string;
+}
+
+export const fetchPNPIAlerts = (): Promise<PNPIAlert[]> =>
+  request("/pnpi/alerts");
+
+// ---------------------------------------------------------------------------
+// PNPI Historique (audit trail)
+// ---------------------------------------------------------------------------
+
+export interface PNPIHistoriqueEntry {
+  id: string;
+  ati_id: string;
+  changed_by: string;
+  previous_statut: string | null;
+  new_statut: string | null;
+  previous_etape: string | null;
+  new_etape: string | null;
+  note: string;
+  changed_at: string;
+}
+
+export const fetchPNPIHistorique = (params?: { changed_by?: string; limit?: number }): Promise<PNPIHistoriqueEntry[]> => {
+  const qs = new URLSearchParams();
+  if (params?.changed_by) qs.set("changed_by", params.changed_by);
+  if (params?.limit) qs.set("limit", String(params.limit));
+  const q = qs.toString();
+  return request(`/pnpi/historique${q ? "?" + q : ""}`);
+};

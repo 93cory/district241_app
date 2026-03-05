@@ -274,6 +274,11 @@ body {
 .reveal-stagger > *:nth-child(5) { animation-delay: 240ms; }
 .reveal-stagger > *:nth-child(6) { animation-delay: 290ms; }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 @keyframes reveal-up {
   from {
     opacity: 0;

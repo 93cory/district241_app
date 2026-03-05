@@ -15,6 +15,7 @@ import { fetchBackendProfile } from "../../lib/backend";
 import { KpiCard } from "../components/KpiCard";
 import { SearchBar } from "./components/SearchBar";
 
+const DashboardRefresh = dynamic(() => import("./components/DashboardRefresh"), { ssr: false });
 const CarteOperateurs = dynamic(() => import("./components/CarteOperateurs"), {
   ssr: false,
   loading: () => (
@@ -110,13 +111,18 @@ export default async function PNPIDashboardPage() {
                 <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg,#003F8F,#009440)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: "0.85rem", flexShrink: 0 }}>PN</div>
                 <h1 style={{ margin: 0, color: "#003F8F", fontSize: "1.4rem", fontWeight: 700 }}>Dashboard Ministeriel &mdash; PNPI</h1>
               </div>
-              <p style={{ margin: 0, color: "#6c7a8c", fontSize: "0.875rem" }}>Plateforme Nationale de Pilotage Industriel &middot; {today}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                <p style={{ margin: 0, color: "#6c7a8c", fontSize: "0.875rem" }}>Plateforme Nationale de Pilotage Industriel &middot; {today}</p>
+                <DashboardRefresh />
+              </div>
             </div>
             <SearchBar />
-            <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", alignItems: "center" }}>
               <Link href="/pnpi/ati" style={{ padding: "0.5rem 1rem", background: "#003F8F", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Gestion ATI</Link>
               <Link href="/pnpi/operateurs" style={{ padding: "0.5rem 1rem", background: "#009440", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Operateurs</Link>
               <Link href="/pnpi/inspections" style={{ padding: "0.5rem 1rem", background: "#7c3aed", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Inspections</Link>
+              <Link href="/pnpi/notifications" style={{ padding: "0.5rem 1rem", background: "#ef4444", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Alertes</Link>
+              <Link href="/pnpi/historique" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Historique</Link>
               <Link href="/pnpi/stats" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Statistiques</Link>
             </div>
           </div>
