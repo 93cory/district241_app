@@ -1,0 +1,21 @@
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(BACKEND_ROOT))
+
+from app.main import Base, SessionLocal, engine, seed_if_empty
+
+
+def main() -> None:
+    Base.metadata.create_all(bind=engine)
+    with SessionLocal() as db:
+        seed_if_empty(db)
+    print("PNPI database seeded.")
+
+
+if __name__ == "__main__":
+    main()

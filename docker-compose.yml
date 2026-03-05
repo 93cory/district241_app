@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: pnpi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pnpi
+      POSTGRES_USER: pnpi_user
+      POSTGRES_PASSWORD: pnpi_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pnpi_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pnpi_user -d pnpi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: pnpi-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PNPI_SECRET_KEY: replace-with-strong-secret
+      PNPI_MINISTERE_PASSWORD: ministere-dev-password
+      PNPI_INDUSTRIEL_PASSWORD: industriel-dev-password
+      PNPI_INSPECTEUR_PASSWORD: inspecteur-dev-password
+      PNPI_DATABASE_URL: postgresql://pnpi_user:pnpi_password@postgres:5432/pnpi
+    ports:
+      - "8000:8000"
+
+volumes:
+  pnpi_postgres_data:
+

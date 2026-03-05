@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pandoc --version)",
+      "Bash(python -c \"import docx; print\\(''python-docx OK''\\)\")",
+      "Bash(python -c \"import reportlab; print\\(''reportlab OK''\\)\")",
+      "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
+      "Bash(pip show sqlalchemy)"
+    ]
+  }
+}
