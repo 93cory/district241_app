@@ -4,6 +4,7 @@ import Image from "next/image";
 import { WebLogoutButton } from "./components/WebLogoutButton";
 import { SessionStatusBadge } from "./components/SessionStatusBadge";
 import { NotificationsBell } from "./components/NotificationsBell";
+import { NavLinks } from "./components/NavLinks";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -35,11 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Image src="/pnpi_logo.png" alt="PNPI" width={32} height={32} style={{ borderRadius: 6 }} />
               <span>PNPI</span>
             </Link>
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href}>
-                {link.label}
-              </Link>
-            ))}
+            <NavLinks links={navLinks} />
             <SessionStatusBadge />
             {roles.length ? <NotificationsBell /> : null}
             {roles.length ? <WebLogoutButton /> : null}

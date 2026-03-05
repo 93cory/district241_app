@@ -16,6 +16,7 @@ import 'operateurs_screen.dart';
 import 'pilotage_workflow_screen.dart';
 import 'pnpi_dashboard_screen.dart';
 import 'profile_screen.dart';
+import 'qr_scanner_screen.dart';
 import 'traceability_screen.dart';
 import 'units_screen.dart';
 
@@ -147,6 +148,16 @@ class _LandingScreenState extends State<LandingScreen> {
             ),
           ),
           IconButton(
+            tooltip: 'Scanner QR',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QrScannerScreen()),
+              );
+            },
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+          ),
+          IconButton(
             tooltip: 'Briefing',
             onPressed: () {
               Navigator.push(
@@ -211,13 +222,11 @@ String _initials(String fullName) {
 List<_AppTab> _buildTabs(AuthUserProfile profile) {
   final roles = profile.roles.toSet();
   final isAdmin = roles.contains('admin');
-  final isMinistre = roles.contains('ministre');   // nouveau rôle PNPI
-  final isMinistere = roles.contains('ministere'); // rôle legacy
+  final isMinistre = roles.contains('ministre');
   final isDirecteur = roles.contains('directeur');
   final isInstructeur = roles.contains('instructeur');
   final isInspecteur = roles.contains('inspecteur');
-  final isOperateur = roles.contains('operateur'); // nouveau rôle PNPI
-  final isIndustriel = roles.contains('industriel'); // rôle legacy
+  final isOperateur = roles.contains('operateur');
 
   final tabs = <_AppTab>[];
 
@@ -271,90 +280,6 @@ List<_AppTab> _buildTabs(AuthUserProfile profile) {
         navLabel: 'Carte',
         icon: Icons.map_rounded,
         page: MapScreen(),
-      ),
-    );
-  }
-
-  if (isMinistere) {
-    addTab(
-      const _AppTab(
-        key: 'pnpi',
-        title: 'Tableau PNPI',
-        navLabel: 'PNPI',
-        icon: Icons.insights_rounded,
-        page: PNPIDashboardScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'ati',
-        title: 'Agréments Techniques (ATI)',
-        navLabel: 'ATI',
-        icon: Icons.approval_rounded,
-        page: ATIScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'operateurs',
-        title: 'Opérateurs Industriels',
-        navLabel: 'Opérateurs',
-        icon: Icons.business_rounded,
-        page: OperateursScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'flux',
-        title: 'Pilotage Industriel',
-        navLabel: 'Flux',
-        icon: Icons.account_tree_rounded,
-        page: PilotageWorkflowScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'carte',
-        title: 'Carte des Sites Industriels',
-        navLabel: 'Carte',
-        icon: Icons.map_rounded,
-        page: MapScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'unites',
-        title: 'Unites Industrielles',
-        navLabel: 'Unites',
-        icon: Icons.factory_rounded,
-        page: UnitsScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'lots',
-        title: 'Tracabilite',
-        navLabel: 'Lots',
-        icon: Icons.qr_code_2_rounded,
-        page: TraceabilityScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'terrain',
-        title: 'Inspecteurs Terrain',
-        navLabel: 'Terrain',
-        icon: Icons.shield_rounded,
-        page: InspectorsScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'audit',
-        title: 'Gouvernance',
-        navLabel: 'Audit',
-        icon: Icons.policy_rounded,
-        page: GovernanceScreen(),
       ),
     );
   }
@@ -476,46 +401,6 @@ List<_AppTab> _buildTabs(AuthUserProfile profile) {
     );
   }
 
-  if (isIndustriel) {
-    addTab(
-      const _AppTab(
-        key: 'mon_dossier',
-        title: 'Mon Dossier PNPI',
-        navLabel: 'Dossier',
-        icon: Icons.folder_special_rounded,
-        page: IndustrielDashboardScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'ati',
-        title: 'Mes Agréments (ATI)',
-        navLabel: 'ATI',
-        icon: Icons.approval_rounded,
-        page: ATIScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'lots',
-        title: 'Tracabilite',
-        navLabel: 'Lots',
-        icon: Icons.qr_code_2_rounded,
-        page: TraceabilityScreen(),
-      ),
-    );
-    addTab(
-      const _AppTab(
-        key: 'unites',
-        title: 'Unites Industrielles',
-        navLabel: 'Unites',
-        icon: Icons.factory_rounded,
-        page: UnitsScreen(),
-      ),
-    );
-  }
-
-  // ── Rôle ministre (nouveau PNPI) ─────────────────────────────────────────
   if (isMinistre) {
     addTab(
       const _AppTab(
@@ -546,11 +431,56 @@ List<_AppTab> _buildTabs(AuthUserProfile profile) {
     );
     addTab(
       const _AppTab(
+        key: 'flux',
+        title: 'Pilotage Industriel',
+        navLabel: 'Flux',
+        icon: Icons.account_tree_rounded,
+        page: PilotageWorkflowScreen(),
+      ),
+    );
+    addTab(
+      const _AppTab(
         key: 'carte',
         title: 'Carte des Sites Industriels',
         navLabel: 'Carte',
         icon: Icons.map_rounded,
         page: MapScreen(),
+      ),
+    );
+    addTab(
+      const _AppTab(
+        key: 'unites',
+        title: 'Unités Industrielles',
+        navLabel: 'Unités',
+        icon: Icons.factory_rounded,
+        page: UnitsScreen(),
+      ),
+    );
+    addTab(
+      const _AppTab(
+        key: 'lots',
+        title: 'Traçabilité',
+        navLabel: 'Lots',
+        icon: Icons.qr_code_2_rounded,
+        page: TraceabilityScreen(),
+      ),
+    );
+    addTab(
+      const _AppTab(
+        key: 'terrain',
+        title: 'Inspecteurs Terrain',
+        navLabel: 'Terrain',
+        icon: Icons.shield_rounded,
+        page: InspectorsScreen(),
+      ),
+    );
+    addTab(
+      const _AppTab(
+        key: 'audit',
+        title: 'Gouvernance',
+        navLabel: 'Audit',
+        icon: Icons.policy_rounded,
+        page: GovernanceScreen(),
       ),
     );
   }
@@ -609,8 +539,6 @@ int _defaultIndexFor(AuthUserProfile profile, List<_AppTab> tabs) {
     preferredKey = 'pnpi';
   } else if (roles.contains('ministre')) {
     preferredKey = 'pnpi';
-  } else if (roles.contains('ministere')) {
-    preferredKey = 'pnpi';
   } else if (roles.contains('directeur')) {
     preferredKey = 'pnpi';
   } else if (roles.contains('instructeur')) {
@@ -618,8 +546,6 @@ int _defaultIndexFor(AuthUserProfile profile, List<_AppTab> tabs) {
   } else if (roles.contains('inspecteur')) {
     preferredKey = 'terrain';
   } else if (roles.contains('operateur')) {
-    preferredKey = 'mon_dossier';
-  } else if (roles.contains('industriel')) {
     preferredKey = 'mon_dossier';
   }
 

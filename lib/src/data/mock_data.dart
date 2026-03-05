@@ -578,7 +578,7 @@ class MockData {
     ProjectDossierTransition(
       id: 'DTR-0002',
       dossierId: 'DOS-2026-0001',
-      changedBy: 'ministere',
+      changedBy: 'ministre',
       previousStatus: 'submitted',
       newStatus: 'under_review',
       previousStage: 'reception',

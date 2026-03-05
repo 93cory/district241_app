@@ -30,6 +30,7 @@ export default async function ATIListPage({ searchParams }: { searchParams: Sear
     const hasNext = raw.length > PER_PAGE;
     const atis = raw.slice(0, PER_PAGE);
     const overdueCount = atis.filter((a) => a.is_overdue).length;
+    const statutCounts = atis.reduce<Record<string, number>>((acc, a) => { acc[a.statut] = (acc[a.statut] ?? 0) + 1; return acc; }, {});
 
     return (
       <section className="section">
@@ -52,6 +53,20 @@ export default async function ATIListPage({ searchParams }: { searchParams: Sear
               ↓ CSV
             </a>
           </div>
+          {/* Mini KPIs */}
+          {!statut && page === 1 && (
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+              {Object.entries(STATUT_LABELS).map(([key, label]) => {
+                const count = statutCounts[key] ?? 0;
+                if (count === 0) return null;
+                return (
+                  <a key={key} href={`/pnpi/ati?statut=${key}`} style={{ padding: "0.35rem 0.7rem", borderRadius: "999px", background: `${STATUT_COLORS[key]}18`, color: STATUT_COLORS[key], fontWeight: 700, fontSize: "0.72rem", textDecoration: "none", whiteSpace: "nowrap" }}>
+                    {label} ({count})
+                  </a>
+                );
+              })}
+            </div>
+          )}
           {/* Filters */}
           <div style={{ marginBottom: "1rem" }}>
             <ATIFiltersClient statut={statut} secteur={secteur} province={province} />

@@ -36,33 +36,39 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
 
   if (hasRole(roles, "ministre")) {
     add("/pnpi", "Dashboard Ministériel");
-    add("/pnpi/stats", "Statistiques PNPI");
-    add("/pnpi/briefing", "Briefing PNPI");
-    add("/pilotage", "Pilotage industriel");
-    add("/briefing", "Briefing");
+    add("/pnpi/ati", "Agréments ATI");
+    add("/pnpi/operateurs", "Opérateurs");
+    add("/pnpi/inspections", "Inspections");
+    add("/pnpi/stats", "Statistiques");
+    add("/pilotage", "Pilotage");
   }
 
   if (hasRole(roles, "directeur")) {
     add("/pnpi", "Dashboard PNPI");
     add("/pnpi/ati", "Agréments ATI");
-    add("/pnpi/stats", "Statistiques PNPI");
-    add("/pnpi/briefing", "Briefing PNPI");
+    add("/pnpi/operateurs", "Opérateurs");
+    add("/pnpi/inspections", "Inspections");
+    add("/pnpi/stats", "Statistiques");
   }
 
   if (hasRole(roles, "instructeur")) {
     add("/pnpi", "Dashboard PNPI");
     add("/pnpi/ati", "File ATI");
-    add("/pnpi/stats", "Statistiques PNPI");
+    add("/pnpi/operateurs", "Opérateurs");
+    add("/pnpi/stats", "Statistiques");
   }
 
   if (hasRole(roles, "operateur")) {
     add("/pnpi/guichet", "Mon espace");
+    add("/pnpi/ati", "Mes ATI");
+    add("/pnpi/operateurs", "Opérateurs");
   }
 
   if (hasRole(roles, "inspecteur")) {
     add("/inspecteur", "Mon espace");
     add("/pnpi/inspections", "Inspections");
     add("/pnpi/ati", "Dossiers ATI");
+    add("/pnpi/operateurs", "Opérateurs");
   }
 
   if (links.length > 0) {

@@ -102,6 +102,12 @@ body {
   transform: translateY(-1px);
 }
 
+.top-nav a.nav-active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
 .hero-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

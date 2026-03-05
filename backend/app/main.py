@@ -1481,15 +1481,36 @@ if os.getenv("PNPI_SKIP_DB_INIT") != "1":
 # FastAPI application factory
 # ---------------------------------------------------------------------------
 
+_openapi_tags = [
+    {"name": "Authentification", "description": "Connexion, tokens JWT et gestion de session."},
+    {"name": "Administration", "description": "Gestion des comptes utilisateurs et des roles RBAC."},
+    {"name": "PNPI Dashboard", "description": "Tableau de bord ministeriel : KPI, pipeline ATI, statistiques."},
+    {"name": "ATI", "description": "Agrements Techniques Industriels : soumission, instruction, validation, decision."},
+    {"name": "Operateurs", "description": "Registre national des operateurs industriels (CRUD + conformite)."},
+    {"name": "Inspections", "description": "Inspections de conformite terrain (CRUD + rapport)."},
+    {"name": "Documents", "description": "Upload et telechargement de pieces justificatives ATI."},
+    {"name": "Pilotage", "description": "Dossiers de projet industriel et workflow de pilotage."},
+    {"name": "Exports", "description": "Export CSV/JSON des donnees ATI, operateurs, inspections, audit."},
+    {"name": "Notifications", "description": "Notifications systeme et alertes SLA."},
+    {"name": "Unites & Tracabilite", "description": "Unites industrielles, declarations de production et tracabilite des lots."},
+    {"name": "Health & Ops", "description": "Sante de l'application, metriques et alertes ops."},
+]
+
 app = FastAPI(
-    title="PNPI / PNPI Backend",
+    title="PNPI — Plateforme Nationale de Pilotage Industriel",
     description=(
-        "API strategique pour piloter les unites industrielles gabonaises, "
-        "la tracabilite des lots, l'indice de transformation et "
-        "les agrements techniques industriels (ATI)."
+        "API du Ministere de l'Industrie du Gabon pour le pilotage des unites "
+        "industrielles, la gestion des agrements techniques (ATI), le suivi "
+        "de la tracabilite des lots et les inspections de conformite.\n\n"
+        "**Roles RBAC** : `admin`, `ministre`, `directeur`, `instructeur`, "
+        "`inspecteur`, `operateur`.\n\n"
+        "**Authentification** : Bearer JWT via `/auth/token`."
     ),
-    version="1.0.0",
+    version="1.1.0",
     lifespan=lifespan,
+    openapi_tags=_openapi_tags,
+    contact={"name": "Equipe PNPI", "email": "pnpi@industrie.gouv.ga"},
+    license_info={"name": "Proprietary"},
 )
 
 if CORS_ALLOW_ORIGINS_RAW == "*":

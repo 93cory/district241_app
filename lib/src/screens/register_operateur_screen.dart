@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/operateur_industriel.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
 

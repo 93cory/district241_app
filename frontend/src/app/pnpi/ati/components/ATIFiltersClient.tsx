@@ -20,6 +20,8 @@ export function ATIFiltersClient({ statut, secteur, province }: { statut: string
     router.push(`${pathname}?${params.toString()}`);
   }, [pathname, router, searchParams]);
 
+  const hasFilters = statut || secteur || province;
+
   return (
     <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", alignItems: "center" }}>
       <select value={statut} onChange={(e) => updateFilter("statut", e.target.value)} style={selectStyle}>
@@ -30,8 +32,16 @@ export function ATIFiltersClient({ statut, secteur, province }: { statut: string
       </select>
       <select value={province} onChange={(e) => updateFilter("province", e.target.value)} style={selectStyle}>
         <option value="">Toutes provinces</option>
-        {PROVINCES.slice(1).map((p) => <option key={p} value={p}>{p.replace(/_/g, " ")}</option>)}
+        {PROVINCES.slice(1).map((p) => <option key={p} value={p}>{p.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</option>)}
       </select>
+      {hasFilters && (
+        <button
+          onClick={() => router.push(pathname)}
+          style={{ padding: "0.4rem 0.7rem", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "0.78rem", background: "#fef2f2", color: "#b42318", cursor: "pointer", fontWeight: 600 }}
+        >
+          Reinitialiser
+        </button>
+      )}
     </div>
   );
 }

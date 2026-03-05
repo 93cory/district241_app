@@ -47,7 +47,7 @@ def _to_inspection_read(insp: InspectionConformiteORM, db: Session) -> Inspectio
     )
 
 
-@router.get("/inspections", response_model=List[InspectionRead])
+@router.get("/inspections", response_model=List[InspectionRead], summary="Lister les inspections de conformite")
 async def list_inspections(
     operateur_id: Optional[str] = Query(default=None),
     statut_conformite: Optional[str] = Query(default=None),
@@ -68,7 +68,8 @@ async def list_inspections(
     return [_to_inspection_read(r, db) for r in rows]
 
 
-@router.post("/inspections", response_model=InspectionRead, status_code=status.HTTP_201_CREATED)
+@router.post("/inspections", response_model=InspectionRead, status_code=status.HTTP_201_CREATED,
+             summary="Creer une inspection de conformite")
 async def create_inspection(
     payload: InspectionCreate,
     current_user: User = Depends(require_roles(Role.admin, Role.inspecteur, Role.directeur)),
@@ -104,7 +105,7 @@ async def create_inspection(
     return _to_inspection_read(insp, db)
 
 
-@router.get("/inspections/{inspection_id}", response_model=InspectionRead)
+@router.get("/inspections/{inspection_id}", response_model=InspectionRead, summary="Detail d'une inspection")
 async def get_inspection(
     inspection_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
@@ -116,7 +117,7 @@ async def get_inspection(
     return _to_inspection_read(insp, db)
 
 
-@router.patch("/inspections/{inspection_id}", response_model=InspectionRead)
+@router.patch("/inspections/{inspection_id}", response_model=InspectionRead, summary="Mettre a jour une inspection")
 async def update_inspection(
     inspection_id: str,
     payload: InspectionCreate,
@@ -137,7 +138,7 @@ async def update_inspection(
     return _to_inspection_read(insp, db)
 
 
-@router.get("/inspections/{inspection_id}/pdf")
+@router.get("/inspections/{inspection_id}/pdf", summary="Rapport PDF d'inspection")
 async def download_inspection_pdf(
     inspection_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),

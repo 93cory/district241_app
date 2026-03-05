@@ -10,7 +10,6 @@ const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> 
   instructeur: { label: "Instructeur", color: "#0284c7", bg: "#e0f2fe" },
   inspecteur: { label: "Inspecteur", color: "#059669", bg: "#d1fae5" },
   operateur: { label: "Operateur", color: "#d97706", bg: "#fef3c7" },
-  ministere: { label: "Ministere (legacy)", color: "#6b7280", bg: "#f3f4f6" },
 };
 
 const STATUT_COLORS: Record<string, string> = { soumis: "#f59e0b", en_instruction: "#3b82f6", en_validation: "#8b5cf6", approuve: "#10b981", rejete: "#ef4444", expire: "#9ca3af" };

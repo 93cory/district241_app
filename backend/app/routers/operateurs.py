@@ -77,7 +77,7 @@ def _to_ati_brief(ati: AgrementTechniqueIndustrielORM) -> ATIBrief:
     )
 
 
-@router.get("/operateurs", response_model=List[OperateurBrief])
+@router.get("/operateurs", response_model=List[OperateurBrief], summary="Lister les operateurs industriels")
 async def list_operateurs(
     secteur: Optional[str] = Query(default=None),
     province: Optional[str] = Query(default=None),
@@ -97,7 +97,8 @@ async def list_operateurs(
     return [_to_operateur_brief(op) for op in ops]
 
 
-@router.post("/operateurs", response_model=OperateurRead, status_code=status.HTTP_201_CREATED)
+@router.post("/operateurs", response_model=OperateurRead, status_code=status.HTTP_201_CREATED,
+             summary="Enregistrer un nouvel operateur")
 async def create_operateur(
     payload: OperateurCreate,
     current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre)),
@@ -139,7 +140,7 @@ async def create_operateur(
     return _to_operateur_read(op)
 
 
-@router.get("/operateurs/{operateur_id}", response_model=OperateurRead)
+@router.get("/operateurs/{operateur_id}", response_model=OperateurRead, summary="Detail d'un operateur")
 async def get_operateur(
     operateur_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
@@ -151,7 +152,7 @@ async def get_operateur(
     return _to_operateur_read(op)
 
 
-@router.get("/operateurs/{operateur_id}/ati", response_model=List[ATIBrief])
+@router.get("/operateurs/{operateur_id}/ati", response_model=List[ATIBrief], summary="ATI d'un operateur")
 async def list_operateur_atis(
     operateur_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),

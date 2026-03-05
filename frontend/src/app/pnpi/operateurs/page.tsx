@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { fetchPNPIOperateurs, type OperateurBrief } from "../../../lib/api";
+import dynamic from "next/dynamic";
+import { fetchPNPIOperateurs, fetchPNPICarte } from "../../../lib/api";
 import { fetchBackendProfile } from "../../../lib/backend";
 import { OperateursFiltersClient } from "./components/OperateursFiltersClient";
 import { OperateurCreateForm } from "./components/OperateurCreateForm";
+
+const CarteOperateurs = dynamic(() => import("../components/CarteOperateurs"), {
+  ssr: false,
+  loading: () => <div style={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "0.82rem" }}>Chargement de la carte...</div>,
+});
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const SECTEUR_LABELS: Record<string, string> = { bois: "Bois", mines: "Mines", agroalimentaire: "Agro", btp: "BTP", petrole: "Petrole", services: "Services" };
@@ -27,7 +33,10 @@ export default async function OperateursPage({ searchParams }: { searchParams: S
   const province = searchParams.province ?? "";
 
   try {
-    const operateurs = await fetchPNPIOperateurs({ secteur: secteur || undefined, province: province || undefined });
+    const [operateurs, carte] = await Promise.all([
+      fetchPNPIOperateurs({ secteur: secteur || undefined, province: province || undefined }),
+      fetchPNPICarte().catch(() => []),
+    ]);
     const totalEffectifs = operateurs.reduce((sum, op) => sum + (op.effectif_declare ?? 0), 0);
 
     return (
@@ -96,6 +105,15 @@ export default async function OperateursPage({ searchParams }: { searchParams: S
             </div>
           )}
         </div>
+
+        {/* Carte des operateurs */}
+        {carte.length > 0 && (
+          <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+            <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "0.95rem" }}>Carte des operateurs industriels</h3>
+            <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.8rem" }}>{carte.length} operateurs geocodes sur le territoire</p>
+            <CarteOperateurs operateurs={carte} />
+          </div>
+        )}
       </section>
     );
   } catch (error) {

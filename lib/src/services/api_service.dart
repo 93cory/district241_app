@@ -22,7 +22,7 @@ const _backendUrl = String.fromEnvironment(
 );
 const _backendUsername = String.fromEnvironment(
   'PNPI_API_USERNAME',
-  defaultValue: 'ministere',
+  defaultValue: 'ministre',
 );
 const _backendPassword = String.fromEnvironment('PNPI_API_PASSWORD');
 const _strictBackend = bool.fromEnvironment(
@@ -196,7 +196,7 @@ class AuthUserProfile {
     required this.roles,
   });
 
-  bool get canManagePilotage => roles.contains('ministere');
+  bool get canManagePilotage => roles.contains('ministre');
 
   factory AuthUserProfile.fromJson(Map<String, dynamic> json) => AuthUserProfile(
         username: json['username'],
@@ -249,10 +249,8 @@ class ApiService {
       'admin': 'Administrateur Demo',
       'ministre': 'Ministre Demo',
       'directeur': 'Directeur Demo',
-      'ministere': 'Agent Ministere Demo',
       'inspecteur': 'Inspecteur Demo',
       'instructeur': 'Instructeur Demo',
-      'industriel': 'Industriel Demo',
       'operateur': 'Operateur Demo',
     };
     _profile = AuthUserProfile(
@@ -752,7 +750,7 @@ class ApiService {
     ),
     AppNotification(
       id: 'notif-003',
-      targetRole: 'industriel',
+      targetRole: 'operateur',
       title: 'ATI approuvé',
       message: 'Votre ATI-2026-0003 a été approuvé par la Direction Industrielle. '
           'Votre certificat est disponible dans l\'application.',
@@ -782,7 +780,7 @@ class ApiService {
     ),
     AppNotification(
       id: 'notif-006',
-      targetRole: 'industriel',
+      targetRole: 'operateur',
       title: 'ATI rejeté',
       message: 'Votre ATI-2026-0004 a été rejeté. Motif : dossier incomplet — '
           'pièces manquantes : plan de site et bilan d\'activité.',
@@ -1222,7 +1220,7 @@ class ApiService {
       final response = await _client.patch(
         Uri.parse('$_backendUrl/pnpi/ati/$atiId/statut'),
         headers: {..._authHeaders, 'Content-Type': 'application/json'},
-        body: jsonEncode({'statut': newStatut, 'note': note}),
+        body: jsonEncode({'new_statut': newStatut, 'note': note}),
       );
       if (response.statusCode != 200) throw Exception('Erreur');
     } catch (_) {

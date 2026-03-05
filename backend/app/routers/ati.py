@@ -21,6 +21,13 @@ from ..models.pnpi import (
 )
 from ..schemas.pnpi import ATIBrief, ATICreate, ATIRead, ATIStatusUpdate, ATITransitionRead
 
+from pydantic import BaseModel as _BaseModel
+
+
+class _BulkAssignPayload(_BaseModel):
+    ati_ids: List[str]
+    instructeur_username: str
+
 
 router = APIRouter(prefix="/pnpi", tags=["ATI"])
 
@@ -99,7 +106,8 @@ def _generate_numero_ati(db: Session) -> str:
     return f"{prefix}{len(existing) + 1:04d}"
 
 
-@router.get("/ati", response_model=List[ATIRead])
+@router.get("/ati", response_model=List[ATIRead], summary="Lister les ATI",
+             description="Retourne la liste des agrements techniques avec filtres optionnels sur statut, secteur et province.")
 async def list_atis(
     statut: Optional[str] = Query(default=None),
     secteur: Optional[str] = Query(default=None),
@@ -122,7 +130,9 @@ async def list_atis(
     return [_to_ati_read(a) for a in atis]
 
 
-@router.post("/ati", response_model=ATIRead, status_code=status.HTTP_201_CREATED)
+@router.post("/ati", response_model=ATIRead, status_code=status.HTTP_201_CREATED,
+             summary="Soumettre un nouvel ATI",
+             description="Cree un agrement technique industriel et genere son numero unique.")
 async def create_ati(
     payload: ATICreate,
     current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre, Role.ministre)),
@@ -178,7 +188,7 @@ async def create_ati(
     return _to_ati_read(ati)
 
 
-@router.get("/ati/{ati_id}", response_model=ATIRead)
+@router.get("/ati/{ati_id}", response_model=ATIRead, summary="Detail d'un ATI")
 async def get_ati(
     ati_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
@@ -190,7 +200,9 @@ async def get_ati(
     return _to_ati_read(ati)
 
 
-@router.patch("/ati/{ati_id}/statut", response_model=ATIRead)
+@router.patch("/ati/{ati_id}/statut", response_model=ATIRead,
+              summary="Changer le statut d'un ATI",
+              description="Effectue une transition de statut selon le graphe de workflow (soumis -> en_instruction -> en_validation -> approuve/rejete).")
 async def update_ati_statut(
     ati_id: str,
     payload: ATIStatusUpdate,
@@ -280,7 +292,8 @@ async def update_ati_statut(
     return _to_ati_read(ati)
 
 
-@router.get("/ati/{ati_id}/historique", response_model=List[ATITransitionRead])
+@router.get("/ati/{ati_id}/historique", response_model=List[ATITransitionRead],
+            summary="Historique des transitions ATI")
 async def ati_historique(
     ati_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
@@ -312,7 +325,8 @@ async def ati_historique(
     ]
 
 
-@router.get("/ati/{ati_id}/qrcode")
+@router.get("/ati/{ati_id}/qrcode", summary="QR Code ATI",
+            description="Genere un QR code PNG pour l'agrement technique.")
 async def download_ati_qrcode(
     ati_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
@@ -336,7 +350,8 @@ async def download_ati_qrcode(
     )
 
 
-@router.get("/ati/{ati_id}/pdf")
+@router.get("/ati/{ati_id}/pdf", summary="Certificat PDF ATI",
+            description="Genere le certificat PDF d'un agrement approuve.")
 async def download_ati_pdf(
     ati_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
@@ -453,3 +468,57 @@ async def download_ati_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.post("/ati/bulk-assign", summary="Assigner des ATI en lot a un instructeur",
+             description="Permet a un directeur ou admin d'assigner plusieurs ATI a un instructeur en une seule operation.")
+async def bulk_assign_ati(
+    payload: _BulkAssignPayload,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> dict:
+    if not payload.ati_ids:
+        raise HTTPException(status_code=400, detail="La liste ati_ids ne peut pas etre vide.")
+    if len(payload.ati_ids) > 50:
+        raise HTTPException(status_code=400, detail="Maximum 50 ATI par operation.")
+
+    atis = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.id.in_(payload.ati_ids)
+        )
+    ).scalars().all()
+
+    if len(atis) != len(payload.ati_ids):
+        found_ids = {a.id for a in atis}
+        missing = [aid for aid in payload.ati_ids if aid not in found_ids]
+        raise HTTPException(status_code=404, detail=f"ATI introuvables: {missing}")
+
+    assigned = 0
+    for ati in atis:
+        if ati.statut in _TERMINAL_STATUTS:
+            continue
+        prev_instructeur = ati.instructeur_username
+        ati.instructeur_username = payload.instructeur_username
+        ati.updated_at = now_utc()
+
+        db.add(ATITransitionORM(
+            id=f"TR-{uuid.uuid4().hex[:16].upper()}",
+            ati_id=ati.id,
+            changed_by=current_user.username,
+            previous_statut=ati.statut,
+            new_statut=ati.statut,
+            note=f"Assignation instructeur: {prev_instructeur or 'aucun'} -> {payload.instructeur_username}",
+            changed_at=now_utc(),
+        ))
+        assigned += 1
+
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="ati.bulk_assign",
+        target=payload.instructeur_username,
+        details=f"ati_ids={len(payload.ati_ids)}; assigned={assigned}",
+    )
+    db.commit()
+
+    return {"assigned": assigned, "skipped": len(atis) - assigned, "instructeur": payload.instructeur_username}

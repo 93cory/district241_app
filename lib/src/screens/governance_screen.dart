@@ -378,11 +378,11 @@ class _GovernanceScreenState extends State<GovernanceScreen>
 
   Color _roleColor(String r) => switch (r) {
         'admin' => Colors.red.shade700,
-        'ministere' => const Color(0xFF005C33),
+        'ministre' => const Color(0xFFB8860B),
         'directeur' => PnpiColors.oceanPulse,
         'instructeur' => Colors.teal,
         'inspecteur' => Colors.indigo,
-        'industriel' => Colors.deepOrange,
+        'operateur' => Colors.purple,
         _ => Colors.grey.shade600,
       };
 

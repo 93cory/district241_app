@@ -14,10 +14,8 @@ class ProfileScreen extends StatelessWidget {
         'admin' => Colors.red.shade700,
         'ministre' => const Color(0xFFB8860B),
         'directeur' => PnpiColors.oceanPulse,
-        'ministere' => const Color(0xFF005C33),
         'inspecteur' => Colors.indigo,
         'instructeur' => Colors.teal,
-        'industriel' => Colors.deepOrange,
         'operateur' => Colors.purple,
         _ => Colors.grey.shade700,
       };
@@ -26,11 +24,9 @@ class ProfileScreen extends StatelessWidget {
         'admin' => 'Administrateur',
         'ministre' => 'Ministre',
         'directeur' => 'Directeur',
-        'ministere' => 'Ministere',
         'inspecteur' => 'Inspecteur',
         'instructeur' => 'Instructeur',
-        'industriel' => 'Industriel',
-        'operateur' => 'Operateur',
+        'operateur' => 'Opérateur',
         _ => role,
       };
 

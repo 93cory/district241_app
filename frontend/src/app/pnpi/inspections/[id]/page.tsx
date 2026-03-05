@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { fetchPNPIInspection } from "../../../../../lib/api";
-import { fetchBackendProfile } from "../../../../../lib/backend";
+import { fetchPNPIInspection } from "../../../../lib/api";
+import { fetchBackendProfile } from "../../../../lib/backend";
 
 const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const CONF_LABELS: Record<string, string> = { conforme: "Conforme", non_conforme: "Non conforme", partiel: "Partiel" };

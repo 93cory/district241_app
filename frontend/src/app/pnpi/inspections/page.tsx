@@ -31,12 +31,45 @@ export default async function InspectionsPage({ searchParams }: { searchParams: 
 
     const conformeCount = inspections.filter(i => i.statut_conformite === "conforme").length;
     const nonConformeCount = inspections.filter(i => i.statut_conformite === "non_conforme").length;
+    const partielCount = inspections.filter(i => i.statut_conformite === "partiel").length;
+    const tauxConformite = inspections.length > 0 ? Math.round((conformeCount / inspections.length) * 100) : 0;
 
     return (
       <section className="section">
-        <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem" }}>
+        <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <Link href="/pnpi" style={{ color: "#6b7280", textDecoration: "none" }}>← Dashboard</Link>
+          <a
+            href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/exports/inspections.csv`}
+            style={{ padding: "0.35rem 0.7rem", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "6px", color: "#374151", fontSize: "0.75rem", fontWeight: 600, textDecoration: "none" }}
+          >
+            ↓ CSV
+          </a>
         </div>
+
+        {/* KPIs */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem", marginBottom: "1.25rem" }}>
+          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#003F8F" }}>{inspections.length}</div>
+            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Total inspections</div>
+          </div>
+          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#10b981" }}>{tauxConformite}%</div>
+            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Taux conformite</div>
+          </div>
+          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#10b981" }}>{conformeCount}</div>
+            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Conformes</div>
+          </div>
+          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#ef4444" }}>{nonConformeCount}</div>
+            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Non conformes</div>
+          </div>
+          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#f59e0b" }}>{partielCount}</div>
+            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Partiels</div>
+          </div>
+        </div>
+
         <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
           {/* Liste */}
           <div style={{ flex: "2 1 500px" }}>

@@ -14,6 +14,7 @@ const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "in
 
 const SecteurBarChart = dynamic(() => import("../components/SecteurChart"), { ssr: false });
 const TendanceLine = dynamic(() => import("../components/TendanceChart"), { ssr: false });
+const ProvinceDonut = dynamic(() => import("../components/ProvinceDonut"), { ssr: false });
 
 export default async function StatsPage() {
   try {
@@ -95,10 +96,12 @@ export default async function StatsPage() {
             <SecteurBarChart secteurs={secteurs} />
           </div>
 
-          {/* Provinces table */}
+          {/* Provinces donut + table */}
           <div className="chart-card" style={{ flex: "1 1 300px", padding: "1.25rem" }}>
-            <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Repartition par province</h3>
-            <div style={{ overflowX: "auto" }}>
+            <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "0.95rem" }}>Repartition par province</h3>
+            <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.8rem" }}>ATIs actifs par region</p>
+            <ProvinceDonut provinces={provinces} />
+            <div style={{ overflowX: "auto", marginTop: "1rem" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
                 <thead>
                   <tr style={{ borderBottom: "2px solid #f3f4f6" }}>

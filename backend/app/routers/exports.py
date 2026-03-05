@@ -16,7 +16,7 @@ from ..core.audit import write_audit_event
 from ..database import get_db, now_utc
 from ..models.core import FieldReportORM, TraceBatchORM, UnitORM
 from ..models.pilotage import ProjectDossierORM, ProjectDossierTransitionORM
-from ..models.pnpi import AgrementTechniqueIndustrielORM, OperateurIndustrielORM
+from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
 
 
 router = APIRouter(tags=["Exports"])
@@ -330,6 +330,151 @@ async def export_operateurs_csv(
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=operateurs_export.csv"},
     )
+
+
+@router.get("/pnpi/exports/inspections.csv", summary="Export CSV des inspections de conformite")
+async def export_inspections_csv(
+    statut_conformite: Optional[str] = Query(default=None),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> Response:
+    query = select(InspectionConformiteORM).order_by(InspectionConformiteORM.date_inspection.desc())
+    if statut_conformite:
+        query = query.where(InspectionConformiteORM.statut_conformite == statut_conformite)
+    inspections = db.execute(query).scalars().all()
+
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["ID", "Operateur ID", "ATI ID", "Inspecteur", "Date", "Statut conformite", "Observations", "Mesures correctives", "Latitude", "Longitude"])
+    for insp in inspections:
+        w.writerow([
+            insp.id, insp.operateur_id, insp.ati_id or "",
+            insp.inspecteur_username,
+            insp.date_inspection.date().isoformat(),
+            insp.statut_conformite,
+            insp.observations[:200] if insp.observations else "",
+            (insp.mesures_correctives or "")[:200],
+            insp.latitude or "", insp.longitude or "",
+        ])
+
+    return Response(
+        content=buf.getvalue().encode("utf-8-sig"),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=inspections_export.csv"},
+    )
+
+
+@router.get("/pnpi/exports/briefing.pdf", summary="Briefing ministeriel PNPI (PDF)")
+async def export_pnpi_briefing_pdf(
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Genere un PDF de synthese ministerielle : KPIs, pipeline, repartition sectorielle."""
+    from statistics import median as _median
+    from collections import defaultdict as _defaultdict
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
+
+    _TERM = {"approuve", "rejete", "expire"}
+    now = now_utc()
+    first_of_month = now.date().replace(day=1)
+
+    # KPIs
+    atis_total = len(all_atis)
+    atis_en_cours = sum(1 for a in all_atis if a.statut not in _TERM)
+    atis_approuves_mois = sum(1 for a in all_atis if a.statut == "approuve" and a.date_decision and a.date_decision.date() >= first_of_month)
+    atis_en_retard = sum(1 for a in all_atis if a.statut not in _TERM and (now.date() - a.date_soumission.date()).days > a.sla_jours)
+    decided = [a for a in all_atis if a.statut in {"approuve", "rejete"} and a.date_decision]
+    durations = [max((a.date_decision.date() - a.date_soumission.date()).days, 0) for a in decided]
+    delai_moyen = float(_median(durations)) if durations else 0.0
+    compliant = sum(1 for a in decided if (a.date_decision.date() - a.date_soumission.date()).days <= a.sla_jours)
+    taux_sla = round((compliant / len(durations) * 100) if durations else 0.0, 0)
+    ops_actifs = sum(1 for op in all_ops if op.is_active)
+
+    # Pipeline
+    counts: dict[str, int] = _defaultdict(int)
+    for a in all_atis:
+        counts[a.statut] += 1
+
+    # Secteurs
+    sec_ops: dict[str, int] = _defaultdict(int)
+    sec_atis: dict[str, int] = _defaultdict(int)
+    sec_approuves: dict[str, int] = _defaultdict(int)
+    sec_emplois: dict[str, int] = _defaultdict(int)
+    for op in all_ops:
+        sec_ops[op.secteur] += 1
+        sec_emplois[op.secteur] += op.effectif_declare or 0
+    for a in all_atis:
+        sec_atis[a.secteur] += 1
+        if a.statut == "approuve":
+            sec_approuves[a.secteur] += 1
+    all_secteurs = sorted(set(list(sec_ops.keys()) + list(sec_atis.keys())))
+
+    # Provinces
+    prov_ops: dict[str, int] = _defaultdict(int)
+    prov_atis: dict[str, int] = _defaultdict(int)
+    op_prov: dict[str, str] = {}
+    for op in all_ops:
+        prov_ops[op.province] += 1
+        op_prov[op.id] = op.province
+    for a in all_atis:
+        if a.statut not in _TERM:
+            prov_atis[op_prov.get(a.operateur_id, "inconnu")] += 1
+    all_provinces = sorted(set(list(prov_ops.keys()) + list(prov_atis.keys())))
+
+    ts = now_utc().strftime("%d/%m/%Y %H:%M")
+    lines = [
+        "REPUBLIQUE GABONAISE",
+        "Ministere de l'Industrie — Plateforme Nationale de Pilotage Industriel",
+        "",
+        f"BRIEFING MINISTERIEL PNPI — {ts}",
+        "=" * 60,
+        "",
+        "INDICATEURS CLES",
+        f"  ATIs total .............. {atis_total}",
+        f"  ATIs en cours ........... {atis_en_cours}",
+        f"  ATIs approuves ce mois .. {atis_approuves_mois}",
+        f"  ATIs en retard SLA ...... {atis_en_retard}",
+        f"  Delai moyen (jours) ..... {delai_moyen:.1f}",
+        f"  Taux conformite SLA ..... {taux_sla:.0f} %",
+        f"  Operateurs actifs ....... {ops_actifs}",
+        "",
+        "PIPELINE DES STATUTS",
+        f"  Soumis .................. {counts.get('soumis', 0)}",
+        f"  En instruction .......... {counts.get('en_instruction', 0)}",
+        f"  En validation ........... {counts.get('en_validation', 0)}",
+        f"  Approuves ............... {counts.get('approuve', 0)}",
+        f"  Rejetes ................. {counts.get('rejete', 0)}",
+        f"  Expires ................. {counts.get('expire', 0)}",
+        "",
+        "REPARTITION PAR SECTEUR",
+    ]
+    for s in all_secteurs:
+        nb = sec_atis.get(s, 0)
+        taux = f"{round(sec_approuves.get(s, 0) / nb * 100):.0f}%" if nb > 0 else "N/A"
+        lines.append(
+            f"  {s:<18} {sec_ops.get(s, 0):>3} ops  {nb:>3} ATIs  {sec_emplois.get(s, 0):>5} emplois  taux {taux}"
+        )
+    lines.append("")
+    lines.append("REPARTITION PAR PROVINCE")
+    for p in all_provinces:
+        lines.append(
+            f"  {p.replace('_', ' ').title():<22} {prov_ops.get(p, 0):>3} ops  {prov_atis.get(p, 0):>3} ATIs actifs"
+        )
+    lines.append("")
+    lines.append(f"Document genere le {ts} par {current_user.username}")
+
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="exports.pnpi_briefing_pdf",
+        target=None,
+        details=f"atis_total={atis_total}; approuves={counts.get('approuve', 0)}",
+    )
+    db.commit()
+
+    return _build_pdf_response(lines, filename="pnpi-briefing-ministeriel.pdf", font_size=9, td_offset=12, start_y=770, start_x=36)
 
 
 # ---------------------------------------------------------------------------

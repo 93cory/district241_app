@@ -3,16 +3,17 @@ services:
     image: postgres:16
     container_name: pnpi-postgres
     restart: unless-stopped
+    env_file: .env
     environment:
-      POSTGRES_DB: pnpi
-      POSTGRES_USER: pnpi_user
-      POSTGRES_PASSWORD: pnpi_password
+      POSTGRES_DB: ${POSTGRES_DB:-pnpi}
+      POSTGRES_USER: ${POSTGRES_USER:-pnpi_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     ports:
       - "5432:5432"
     volumes:
       - pnpi_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pnpi_user -d pnpi"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pnpi_user} -d ${POSTGRES_DB:-pnpi}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,17 +24,18 @@ services:
       dockerfile: backend/Dockerfile
     container_name: pnpi-backend
     restart: unless-stopped
+    env_file: .env
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      PNPI_SECRET_KEY: replace-with-strong-secret
-      PNPI_ADMIN_PASSWORD: admin-dev-password
-      PNPI_MINISTRE_PASSWORD: ministre-dev-password
-      PNPI_OPERATEUR_PASSWORD: operateur-dev-password
-      PNPI_INSPECTEUR_PASSWORD: inspecteur-dev-password
-      PNPI_DATABASE_URL: postgresql://pnpi_user:pnpi_password@postgres:5432/pnpi
-      PNPI_ENV: development
+      PNPI_SECRET_KEY: ${PNPI_SECRET_KEY:?Set PNPI_SECRET_KEY in .env}
+      PNPI_ADMIN_PASSWORD: ${PNPI_ADMIN_PASSWORD:?Set PNPI_ADMIN_PASSWORD in .env}
+      PNPI_MINISTRE_PASSWORD: ${PNPI_MINISTRE_PASSWORD:?Set PNPI_MINISTRE_PASSWORD in .env}
+      PNPI_OPERATEUR_PASSWORD: ${PNPI_OPERATEUR_PASSWORD:?Set PNPI_OPERATEUR_PASSWORD in .env}
+      PNPI_INSPECTEUR_PASSWORD: ${PNPI_INSPECTEUR_PASSWORD:?Set PNPI_INSPECTEUR_PASSWORD in .env}
+      PNPI_DATABASE_URL: postgresql://${POSTGRES_USER:-pnpi_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pnpi}
+      PNPI_ENV: ${PNPI_ENV:-development}
     ports:
       - "8000:8000"
 
@@ -43,12 +45,13 @@ services:
       dockerfile: frontend/Dockerfile
     container_name: pnpi-frontend
     restart: unless-stopped
+    env_file: .env
     depends_on:
       - backend
     environment:
-      NEXT_PUBLIC_BACKEND_URL: http://backend:8000
-      PNPI_BACKEND_USERNAME: ministre
-      PNPI_BACKEND_PASSWORD: ministre-dev-password
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://backend:8000}
+      PNPI_BACKEND_USERNAME: ${PNPI_BACKEND_USERNAME:-ministre}
+      PNPI_BACKEND_PASSWORD: ${PNPI_BACKEND_PASSWORD:?Set PNPI_BACKEND_PASSWORD in .env}
     ports:
       - "3000:3000"
 
