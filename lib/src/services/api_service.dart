@@ -845,6 +845,34 @@ class ApiService {
     }
   }
 
+  Future<List<ATITransition>> fetchPnpiHistorique({int limit = 50}) async {
+    try {
+      await _ensureToken();
+      final response = await _client.get(
+        Uri.parse('$_backendUrl/pnpi/historique?limit=$limit'),
+        headers: _authHeaders,
+      );
+      if (response.statusCode != 200) throw Exception('Erreur');
+      return (jsonDecode(response.body) as List<dynamic>)
+          .map((e) {
+            final m = e as Map<String, dynamic>;
+            return ATITransition(
+              id: m['id'] as String,
+              atiId: m['ati_id'] as String,
+              changedBy: m['changed_by'] as String,
+              oldStatut: m['previous_statut'] as String?,
+              newStatut: m['new_statut'] as String,
+              note: m['note'] as String?,
+              changedAt: DateTime.parse(m['changed_at'] as String),
+            );
+          })
+          .toList();
+    } catch (_) {
+      if (_strictBackend) rethrow;
+      return [];
+    }
+  }
+
   Future<void> markNotificationRead(String notificationId) async {
     await _ensureToken();
     final response = await _client.patch(

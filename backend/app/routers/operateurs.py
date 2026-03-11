@@ -168,3 +168,26 @@ async def list_operateur_atis(
         .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
     ).scalars().all()
     return [_to_ati_brief(a) for a in atis]
+
+
+@router.post("/operateurs/{operateur_id}/toggle-active", response_model=OperateurRead,
+             summary="Activer ou desactiver un operateur")
+async def toggle_operateur_active(
+    operateur_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> OperateurRead:
+    op = db.get(OperateurIndustrielORM, operateur_id)
+    if not op:
+        raise HTTPException(status_code=404, detail="Operateur introuvable.")
+    op.is_active = not op.is_active
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="operateur.toggle_active",
+        target=op.id,
+        details=f"is_active={op.is_active}",
+    )
+    db.commit()
+    db.refresh(op)
+    return _to_operateur_read(op)

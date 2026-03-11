@@ -124,6 +124,7 @@ export default async function PNPIDashboardPage() {
               <Link href="/pnpi/notifications" style={{ padding: "0.5rem 1rem", background: "#ef4444", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Alertes</Link>
               <Link href="/pnpi/historique" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Historique</Link>
               <Link href="/pnpi/stats" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Statistiques</Link>
+              <a href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/dashboard/export-recap.pdf`} target="_blank" rel="noopener noreferrer" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>&#8595; Recap PDF</a>
             </div>
           </div>
         </section>

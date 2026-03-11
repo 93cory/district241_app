@@ -6,7 +6,10 @@ from datetime import datetime, timedelta
 from statistics import median
 from typing import Dict, List, Optional
 
+import io
+
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response as FastAPIResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 
@@ -422,3 +425,117 @@ async def pnpi_health(
             "derniere_inspection": latest_inspection.isoformat() if latest_inspection else None,
         },
     }
+
+
+@router.get("/dashboard/export-recap.pdf", summary="Recap mensuel PNPI en PDF")
+async def export_recap_pdf(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> FastAPIResponse:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    from reportlab.lib.enums import TA_CENTER
+
+    now = now_utc()
+    bleu = colors.HexColor("#003F8F")
+    vert = colors.HexColor("#009440")
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    atis_total = len(all_atis)
+    atis_en_cours = sum(1 for a in all_atis if a.statut not in _TERMINAL_STATUTS)
+    first_of_month = now.date().replace(day=1)
+    atis_approuves_mois = sum(
+        1 for a in all_atis
+        if a.statut == "approuve" and a.date_decision and a.date_decision.date() >= first_of_month
+    )
+    atis_en_retard = sum(1 for a in all_atis if _ati_is_overdue(a))
+    ops_actifs = db.execute(
+        select(func.count(OperateurIndustrielORM.id)).where(OperateurIndustrielORM.is_active.is_(True))
+    ).scalar_one()
+
+    # Pipeline counts
+    pipeline: Dict[str, int] = defaultdict(int)
+    for a in all_atis:
+        pipeline[a.statut] += 1
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+    styles = getSampleStyleSheet()
+
+    story = []
+    story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray)))
+    story.append(Paragraph("Ministere de l'Industrie — PNPI", ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu)))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(HRFlowable(width="100%", thickness=2, color=bleu))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Recap Mensuel PNPI", ParagraphStyle("title", parent=styles["Title"], textColor=bleu, fontSize=16, spaceAfter=4)))
+    story.append(Paragraph(f"Genere le {now.strftime('%d/%m/%Y a %H:%M')} UTC", ParagraphStyle("date", parent=styles["Normal"], textColor=colors.gray, fontSize=9, spaceAfter=12)))
+    story.append(Spacer(1, 0.4*cm))
+
+    # KPI table
+    story.append(Paragraph("Indicateurs Cles", ParagraphStyle("sec", parent=styles["Heading2"], textColor=bleu, fontSize=12, spaceAfter=6)))
+    kpi_data = [
+        ["Indicateur", "Valeur"],
+        ["Total ATI", str(atis_total)],
+        ["ATI en cours", str(atis_en_cours)],
+        ["Approuves ce mois", str(atis_approuves_mois)],
+        ["ATI en retard SLA", str(atis_en_retard)],
+        ["Operateurs actifs", str(ops_actifs)],
+    ]
+    t = Table(kpi_data, colWidths=[9*cm, 5*cm])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), bleu),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f3f4f6")),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+        ("PADDING", (0, 0), (-1, -1), 6),
+        ("ALIGN", (1, 1), (1, -1), "CENTER"),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 0.6*cm))
+
+    # Pipeline table
+    story.append(Paragraph("Pipeline ATI", ParagraphStyle("sec2", parent=styles["Heading2"], textColor=vert, fontSize=12, spaceAfter=6)))
+    pipeline_data = [
+        ["Statut", "Nombre"],
+        ["Soumis", str(pipeline.get("soumis", 0))],
+        ["En instruction", str(pipeline.get("en_instruction", 0))],
+        ["En validation", str(pipeline.get("en_validation", 0))],
+        ["Approuve", str(pipeline.get("approuve", 0))],
+        ["Rejete", str(pipeline.get("rejete", 0))],
+        ["Expire", str(pipeline.get("expire", 0))],
+    ]
+    t2 = Table(pipeline_data, colWidths=[9*cm, 5*cm])
+    t2.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), vert),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f3f4f6")),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+        ("PADDING", (0, 0), (-1, -1), 6),
+        ("ALIGN", (1, 1), (1, -1), "CENTER"),
+    ]))
+    story.append(t2)
+    story.append(Spacer(1, 1*cm))
+
+    story.append(HRFlowable(width="100%", thickness=1, color=bleu))
+    story.append(Paragraph(
+        f"Document genere par la PNPI — {now.strftime('%d/%m/%Y %H:%M')} UTC",
+        ParagraphStyle("footer", parent=styles["Normal"], alignment=TA_CENTER, fontSize=7, textColor=colors.gray)
+    ))
+
+    doc.build(story)
+    buf.seek(0)
+    return FastAPIResponse(
+        content=buf.read(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="recap_pnpi_{now.strftime("%Y%m")}.pdf"'},
+    )

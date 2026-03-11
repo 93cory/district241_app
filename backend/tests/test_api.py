@@ -1088,3 +1088,111 @@ class TestSearchInspections:
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PNPI — Toggle active + Recap PDF + E2E workflow (lot 7)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestOperateurToggleActive:
+    def test_toggle_active(self) -> None:
+        if not _created_operateur_id:
+            return
+        headers = auth_headers("ministre", "ministre-dev-password")
+        detail = client.get(f"/pnpi/operateurs/{_created_operateur_id}", headers=headers).json()
+        was_active = detail["is_active"]
+        response = client.post(f"/pnpi/operateurs/{_created_operateur_id}/toggle-active", headers=headers)
+        assert response.status_code == 200
+        assert response.json()["is_active"] == (not was_active)
+        response2 = client.post(f"/pnpi/operateurs/{_created_operateur_id}/toggle-active", headers=headers)
+        assert response2.status_code == 200
+        assert response2.json()["is_active"] == was_active
+
+    def test_toggle_not_found(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+        response = client.post("/pnpi/operateurs/OP-INEXISTANT-000/toggle-active", headers=headers)
+        assert response.status_code == 404
+
+    def test_toggle_requires_auth(self) -> None:
+        response = client.post("/pnpi/operateurs/some-id/toggle-active")
+        assert response.status_code == 401
+
+
+class TestRecapPDF:
+    def test_recap_pdf_download(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+        response = client.get("/pnpi/dashboard/export-recap.pdf", headers=headers)
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "application/pdf"
+
+    def test_recap_pdf_requires_auth(self) -> None:
+        response = client.get("/pnpi/dashboard/export-recap.pdf")
+        assert response.status_code == 401
+
+
+class TestE2EATIWorkflow:
+    """End-to-end: create operateur -> create ATI -> full workflow -> approve -> verify."""
+
+    def test_full_workflow(self) -> None:
+        headers = auth_headers("ministre", "ministre-dev-password")
+
+        # 1. Create operateur
+        nif = f"NIF-E2E-{uuid.uuid4().hex[:8].upper()}"
+        op = client.post("/pnpi/operateurs", headers=headers, json={
+            "nif_gabon": nif,
+            "raison_sociale": "E2E Test Company",
+            "secteur": "mines",
+            "province": "haut_ogooue",
+            "ville": "Franceville",
+            "effectif_declare": 50,
+        })
+        assert op.status_code == 201
+        op_id = op.json()["id"]
+
+        # 2. Create ATI
+        ati = client.post("/pnpi/ati", headers=headers, json={
+            "operateur_id": op_id,
+            "type_activite": "Exploitation miniere E2E",
+            "secteur": "mines",
+            "priorite": "haute",
+            "sla_jours": 20,
+        })
+        assert ati.status_code == 201
+        ati_id = ati.json()["id"]
+        assert ati.json()["statut"] == "soumis"
+
+        # 3. Workflow transitions
+        for new_statut in ["en_instruction", "en_validation", "approuve"]:
+            body: dict = {"new_statut": new_statut}
+            if new_statut == "approuve":
+                body["numero_reference_decision"] = "REF-E2E-001"
+            r = client.patch(f"/pnpi/ati/{ati_id}/statut", headers=headers, json=body)
+            assert r.status_code == 200
+            assert r.json()["statut"] == new_statut
+
+        # 4. Verify final state
+        detail = client.get(f"/pnpi/ati/{ati_id}", headers=headers).json()
+        assert detail["statut"] == "approuve"
+        assert detail["qr_code_data"] is not None
+        assert detail["date_expiration"] is not None
+
+        # 5. QR code available
+        qr = client.get(f"/pnpi/ati/{ati_id}/qrcode", headers=headers)
+        assert qr.status_code == 200
+        assert qr.headers["content-type"] == "image/png"
+
+        # 6. PDF available
+        pdf = client.get(f"/pnpi/ati/{ati_id}/pdf", headers=headers)
+        assert pdf.status_code == 200
+        assert pdf.headers["content-type"] == "application/pdf"
+
+        # 7. Historique has 3 transitions
+        hist = client.get(f"/pnpi/ati/{ati_id}/historique", headers=headers)
+        assert hist.status_code == 200
+        assert len(hist.json()) >= 3
+
+        # 8. Global historique includes our transitions
+        global_hist = client.get("/pnpi/historique?limit=100", headers=headers)
+        assert global_hist.status_code == 200
+        our_transitions = [t for t in global_hist.json() if t["ati_id"] == ati_id]
+        assert len(our_transitions) >= 3

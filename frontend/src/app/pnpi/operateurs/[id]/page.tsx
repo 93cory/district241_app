@@ -2,17 +2,22 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { fetchPNPIOperateur, fetchPNPIOperateurATIs } from "../../../../lib/api";
 import { fetchBackendProfile } from "../../../../lib/backend";
+import { ToggleActiveButton } from "./components/ToggleActiveButton";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
+const CAN_TOGGLE = new Set(["admin", "directeur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
 const STATUT_COLORS: Record<string, string> = { soumis: "#f59e0b", en_instruction: "#3b82f6", en_validation: "#8b5cf6", approuve: "#10b981", rejete: "#ef4444", expire: "#9ca3af" };
 const SECTEUR_LABELS: Record<string, string> = { bois: "Bois & Foret", mines: "Mines", agroalimentaire: "Agro-alimentaire", btp: "BTP", petrole: "Petrole", services: "Services" };
 const SECTEUR_COLORS: Record<string, string> = { bois: "#16a34a", mines: "#d97706", agroalimentaire: "#059669", btp: "#2563eb", petrole: "#7c3aed", services: "#0284c7" };
 
 export default async function OperateurDetailPage({ params }: { params: { id: string } }) {
+  let canToggle = false;
   try {
     const profile = await fetchBackendProfile();
-    if (!((profile.roles ?? []) as string[]).some((r) => PNPI_ROLES.has(r))) redirect("/connexion");
+    const roles = (profile.roles ?? []) as string[];
+    if (!roles.some((r) => PNPI_ROLES.has(r))) redirect("/connexion");
+    canToggle = roles.some((r) => CAN_TOGGLE.has(r));
   } catch { redirect("/connexion"); }
 
   let op: Awaited<ReturnType<typeof fetchPNPIOperateur>>;
@@ -43,6 +48,7 @@ export default async function OperateurDetailPage({ params }: { params: { id: st
               <h2 style={{ margin: 0, color: "#003F8F" }}>{op.raison_sociale}</h2>
               <span style={{ padding: "0.2rem 0.6rem", borderRadius: "999px", background: `${secteurColor}15`, color: secteurColor, fontWeight: 700, fontSize: "0.78rem" }}>{SECTEUR_LABELS[op.secteur] ?? op.secteur}</span>
               <span style={{ padding: "0.15rem 0.5rem", borderRadius: "999px", background: op.is_active ? "#f0fdf4" : "#f9fafb", color: op.is_active ? "#16a34a" : "#9ca3af", fontWeight: 600, fontSize: "0.7rem" }}>{op.is_active ? "Actif" : "Inactif"}</span>
+              {canToggle && <ToggleActiveButton operateurId={op.id} isActive={op.is_active} />}
             </div>
             <p style={{ margin: 0, color: "#6b7280", fontSize: "0.875rem" }}>NIF: <strong style={{ fontFamily: "monospace" }}>{op.nif_gabon}</strong> &middot; {op.ville}, {op.province.replace(/_/g, " ")}</p>
           </div>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { fetchPNPIATI, fetchPNPIATIHistorique, fetchPNPIATIDocuments } from "../../../../lib/api";
+import { fetchPNPIATI, fetchPNPIATIHistorique, fetchPNPIATIDocuments, fetchPNPIOperateur } from "../../../../lib/api";
 import { fetchBackendProfile } from "../../../../lib/backend";
 import { WorkflowButtons } from "../components/WorkflowButton";
 import { DocumentUpload } from "../components/DocumentUpload";
@@ -20,8 +20,10 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
   let ati: Awaited<ReturnType<typeof fetchPNPIATI>>;
   let historique: Awaited<ReturnType<typeof fetchPNPIATIHistorique>>;
   let documents: Awaited<ReturnType<typeof fetchPNPIATIDocuments>>;
+  let operateurNom = "";
   try {
     [ati, historique, documents] = await Promise.all([fetchPNPIATI(params.id), fetchPNPIATIHistorique(params.id), fetchPNPIATIDocuments(params.id)]);
+    try { operateurNom = (await fetchPNPIOperateur(ati.operateur_id)).raison_sociale; } catch { /* fallback to ID */ }
   } catch { notFound(); }
 
   const etapeIdx = ETAPES.indexOf(ati.etape);
@@ -48,7 +50,10 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
               {ati.is_overdue && <span style={{ padding: "0.2rem 0.5rem", borderRadius: "4px", background: "#fef3c7", color: "#d97706", fontWeight: 700, fontSize: "0.72rem" }}>EN RETARD</span>}
             </div>
             <p style={{ margin: 0, color: "#374151", fontWeight: 500 }}>{ati.type_activite}</p>
-            <p style={{ margin: "0.25rem 0 0", color: "#6b7280", fontSize: "0.875rem" }}>Operateur ID: {ati.operateur_id} &middot; Secteur: {ati.secteur} &middot; Priorite: <strong style={{ textTransform: "capitalize" }}>{ati.priorite}</strong></p>
+            <p style={{ margin: "0.25rem 0 0", color: "#6b7280", fontSize: "0.875rem" }}>
+              Operateur: <Link href={`/pnpi/operateurs/${ati.operateur_id}`} style={{ color: "#003F8F", fontWeight: 600, textDecoration: "none" }}>{operateurNom || ati.operateur_id}</Link>
+              {" "}&middot; Secteur: {ati.secteur} &middot; Priorite: <strong style={{ textTransform: "capitalize" }}>{ati.priorite}</strong>
+            </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
             <WorkflowButtons atiId={ati.id} currentStatut={ati.statut} />
