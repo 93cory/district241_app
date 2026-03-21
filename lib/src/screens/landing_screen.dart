@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/notifications_provider.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
+import '../widgets/offline_banner.dart';
 import '../widgets/pnpi_branding.dart';
 import 'ati_screen.dart';
 import 'briefing_screen.dart';
@@ -37,22 +40,13 @@ class LandingScreen extends StatefulWidget {
 class _LandingScreenState extends State<LandingScreen> {
   late final List<_AppTab> _tabs = _buildTabs(widget.profile);
   late int _currentIndex = _defaultIndexFor(widget.profile, _tabs);
-  int _unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
-    _refreshUnreadCount();
-  }
-
-  Future<void> _refreshUnreadCount() async {
-    try {
-      final list = await ApiService.instance.fetchNotifications();
-      if (!mounted) return;
-      setState(() {
-        _unreadNotifications = list.where((n) => !n.isRead).length;
-      });
-    } catch (_) {}
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<NotificationsProvider>().fetch();
+    });
   }
 
   void _openNotifications() async {
@@ -60,7 +54,9 @@ class _LandingScreenState extends State<LandingScreen> {
       context,
       MaterialPageRoute(builder: (_) => const NotificationsScreen()),
     );
-    _refreshUnreadCount();
+    if (mounted) {
+      context.read<NotificationsProvider>().fetch();
+    }
   }
 
   void _openProfile() {
@@ -75,6 +71,8 @@ class _LandingScreenState extends State<LandingScreen> {
   @override
   Widget build(BuildContext context) {
     final currentTab = _tabs[_currentIndex];
+    final notifProvider = context.watch<NotificationsProvider>();
+    final unreadCount = notifProvider.unreadCount;
     return Scaffold(
       extendBody: true,
       appBar: AppBar(
@@ -105,7 +103,7 @@ class _LandingScreenState extends State<LandingScreen> {
                 onPressed: _openNotifications,
                 icon: const Icon(Icons.notifications_outlined),
               ),
-              if (_unreadNotifications > 0)
+              if (unreadCount > 0)
                 Positioned(
                   top: 6,
                   right: 6,
@@ -119,9 +117,9 @@ class _LandingScreenState extends State<LandingScreen> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      _unreadNotifications > 9
+                      unreadCount > 9
                           ? '9+'
-                          : '$_unreadNotifications',
+                          : '$unreadCount',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -192,14 +190,21 @@ class _LandingScreenState extends State<LandingScreen> {
         ],
       ),
       body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: PnpiTheme.motionMedium,
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          child: KeyedSubtree(
-            key: ValueKey<String>(currentTab.key),
-            child: currentTab.page,
-          ),
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: PnpiTheme.motionMedium,
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                child: KeyedSubtree(
+                  key: ValueKey<String>(currentTab.key),
+                  child: currentTab.page,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: Container(
@@ -223,6 +228,7 @@ class _LandingScreenState extends State<LandingScreen> {
                   (tab) => BottomNavigationBarItem(
                     icon: Icon(tab.icon),
                     label: tab.navLabel,
+                    tooltip: tab.navLabel,
                   ),
                 )
                 .toList(),

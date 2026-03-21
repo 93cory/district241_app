@@ -7,7 +7,7 @@ from datetime import date
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 
@@ -20,6 +20,13 @@ from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteOR
 
 
 router = APIRouter(tags=["Exports"])
+
+
+def _csv_generator(rows, header):
+    """Stream CSV rows one at a time for large datasets."""
+    yield ",".join(header) + "\n"
+    for row in rows:
+        yield ",".join(str(v) for v in row) + "\n"
 
 
 def _filter_pilotage_transitions(rows, *, dossier_id, changed_by, date_from, date_to):
@@ -39,33 +46,28 @@ def _filter_pilotage_transitions(rows, *, dossier_id, changed_by, date_from, dat
 
 @router.get("/exports/indicators.csv")
 async def export_indicators_csv(
-    _: User = Depends(require_roles(Role.admin, Role.ministre)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
-) -> Response:
+):
     from ..main import _compute_sector_indicators
     indicators = _compute_sector_indicators(db)
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Secteur", "Volume local (T)", "Volume importe (T)", "Emplois"])
-    for indicator in indicators:
-        writer.writerow(
-            [
-                indicator.sector,
-                indicator.local_volume_tons,
-                indicator.import_volume_tons,
-                indicator.jobs,
-            ]
-        )
-    return Response(
-        content=output.getvalue(),
+    header = ["Secteur", "Volume local (T)", "Volume importe (T)", "Emplois"]
+    rows = [
+        [indicator.sector, indicator.local_volume_tons, indicator.import_volume_tons, indicator.jobs]
+        for indicator in indicators
+    ]
+    write_audit_event(db, actor=current_user.username, action="export.csv", target="indicators", details="Export CSV indicateurs genere")
+    db.commit()
+    return StreamingResponse(
+        _csv_generator(rows, header),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=indicateurs-pnpi.csv"},
+        headers={"Content-Disposition": 'attachment; filename="indicateurs-pnpi.csv"'},
     )
 
 
 @router.get("/exports/dashboard.pdf")
 async def export_dashboard_pdf(
-    _: User = Depends(require_roles(Role.admin, Role.ministre)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
     from ..main import _compute_sector_indicators
@@ -81,6 +83,10 @@ async def export_dashboard_pdf(
     national_index = (total_local / denominator) if denominator > 0 else 0.0
 
     lines = [
+        "REPUBLIQUE GABONAISE",
+        "Ministere de l'Industrie et de la Transformation Locale",
+        "CONFIDENTIEL — Document officiel PNPI",
+        "",
         "PNPI - Resume Strategique",
         f"Date: {now_utc().isoformat()}",
         f"Indice national: {round(national_index * 100, 2)} %",
@@ -95,12 +101,15 @@ async def export_dashboard_pdf(
             f"- {indicator.sector}: local {indicator.local_volume_tons}T / import {indicator.import_volume_tons}T / emplois {indicator.jobs}"
         )
 
+    write_audit_event(db, actor=current_user.username, action="export.pdf", target="dashboard", details="Export PDF dashboard genere")
+    db.commit()
+
     return _build_pdf_response(lines, filename="pnpi-dashboard.pdf", font_size=10)
 
 
 @router.get("/exports/inspectors-briefing.pdf")
 async def export_inspectors_briefing_pdf(
-    _: User = Depends(require_roles(Role.admin, Role.ministre)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
     field_reports = (
@@ -116,6 +125,10 @@ async def export_inspectors_briefing_pdf(
     units = db.execute(select(UnitORM)).scalars().unique().all()
 
     lines = [
+        "REPUBLIQUE GABONAISE",
+        "Ministere de l'Industrie et de la Transformation Locale",
+        "CONFIDENTIEL — Document officiel PNPI",
+        "",
         "PNPI - Briefing Inspecteurs",
         f"Date: {now_utc().isoformat()}",
         f"Rapports terrain: {len(field_reports)}",
@@ -128,6 +141,9 @@ async def export_inspectors_briefing_pdf(
         lines.append(
             f"- {report.id} [{report.status}] {report.severity} / {location} / {report.title}"
         )
+
+    write_audit_event(db, actor=current_user.username, action="export.pdf", target="inspectors-briefing", details="Export PDF briefing inspecteurs genere")
+    db.commit()
 
     return _build_pdf_response(lines, filename="pnpi-inspectors-briefing.pdf", font_size=10)
 
@@ -160,35 +176,31 @@ async def export_pilotage_transitions_csv(
         date_from=date_from,
         date_to=date_to,
     )
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(
+    header = [
+        "Transition ID",
+        "Dossier ID",
+        "Acteur",
+        "Date",
+        "Statut precedent",
+        "Statut nouveau",
+        "Etape precedente",
+        "Etape nouvelle",
+        "Note",
+    ]
+    csv_rows = [
         [
-            "Transition ID",
-            "Dossier ID",
-            "Acteur",
-            "Date",
-            "Statut precedent",
-            "Statut nouveau",
-            "Etape precedente",
-            "Etape nouvelle",
-            "Note",
+            row.id,
+            row.dossier_id,
+            row.changed_by,
+            row.changed_at.isoformat(),
+            row.previous_status or "",
+            row.new_status or "",
+            row.previous_stage or "",
+            row.new_stage or "",
+            row.note,
         ]
-    )
-    for row in rows:
-        writer.writerow(
-            [
-                row.id,
-                row.dossier_id,
-                row.changed_by,
-                row.changed_at.isoformat(),
-                row.previous_status or "",
-                row.new_status or "",
-                row.previous_stage or "",
-                row.new_stage or "",
-                row.note,
-            ]
-        )
+        for row in rows
+    ]
     write_audit_event(
         db,
         actor=current_user.username,
@@ -200,10 +212,10 @@ async def export_pilotage_transitions_csv(
         ),
     )
     db.commit()
-    return Response(
-        content=output.getvalue(),
+    return StreamingResponse(
+        _csv_generator(csv_rows, header),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=pilotage-transitions.csv"},
+        headers={"Content-Disposition": 'attachment; filename="pilotage-transitions.csv"'},
     )
 
 
@@ -237,6 +249,10 @@ async def export_pilotage_transitions_pdf(
     )
 
     lines = [
+        "REPUBLIQUE GABONAISE",
+        "Ministere de l'Industrie et de la Transformation Locale",
+        "CONFIDENTIEL — Document officiel PNPI",
+        "",
         "PNPI - Journal des transitions workflow",
         f"Date: {now_utc().isoformat()}",
         f"Nombre de transitions: {len(rows)}",
@@ -270,9 +286,9 @@ async def export_pilotage_transitions_pdf(
 async def export_ati_csv(
     statut: Optional[str] = Query(default=None),
     secteur: Optional[str] = Query(default=None),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
-) -> Response:
+):
     atis = db.execute(
         select(AgrementTechniqueIndustrielORM)
         .where(*([] if not statut else [AgrementTechniqueIndustrielORM.statut == statut]))
@@ -280,13 +296,12 @@ async def export_ati_csv(
         .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
     ).scalars().all()
 
-    buf = io.StringIO()
-    w = csv.writer(buf, delimiter=";")
-    w.writerow(["Numero ATI", "Operateur ID", "Type activite", "Secteur", "Statut", "Etape", "Priorite", "Instructeur", "Date soumission", "Date decision", "Age (j)", "SLA (j)", "En retard"])
+    header = ["Numero ATI", "Operateur ID", "Type activite", "Secteur", "Statut", "Etape", "Priorite", "Instructeur", "Date soumission", "Date decision", "Age (j)", "SLA (j)", "En retard"]
+    rows = []
     for a in atis:
         age = max((now_utc().date() - a.date_soumission.date()).days, 0)
         overdue = age > a.sla_jours and a.statut not in {"approuve", "rejete", "expire"}
-        w.writerow([
+        rows.append([
             a.numero_ati, a.operateur_id, a.type_activite, a.secteur, a.statut,
             a.etape, a.priorite, a.instructeur_username or "",
             a.date_soumission.date().isoformat(),
@@ -294,30 +309,32 @@ async def export_ati_csv(
             age, a.sla_jours, "Oui" if overdue else "Non",
         ])
 
-    return Response(
-        content=buf.getvalue().encode("utf-8-sig"),
+    write_audit_event(db, actor=current_user.username, action="export.csv", target="ati", details=f"Export CSV ATI genere ({len(rows)} lignes)")
+    db.commit()
+
+    return StreamingResponse(
+        _csv_generator(rows, header),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=ati_export.csv"},
+        headers={"Content-Disposition": 'attachment; filename="ati_export.csv"'},
     )
 
 
 @router.get("/pnpi/exports/operateurs.csv")
 async def export_operateurs_csv(
     secteur: Optional[str] = Query(default=None),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
-) -> Response:
+):
     ops = db.execute(
         select(OperateurIndustrielORM)
         .where(*([] if not secteur else [OperateurIndustrielORM.secteur == secteur]))
         .order_by(OperateurIndustrielORM.raison_sociale)
     ).scalars().all()
 
-    buf = io.StringIO()
-    w = csv.writer(buf, delimiter=";")
-    w.writerow(["ID", "NIF Gabon", "Raison sociale", "Secteur", "Province", "Ville", "Effectif declare", "Statut", "Email", "Telephone", "Cree le"])
+    header = ["ID", "NIF Gabon", "Raison sociale", "Secteur", "Province", "Ville", "Effectif declare", "Statut", "Email", "Telephone", "Cree le"]
+    rows = []
     for op in ops:
-        w.writerow([
+        rows.append([
             op.id, op.nif_gabon, op.raison_sociale, op.secteur, op.province, op.ville,
             op.effectif_declare or 0,
             "Actif" if op.is_active else "Inactif",
@@ -325,29 +342,31 @@ async def export_operateurs_csv(
             op.created_at.date().isoformat(),
         ])
 
-    return Response(
-        content=buf.getvalue().encode("utf-8-sig"),
+    write_audit_event(db, actor=current_user.username, action="export.csv", target="operateurs", details=f"Export CSV operateurs genere ({len(rows)} lignes)")
+    db.commit()
+
+    return StreamingResponse(
+        _csv_generator(rows, header),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=operateurs_export.csv"},
+        headers={"Content-Disposition": 'attachment; filename="operateurs_export.csv"'},
     )
 
 
 @router.get("/pnpi/exports/inspections.csv", summary="Export CSV des inspections de conformite")
 async def export_inspections_csv(
     statut_conformite: Optional[str] = Query(default=None),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
-) -> Response:
+):
     query = select(InspectionConformiteORM).order_by(InspectionConformiteORM.date_inspection.desc())
     if statut_conformite:
         query = query.where(InspectionConformiteORM.statut_conformite == statut_conformite)
     inspections = db.execute(query).scalars().all()
 
-    buf = io.StringIO()
-    w = csv.writer(buf, delimiter=";")
-    w.writerow(["ID", "Operateur ID", "ATI ID", "Inspecteur", "Date", "Statut conformite", "Observations", "Mesures correctives", "Latitude", "Longitude"])
+    header = ["ID", "Operateur ID", "ATI ID", "Inspecteur", "Date", "Statut conformite", "Observations", "Mesures correctives", "Latitude", "Longitude"]
+    rows = []
     for insp in inspections:
-        w.writerow([
+        rows.append([
             insp.id, insp.operateur_id, insp.ati_id or "",
             insp.inspecteur_username,
             insp.date_inspection.date().isoformat(),
@@ -357,10 +376,13 @@ async def export_inspections_csv(
             insp.latitude or "", insp.longitude or "",
         ])
 
-    return Response(
-        content=buf.getvalue().encode("utf-8-sig"),
+    write_audit_event(db, actor=current_user.username, action="export.csv", target="inspections", details=f"Export CSV inspections genere ({len(rows)} lignes)")
+    db.commit()
+
+    return StreamingResponse(
+        _csv_generator(rows, header),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=inspections_export.csv"},
+        headers={"Content-Disposition": 'attachment; filename="inspections_export.csv"'},
     )
 
 
@@ -426,7 +448,8 @@ async def export_pnpi_briefing_pdf(
     ts = now_utc().strftime("%d/%m/%Y %H:%M")
     lines = [
         "REPUBLIQUE GABONAISE",
-        "Ministere de l'Industrie — Plateforme Nationale de Pilotage Industriel",
+        "Ministere de l'Industrie et de la Transformation Locale",
+        "CONFIDENTIEL — Document officiel PNPI",
         "",
         f"BRIEFING MINISTERIEL PNPI — {ts}",
         "=" * 60,

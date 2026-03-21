@@ -15,7 +15,7 @@ const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "in
 const SECTEUR_LABELS: Record<string, string> = { bois: "Bois", mines: "Mines", agroalimentaire: "Agro", btp: "BTP", petrole: "Petrole", services: "Services" };
 const SECTEUR_COLORS: Record<string, string> = { bois: "#16a34a", mines: "#d97706", agroalimentaire: "#059669", btp: "#2563eb", petrole: "#7c3aed", services: "#0284c7" };
 
-type SearchParams = { secteur?: string; province?: string };
+type SearchParams = { secteur?: string; province?: string; page?: string };
 
 export default async function OperateursPage({ searchParams }: { searchParams: SearchParams }) {
   try {
@@ -31,12 +31,16 @@ export default async function OperateursPage({ searchParams }: { searchParams: S
 
   const secteur = searchParams.secteur ?? "";
   const province = searchParams.province ?? "";
+  const page = Math.max(1, parseInt(searchParams.page ?? "1", 10));
+  const PER_PAGE = 25;
 
   try {
-    const [operateurs, carte] = await Promise.all([
-      fetchPNPIOperateurs({ secteur: secteur || undefined, province: province || undefined }),
+    const [raw, carte] = await Promise.all([
+      fetchPNPIOperateurs({ secteur: secteur || undefined, province: province || undefined, skip: (page - 1) * PER_PAGE, limit: PER_PAGE + 1 }),
       fetchPNPICarte().catch(() => []),
     ]);
+    const hasNext = raw.length > PER_PAGE;
+    const operateurs = raw.slice(0, PER_PAGE);
     const totalEffectifs = operateurs.reduce((sum, op) => sum + (op.effectif_declare ?? 0), 0);
 
     return (
@@ -49,7 +53,7 @@ export default async function OperateursPage({ searchParams }: { searchParams: S
               </div>
               <h2 style={{ margin: 0, color: "#003F8F" }}>Registre des operateurs industriels</h2>
               <p style={{ margin: "0.2rem 0 0", color: "#6b7280", fontSize: "0.875rem" }}>
-                {operateurs.length} operateur(s) &middot; {totalEffectifs.toLocaleString("fr-FR")} emplois declares
+                Page {page} &middot; {operateurs.length} operateur(s) affiches &middot; {totalEffectifs.toLocaleString("fr-FR")} emplois declares
               </p>
             </div>
             <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -102,6 +106,28 @@ export default async function OperateursPage({ searchParams }: { searchParams: S
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {/* Pagination */}
+          {(page > 1 || hasNext) && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", padding: "0.75rem 0", borderTop: "1px solid #f3f4f6" }}>
+              <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+                Page {page} &middot; {operateurs.length} operateur(s) affiches
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {page > 1 && (
+                  <a
+                    href={`/pnpi/operateurs?${new URLSearchParams({ ...(secteur && { secteur }), ...(province && { province }), page: String(page - 1) })}`}
+                    style={{ padding: "0.4rem 0.875rem", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "6px", color: "#374151", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}
+                  >← Precedent</a>
+                )}
+                {hasNext && (
+                  <a
+                    href={`/pnpi/operateurs?${new URLSearchParams({ ...(secteur && { secteur }), ...(province && { province }), page: String(page + 1) })}`}
+                    style={{ padding: "0.4rem 0.875rem", background: "#003F8F", color: "white", border: "none", borderRadius: "6px", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}
+                  >Suivant →</a>
+                )}
+              </div>
             </div>
           )}
         </div>

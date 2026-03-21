@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../models/ati.dart';
 import '../models/industrial_unit.dart';
+import '../models/inspection_conformite.dart';
 import '../models/operateur_industriel.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
@@ -91,21 +93,66 @@ class _MapScreenState extends State<MapScreen> {
 
   // Couche opérateurs PNPI
   List<OperateurIndustriel> _operateurs = [];
+  List<InspectionConformite> _inspections = [];
+  List<AgrementTechniqueIndustriel> _atis = [];
   bool _loadingOps = true;
+  String? _loadError;
 
   @override
   void initState() {
     super.initState();
-    _loadOperateurs();
+    _loadAll();
   }
 
-  Future<void> _loadOperateurs() async {
-    final ops = await ApiService.instance.fetchOperateurs();
-    if (!mounted) return;
+  Future<void> _loadAll() async {
     setState(() {
-      _operateurs = ops.where((o) => o.latitude != null && o.longitude != null).toList();
-      _loadingOps = false;
+      _loadingOps = true;
+      _loadError = null;
     });
+    try {
+      final results = await Future.wait([
+        ApiService.instance.fetchOperateurs(forceRefresh: true),
+        ApiService.instance.fetchInspections(),
+        ApiService.instance.fetchATIs(forceRefresh: true),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _operateurs = (results[0] as List<OperateurIndustriel>)
+            .where((o) => o.latitude != null && o.longitude != null)
+            .toList();
+        _inspections = results[1] as List<InspectionConformite>;
+        _atis = results[2] as List<AgrementTechniqueIndustriel>;
+        _loadingOps = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingOps = false;
+        _loadError = 'Erreur de chargement des donnees';
+      });
+    }
+  }
+
+  /// Returns the latest ATI status for an operator, if any.
+  String? _latestAtiStatut(String operateurId) {
+    final opAtis = _atis.where((a) => a.operateurId == operateurId).toList();
+    if (opAtis.isEmpty) return null;
+    opAtis.sort((a, b) => b.dateSoumission.compareTo(a.dateSoumission));
+    return opAtis.first.statut;
+  }
+
+  /// Returns the marker color based on operator conformite and latest ATI status.
+  Color _operateurMarkerColor(OperateurIndustriel op) {
+    final atiStatut = _latestAtiStatut(op.id);
+    if (atiStatut != null) {
+      return switch (atiStatut) {
+        'approuve' => const Color(0xFF2E7D32),
+        'en_instruction' || 'en_validation' || 'soumis' => const Color(0xFF1565C0),
+        'rejete' => const Color(0xFFC62828),
+        _ => _secteurColor(op.secteur),
+      };
+    }
+    return _secteurColor(op.secteur);
   }
 
   // ── Couleurs par secteur ────────────────────────────────────────────────────
@@ -405,6 +452,9 @@ class _MapScreenState extends State<MapScreen> {
                   ? opMarkers
                   : siteMarkers,
             ),
+            // Inspection overlay markers
+            if (_mode == _MapMode.operateurs)
+              MarkerLayer(markers: _buildInspectionMarkers()),
           ],
         ),
 
@@ -447,7 +497,7 @@ class _MapScreenState extends State<MapScreen> {
                       }),
                     ),
                     const SizedBox(width: 8),
-                    // Reset
+                    // Reset & refresh data
                     GestureDetector(
                       onTap: () {
                         _mapController.move(
@@ -456,6 +506,7 @@ class _MapScreenState extends State<MapScreen> {
                           _activeSecteur = null;
                           _selectedId = null;
                         });
+                        _loadAll();
                       },
                       child: const Icon(Icons.refresh,
                           color: Colors.white70, size: 18),
@@ -539,6 +590,59 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
+
+        // ── Chargement / erreur ─────────────────────────────────────────────
+        if (_loadingOps)
+          Positioned(
+            top: 110,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: PnpiColors.deepSpace.withAlpha(200),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Chargement...',
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        if (_loadError != null && !_loadingOps)
+          Positioned(
+            top: 110,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade700.withAlpha(200),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _loadError!,
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -547,7 +651,7 @@ class _MapScreenState extends State<MapScreen> {
 
   List<Marker> _buildOpMarkers() {
     return _filteredOps.map((op) {
-      final color = _secteurColor(op.secteur);
+      final color = _operateurMarkerColor(op);
       final isSelected = _selectedId == op.id;
       final conformiteIcon = switch (op.statutConformite) {
         'conforme' => Icons.check_circle_rounded,
@@ -652,6 +756,33 @@ class _MapScreenState extends State<MapScreen> {
     }).toList();
   }
 
+  List<Marker> _buildInspectionMarkers() {
+    return _inspections
+        .where((insp) => insp.latitude != null && insp.longitude != null)
+        .map((insp) {
+      final isNonConforme = insp.statutConformite == 'non_conforme';
+      final color = isNonConforme ? Colors.red.shade700 : Colors.green.shade700;
+
+      return Marker(
+        point: LatLng(insp.latitude!, insp.longitude!),
+        width: 28,
+        height: 28,
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorWithOpacity(color, 0.85),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 1.5),
+          ),
+          child: Icon(
+            isNonConforme ? Icons.warning_rounded : Icons.verified_rounded,
+            color: Colors.white,
+            size: 14,
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   // ── Légendes ────────────────────────────────────────────────────────────────
 
   Widget _opLegend() {
@@ -670,6 +801,18 @@ class _MapScreenState extends State<MapScreen> {
         _legendDot(const Color(0xFFF57F17), 'Partiel'),
         const SizedBox(height: 3),
         _legendDot(const Color(0xFFC62828), 'Non conforme'),
+        const SizedBox(height: 6),
+        const Text('Statut ATI',
+            style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: Colors.black54)),
+        const SizedBox(height: 4),
+        _legendDot(const Color(0xFF2E7D32), 'ATI approuvé'),
+        const SizedBox(height: 3),
+        _legendDot(const Color(0xFF1565C0), 'ATI en cours'),
+        const SizedBox(height: 3),
+        _legendDot(const Color(0xFFC62828), 'ATI rejeté'),
         const SizedBox(height: 6),
         const Text('© OSM',
             style: TextStyle(fontSize: 9, color: Colors.black38)),

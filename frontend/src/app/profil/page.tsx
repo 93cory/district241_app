@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { fetchBackendProfile } from "../../lib/backend";
 import { fetchPNPIATIs, fetchPNPIInspections } from "../../lib/api";
+import TwoFactorSetup from "./TwoFactorSetup";
+import { ChangePasswordForm } from "./ChangePasswordForm";
 
 const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   admin: { label: "Administrateur", color: "#7c3aed", bg: "#f5f3ff" },
@@ -117,6 +119,21 @@ export default async function ProfilPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Securite — Authentification a deux facteurs */}
+        <div style={{ flex: "1 1 280px" }}>
+          <div className="chart-card" style={{ padding: "1.5rem" }}>
+            <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>
+              Securite — Authentification a deux facteurs
+            </h3>
+            <TwoFactorSetup />
+          </div>
+
+          {/* Changement de mot de passe */}
+          <div className="chart-card" style={{ padding: "1.5rem", marginTop: "1.25rem" }}>
+            <ChangePasswordForm />
           </div>
         </div>
 

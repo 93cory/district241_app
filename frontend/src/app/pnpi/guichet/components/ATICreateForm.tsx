@@ -2,6 +2,8 @@
 import { useState, useTransition } from "react";
 import { createATI } from "../actions";
 import type { OperateurBrief } from "../../../../lib/api";
+import { useToast } from "../../../components/Toast";
+import { ConfirmDialog } from "../../../components/ConfirmDialog";
 
 const SECTEURS = ["bois", "mines", "agroalimentaire", "btp", "petrole", "services"];
 const SECTEUR_LABELS: Record<string, string> = { bois: "Bois & Foret", mines: "Mines", agroalimentaire: "Agro-alimentaire", btp: "BTP", petrole: "Petrole", services: "Services" };
@@ -13,6 +15,10 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingData, setPendingData] = useState<{ operateur_id: string; type_activite: string; secteur: string; priorite: string; observations?: string } | null>(null);
+  const [pendingForm, setPendingForm] = useState<HTMLFormElement | null>(null);
+  const { showToast } = useToast();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,18 +36,49 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
     }
     setError(null);
     setSuccess(null);
+    setPendingData(data);
+    setPendingForm(e.currentTarget);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirm = () => {
+    setConfirmOpen(false);
+    if (!pendingData || !pendingForm) return;
+    const data = pendingData;
+    const form = pendingForm;
     startTransition(async () => {
       try {
         const result = await createATI(data) as { numero_ati: string };
         setSuccess(`ATI ${result.numero_ati} soumis avec succes !`);
-        (e.target as HTMLFormElement).reset();
+        showToast(`ATI ${result.numero_ati} soumis avec succes !`, "success");
+        form.reset();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erreur lors de la soumission");
+        const msg = err instanceof Error ? err.message : "Erreur lors de la soumission";
+        setError(msg);
+        showToast(msg, "error");
+      } finally {
+        setPendingData(null);
+        setPendingForm(null);
       }
     });
   };
 
+  const handleCancel = () => {
+    setConfirmOpen(false);
+    setPendingData(null);
+    setPendingForm(null);
+  };
+
   return (
+    <>
+    <ConfirmDialog
+      open={confirmOpen}
+      title="Soumettre cet ATI ?"
+      message="Cette action va enregistrer la demande d'agrement. Voulez-vous continuer ?"
+      confirmLabel="Soumettre"
+      onConfirm={handleConfirm}
+      onCancel={handleCancel}
+    />
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <div>
         <label style={labelStyle}>Operateur industriel *</label>
@@ -87,5 +124,6 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
         {isPending ? "Soumission en cours..." : "Soumettre la demande ATI"}
       </button>
     </form>
+    </>
   );
 }

@@ -297,6 +297,10 @@ class _InspectionConformiteScreenState
                   ),
                 ),
               ],
+              // ── Photos section ──────────────────────────────────────
+              const SizedBox(height: 14),
+              const Divider(height: 24),
+              _InspectionPhotosSection(inspectionId: ins.id),
             ],
           ),
         ),
@@ -403,6 +407,196 @@ class _InspectionConformiteScreenState
         'services' => const Color(0xFF7B1FA2),
         _ => Colors.blueGrey,
       };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Section photos d'inspection
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _InspectionPhotosSection extends StatefulWidget {
+  final String inspectionId;
+
+  const _InspectionPhotosSection({required this.inspectionId});
+
+  @override
+  State<_InspectionPhotosSection> createState() =>
+      _InspectionPhotosSectionState();
+}
+
+class _InspectionPhotosSectionState extends State<_InspectionPhotosSection> {
+  List<Map<String, dynamic>> _photos = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPhotos();
+  }
+
+  Future<void> _loadPhotos() async {
+    final photos =
+        await ApiService.instance.fetchInspectionPhotos(widget.inspectionId);
+    if (!mounted) return;
+    setState(() {
+      _photos = photos;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.camera_alt_rounded, size: 15, color: Colors.black54),
+            const SizedBox(width: 6),
+            Text(
+              'Photos (${_loading ? "..." : _photos.length})',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
+            const Spacer(),
+            if (!_loading)
+              GestureDetector(
+                onTap: _loadPhotos,
+                child: const Icon(Icons.refresh_rounded,
+                    size: 16, color: Colors.black38),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+                child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )),
+          )
+        else if (_photos.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.photo_library_outlined,
+                    size: 28, color: Colors.grey.shade400),
+                const SizedBox(height: 6),
+                Text(
+                  'Aucune photo',
+                  style:
+                      TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Les photos peuvent etre ajoutees via le portail web.',
+                  style:
+                      TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          )
+        else
+          SizedBox(
+            height: 90,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _photos.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final photo = _photos[index];
+                return GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => Dialog(
+                        backgroundColor: Colors.black87,
+                        insetPadding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      photo['nom_fichier'] ?? '',
+                                      style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () =>
+                                        Navigator.of(context).pop(),
+                                    child: const Icon(Icons.close,
+                                        color: Colors.white70, size: 20),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              constraints: BoxConstraints(
+                                maxHeight:
+                                    MediaQuery.of(context).size.height *
+                                        0.6,
+                              ),
+                              child: Image.network(
+                                '${const String.fromEnvironment('PNPI_API_URL', defaultValue: 'http://localhost:8000')}/pnpi/inspections/${widget.inspectionId}/photos/${photo['id']}/file',
+                                fit: BoxFit.contain,
+                                errorBuilder: (ctx, err, stack) => const Center(
+                                  child: Icon(Icons.broken_image,
+                                      color: Colors.white38, size: 48),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 90,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(9),
+                      child: Image.network(
+                        '${const String.fromEnvironment('PNPI_API_URL', defaultValue: 'http://localhost:8000')}/pnpi/inspections/${widget.inspectionId}/photos/${photo['id']}/file',
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, stack) => Center(
+                          child: Icon(Icons.photo_outlined,
+                              size: 24, color: Colors.grey.shade400),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

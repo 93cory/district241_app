@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/inspection_conformite.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
+import '../widgets/pnpi_toast.dart';
 import 'inspection_conformite_screen.dart';
 import 'inspection_create_screen.dart';
 import 'qr_scanner_screen.dart';
@@ -245,12 +246,15 @@ class _InspectorsScreenState extends State<InspectorsScreen> {
                 label: 'Nouvelle\ninspection',
                 color: Colors.teal.shade700,
                 onTap: () async {
-                  await Navigator.push(
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (_) =>
                             const InspectionCreateScreen()),
                   );
+                  if (result != null && mounted) {
+                    PnpiToast.show(context, message: 'Inspection enregistree avec succes !', type: ToastType.success);
+                  }
                   _load();
                 },
               ),

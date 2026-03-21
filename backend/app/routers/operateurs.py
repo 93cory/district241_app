@@ -82,6 +82,8 @@ async def list_operateurs(
     secteur: Optional[str] = Query(default=None),
     province: Optional[str] = Query(default=None),
     is_active: Optional[bool] = Query(default=None),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=200),
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[OperateurBrief]:
@@ -92,7 +94,7 @@ async def list_operateurs(
         query = query.where(OperateurIndustrielORM.province == province)
     if is_active is not None:
         query = query.where(OperateurIndustrielORM.is_active.is_(is_active))
-    query = query.order_by(OperateurIndustrielORM.raison_sociale)
+    query = query.order_by(OperateurIndustrielORM.raison_sociale).offset(skip).limit(limit)
     ops = db.execute(query).scalars().all()
     return [_to_operateur_brief(op) for op in ops]
 

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
 import '../widgets/pnpi_branding.dart';
 import 'landing_screen.dart';
+import 'two_factor_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,10 +38,33 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
-      await ApiService.instance.login(
+      final authProvider = context.read<AuthProvider>();
+      final result = await authProvider.login(
         username: _usernameCtrl.text.trim(),
         password: _passwordCtrl.text,
       );
+
+      if (authProvider.error != null) {
+        setState(() => _error = authProvider.error);
+        return;
+      }
+
+      // If 2FA is required, navigate to the TOTP verification screen.
+      if (result != null && result['requires_2fa'] == true) {
+        if (!mounted) return;
+        final verified = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (_) => TwoFactorScreen(
+              username: _usernameCtrl.text.trim(),
+              apiBaseUrl: '',
+              onVerified: () => Navigator.of(context).pop(true),
+              onBack: () => Navigator.of(context).pop(false),
+            ),
+          ),
+        );
+        if (verified != true || !mounted) return;
+      }
+
       final profile = await ApiService.instance.fetchCurrentUser(forceRefresh: true);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(

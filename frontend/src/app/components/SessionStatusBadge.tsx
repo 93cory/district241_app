@@ -59,6 +59,8 @@ export const SessionStatusBadge = () => {
 
   return (
     <span
+      role="status"
+      aria-live="polite"
       title={resolved.user ? `${resolved.user.full_name} (${resolved.user.roles.join(", ")})` : resolved.label}
       style={{
         border: `1px solid ${colorByStatus[resolved.status]}66`,

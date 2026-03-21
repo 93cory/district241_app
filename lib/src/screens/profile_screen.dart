@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
 import '../widgets/pnpi_branding.dart';
 import 'login_screen.dart';
+import 'two_factor_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   final AuthUserProfile profile;
@@ -59,6 +60,8 @@ class ProfileScreen extends StatelessWidget {
           _buildInfoCard(),
           const SizedBox(height: 18),
           _buildRolesCard(),
+          const SizedBox(height: 18),
+          _buildTwoFactorCard(context),
           const SizedBox(height: 24),
           _buildLogoutButton(context),
           const SizedBox(height: 32),
@@ -234,6 +237,106 @@ class ProfileScreen extends StatelessWidget {
                 ),
               );
             }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTwoFactorCard(BuildContext context) {
+    final bool is2FAEnabled = profile.totpEnabled;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: PnpiTheme.softShadows,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Securite — Authentification a deux facteurs',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Icon(
+                is2FAEnabled ? Icons.verified : Icons.shield_outlined,
+                size: 20,
+                color: is2FAEnabled ? Colors.green.shade700 : Colors.orange.shade700,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Statut : ',
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: is2FAEnabled
+                      ? Colors.green.shade50
+                      : Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(99),
+                  border: Border.all(
+                    color: is2FAEnabled
+                        ? Colors.green.shade300
+                        : Colors.orange.shade300,
+                  ),
+                ),
+                child: Text(
+                  is2FAEnabled ? 'Activee' : 'Desactivee',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    color: is2FAEnabled
+                        ? Colors.green.shade700
+                        : Colors.orange.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => TwoFactorScreen(
+                      username: profile.username,
+                      apiBaseUrl: const String.fromEnvironment(
+                        'PNPI_API_URL',
+                        defaultValue: 'http://localhost:8000',
+                      ),
+                      onVerified: () => Navigator.of(context).pop(),
+                      onBack: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                );
+              },
+              icon: Icon(
+                is2FAEnabled ? Icons.lock_open : Icons.lock_outline,
+                size: 18,
+              ),
+              label: Text(is2FAEnabled ? 'Desactiver la 2FA' : 'Activer la 2FA'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor:
+                    is2FAEnabled ? Colors.red.shade700 : PnpiColors.lagoon,
+                side: BorderSide(
+                  color: is2FAEnabled
+                      ? Colors.red.shade300
+                      : PnpiColors.lagoon,
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
           ),
         ],
       ),

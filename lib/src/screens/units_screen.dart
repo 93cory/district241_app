@@ -366,7 +366,7 @@ class _UnitsScreenState extends State<UnitsScreen> {
                 ),
                 const SizedBox(height: 18),
                 DropdownButtonFormField<String>(
-                  value: selectedId,
+                  initialValue: selectedId,
                   items: _units
                       .map((u) => DropdownMenuItem(
                           value: u.id, child: Text(u.name)))

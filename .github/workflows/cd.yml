@@ -1,0 +1,119 @@
+name: PNPI CD
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # ------------------------------------------------------------------
+  # Wait for CI to pass before deploying
+  # ------------------------------------------------------------------
+  ci-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI workflow
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-regexp: "^(backend|frontend|flutter|docker)$"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 15
+
+  # ------------------------------------------------------------------
+  # Build Docker images and push to GHCR
+  # ------------------------------------------------------------------
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: ci-check
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/pnpi
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image tag
+        id: tag
+        run: echo "sha=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push backend image
+        run: |
+          docker build -f backend/Dockerfile -t "$IMAGE_PREFIX-backend:${{ steps.tag.outputs.sha }}" -t "$IMAGE_PREFIX-backend:latest" .
+          docker push "$IMAGE_PREFIX-backend:${{ steps.tag.outputs.sha }}"
+          docker push "$IMAGE_PREFIX-backend:latest"
+
+      - name: Build and push frontend image
+        run: |
+          docker build -f frontend/Dockerfile -t "$IMAGE_PREFIX-frontend:${{ steps.tag.outputs.sha }}" -t "$IMAGE_PREFIX-frontend:latest" .
+          docker push "$IMAGE_PREFIX-frontend:${{ steps.tag.outputs.sha }}"
+          docker push "$IMAGE_PREFIX-frontend:latest"
+
+  # ------------------------------------------------------------------
+  # Deploy to production server via SSH
+  # ------------------------------------------------------------------
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    environment: production
+    env:
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/pnpi
+
+            # Pull latest compose file
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Export image tag for compose
+            export IMAGE_TAG="${{ github.sha }}"
+            export GHCR_OWNER="${{ github.repository_owner }}"
+
+            # Log in to GHCR and pull new images
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            docker compose -f docker-compose.prod.yml pull backend frontend
+
+            # Rolling restart
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+
+            # Run database migrations
+            docker compose -f docker-compose.prod.yml exec -T backend alembic upgrade head
+
+            # Prune old images
+            docker image prune -f
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            echo "Waiting for services to stabilize..."
+            sleep 10
+
+            # Check backend health
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health || true)
+            if [ "$HTTP_STATUS" != "200" ]; then
+              echo "Health check failed with status $HTTP_STATUS"
+              docker compose -f /opt/pnpi/docker-compose.prod.yml logs --tail=50
+              exit 1
+            fi
+            echo "Health check passed (HTTP $HTTP_STATUS)"

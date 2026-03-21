@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
+import '../widgets/validated_field.dart';
 
 /// Formulaire d'enregistrement d'un nouvel opérateur industriel.
 class RegisterOperateurScreen extends StatefulWidget {
@@ -56,22 +57,6 @@ class _RegisterOperateurScreenState extends State<RegisterOperateurScreen> {
     super.dispose();
   }
 
-  String? _validateNif(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Le NIF Gabon est requis';
-    final cleaned = v.trim().toUpperCase();
-    // Accept common formats: alphanumeric, 6-20 chars
-    if (cleaned.length < 5 || cleaned.length > 25) {
-      return 'NIF invalide (5 à 25 caractères)';
-    }
-    return null;
-  }
-
-  String? _validateEmail(String? v) {
-    if (v == null || v.trim().isEmpty) return null; // optional
-    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$');
-    if (!emailRegex.hasMatch(v.trim())) return 'Email invalide';
-    return null;
-  }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -140,23 +125,22 @@ class _RegisterOperateurScreenState extends State<RegisterOperateurScreen> {
             // ── Section identité ──────────────────────────────────────────
             _sectionHeader('Identité légale', Icons.business_rounded),
             const SizedBox(height: 10),
-            TextFormField(
+            ValidatedField(
               controller: _raisonSocialeCtrl,
-              textCapitalization: TextCapitalization.words,
-              decoration: _inputDeco('Raison sociale *', Icons.store_rounded),
-              validator: (v) {
-                if (v == null || v.trim().length < 3) {
-                  return 'Raison sociale requise (min. 3 caractères)';
-                }
-                return null;
-              },
+              label: 'Raison sociale',
+              hint: 'Raison sociale',
+              required: true,
+              prefixIcon: Icons.store_rounded,
+              validator: Validators.minLength(3),
             ),
             const SizedBox(height: 12),
-            TextFormField(
+            ValidatedField(
               controller: _nifCtrl,
-              textCapitalization: TextCapitalization.characters,
-              decoration: _inputDeco('NIF Gabon *', Icons.badge_rounded),
-              validator: _validateNif,
+              label: 'NIF Gabon',
+              hint: 'NIF Gabon',
+              required: true,
+              prefixIcon: Icons.badge_rounded,
+              validator: Validators.nif,
             ),
 
             const SizedBox(height: 20),
@@ -184,14 +168,12 @@ class _RegisterOperateurScreenState extends State<RegisterOperateurScreen> {
               onChanged: (v) => setState(() => _province = v!),
             ),
             const SizedBox(height: 12),
-            TextFormField(
+            ValidatedField(
               controller: _villeCtrl,
-              textCapitalization: TextCapitalization.words,
-              decoration: _inputDeco('Ville / Localité *', Icons.location_city_rounded),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Ville requise';
-                return null;
-              },
+              label: 'Ville / Localité',
+              hint: 'Ville / Localité',
+              required: true,
+              prefixIcon: Icons.location_city_rounded,
             ),
 
             const SizedBox(height: 20),
@@ -199,17 +181,22 @@ class _RegisterOperateurScreenState extends State<RegisterOperateurScreen> {
             // ── Section contact ───────────────────────────────────────────
             _sectionHeader('Contact (optionnel)', Icons.contact_phone_outlined),
             const SizedBox(height: 10),
-            TextFormField(
+            ValidatedField(
               controller: _emailCtrl,
+              label: 'Email de contact',
+              hint: 'Email de contact',
               keyboardType: TextInputType.emailAddress,
-              decoration: _inputDeco('Email de contact', Icons.email_outlined),
-              validator: _validateEmail,
+              prefixIcon: Icons.email_outlined,
+              validator: Validators.email,
             ),
             const SizedBox(height: 12),
-            TextFormField(
+            ValidatedField(
               controller: _telCtrl,
+              label: 'Téléphone',
+              hint: 'Téléphone (+241...)',
               keyboardType: TextInputType.phone,
-              decoration: _inputDeco('Téléphone (+241…)', Icons.phone_outlined),
+              prefixIcon: Icons.phone_outlined,
+              validator: Validators.phone,
             ),
 
             const SizedBox(height: 28),

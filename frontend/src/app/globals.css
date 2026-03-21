@@ -304,6 +304,208 @@ body {
   }
 }
 
+/* --- Mobile Navigation --- */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 1001;
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 24px;
+}
+
+.hamburger-icon span {
+  display: block;
+  height: 2.5px;
+  background: var(--text-main);
+  border-radius: 2px;
+  transition: all 200ms ease;
+}
+
+.hamburger-open span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-open span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.mobile-nav-overlay {
+  display: none;
+}
+
+.mobile-nav-drawer {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hamburger-btn {
+    display: block;
+  }
+
+  .desktop-nav {
+    display: none;
+  }
+
+  .mobile-nav-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    animation: fade-in 200ms ease;
+  }
+
+  .mobile-nav-drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    background: var(--bg-layer);
+    padding: 24px 16px;
+    overflow-y: auto;
+    z-index: 1001;
+    animation: slide-in-left 250ms ease-out;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .mobile-nav-drawer a,
+  .mobile-nav-drawer button {
+    display: block;
+    width: 100%;
+    padding: 12px 16px;
+    text-align: left;
+    border-radius: 10px;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+/* --- Dark Mode --- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg-base: #0d1824;
+    --bg-layer: #1b2635;
+    --surface: #1b2635;
+    --surface-soft: #162231;
+    --line: #2a3a4e;
+    --line-strong: #3d5068;
+    --text-main: #e8edf2;
+    --text-soft: #9eb4cf;
+    --accent-primary: #0c7eb4;
+    --danger: #ef4444;
+    --shadow-1: 0 14px 30px rgba(0, 0, 0, 0.3);
+    --shadow-2: 0 26px 48px rgba(0, 0, 0, 0.4);
+  }
+
+  body {
+    background: var(--bg-base);
+    color: var(--text-main);
+  }
+
+  .page-shell::before {
+    background:
+      linear-gradient(115deg, rgba(0, 0, 0, 0.2) 0%, transparent 44%),
+      repeating-linear-gradient(
+        -32deg,
+        rgba(255, 255, 255, 0.02) 0px,
+        rgba(255, 255, 255, 0.02) 2px,
+        transparent 2px,
+        transparent 16px
+      );
+  }
+
+  .chart-card, .table-card, .map-card {
+    background: var(--bg-layer);
+    border-color: var(--line);
+  }
+
+  .kpi-card {
+    background: var(--bg-layer);
+  }
+
+  .kpi-card::after {
+    background: linear-gradient(95deg, rgba(12, 126, 180, 0.12), rgba(0, 98, 51, 0.1));
+  }
+
+  .annex-table th {
+    background: var(--bg-layer);
+    color: var(--text-main);
+  }
+
+  .annex-table th,
+  .annex-table td {
+    border-color: var(--line);
+  }
+
+  .annex-table tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  input, select, textarea {
+    background: var(--bg-layer);
+    color: var(--text-main);
+    border-color: var(--line);
+  }
+
+  a { color: var(--accent-primary); }
+
+  .top-nav a {
+    background: color-mix(in srgb, var(--surface) 82%, #1a3050 18%);
+    border-color: var(--line);
+    color: var(--text-main);
+  }
+
+  .top-nav a.nav-active {
+    background: var(--accent-primary);
+    color: #fff;
+    border-color: var(--accent-primary);
+  }
+
+  .export-link {
+    background: var(--surface);
+    color: var(--text-main);
+    border-color: var(--line);
+  }
+
+  .ministerial-banner {
+    background: linear-gradient(120deg, #081c3a 0%, #004d28 55%, #c29d00 100%);
+  }
+}
+
 @media print {
   :root {
     color-scheme: light;
@@ -340,4 +542,9 @@ body {
     break-before: page;
     page-break-before: always;
   }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }

@@ -33,9 +33,21 @@ export async function POST(request: Request) {
     }
 
     const tokenBody = (await tokenResponse.json()) as {
-      access_token: string;
-      refresh_token: string;
+      access_token?: string;
+      refresh_token?: string;
+      requires_2fa?: boolean;
+      username?: string;
+      message?: string;
     };
+
+    // If 2FA is required, forward that to the client without issuing cookies
+    if (tokenBody.requires_2fa) {
+      return NextResponse.json({
+        requires_2fa: true,
+        username: tokenBody.username,
+        message: tokenBody.message,
+      });
+    }
 
     const meResponse = await fetch(`${backendBaseUrl}/auth/me`, {
       method: "GET",

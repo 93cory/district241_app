@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { fetchPNPIAlerts, PNPIAlert } from "../../../lib/api";
 import { fetchBackendProfile } from "../../../lib/backend";
+import { NotificationsSeverityFilter } from "./NotificationsSeverityFilter";
 
 const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 
@@ -47,7 +48,9 @@ function relativeTime(dateStr: string): string {
   return `Il y a ${diffM} mois`;
 }
 
-export default async function NotificationsPage() {
+type SearchParams = { severity?: string };
+
+export default async function NotificationsPage({ searchParams }: { searchParams: SearchParams }) {
   try {
     const profile = await fetchBackendProfile();
     if (!((profile.roles ?? []) as string[]).some(r => ALLOWED.has(r))) redirect("/connexion");
@@ -58,6 +61,8 @@ export default async function NotificationsPage() {
   try {
     const alerts = await fetchPNPIAlerts();
 
+    const activeSeverity = searchParams.severity ?? "";
+
     const totalCount = alerts.length;
     const criticalCount = alerts.filter(a => a.severity === "critical").length;
     const highCount = alerts.filter(a => a.severity === "high").length;
@@ -65,6 +70,11 @@ export default async function NotificationsPage() {
     const slaCount = alerts.filter(a => a.type === "sla_overdue").length;
     const ncCount = alerts.filter(a => a.type === "non_conforme").length;
     const expiringCount = alerts.filter(a => a.type === "expiring_soon").length;
+
+    // Filter by severity if specified
+    const filteredAlerts = activeSeverity
+      ? alerts.filter(a => a.severity === activeSeverity)
+      : alerts;
 
     return (
       <section className="section">
@@ -123,11 +133,17 @@ export default async function NotificationsPage() {
             <span style={{ color: "#f59e0b", fontWeight: 600 }}>{highCount} hautes</span>
           </p>
 
-          {alerts.length === 0 ? (
+          {/* Severity filter tabs */}
+          <NotificationsSeverityFilter
+            activeSeverity={activeSeverity}
+            counts={{ all: totalCount, critical: criticalCount, high: highCount, medium: mediumCount, info: totalCount - criticalCount - highCount - mediumCount }}
+          />
+
+          {filteredAlerts.length === 0 ? (
             <p style={{ color: "#9ca3af", textAlign: "center", padding: "2rem 0" }}>Aucune alerte.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              {alerts.map((alert, idx) => {
+              {filteredAlerts.map((alert, idx) => {
                 const sevColor = SEVERITY_COLORS[alert.severity] ?? "#6b7280";
                 const href = linkForAlert(alert);
                 const card = (

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/ati.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
+import '../widgets/skeleton_loader.dart';
 
 class PNPIDashboardScreen extends StatefulWidget {
   const PNPIDashboardScreen({super.key});
@@ -44,7 +45,7 @@ class _PNPIDashboardScreenState extends State<PNPIDashboardScreen> {
       future: _future,
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const SkeletonDashboard();
         }
         if (!snap.hasData) {
           return const Center(child: Text('Impossible de charger le tableau de bord'));
@@ -108,9 +109,13 @@ class _PNPIDashboardScreenState extends State<PNPIDashboardScreen> {
                   ),
                 ),
               ),
-              GestureDetector(
-                onTap: _refresh,
-                child: const Icon(Icons.refresh, color: Colors.white70, size: 20),
+              Semantics(
+                button: true,
+                label: 'Rafraîchir le tableau de bord',
+                child: GestureDetector(
+                  onTap: _refresh,
+                  child: const Icon(Icons.refresh, color: Colors.white70, size: 20),
+                ),
               ),
             ],
           ),
@@ -164,7 +169,9 @@ class _PNPIDashboardScreenState extends State<PNPIDashboardScreen> {
 
   Widget _heroKpi(String label, String value, IconData icon) {
     return Expanded(
-      child: Container(
+      child: Semantics(
+        label: '$label: $value',
+        child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: Colors.white24,
@@ -193,39 +200,43 @@ class _PNPIDashboardScreenState extends State<PNPIDashboardScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
   Widget _heroKpiColored(
       String label, String value, IconData icon, Color accent) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white24,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.white38),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: accent, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style:
-                          const TextStyle(color: Colors.white60, fontSize: 10)),
-                  Text(value,
-                      style: TextStyle(
-                          color: accent,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15)),
-                ],
+      child: Semantics(
+        label: '$label: $value',
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white38),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: accent, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style:
+                            const TextStyle(color: Colors.white60, fontSize: 10)),
+                    Text(value,
+                        style: TextStyle(
+                            color: accent,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15)),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -641,7 +652,9 @@ class _PNPIDashboardScreenState extends State<PNPIDashboardScreen> {
 
   Widget _recentATIRow(AgrementTechniqueIndustriel ati) {
     final color = _statutColor(ati.statut);
-    return Container(
+    return Semantics(
+      label: '${ati.numeroAti} — ${ati.operateurNom} — ${ati.statutLabel}',
+      child: Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -698,6 +711,7 @@ class _PNPIDashboardScreenState extends State<PNPIDashboardScreen> {
             ],
           ),
         ],
+      ),
       ),
     );
   }

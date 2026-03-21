@@ -24,7 +24,19 @@ def as_utc(value: Optional[datetime]) -> Optional[datetime]:
 
 def _engine_for(url: str):
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
-    return create_engine(url, future=True, connect_args=connect_args)
+    is_sqlite = url.startswith("sqlite")
+
+    pool_kwargs = {}
+    if not is_sqlite:
+        pool_kwargs = {
+            "pool_size": 10,
+            "max_overflow": 20,
+            "pool_timeout": 30,
+            "pool_recycle": 1800,  # Recycle connections every 30 min
+            "pool_pre_ping": True,  # Verify connection is alive before using
+        }
+
+    return create_engine(url, future=True, connect_args=connect_args, **pool_kwargs)
 
 
 engine = _engine_for(settings.database_url)

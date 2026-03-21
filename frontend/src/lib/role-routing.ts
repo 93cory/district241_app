@@ -45,6 +45,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
 
   if (hasRole(roles, "directeur")) {
     add("/pnpi", "Dashboard PNPI");
+    add("/pnpi/mes-dossiers", "Mes Dossiers");
     add("/pnpi/ati", "Agréments ATI");
     add("/pnpi/operateurs", "Opérateurs");
     add("/pnpi/inspections", "Inspections");
@@ -53,6 +54,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
 
   if (hasRole(roles, "instructeur")) {
     add("/pnpi", "Dashboard PNPI");
+    add("/pnpi/mes-dossiers", "Mes Dossiers");
     add("/pnpi/ati", "File ATI");
     add("/pnpi/operateurs", "Opérateurs");
     add("/pnpi/stats", "Statistiques");

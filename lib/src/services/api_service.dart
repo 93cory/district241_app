@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'api_cache.dart';
 import '../data/mock_data.dart';
 import '../models/ati.dart';
 import '../models/ati_transition.dart';
@@ -216,11 +217,13 @@ class AuthUserProfile {
   final String username;
   final String fullName;
   final List<String> roles;
+  final bool totpEnabled;
 
   const AuthUserProfile({
     required this.username,
     required this.fullName,
     required this.roles,
+    this.totpEnabled = false,
   });
 
   bool get canManagePilotage => roles.contains('ministre');
@@ -229,6 +232,7 @@ class AuthUserProfile {
         username: json['username'],
         fullName: json['full_name'],
         roles: (json['roles'] as List<dynamic>).map((entry) => '$entry').toList(),
+        totpEnabled: json['totp_enabled'] == true,
       );
 }
 
@@ -248,7 +252,7 @@ class ApiService {
   Map<String, String> get _authHeaders =>
       _token == null ? {} : {'Authorization': 'Bearer $_token'};
 
-  Future<void> login({
+  Future<Map<String, dynamic>?> login({
     String username = _backendUsername,
     String password = _backendPassword,
   }) async {
@@ -264,7 +268,35 @@ class ApiService {
       throw Exception('Impossible de s authentifier');
     }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
+
+    // If 2FA is required the backend returns requires_2fa instead of tokens.
+    if (json['requires_2fa'] == true) {
+      return json;
+    }
+
     _token = json['access_token'];
+    _profile = null;
+    _demoMode = false;
+    await syncQueuedFieldReports();
+    return null;
+  }
+
+  /// Completes login by verifying a TOTP code. Stores the token on success.
+  Future<void> verify2fa({
+    required String username,
+    required String code,
+  }) async {
+    final resp = await _client.post(
+      Uri.parse('$_backendUrl/auth/token/2fa'),
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: {'username': username, 'totp_code': code},
+    );
+    if (resp.statusCode != 200) {
+      final errBody = jsonDecode(resp.body) as Map<String, dynamic>;
+      throw Exception(errBody['detail'] ?? 'Code 2FA invalide');
+    }
+    final tokenJson = jsonDecode(resp.body) as Map<String, dynamic>;
+    _token = tokenJson['access_token'];
     _profile = null;
     _demoMode = false;
     await syncQueuedFieldReports();
@@ -292,6 +324,7 @@ class ApiService {
     _token = null;
     _profile = null;
     _demoMode = false;
+    ApiCache.instance.clear();
   }
 
   Future<void> _ensureToken() async {
@@ -402,7 +435,12 @@ class ApiService {
     }
   }
 
-  Future<DashboardSnapshot> fetchDashboardSnapshot() async {
+  Future<DashboardSnapshot> fetchDashboardSnapshot({bool forceRefresh = false}) async {
+    const cacheKey = 'dashboard_snapshot';
+    if (!forceRefresh) {
+      final cached = ApiCache.instance.get<DashboardSnapshot>(cacheKey);
+      if (cached != null) return cached;
+    }
     try {
       await _ensureToken();
       final response = await _client.get(
@@ -410,11 +448,13 @@ class ApiService {
         headers: _authHeaders,
       );
       if (response.statusCode != 200) throw Exception('Erreur');
-      return DashboardSnapshot.fromJson(jsonDecode(response.body));
+      final result = DashboardSnapshot.fromJson(jsonDecode(response.body));
+      ApiCache.instance.set(cacheKey, result, ttl: const Duration(minutes: 3));
+      return result;
     } catch (_) {
       if (_strictBackend) rethrow;
       final indicators = MockData.sectorIndicators;
-      return DashboardSnapshot(
+      final result = DashboardSnapshot(
         indicators: indicators,
         nationalIndex: 0.68,
         jobsCreated: indicators.fold<int>(0, (sum, e) => sum + e.jobs),
@@ -430,6 +470,8 @@ class ApiService {
         activeZones: 3,
         tracedBatches: MockData.traceBatches.length,
       );
+      ApiCache.instance.set(cacheKey, result, ttl: const Duration(minutes: 3));
+      return result;
     }
   }
 
@@ -737,7 +779,12 @@ class ApiService {
     }
   }
 
-  Future<List<AppNotification>> fetchNotifications() async {
+  Future<List<AppNotification>> fetchNotifications({bool forceRefresh = false}) async {
+    const cacheKey = 'notifications';
+    if (!forceRefresh) {
+      final cached = ApiCache.instance.get<List<AppNotification>>(cacheKey);
+      if (cached != null) return cached;
+    }
     try {
       await _ensureToken();
       final response = await _client.get(
@@ -745,9 +792,11 @@ class ApiService {
         headers: _authHeaders,
       );
       if (response.statusCode != 200) throw Exception('Erreur');
-      return (jsonDecode(response.body) as List<dynamic>)
+      final result = (jsonDecode(response.body) as List<dynamic>)
           .map((entry) => AppNotification.fromJson(entry))
           .toList();
+      ApiCache.instance.set(cacheKey, result, ttl: const Duration(minutes: 1));
+      return result;
     } catch (_) {
       if (_strictBackend) rethrow;
       return _mockNotifications;
@@ -883,6 +932,7 @@ class ApiService {
     if (response.statusCode != 200) {
       throw Exception('Mise a jour notification echouee: ${response.body}');
     }
+    ApiCache.instance.invalidate('notifications');
   }
 
   Future<List<AuditEvent>> fetchAuditEvents() async {
@@ -1140,7 +1190,12 @@ class ApiService {
     return file.path;
   }
 
-  Future<List<OperateurIndustriel>> fetchOperateurs() async {
+  Future<List<OperateurIndustriel>> fetchOperateurs({bool forceRefresh = false}) async {
+    const cacheKey = 'operateurs_list';
+    if (!forceRefresh) {
+      final cached = ApiCache.instance.get<List<OperateurIndustriel>>(cacheKey);
+      if (cached != null) return cached;
+    }
     try {
       await _ensureToken();
       final response = await _client.get(
@@ -1148,9 +1203,11 @@ class ApiService {
         headers: _authHeaders,
       );
       if (response.statusCode != 200) throw Exception('Erreur');
-      return (jsonDecode(response.body) as List<dynamic>)
+      final result = (jsonDecode(response.body) as List<dynamic>)
           .map((e) => OperateurIndustriel.fromJson(e as Map<String, dynamic>))
           .toList();
+      ApiCache.instance.set(cacheKey, result, ttl: const Duration(minutes: 2));
+      return result;
     } catch (_) {
       if (_strictBackend) rethrow;
       return MockData.operateurs;
@@ -1182,7 +1239,13 @@ class ApiService {
     String? statut,
     String? secteur,
     String? province,
+    bool forceRefresh = false,
   }) async {
+    final cacheKey = 'atis_${statut ?? ''}_${secteur ?? ''}_${province ?? ''}';
+    if (!forceRefresh) {
+      final cached = ApiCache.instance.get<List<AgrementTechniqueIndustriel>>(cacheKey);
+      if (cached != null) return cached;
+    }
     try {
       await _ensureToken();
       final query = <String, String>{};
@@ -1193,9 +1256,11 @@ class ApiService {
           .replace(queryParameters: query.isEmpty ? null : query);
       final response = await _client.get(uri, headers: _authHeaders);
       if (response.statusCode != 200) throw Exception('Erreur');
-      return (jsonDecode(response.body) as List<dynamic>)
+      final result = (jsonDecode(response.body) as List<dynamic>)
           .map((e) => AgrementTechniqueIndustriel.fromJson(e as Map<String, dynamic>))
           .toList();
+      ApiCache.instance.set(cacheKey, result, ttl: const Duration(minutes: 2));
+      return result;
     } catch (_) {
       if (_strictBackend) rethrow;
       var list = MockData.atis;
@@ -1230,6 +1295,7 @@ class ApiService {
     if (response.statusCode != 201) {
       throw Exception('Soumission ATI echouee: ${response.body}');
     }
+    ApiCache.instance.invalidatePrefix('atis_');
     return AgrementTechniqueIndustriel.fromJson(
         jsonDecode(response.body) as Map<String, dynamic>);
   }
@@ -1261,6 +1327,7 @@ class ApiService {
       if (response.statusCode != 201) {
         throw Exception('Enregistrement echoue: ${response.body}');
       }
+      ApiCache.instance.invalidate('operateurs_list');
       return OperateurIndustriel.fromJson(
           jsonDecode(response.body) as Map<String, dynamic>);
     } catch (e) {
@@ -1299,6 +1366,26 @@ class ApiService {
     } catch (_) {
       if (_strictBackend) rethrow;
       // Demo mode: succeed silently — UI will reload from MockData
+    }
+  }
+
+  /// Resubmit a rejected ATI with optional observations about corrections made.
+  Future<void> resubmitATI(String atiId, {String observations = ''}) async {
+    try {
+      await _ensureToken();
+      final response = await _client.post(
+        Uri.parse('$_backendUrl/pnpi/ati/$atiId/resubmit'),
+        headers: {..._authHeaders, 'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {'observations': observations},
+      );
+      if (response.statusCode != 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(body['detail'] ?? 'Resoumission echouee');
+      }
+      ApiCache.instance.invalidatePrefix('atis_');
+    } catch (_) {
+      if (_strictBackend) rethrow;
+      // Demo mode: succeed silently
     }
   }
 
@@ -1450,6 +1537,23 @@ class ApiService {
           .toList();
     }
     throw Exception('fetchPNPITendances: ${response.statusCode}');
+  }
+
+  Future<List<Map<String, dynamic>>> fetchInspectionPhotos(String inspectionId) async {
+    try {
+      await _ensureToken();
+      final response = await _client.get(
+        Uri.parse('$_backendUrl/pnpi/inspections/$inspectionId/photos'),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      }
+      return [];
+    } catch (_) {
+      if (_strictBackend) rethrow;
+      return [];
+    }
   }
 
   Future<void> openLocalFile(String path) async {

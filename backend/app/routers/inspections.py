@@ -1,13 +1,16 @@
 """PNPI — Endpoints de gestion des inspections de conformité."""
 from __future__ import annotations
 
+import os
 import uuid
+from pathlib import Path
 from typing import List, Optional
 
 import io
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import Response as FastAPIResponse
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse, Response as FastAPIResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -15,10 +18,42 @@ from ..core.auth import Role, User, require_roles
 from ..core.audit import write_audit_event
 from ..database import get_db, now_utc
 from ..models.core import UserAccountORM
-from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
+from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, InspectionPhotoORM, OperateurIndustrielORM
 from ..schemas.pnpi import InspectionCreate, InspectionRead
 
 router = APIRouter(prefix="/pnpi", tags=["Inspections"])
+
+PHOTO_UPLOAD_DIR = Path(os.getenv("PNPI_UPLOAD_DIR", "uploads/inspections"))
+PHOTO_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+PHOTO_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+PHOTO_ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
+PHOTO_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+
+
+class PhotoRead(BaseModel):
+    id: str
+    inspection_id: str
+    nom_fichier: str
+    taille_octets: int
+    description: Optional[str] = None
+    uploaded_at: str
+    uploaded_by: str
+
+    class Config:
+        from_attributes = True
+
+
+def _to_photo_read(photo: InspectionPhotoORM) -> PhotoRead:
+    return PhotoRead(
+        id=photo.id,
+        inspection_id=photo.inspection_id,
+        nom_fichier=photo.nom_fichier,
+        taille_octets=photo.taille_octets,
+        description=photo.description,
+        uploaded_at=photo.uploaded_at.isoformat(),
+        uploaded_by=photo.uploaded_by,
+    )
 
 
 def _to_inspection_read(insp: InspectionConformiteORM, db: Session) -> InspectionRead:
@@ -217,3 +252,130 @@ async def download_inspection_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="inspection_{insp.id}.pdf"'},
     )
+
+
+# ─── Inspection Photos ──────────────────────────────────────────────────────
+
+
+@router.get("/inspections/{inspection_id}/photos", response_model=List[PhotoRead], summary="Lister les photos d'une inspection")
+async def list_inspection_photos(
+    inspection_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> List[PhotoRead]:
+    insp = db.get(InspectionConformiteORM, inspection_id)
+    if not insp:
+        raise HTTPException(status_code=404, detail="Inspection introuvable.")
+    photos = db.execute(
+        select(InspectionPhotoORM)
+        .where(InspectionPhotoORM.inspection_id == inspection_id)
+        .order_by(InspectionPhotoORM.uploaded_at.desc())
+    ).scalars().all()
+    return [_to_photo_read(p) for p in photos]
+
+
+@router.post("/inspections/{inspection_id}/photos", response_model=PhotoRead, status_code=status.HTTP_201_CREATED,
+             summary="Uploader une photo d'inspection")
+async def upload_inspection_photo(
+    inspection_id: str,
+    file: UploadFile = File(...),
+    description: Optional[str] = Form(default=None),
+    current_user: User = Depends(require_roles(Role.admin, Role.inspecteur, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> PhotoRead:
+    insp = db.get(InspectionConformiteORM, inspection_id)
+    if not insp:
+        raise HTTPException(status_code=404, detail="Inspection introuvable.")
+
+    # Validate extension
+    ext = Path(file.filename or "photo.bin").suffix.lower()
+    if ext not in PHOTO_ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Type de fichier non autorise. Extensions acceptees: {', '.join(PHOTO_ALLOWED_EXTENSIONS)}",
+        )
+
+    # Validate content type
+    if file.content_type and file.content_type not in PHOTO_ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Type MIME non autorise. Types acceptes: {', '.join(PHOTO_ALLOWED_CONTENT_TYPES)}",
+        )
+
+    content = await file.read()
+    if len(content) > PHOTO_MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Fichier trop volumineux. Maximum: {PHOTO_MAX_FILE_SIZE // 1024 // 1024} MB",
+        )
+
+    photo_id = f"PHO-{uuid.uuid4().hex[:12].upper()}"
+    stored_name = f"{photo_id}{ext}"
+    inspection_dir = PHOTO_UPLOAD_DIR / inspection_id
+    inspection_dir.mkdir(parents=True, exist_ok=True)
+    file_path = inspection_dir / stored_name
+    file_path.write_bytes(content)
+
+    photo = InspectionPhotoORM(
+        id=photo_id,
+        inspection_id=inspection_id,
+        nom_fichier=file.filename or stored_name,
+        chemin_stockage=str(file_path),
+        taille_octets=len(content),
+        description=description,
+        uploaded_at=now_utc(),
+        uploaded_by=current_user.username,
+    )
+    db.add(photo)
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="inspection_photo.upload",
+        target=photo_id,
+        details=f"inspection={inspection_id}; file={file.filename}",
+    )
+    db.commit()
+    db.refresh(photo)
+    return _to_photo_read(photo)
+
+
+@router.get("/inspections/{inspection_id}/photos/{photo_id}/file", summary="Telecharger le fichier photo")
+async def download_inspection_photo(
+    inspection_id: str,
+    photo_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    photo = db.get(InspectionPhotoORM, photo_id)
+    if not photo or photo.inspection_id != inspection_id:
+        raise HTTPException(status_code=404, detail="Photo introuvable.")
+    file_path = Path(photo.chemin_stockage)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Fichier physique introuvable sur le serveur.")
+    return FileResponse(path=str(file_path), filename=photo.nom_fichier, media_type="application/octet-stream")
+
+
+@router.delete("/inspections/{inspection_id}/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT,
+               summary="Supprimer une photo d'inspection")
+async def delete_inspection_photo(
+    inspection_id: str,
+    photo_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.inspecteur, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> FastAPIResponse:
+    photo = db.get(InspectionPhotoORM, photo_id)
+    if not photo or photo.inspection_id != inspection_id:
+        raise HTTPException(status_code=404, detail="Photo introuvable.")
+    file_path = Path(photo.chemin_stockage)
+    if file_path.exists():
+        file_path.unlink()
+    db.delete(photo)
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="inspection_photo.delete",
+        target=photo_id,
+        details=f"inspection={inspection_id}; file={photo.nom_fichier}",
+    )
+    db.commit()
+    return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)

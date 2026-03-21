@@ -114,10 +114,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         actions: [
           if (unreadCount > 0)
-            TextButton.icon(
-              onPressed: _markAllRead,
-              icon: const Icon(Icons.done_all, color: Colors.white),
-              label: const Text('Tout lu', style: TextStyle(color: Colors.white)),
+            Semantics(
+              button: true,
+              label: 'Marquer toutes les notifications comme lues',
+              child: TextButton.icon(
+                onPressed: _markAllRead,
+                icon: const Icon(Icons.done_all, color: Colors.white),
+                label: const Text('Tout lu', style: TextStyle(color: Colors.white)),
+              ),
             ),
         ],
       ),
@@ -145,7 +149,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final isRead = n.isRead;
     final busy = _busyIds.contains(n.id);
 
-    return GestureDetector(
+    return Semantics(
+      button: !isRead,
+      label: '${n.title} — ${n.severity}${isRead ? ', lue' : ', non lue — appuyer pour marquer comme lue'}',
+      child: GestureDetector(
       onTap: () => _markRead(n),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 240),
@@ -252,6 +259,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import io
 import uuid
-from datetime import timedelta
+from datetime import date as date_type, datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
 from fastapi.responses import Response as FastAPIResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -36,12 +36,21 @@ _TERMINAL_STATUTS = {"approuve", "rejete", "expire"}
 
 # Valid transition graph: statut -> allowed next statuts
 _STATUT_TRANSITIONS = {
-    "soumis": ["soumis", "en_instruction", "rejete"],
-    "en_instruction": ["en_instruction", "en_validation", "rejete"],
-    "en_validation": ["en_validation", "approuve", "rejete"],
-    "approuve": ["approuve", "expire"],
-    "rejete": ["rejete"],
-    "expire": ["expire"],
+    "soumis": {"en_instruction"},
+    "en_instruction": {"en_validation", "rejete"},
+    "en_validation": {"approuve", "rejete"},
+    "rejete": {"soumis"},  # resubmission
+    "approuve": {"expire"},  # only by system
+    "expire": set(),  # terminal
+}
+
+# Valid etape transitions
+_ETAPE_TRANSITIONS = {
+    "reception": {"analyse_technique"},
+    "analyse_technique": {"verification_terrain", "decision"},
+    "verification_terrain": {"decision"},
+    "decision": {"notification"},
+    "notification": set(),  # terminal
 }
 
 
@@ -113,12 +122,15 @@ async def list_atis(
     statut: Optional[str] = Query(default=None),
     secteur: Optional[str] = Query(default=None),
     province: Optional[str] = Query(default=None),
+    assigned_to_me: bool = Query(default=False),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=500),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[ATIRead]:
     query = select(AgrementTechniqueIndustrielORM)
+    if assigned_to_me:
+        query = query.where(AgrementTechniqueIndustrielORM.instructeur_username == current_user.username)
     if statut:
         query = query.where(AgrementTechniqueIndustrielORM.statut == statut)
     if secteur:
@@ -219,15 +231,21 @@ async def update_ati_statut(
     now = now_utc()
 
     if payload.new_statut is not None:
-        allowed_next = _STATUT_TRANSITIONS.get(ati.statut, [])
-        if payload.new_statut not in allowed_next:
+        allowed = _STATUT_TRANSITIONS.get(ati.statut, set())
+        if payload.new_statut not in allowed:
             raise HTTPException(
                 status_code=400,
-                detail=f"Transition statut invalide: {ati.statut} -> {payload.new_statut}. Permis: {allowed_next}",
+                detail=f"Transition invalide: {ati.statut} -> {payload.new_statut}. Transitions autorisees: {', '.join(allowed) or 'aucune'}",
             )
         ati.statut = payload.new_statut
 
     if payload.new_etape is not None:
+        allowed_etapes = _ETAPE_TRANSITIONS.get(ati.etape, set())
+        if payload.new_etape not in allowed_etapes:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Transition etape invalide: {ati.etape} -> {payload.new_etape}. Transitions autorisees: {', '.join(allowed_etapes) or 'aucune'}",
+            )
         ati.etape = payload.new_etape
 
     if payload.instructeur_username is not None:
@@ -291,6 +309,50 @@ async def update_ati_statut(
         pass  # Ne bloque jamais le workflow si l'email echoue
 
     return _to_ati_read(ati)
+
+
+@router.post("/ati/{ati_id}/resubmit", summary="Resoumettre un ATI rejete",
+             description="Permet a un operateur de resoumettre un ATI precedemment rejete apres corrections.")
+async def resubmit_ati(
+    ati_id: str,
+    observations: str = Form(""),
+    current_user: User = Depends(require_roles(Role.operateur, Role.admin)),
+    db: Session = Depends(get_db),
+) -> dict:
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    if ati.statut != "rejete":
+        raise HTTPException(status_code=400, detail="Seul un ATI rejete peut etre resoumis.")
+
+    # Reset to soumis
+    previous_statut = ati.statut
+    ati.statut = "soumis"
+    ati.etape = "reception"
+    ati.motif_rejet = None
+    ati.date_decision = None
+    if observations.strip():
+        ati.observations = observations.strip()
+    ati.updated_at = now_utc()
+
+    # Record transition
+    transition = ATITransitionORM(
+        id=f"TR-{uuid.uuid4().hex[:10].upper()}",
+        ati_id=ati.id,
+        changed_by=current_user.username,
+        previous_statut=previous_statut,
+        new_statut="soumis",
+        previous_etape="decision",
+        new_etape="reception",
+        note=f"Resoumission par l'operateur. {observations.strip()}",
+        changed_at=now_utc(),
+    )
+    db.add(transition)
+
+    write_audit_event(db, actor=current_user.username, action="ati.resubmit", target=ati.id, details="ATI resoumis apres rejet")
+    db.commit()
+
+    return {"message": "ATI resoumis avec succes.", "id": ati.id, "statut": "soumis"}
 
 
 @router.get("/ati/{ati_id}/historique", response_model=List[ATITransitionRead],
@@ -595,12 +657,35 @@ async def list_pnpi_alerts(
 async def list_all_transitions(
     limit: int = Query(default=100, le=500),
     changed_by: Optional[str] = Query(default=None),
+    date_from: Optional[str] = Query(default=None, description="Date debut ISO (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(default=None, description="Date fin ISO (YYYY-MM-DD)"),
+    actor: Optional[str] = Query(default=None, description="Nom d'utilisateur acteur"),
+    ati_numero: Optional[str] = Query(default=None, description="Numero ATI (recherche partielle)"),
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> list:
     query = select(ATITransitionORM).order_by(ATITransitionORM.changed_at.desc())
-    if changed_by:
-        query = query.where(ATITransitionORM.changed_by == changed_by)
+    # Support both changed_by and actor params (actor is the new name)
+    effective_actor = actor or changed_by
+    if effective_actor:
+        query = query.where(ATITransitionORM.changed_by == effective_actor)
+    if date_from:
+        try:
+            dt_from = datetime.fromisoformat(date_from).replace(tzinfo=timezone.utc)
+            query = query.where(ATITransitionORM.changed_at >= dt_from)
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            dt_to = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)
+            query = query.where(ATITransitionORM.changed_at <= dt_to)
+        except ValueError:
+            pass
+    if ati_numero:
+        # Join to ATI table and filter by numero_ati (partial match)
+        query = query.join(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.numero_ati.ilike(f"%{ati_numero}%")
+        )
     query = query.limit(limit)
     transitions = db.execute(query).scalars().all()
 

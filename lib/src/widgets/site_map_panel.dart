@@ -206,12 +206,15 @@ class _SiteMapPanelState extends State<SiteMapPanel> {
           runSpacing: 4,
           children: _sectors.map((sector) {
             final selected = _activeSector == sector;
-            return FilterChip(
-              label: Text(sector),
-              selected: selected,
-              onSelected: (_) => _toggleSector(sector),
-              backgroundColor: Colors.grey.shade100,
-              selectedColor: colorWithOpacity(PnpiColors.lagoon, 0.2),
+            return Semantics(
+              label: 'Filtre secteur $sector${selected ? ', sélectionné' : ''}',
+              child: FilterChip(
+                label: Text(sector),
+                selected: selected,
+                onSelected: (_) => _toggleSector(sector),
+                backgroundColor: Colors.grey.shade100,
+                selectedColor: colorWithOpacity(PnpiColors.lagoon, 0.2),
+              ),
             );
           }).toList(),
         ),
@@ -223,12 +226,15 @@ class _SiteMapPanelState extends State<SiteMapPanel> {
           runSpacing: 4,
           children: _provinces.map((province) {
             final isSelected = _activeProvince == province;
-            return ChoiceChip(
-              label: Text(province),
-              selected: isSelected,
-              onSelected: (_) => _toggleProvince(province),
-              selectedColor: colorWithOpacity(PnpiColors.oceanPulse, 0.3),
-              backgroundColor: Colors.grey.shade100,
+            return Semantics(
+              label: 'Filtre province $province${isSelected ? ', sélectionné' : ''}',
+              child: ChoiceChip(
+                label: Text(province),
+                selected: isSelected,
+                onSelected: (_) => _toggleProvince(province),
+                selectedColor: colorWithOpacity(PnpiColors.oceanPulse, 0.3),
+                backgroundColor: Colors.grey.shade100,
+              ),
             );
           }).toList(),
         ),

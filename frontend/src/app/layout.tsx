@@ -5,6 +5,9 @@ import { WebLogoutButton } from "./components/WebLogoutButton";
 import { SessionStatusBadge } from "./components/SessionStatusBadge";
 import { NotificationsBell } from "./components/NotificationsBell";
 import { NavLinks } from "./components/NavLinks";
+import { MobileNav } from "./components/MobileNav";
+import { ToastProvider } from "./components/Toast";
+import { SessionTimeout } from "./components/SessionTimeout";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -31,17 +34,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="fr">
       <body>
         <div className="page-shell">
-          <nav className="top-nav">
-            <Link href="/" className="nav-brand">
-              <Image src="/pnpi_logo.png" alt="PNPI" width={32} height={32} style={{ borderRadius: 6 }} />
-              <span>PNPI</span>
-            </Link>
-            <NavLinks links={navLinks} />
-            <SessionStatusBadge />
-            {roles.length ? <NotificationsBell /> : null}
-            {roles.length ? <WebLogoutButton /> : null}
-          </nav>
-          {children}
+          <a href="#main-content" className="skip-link" style={{position:'absolute',left:'-9999px',top:'auto',width:'1px',height:'1px',overflow:'hidden'}}
+            onFocus={(e) => { e.currentTarget.style.position='static'; e.currentTarget.style.width='auto'; e.currentTarget.style.height='auto'; }}
+            onBlur={(e) => { e.currentTarget.style.position='absolute'; e.currentTarget.style.left='-9999px'; e.currentTarget.style.width='1px'; e.currentTarget.style.height='1px'; }}
+          >Aller au contenu principal</a>
+          <header role="banner">
+            <nav className="top-nav" aria-label="Navigation principale">
+              <Link href="/" className="nav-brand">
+                <Image src="/pnpi_logo.png" alt="PNPI" width={32} height={32} style={{ borderRadius: 6 }} />
+                <span>PNPI</span>
+              </Link>
+              <MobileNav>
+                <NavLinks links={navLinks} />
+                <SessionStatusBadge />
+                {roles.length ? <NotificationsBell /> : null}
+                {roles.length ? <WebLogoutButton /> : null}
+              </MobileNav>
+            </nav>
+          </header>
+          <main id="main-content">
+            <ToastProvider>{children}</ToastProvider>
+            <SessionTimeout />
+          </main>
         </div>
       </body>
     </html>

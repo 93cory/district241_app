@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Palette revisitee pour donner une direction visuelle premium au projet PNPI.
 class PnpiColors {
@@ -42,22 +43,105 @@ class PnpiTheme {
     ),
   ];
 
-  static final TextTheme _textTheme = Typography.blackMountainView.copyWith(
-    displayLarge: const TextStyle(
+  static final TextTheme _textTheme = GoogleFonts.montserratTextTheme(
+    Typography.blackMountainView,
+  ).copyWith(
+    displayLarge: GoogleFonts.montserrat(
       color: PnpiColors.slateDark,
       fontWeight: FontWeight.w700,
       fontSize: 32,
     ),
-    headlineLarge: const TextStyle(
+    headlineLarge: GoogleFonts.montserrat(
       color: PnpiColors.slateDark,
       fontWeight: FontWeight.w600,
     ),
-    titleLarge: const TextStyle(
+    titleLarge: GoogleFonts.montserrat(
       color: PnpiColors.slateDark,
       fontWeight: FontWeight.w600,
     ),
-    bodyLarge: const TextStyle(color: PnpiColors.slateDark),
-    labelLarge: const TextStyle(color: PnpiColors.slateDark),
+    bodyLarge: GoogleFonts.montserrat(color: PnpiColors.slateDark),
+    labelLarge: GoogleFonts.montserrat(color: PnpiColors.slateDark),
+  );
+
+  static final TextTheme _darkTextTheme = GoogleFonts.montserratTextTheme(
+    Typography.whiteMountainView,
+  ).copyWith(
+    displayLarge: GoogleFonts.montserrat(
+      color: const Color(0xFFE8EDF2),
+      fontWeight: FontWeight.w700,
+      fontSize: 32,
+    ),
+    headlineLarge: GoogleFonts.montserrat(
+      color: const Color(0xFFE8EDF2),
+      fontWeight: FontWeight.w600,
+    ),
+    titleLarge: GoogleFonts.montserrat(
+      color: const Color(0xFFE8EDF2),
+      fontWeight: FontWeight.w600,
+    ),
+    bodyLarge: GoogleFonts.montserrat(color: const Color(0xFFE8EDF2)),
+    labelLarge: GoogleFonts.montserrat(color: const Color(0xFFE8EDF2)),
+  );
+
+  static final ThemeData dark = ThemeData(
+    brightness: Brightness.dark,
+    primaryColor: PnpiColors.lagoon,
+    scaffoldBackgroundColor: PnpiColors.deepSpace,
+    colorScheme: const ColorScheme(
+      brightness: Brightness.dark,
+      primary: PnpiColors.lagoon,
+      onPrimary: Colors.white,
+      secondary: PnpiColors.oceanPulse,
+      onSecondary: Colors.white,
+      error: Colors.redAccent,
+      onError: Colors.white,
+      surface: Color(0xFF1B2635),
+      onSurface: Color(0xFFE8EDF2),
+    ),
+    fontFamily: GoogleFonts.montserrat().fontFamily,
+    textTheme: _darkTextTheme,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF0D1824),
+      elevation: 0,
+      centerTitle: false,
+      iconTheme: IconThemeData(color: Colors.white),
+      titleTextStyle: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w700,
+        color: Colors.white,
+      ),
+    ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: PnpiColors.oceanPulse,
+    ),
+    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      selectedItemColor: PnpiColors.luminousGold,
+      unselectedItemColor: Color(0xFF9EB4CF),
+      backgroundColor: Color(0xFF0D1824),
+      selectedIconTheme: IconThemeData(size: 26),
+      landscapeLayout: BottomNavigationBarLandscapeLayout.spread,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: PnpiColors.lagoon,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    ),
+    cardTheme: const CardThemeData(
+      color: Color(0xFF1B2635),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(20)),
+      ),
+      elevation: 4,
+    ),
+    visualDensity: VisualDensity.adaptivePlatformDensity,
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: PnpiColors.lagoon,
+    ),
   );
 
   static final ThemeData light = ThemeData(
@@ -75,7 +159,7 @@ class PnpiTheme {
       surface: Colors.white,
       onSurface: PnpiColors.slateDark,
     ),
-    fontFamily: 'Montserrat',
+    fontFamily: GoogleFonts.montserrat().fontFamily,
     textTheme: _textTheme,
     appBarTheme: const AppBarTheme(
       backgroundColor: PnpiColors.deepSpace,

@@ -1,0 +1,104 @@
+# ---------------------------------------------------------------
+# PNPI — Docker Compose (production)
+# ---------------------------------------------------------------
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: pnpi-postgres
+    restart: always
+    env_file: .env.prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pnpi}
+      POSTGRES_USER: ${POSTGRES_USER:-pnpi_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.prod}
+    volumes:
+      - pnpi_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pnpi_user} -d ${POSTGRES_DB:-pnpi}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - pnpi-net
+
+  backend:
+    image: ghcr.io/${GHCR_OWNER:-pnpi}/pnpi-backend:${IMAGE_TAG:-latest}
+    container_name: pnpi-backend
+    restart: always
+    env_file: .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PNPI_SECRET_KEY: ${PNPI_SECRET_KEY:?Set PNPI_SECRET_KEY in .env.prod}
+      PNPI_ADMIN_PASSWORD: ${PNPI_ADMIN_PASSWORD:?Set PNPI_ADMIN_PASSWORD in .env.prod}
+      PNPI_MINISTRE_PASSWORD: ${PNPI_MINISTRE_PASSWORD:?Set PNPI_MINISTRE_PASSWORD in .env.prod}
+      PNPI_OPERATEUR_PASSWORD: ${PNPI_OPERATEUR_PASSWORD:?Set PNPI_OPERATEUR_PASSWORD in .env.prod}
+      PNPI_INSPECTEUR_PASSWORD: ${PNPI_INSPECTEUR_PASSWORD:?Set PNPI_INSPECTEUR_PASSWORD in .env.prod}
+      PNPI_DATABASE_URL: postgresql://${POSTGRES_USER:-pnpi_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pnpi}
+      PNPI_ENV: production
+      PNPI_CORS_ALLOW_ORIGINS: ${PNPI_CORS_ALLOW_ORIGINS:-https://pnpi.gouv.ga}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - pnpi-net
+
+  frontend:
+    image: ghcr.io/${GHCR_OWNER:-pnpi}/pnpi-frontend:${IMAGE_TAG:-latest}
+    container_name: pnpi-frontend
+    restart: always
+    env_file: .env.prod
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://backend:8000}
+      PNPI_BACKEND_USERNAME: ${PNPI_BACKEND_USERNAME:-ministre}
+      PNPI_BACKEND_PASSWORD: ${PNPI_BACKEND_PASSWORD:?Set PNPI_BACKEND_PASSWORD in .env.prod}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - pnpi-net
+
+  nginx:
+    build:
+      context: ./deploy
+      dockerfile: Dockerfile.nginx
+    container_name: pnpi-nginx
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${SSL_CERT_PATH:-./deploy/ssl}:/etc/ssl/pnpi:ro
+      - pnpi_nginx_logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://localhost:80/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - pnpi-net
+
+volumes:
+  pnpi_postgres_data:
+  pnpi_nginx_logs:
+
+networks:
+  pnpi-net:
+    driver: bridge

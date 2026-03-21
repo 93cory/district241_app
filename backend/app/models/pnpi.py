@@ -115,6 +115,19 @@ class InspectionConformiteORM(Base):
     operateur: Mapped[OperateurIndustrielORM] = relationship(back_populates="inspections", lazy="joined")
 
 
+class InspectionPhotoORM(Base):
+    __tablename__ = "inspection_photos"
+
+    id: Mapped[str] = mapped_column(String(24), primary_key=True)
+    inspection_id: Mapped[str] = mapped_column(ForeignKey("inspections_conformite.id"), nullable=False, index=True)
+    nom_fichier: Mapped[str] = mapped_column(String(255), nullable=False)
+    chemin_stockage: Mapped[str] = mapped_column(String(512), nullable=False)
+    taille_octets: Mapped[int] = mapped_column(nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    uploaded_by: Mapped[str] = mapped_column(String(80), nullable=False)
+
+
 class DocumentDossierORM(Base):
     __tablename__ = "documents_dossier"
 

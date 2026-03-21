@@ -2,8 +2,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
 interface User { username: string; full_name: string; roles: string[]; is_active: boolean; }
 
 export function AssignInstructeur({ atiId, currentInstructeur }: { atiId: string; currentInstructeur: string | null }) {
@@ -15,18 +13,17 @@ export function AssignInstructeur({ atiId, currentInstructeur }: { atiId: string
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`${BACKEND}/admin/users`, { credentials: "include" })
+    fetch("/api/admin/users", { credentials: "include" })
       .then(r => r.ok ? r.json() : Promise.resolve([]))
       .then((all: User[]) => setUsers(all.filter(u => u.is_active && u.roles.some(r => ["instructeur", "admin", "directeur"].includes(r)))))
-      .catch(() => { /* ignore — non-admin */ });
+      .catch(() => { /* ignore -- non-admin */ });
   }, []);
 
   const handleAssign = async () => {
     setBusy(true); setError(null); setSuccess(false);
     try {
-      const res = await fetch(`${BACKEND}/pnpi/ati/${atiId}/statut`, {
+      const res = await fetch(`/api/ati/${encodeURIComponent(atiId)}/statut`, {
         method: "PATCH",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ instructeur_username: selected || null, note: `Assignation instructeur: ${selected || "aucun"}` }),
       });
@@ -35,7 +32,7 @@ export function AssignInstructeur({ atiId, currentInstructeur }: { atiId: string
       setSuccess(true);
       setTimeout(() => { setSuccess(false); router.refresh(); }, 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur réseau");
+      setError(err instanceof Error ? err.message : "Erreur reseau");
     } finally {
       setBusy(false);
     }
@@ -44,7 +41,7 @@ export function AssignInstructeur({ atiId, currentInstructeur }: { atiId: string
   return (
     <div style={{ padding: "1rem 1.25rem", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
       <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", marginBottom: "0.5rem" }}>
-        Instructeur assigné
+        Instructeur assigne
       </div>
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
         <select
@@ -55,7 +52,7 @@ export function AssignInstructeur({ atiId, currentInstructeur }: { atiId: string
             padding: "0.45rem 0.75rem", fontSize: "0.82rem", background: "white", outline: "none",
           }}
         >
-          <option value="">— Non assigné —</option>
+          <option value="">-- Non assigne --</option>
           {users.map(u => (
             <option key={u.username} value={u.username}>
               {u.full_name || u.username} (@{u.username})
@@ -71,11 +68,11 @@ export function AssignInstructeur({ atiId, currentInstructeur }: { atiId: string
             flexShrink: 0,
           }}
         >
-          {busy ? "..." : success ? "✓ Assigné" : "Assigner"}
+          {busy ? "..." : success ? "Assigne" : "Assigner"}
         </button>
       </div>
       {error && <div style={{ marginTop: "0.5rem", color: "#b42318", fontSize: "0.78rem" }}>{error}</div>}
-      {success && <div style={{ marginTop: "0.5rem", color: "#10b981", fontSize: "0.78rem" }}>Instructeur mis à jour.</div>}
+      {success && <div style={{ marginTop: "0.5rem", color: "#10b981", fontSize: "0.78rem" }}>Instructeur mis a jour.</div>}
     </div>
   );
 }

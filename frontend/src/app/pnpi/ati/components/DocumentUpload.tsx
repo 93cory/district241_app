@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 
 interface DocumentRead {
   id: string;
@@ -16,21 +16,28 @@ const TYPE_LABELS: Record<string, string> = {
   certification: "Certification", autre: "Autre document",
 };
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
   return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
 }
 
-export function DocumentUpload({ atiId, initialDocs }: { atiId: string; initialDocs: DocumentRead[] }) {
+export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; initialDocs?: DocumentRead[] }) {
   const [docs, setDocs] = useState<DocumentRead[]>(initialDocs);
   const [typeDoc, setTypeDoc] = useState("autre");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Fetch documents on mount via proxy route
+  useEffect(() => {
+    if (initialDocs.length > 0) return;
+    fetch(`/api/ati/${encodeURIComponent(atiId)}/documents`)
+      .then(r => r.ok ? r.json() : Promise.resolve([]))
+      .then((data: DocumentRead[]) => setDocs(data))
+      .catch(() => { /* silently ignore */ });
+  }, [atiId, initialDocs.length]);
 
   const handleUpload = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,10 +52,9 @@ export function DocumentUpload({ atiId, initialDocs }: { atiId: string; initialD
         form.append("file", file);
         form.append("type_document", typeDoc);
 
-        const res = await fetch(`${BACKEND_URL}/pnpi/ati/${atiId}/documents`, {
+        const res = await fetch(`/api/ati/${encodeURIComponent(atiId)}/documents`, {
           method: "POST",
           body: form,
-          credentials: "include",
         });
 
         if (!res.ok) {
@@ -69,9 +75,8 @@ export function DocumentUpload({ atiId, initialDocs }: { atiId: string; initialD
   const handleDelete = async (docId: string, nomFichier: string) => {
     if (!confirm(`Supprimer "${nomFichier}" ?`)) return;
     try {
-      const res = await fetch(`${BACKEND_URL}/pnpi/documents/${docId}`, {
+      const res = await fetch(`/api/ati/${encodeURIComponent(atiId)}/documents?docId=${encodeURIComponent(docId)}`, {
         method: "DELETE",
-        credentials: "include",
       });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       setDocs(prev => prev.filter(d => d.id !== docId));
@@ -80,10 +85,12 @@ export function DocumentUpload({ atiId, initialDocs }: { atiId: string; initialD
     }
   };
 
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+
   const inputStyle: React.CSSProperties = { width: "100%", padding: "0.4rem 0.6rem", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "0.8rem", boxSizing: "border-box" };
 
   return (
-    <div>
+    <div style={{ padding: "1rem 1.25rem", background: "white", borderRadius: "10px", border: "1px solid #e5e7eb" }}>
       <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Documents du dossier ({docs.length})</h3>
 
       {/* Upload form */}

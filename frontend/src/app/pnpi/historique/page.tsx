@@ -24,7 +24,14 @@ const STATUT_LABELS: Record<string, string> = {
   expire: "Expire",
 };
 
-type SearchParams = { acteur?: string };
+type SearchParams = {
+  acteur?: string;
+  date_from?: string;
+  date_to?: string;
+  ati_numero?: string;
+  action_type?: string;
+  page?: string;
+};
 
 function statutBadge(statut: string | null) {
   if (!statut) return <span style={{ color: "#9ca3af", fontSize: "0.75rem" }}>--</span>;
@@ -46,6 +53,8 @@ function statutBadge(statut: string | null) {
   );
 }
 
+const PAGE_SIZE = 50;
+
 export default async function HistoriquePage({ searchParams }: { searchParams: SearchParams }) {
   try {
     const profile = await fetchBackendProfile();
@@ -55,26 +64,58 @@ export default async function HistoriquePage({ searchParams }: { searchParams: S
   }
 
   const acteur = searchParams.acteur ?? "";
+  const dateFrom = searchParams.date_from ?? "";
+  const dateTo = searchParams.date_to ?? "";
+  const atiNumero = searchParams.ati_numero ?? "";
+  const actionType = searchParams.action_type ?? "";
+  const currentPage = Math.max(1, parseInt(searchParams.page ?? "1", 10));
 
   try {
     const entries = await fetchPNPIHistorique({
       changed_by: acteur || undefined,
-      limit: 200,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+      ati_numero: atiNumero || undefined,
+      limit: 500,
     });
 
+    // Client-side filter by action_type (new_statut) if specified
+    let filtered = entries;
+    if (actionType) {
+      filtered = entries.filter((e) => e.new_statut === actionType);
+    }
+
+    // Pagination
+    const totalFiltered = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+    const safePage = Math.min(currentPage, totalPages);
+    const paginatedEntries = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
     // KPI computations
-    const totalTransitions = entries.length;
-    const uniqueActors = new Set(entries.map((e) => e.changed_by)).size;
+    const totalTransitions = filtered.length;
+    const uniqueActors = new Set(filtered.map((e) => e.changed_by)).size;
 
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
-    const transitionsToday = entries.filter((e) => e.changed_at.slice(0, 10) === todayStr).length;
+    const transitionsToday = filtered.filter((e) => e.changed_at.slice(0, 10) === todayStr).length;
 
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const transitionsWeek = entries.filter((e) => new Date(e.changed_at) >= weekAgo).length;
+    const transitionsWeek = filtered.filter((e) => new Date(e.changed_at) >= weekAgo).length;
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+
+    // Build pagination links
+    const buildPageUrl = (page: number) => {
+      const params = new URLSearchParams();
+      if (acteur) params.set("acteur", acteur);
+      if (dateFrom) params.set("date_from", dateFrom);
+      if (dateTo) params.set("date_to", dateTo);
+      if (atiNumero) params.set("ati_numero", atiNumero);
+      if (actionType) params.set("action_type", actionType);
+      params.set("page", String(page));
+      return `/pnpi/historique?${params.toString()}`;
+    };
 
     return (
       <section className="section">
@@ -127,14 +168,20 @@ export default async function HistoriquePage({ searchParams }: { searchParams: S
             <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.875rem" }}>
               {totalTransitions} transition(s) &middot; {uniqueActors} acteur(s)
             </p>
-            <HistoriqueFiltersClient acteur={acteur} />
+            <HistoriqueFiltersClient
+              acteur={acteur}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              atiNumero={atiNumero}
+              actionType={actionType}
+            />
           </div>
 
-          {entries.length === 0 ? (
+          {paginatedEntries.length === 0 ? (
             <p style={{ color: "#9ca3af", textAlign: "center", padding: "2rem 0" }}>Aucune transition avec ces filtres.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
-              {entries.map((entry, idx) => {
+              {paginatedEntries.map((entry, idx) => {
                 const dt = new Date(entry.changed_at);
                 const dateStr = dt.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
                 const timeStr = dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -156,7 +203,7 @@ export default async function HistoriquePage({ searchParams }: { searchParams: S
                           flexShrink: 0,
                         }}
                       />
-                      {idx < entries.length - 1 && (
+                      {idx < paginatedEntries.length - 1 && (
                         <div style={{ width: "2px", flex: 1, background: "#e5e7eb", minHeight: "2rem" }} />
                       )}
                     </div>
@@ -223,6 +270,31 @@ export default async function HistoriquePage({ searchParams }: { searchParams: S
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem", marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e5e7eb" }}>
+              {safePage > 1 && (
+                <Link
+                  href={buildPageUrl(safePage - 1)}
+                  style={{ padding: "0.35rem 0.7rem", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "0.8rem", color: "#374151", textDecoration: "none", fontWeight: 600 }}
+                >
+                  &larr; Precedent
+                </Link>
+              )}
+              <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+                Page {safePage} / {totalPages} ({totalFiltered} resultats)
+              </span>
+              {safePage < totalPages && (
+                <Link
+                  href={buildPageUrl(safePage + 1)}
+                  style={{ padding: "0.35rem 0.7rem", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "0.8rem", color: "#374151", textDecoration: "none", fontWeight: 600 }}
+                >
+                  Suivant &rarr;
+                </Link>
+              )}
             </div>
           )}
         </div>

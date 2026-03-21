@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, String
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -72,6 +72,10 @@ class UserAccountORM(Base):
     failed_login_attempts: Mapped[int] = mapped_column(nullable=False, default=0)
     locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     password_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    totp_secret: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    totp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    totp_confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    backup_codes_hash: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
 class NotificationORM(Base):

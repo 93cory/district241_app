@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TwoFactorForm } from "./TwoFactorForm";
 
 export const ConnexionForm = () => {
   const router = useRouter();
@@ -9,6 +10,8 @@ export const ConnexionForm = () => {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [pendingUsername, setPendingUsername] = useState("");
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,10 +24,17 @@ export const ConnexionForm = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      const payload = (await response.json()) as { error?: string; redirect_to?: string };
+      const payload = (await response.json()) as { error?: string; redirect_to?: string; requires_2fa?: boolean; username?: string };
 
       if (!response.ok) {
         setError(payload.error ?? `Connexion echouee (${response.status}).`);
+        setBusy(false);
+        return;
+      }
+
+      if (payload.requires_2fa) {
+        setPendingUsername(payload.username ?? username);
+        setRequires2FA(true);
         setBusy(false);
         return;
       }
@@ -49,6 +59,18 @@ export const ConnexionForm = () => {
     marginBottom: "1rem",
     background: "#fafafa",
   };
+
+  if (requires2FA) {
+    return (
+      <TwoFactorForm
+        username={pendingUsername}
+        onBack={() => {
+          setRequires2FA(false);
+          setPendingUsername("");
+        }}
+      />
+    );
+  }
 
   return (
     <div style={{

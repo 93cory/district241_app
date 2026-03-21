@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/operateur_industriel.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
+import '../widgets/pnpi_toast.dart';
+import '../widgets/validated_field.dart';
+import '../widgets/confirm_dialog.dart';
 
 /// Formulaire de soumission d'un nouvel Agrément Technique Industriel (ATI).
 class SubmitATIScreen extends StatefulWidget {
@@ -96,6 +99,15 @@ class _SubmitATIScreenState extends State<SubmitATIScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedOp == null) return;
 
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title: 'Soumettre cet ATI ?',
+      message: 'Cette action va enregistrer la demande d\'agrement. Voulez-vous continuer ?',
+      confirmLabel: 'Soumettre',
+      icon: Icons.send_rounded,
+    );
+    if (!confirmed) return;
+
     setState(() => _submitting = true);
     try {
       await ApiService.instance.submitATI(
@@ -107,21 +119,11 @@ class _SubmitATIScreenState extends State<SubmitATIScreen> {
         slaDays: _slaDays,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('ATI soumis avec succès'),
-          backgroundColor: Colors.green.shade700,
-        ),
-      );
+      PnpiToast.show(context, message: 'ATI soumis avec succes !', type: ToastType.success);
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Soumission échouée : $e'),
-          backgroundColor: Colors.red.shade700,
-        ),
-      );
+      PnpiToast.show(context, message: 'Soumission echouee : $e', type: ToastType.error);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -177,7 +179,7 @@ class _SubmitATIScreenState extends State<SubmitATIScreen> {
                   _sectionHeader('Opérateur industriel', Icons.business_rounded),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<OperateurIndustriel>(
-                    value: _selectedOp,
+                    initialValue: _selectedOp,
                     isExpanded: true,
                     decoration: _inputDeco('Sélectionner un opérateur'),
                     items: _operateurs.map((op) {
@@ -218,17 +220,13 @@ class _SubmitATIScreenState extends State<SubmitATIScreen> {
                   // Section activité
                   _sectionHeader('Activité demandée', Icons.work_outline),
                   const SizedBox(height: 10),
-                  TextFormField(
+                  ValidatedField(
                     controller: _typeActiviteCtrl,
+                    label: 'Activité industrielle',
+                    hint: 'Décrivez l\'activité industrielle à agréer...',
+                    required: true,
                     maxLines: 3,
-                    decoration: _inputDeco(
-                        'Décrivez l\'activité industrielle à agréer…'),
-                    validator: (v) {
-                      if (v == null || v.trim().length < 10) {
-                        return 'Décrivez l\'activité (min. 10 caractères)';
-                      }
-                      return null;
-                    },
+                    validator: Validators.minLength(10),
                   ),
                   const SizedBox(height: 20),
 

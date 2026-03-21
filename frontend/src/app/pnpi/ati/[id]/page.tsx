@@ -5,6 +5,7 @@ import { fetchBackendProfile } from "../../../../lib/backend";
 import { WorkflowButtons } from "../components/WorkflowButton";
 import { DocumentUpload } from "../components/DocumentUpload";
 import { AssignInstructeur } from "../components/AssignInstructeur";
+import { ResubmitForm } from "./ResubmitForm";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -120,6 +121,7 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
                 <p style={{ margin: 0, fontSize: "0.875rem", color: "#374151" }}>{ati.motif_rejet}</p>
               </div>
             )}
+            {ati.statut === "rejete" && <ResubmitForm atiId={ati.id} motifRejet={ati.motif_rejet} />}
           </div>
 
           {/* QR code if approved */}

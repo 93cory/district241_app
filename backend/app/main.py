@@ -1406,6 +1406,10 @@ def ensure_user_account_security_columns(db: Session) -> None:
 
 
 def initialize_database() -> None:
+    from .validate_env import validate_environment
+    if not validate_environment():
+        import sys
+        sys.exit(1)
     enforce_security_prerequisites()
     # Import all models to ensure they're registered with Base metadata
     from .models import (  # noqa: F401
@@ -1432,12 +1436,20 @@ _sla_logger = logging.getLogger("pnpi.sla")
 
 
 async def _sla_background_loop() -> None:
-    """Verifie les ATIs en retard SLA toutes les heures et log les alertes."""
+    """Verifie les ATIs en retard SLA toutes les heures et log les alertes.
+
+    Escalation levels:
+    - >1x SLA: standard overdue warning (logged)
+    - >1.5x SLA: escalation notification targeting directeur role
+    - >2x SLA: CRITICAL notification targeting ministre role
+    """
     await asyncio.sleep(60)  # attendre 1 minute au demarrage
     while True:
         try:
             from .database import SessionLocal, now_utc
             from .models.pnpi import AgrementTechniqueIndustrielORM
+            from .core.audit import create_system_notification
+            from .core.auth import Role
             from sqlalchemy import select
             _TERMINAL = {"approuve", "rejete", "expire"}
             with SessionLocal() as db:
@@ -1446,11 +1458,57 @@ async def _sla_background_loop() -> None:
                         AgrementTechniqueIndustrielORM.statut.notin_(_TERMINAL)
                     )
                 ).scalars().all()
-                overdue = [
-                    a for a in atis
-                    if max((now_utc().date() - a.date_soumission.date()).days, 0) > a.sla_jours
-                ]
+                overdue = []
+                for a in atis:
+                    age = max((now_utc().date() - a.date_soumission.date()).days, 0)
+                    if age <= a.sla_jours:
+                        continue
+                    overdue.append(a)
+                    ratio = age / a.sla_jours if a.sla_jours > 0 else 999
+                    today_iso = now_utc().date().isoformat()
+
+                    # Level 3: CRITICAL escalation to ministre (>2x SLA)
+                    if ratio > 2:
+                        create_system_notification(
+                            db,
+                            title=f"CRITIQUE — ATI {a.numero_ati} depasse 2x le SLA",
+                            message=(
+                                f"L'ATI {a.numero_ati} ({a.type_activite[:60]}) est en retard "
+                                f"de {age}j pour un SLA de {a.sla_jours}j (ratio {ratio:.1f}x). "
+                                f"Instructeur: {a.instructeur_username or 'non assigne'}. "
+                                f"Action ministerielle requise."
+                            ),
+                            severity="critical",
+                            target_role=Role.ministre,
+                            notification_key=f"sla-critical-ministre:{a.id}:{today_iso}",
+                        )
+                        _sla_logger.warning(
+                            f"[SLA CRITICAL] {a.numero_ati} — {age}j/{a.sla_jours}j "
+                            f"(ratio {ratio:.1f}x) -> escalade ministre"
+                        )
+
+                    # Level 2: Escalation to directeur (>1.5x SLA)
+                    elif ratio > 1.5:
+                        create_system_notification(
+                            db,
+                            title=f"Escalade — ATI {a.numero_ati} depasse 1.5x le SLA",
+                            message=(
+                                f"L'ATI {a.numero_ati} ({a.type_activite[:60]}) est en retard "
+                                f"de {age}j pour un SLA de {a.sla_jours}j (ratio {ratio:.1f}x). "
+                                f"Instructeur: {a.instructeur_username or 'non assigne'}. "
+                                f"Intervention directeur requise."
+                            ),
+                            severity="high",
+                            target_role=Role.directeur,
+                            notification_key=f"sla-escalade-directeur:{a.id}:{today_iso}",
+                        )
+                        _sla_logger.warning(
+                            f"[SLA ESCALADE] {a.numero_ati} — {age}j/{a.sla_jours}j "
+                            f"(ratio {ratio:.1f}x) -> escalade directeur"
+                        )
+
                 if overdue:
+                    db.commit()
                     _sla_logger.warning(
                         f"[SLA ALERT] {len(overdue)} ATI(s) en retard: "
                         + ", ".join(a.numero_ati for a in overdue[:10])
@@ -1577,6 +1635,9 @@ from .routers.operateurs import router as operateurs_router
 from .routers.inspections import router as inspections_router
 from .routers.notifications import router as notifications_router
 from .routers.documents import router as documents_router
+from .routers.geo import router as geo_router
+from .routers.totp import router as totp_router
+from .routers.ws import router as ws_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1590,6 +1651,9 @@ app.include_router(operateurs_router)
 app.include_router(inspections_router)
 app.include_router(notifications_router)
 app.include_router(documents_router)
+app.include_router(geo_router)
+app.include_router(totp_router)
+app.include_router(ws_router)
 
 # ── Fichiers statiques (logo, assets) ────────────────────────────────────────
 _static_dir = os.path.join(os.path.dirname(__file__), "..", "static")

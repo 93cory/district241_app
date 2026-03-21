@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/operateur_industriel.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
+import '../widgets/pnpi_toast.dart';
+import '../widgets/confirm_dialog.dart';
 
 /// Formulaire de saisie d'une nouvelle inspection de conformité industrielle.
 class InspectionCreateScreen extends StatefulWidget {
@@ -111,6 +113,15 @@ class _InspectionCreateScreenState extends State<InspectionCreateScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedOp == null) return;
 
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title: 'Valider cette inspection ?',
+      message: 'Cette action va enregistrer le rapport d\'inspection. Voulez-vous continuer ?',
+      confirmLabel: 'Valider',
+      icon: Icons.assignment_turned_in_rounded,
+    );
+    if (!confirmed) return;
+
     setState(() => _submitting = true);
     try {
       final inspection = await ApiService.instance.createInspection(
@@ -124,21 +135,11 @@ class _InspectionCreateScreenState extends State<InspectionCreateScreen> {
         secteur: _secteur,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Inspection ${inspection.id} enregistrée'),
-          backgroundColor: Colors.green.shade700,
-        ),
-      );
+      PnpiToast.show(context, message: 'Inspection ${inspection.id} enregistree avec succes !', type: ToastType.success);
       Navigator.of(context).pop(inspection);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Enregistrement échoué : $e'),
-          backgroundColor: Colors.red.shade700,
-        ),
-      );
+      PnpiToast.show(context, message: 'Enregistrement echoue : $e', type: ToastType.error);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -331,6 +332,81 @@ class _InspectionCreateScreenState extends State<InspectionCreateScreen> {
                       ],
                     ),
                   ),
+
+                  // ── Photos (placeholder) ────────────────────────────────
+                  _sectionHeader('Photos', Icons.camera_alt_rounded),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.photo_library_outlined,
+                                size: 32, color: Colors.grey.shade400),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '0 photos',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Les photos pourront etre ajoutees apres la creation de l\'inspection, depuis l\'ecran de detail.',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade500,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        // Placeholder grid for photos
+                        Row(
+                          children: List.generate(
+                            3,
+                            (index) => Expanded(
+                              child: Container(
+                                margin: EdgeInsets.only(
+                                    right: index < 2 ? 8 : 0),
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
+                                    style: BorderStyle.solid,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.add_a_photo_outlined,
+                                  size: 20,
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
                   // ── Récapitulatif ─────────────────────────────────────────
                   if (_selectedOp != null)

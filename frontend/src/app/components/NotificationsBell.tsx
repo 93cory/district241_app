@@ -56,6 +56,8 @@ export function NotificationsBell() {
       <button
         onClick={() => setOpen(o => !o)}
         title="Notifications"
+        aria-label={`Notifications${unread > 0 ? `, ${unread} non lues` : ''}`}
+        aria-expanded={open}
         style={{
           position: "relative", background: "none", border: "none", cursor: "pointer",
           padding: "0.25rem 0.35rem", borderRadius: "6px", lineHeight: 1,

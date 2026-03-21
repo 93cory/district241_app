@@ -4,6 +4,7 @@ import '../models/forecast_point.dart';
 import '../models/sector_indicator.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
+import '../widgets/skeleton_loader.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/section_title.dart';
 import 'pitch_screen.dart';
@@ -43,7 +44,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const SkeletonDashboard();
         }
         if (!snapshot.hasData) {
           return const Center(child: Text('Impossible de charger le dashboard'));

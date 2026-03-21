@@ -29,7 +29,9 @@ class MetricCard extends StatelessWidget {
       end: Alignment.bottomRight,
     );
 
-    return Container(
+    return Semantics(
+      label: '$label: $value${footnote.isNotEmpty ? ', $footnote' : ''}',
+      child: Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: gradient,
@@ -81,6 +83,7 @@ class MetricCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
       ),
     );
   }

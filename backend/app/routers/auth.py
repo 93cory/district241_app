@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from typing import Dict
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+import pyotp
 
 from ..core.auth import (
     User,
@@ -19,6 +20,9 @@ from ..core.auth import (
     token_digest,
     fake_users_db,
     user_from_row,
+    verify_password,
+    get_password_hash,
+    validate_password_policy,
 )
 from ..core.audit import write_audit_event
 from ..database import get_db, now_utc, as_utc
@@ -40,12 +44,12 @@ def get_client_ip(request: Request) -> str:
 router = APIRouter(tags=["Authentification"])
 
 
-@router.post("/auth/token", response_model=Token)
+@router.post("/auth/token")
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
-) -> Token:
+):
     from ..main import enforce_rate_limit, log_action, AUTH_RATE_LIMIT_MAX_REQUESTS
 
     client_ip = get_client_ip(request)
@@ -56,6 +60,12 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=error_detail or "Identifiants invalides.",
         )
+
+    # Check if user has 2FA enabled — if so, require TOTP verification
+    row = db.get(UserAccountORM, user.username)
+    if row and row.totp_enabled:
+        return {"requires_2fa": True, "username": user.username, "message": "Code 2FA requis."}
+
     access_token = create_access_token(
         {"sub": user.username, "roles": [role.value for role in user.roles]}
     )
@@ -72,9 +82,62 @@ async def login(
     return Token(access_token=access_token, refresh_token=refresh_token)
 
 
-@router.get("/auth/me", response_model=User)
-async def read_current_user(current_user: User = Depends(get_current_user)) -> User:
-    return current_user
+@router.post("/auth/token/2fa", response_model=Token)
+async def login_with_2fa(
+    request: Request,
+    username: str = Form(...),
+    totp_code: str = Form(...),
+    db: Session = Depends(get_db),
+) -> Token:
+    from ..main import enforce_rate_limit, log_action, AUTH_RATE_LIMIT_MAX_REQUESTS
+
+    client_ip = get_client_ip(request)
+    enforce_rate_limit(key=f"auth:token2fa:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+
+    row = db.get(UserAccountORM, username)
+    if not row or not row.totp_enabled or not row.totp_secret:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Utilisateur invalide ou 2FA non activee.",
+        )
+
+    totp = pyotp.TOTP(row.totp_secret)
+    if not totp.verify(totp_code, valid_window=1):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Code 2FA invalide.",
+        )
+
+    user = user_from_row(row)
+    access_token = create_access_token(
+        {"sub": user.username, "roles": [role.value for role in user.roles]}
+    )
+    refresh_token = issue_refresh_token(db, username=user.username, client_ip=client_ip)
+    write_audit_event(
+        db,
+        actor=user.username,
+        action="auth.login_2fa",
+        target=user.username,
+        details=f"Connexion 2FA reussie (ip={client_ip})",
+    )
+    db.commit()
+    log_action(user.username, "connexion_2fa", "Authentification 2FA reussie")
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.get("/auth/me")
+async def read_current_user(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    row = db.get(UserAccountORM, current_user.username)
+    totp_enabled = bool(row and row.totp_enabled)
+    return {
+        "username": current_user.username,
+        "full_name": current_user.full_name,
+        "roles": [r.value for r in current_user.roles],
+        "totp_enabled": totp_enabled,
+    }
 
 
 @router.post("/auth/refresh", response_model=Token)
@@ -154,3 +217,36 @@ async def logout(
     )
     db.commit()
     return {"status": "ok"}
+
+
+@router.post("/auth/change-password")
+async def change_password(
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    row = db.get(UserAccountORM, current_user.username)
+    if not row:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable.")
+
+    if not verify_password(current_password, row.hashed_password):
+        raise HTTPException(status_code=401, detail="Mot de passe actuel incorrect.")
+
+    policy_error = validate_password_policy(new_password)
+    if policy_error:
+        raise HTTPException(status_code=400, detail=policy_error)
+
+    row.hashed_password = get_password_hash(new_password)
+    row.password_updated_at = now_utc()
+
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="password_change",
+        target=current_user.username,
+        details="Password changed successfully",
+    )
+    db.commit()
+
+    return {"message": "Mot de passe modifie avec succes."}

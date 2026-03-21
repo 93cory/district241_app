@@ -370,10 +370,12 @@ export const fetchPNPIATIs = (params?: { statut?: string; secteur?: string; prov
 };
 export const fetchPNPIATI = (id: string): Promise<ATIRead> => request(`/pnpi/ati/${encodeURIComponent(id)}`);
 export const fetchPNPIATIHistorique = (id: string): Promise<ATITransitionRead[]> => request(`/pnpi/ati/${encodeURIComponent(id)}/historique`);
-export const fetchPNPIOperateurs = (params?: { secteur?: string; province?: string }): Promise<OperateurBrief[]> => {
+export const fetchPNPIOperateurs = (params?: { secteur?: string; province?: string; skip?: number; limit?: number }): Promise<OperateurBrief[]> => {
   const qs = new URLSearchParams();
   if (params?.secteur) qs.set("secteur", params.secteur);
   if (params?.province) qs.set("province", params.province);
+  if (params?.skip) qs.set("skip", String(params.skip));
+  if (params?.limit) qs.set("limit", String(params.limit));
   const q = qs.toString();
   return request(`/pnpi/operateurs${q ? "?" + q : ""}`);
 };
@@ -465,10 +467,19 @@ export interface PNPIHistoriqueEntry {
   changed_at: string;
 }
 
-export const fetchPNPIHistorique = (params?: { changed_by?: string; limit?: number }): Promise<PNPIHistoriqueEntry[]> => {
+export const fetchPNPIHistorique = (params?: {
+  changed_by?: string;
+  limit?: number;
+  date_from?: string;
+  date_to?: string;
+  ati_numero?: string;
+}): Promise<PNPIHistoriqueEntry[]> => {
   const qs = new URLSearchParams();
   if (params?.changed_by) qs.set("changed_by", params.changed_by);
   if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.date_from) qs.set("date_from", params.date_from);
+  if (params?.date_to) qs.set("date_to", params.date_to);
+  if (params?.ati_numero) qs.set("ati_numero", params.ati_numero);
   const q = qs.toString();
   return request(`/pnpi/historique${q ? "?" + q : ""}`);
 };
