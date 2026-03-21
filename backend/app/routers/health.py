@@ -6,10 +6,11 @@ import time
 from typing import Dict
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select, text
 
+from ..core.analytics import get_usage_stats
 from ..core.auth import Role, User, require_roles
 from ..core.audit import write_audit_event
 from ..database import get_db, now_utc
@@ -207,3 +208,12 @@ async def ops_alerts_check(
     )
     db.commit()
     return {"payload": payload, "webhook": webhook_result}
+
+
+@router.get("/analytics/usage")
+async def usage_analytics(
+    days: int = Query(default=30, ge=1, le=365),
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
+    db: Session = Depends(get_db),
+) -> dict:
+    return get_usage_stats(db, days=days)

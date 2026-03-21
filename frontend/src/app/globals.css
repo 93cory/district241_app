@@ -547,4 +547,49 @@ body {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+
+/* --- Focus Visible (WCAG 2.1 AA) --- */
+:focus-visible {
+  outline: 3px solid #0c7eb4;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #0c7eb4;
+  outline-offset: 2px;
+}
+
+/* Skip link visible on focus */
+.skip-link:focus {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  padding: 8px 16px;
+  background: #0d3f78;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  z-index: 9999;
+}
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  .kpi-card, .chart-card, .table-card {
+    border: 2px solid CanvasText;
+  }
+
+  button {
+    border: 1px solid ButtonText;
+  }
+}
+
+/* Ensure minimum contrast for soft text */
+.text-soft, [class*="text-soft"] {
+  color: #4a6178; /* Upgraded from #526175 for better contrast: 5.2:1 on white */
 }

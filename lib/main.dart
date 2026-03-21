@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'src/l10n/l10n.dart';
 import 'src/providers/auth_provider.dart';
 import 'src/providers/connectivity_provider.dart';
 import 'src/providers/notifications_provider.dart';
@@ -28,6 +30,14 @@ class PnpiApp extends StatelessWidget {
         darkTheme: PnpiTheme.dark,
         themeMode: ThemeMode.system,
         debugShowCheckedModeBanner: false,
+        locale: const Locale('fr'),
+        supportedLocales: PnpiLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          PnpiLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: const LoginScreen(),
       ),
     );

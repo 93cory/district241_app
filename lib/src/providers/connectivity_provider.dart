@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../services/offline_queue.dart';
 
 class ConnectivityProvider extends ChangeNotifier {
   bool _isOnline = true;
@@ -26,8 +27,13 @@ class ConnectivityProvider extends ChangeNotifier {
 
   void _setOnline(bool value) {
     if (_isOnline != value) {
+      final wasOffline = !_isOnline;
       _isOnline = value;
       notifyListeners();
+      // Auto-sync queued actions when coming back online
+      if (_isOnline && wasOffline) {
+        OfflineQueue.instance.syncAll();
+      }
     }
   }
 

@@ -138,6 +138,7 @@ class PnpiTheme {
       ),
       elevation: 4,
     ),
+    focusColor: PnpiColors.oceanPulse.withValues(alpha: 0.4),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       color: PnpiColors.lagoon,
@@ -198,6 +199,7 @@ class PnpiTheme {
       ),
       elevation: 4,
     ),
+    focusColor: PnpiColors.oceanPulse.withValues(alpha: 0.3),
     visualDensity: VisualDensity.adaptivePlatformDensity,
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       color: PnpiColors.lagoon,
