@@ -1651,6 +1651,9 @@ from .routers.geo import router as geo_router
 from .routers.totp import router as totp_router
 from .routers.ws import router as ws_router
 from .routers.integration import router as integration_router
+from .routers.messages import router as messages_router
+from .routers.calendar import router as calendar_router
+from .routers.reports import router as reports_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1668,6 +1671,9 @@ app.include_router(geo_router)
 app.include_router(totp_router)
 app.include_router(ws_router)
 app.include_router(integration_router)
+app.include_router(messages_router)
+app.include_router(calendar_router)
+app.include_router(reports_router)
 
 @app.get("/metrics", include_in_schema=False)
 async def prometheus_metrics():

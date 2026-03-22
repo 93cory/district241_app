@@ -1,16 +1,17 @@
 """PNPI / PNPI — Endpoints d'administration (utilisateurs, notifications)."""
 from __future__ import annotations
 
-from typing import List
+from datetime import datetime as dt, timezone
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from ..core.auth import Role, User, require_roles, get_password_hash, validate_password_policy, roles_to_csv, csv_to_roles
 from ..core.audit import write_audit_event
 from ..database import get_db, now_utc
-from ..models.core import NotificationORM, UserAccountORM
+from ..models.core import AuditEventORM, NotificationORM, UserAccountORM
 
 
 router = APIRouter(tags=["Administration"])
@@ -296,4 +297,56 @@ async def bulk_import_users(
         "errors": len(errors),
         "created_users": created,
         "error_details": errors,
+    }
+
+
+@router.get("/admin/audit-logs")
+async def search_audit_logs(
+    actor: Optional[str] = Query(None),
+    action: Optional[str] = Query(None),
+    target: Optional[str] = Query(None),
+    date_start: Optional[str] = Query(None),
+    date_end: Optional[str] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    _: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Search and filter audit log events."""
+    query = select(AuditEventORM)
+
+    if actor:
+        query = query.where(AuditEventORM.actor.ilike(f"%{actor}%"))
+    if action:
+        query = query.where(AuditEventORM.action.ilike(f"%{action}%"))
+    if target:
+        query = query.where(AuditEventORM.target.ilike(f"%{target}%"))
+    if date_start:
+        start = dt.fromisoformat(date_start).replace(tzinfo=timezone.utc)
+        query = query.where(AuditEventORM.timestamp >= start)
+    if date_end:
+        end = dt.fromisoformat(date_end).replace(tzinfo=timezone.utc)
+        query = query.where(AuditEventORM.timestamp <= end)
+
+    total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
+
+    events = db.execute(
+        query.order_by(AuditEventORM.timestamp.desc()).offset(skip).limit(limit)
+    ).scalars().all()
+
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "events": [
+            {
+                "id": e.id,
+                "actor": e.actor,
+                "action": e.action,
+                "target": e.target,
+                "details": e.details,
+                "created_at": e.timestamp.isoformat(),
+            }
+            for e in events
+        ],
     }

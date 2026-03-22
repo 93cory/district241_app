@@ -33,6 +33,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pilotage", "Pilotage PNPI");
     add("/briefing", "Briefing PNPI");
     add("/pnpi/dashboard-config", "Config Dashboard");
+    add("/pnpi/calendar", "Calendrier");
+    add("/pnpi/reports", "Rapports");
+    add("/admin/audit-log", "Audit");
   }
 
   if (hasRole(roles, "ministre")) {
@@ -45,6 +48,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/impact", "Impact");
     add("/pilotage", "Pilotage");
     add("/pnpi/dashboard-config", "Config Dashboard");
+    add("/pnpi/calendar", "Calendrier");
+    add("/pnpi/reports", "Rapports");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -57,6 +62,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/comparison", "Comparaison");
     add("/pnpi/impact", "Impact");
     add("/pnpi/dashboard-config", "Config Dashboard");
+    add("/pnpi/calendar", "Calendrier");
+    add("/pnpi/reports", "Rapports");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -65,6 +72,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/ati", "File ATI");
     add("/pnpi/operateurs", "Opérateurs");
     add("/pnpi/stats", "Statistiques");
+    add("/pnpi/calendar", "Calendrier");
   }
 
   if (hasRole(roles, "operateur")) {
@@ -78,9 +86,11 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/inspections", "Inspections");
     add("/pnpi/ati", "Dossiers ATI");
     add("/pnpi/operateurs", "Opérateurs");
+    add("/pnpi/calendar", "Calendrier");
   }
 
   if (links.length > 0) {
+    add("/pnpi/messages", "Messages");
     add("/profil", "Mon profil");
   }
 
