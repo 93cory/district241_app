@@ -64,6 +64,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/embed", "Widgets");
     add("/admin/scheduled-reports", "Rapports auto");
     add("/api-docs", "API Docs");
+    add("/kiosk", "Kiosque");
   }
 
   if (hasRole(roles, "ministre")) {
@@ -92,6 +93,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
     add("/pnpi/economic-impact", "Impact eco.");
+    add("/kiosk", "Kiosque");
   }
 
   if (hasRole(roles, "directeur")) {

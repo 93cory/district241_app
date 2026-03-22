@@ -7,6 +7,8 @@ import { ChangePasswordForm } from "./ChangePasswordForm";
 import { NotificationPreferences } from "./NotificationPreferences";
 import { PushNotifications } from "../components/PushNotifications";
 import { LoginHistory } from "./LoginHistory";
+import { DailyDigest } from "./DailyDigest";
+import { Badges } from "./Badges";
 
 const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   admin: { label: "Administrateur", color: "#7c3aed", bg: "#f5f3ff" },
@@ -42,6 +44,20 @@ export default async function ProfilPage() {
     <section className="section">
       <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem" }}>
         <Link href={((profile.roles ?? []).includes("inspecteur") ? "/inspecteur" : "/pnpi")} style={{ color: "#6b7280", textDecoration: "none" }}>← Retour</Link>
+      </div>
+
+      {/* Daily Digest + Badges */}
+      <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+        <div style={{ flex: "1 1 380px" }}>
+          <div className="chart-card" style={{ padding: "1.5rem" }}>
+            <DailyDigest />
+          </div>
+        </div>
+        <div style={{ flex: "1 1 380px" }}>
+          <div className="chart-card" style={{ padding: "1.5rem" }}>
+            <Badges />
+          </div>
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>

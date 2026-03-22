@@ -26,6 +26,8 @@ from ..core.auth import (
     validate_password_policy,
 )
 from ..core.audit import write_audit_event
+from ..core.digest import generate_daily_digest
+from ..core.badges import compute_badges
 from ..database import get_db, now_utc, as_utc
 from ..config import settings
 from ..models.core import LoginHistoryORM, RefreshTokenORM, UserAccountORM
@@ -347,3 +349,21 @@ async def update_preferences(
 
     db.commit()
     return {"status": "ok", "message": "Preferences mises a jour."}
+
+
+@router.get("/auth/me/digest")
+async def get_my_digest(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return generate_daily_digest(db, current_user.username, [r.value for r in current_user.roles])
+
+
+@router.get("/auth/me/badges")
+async def get_my_badges(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    badges = compute_badges(db, current_user.username)
+    earned_count = sum(1 for b in badges if b["earned"])
+    return {"badges": badges, "earned": earned_count, "total": len(badges)}
