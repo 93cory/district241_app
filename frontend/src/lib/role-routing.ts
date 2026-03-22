@@ -92,6 +92,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
   if (links.length > 0) {
     add("/pnpi/messages", "Messages");
     add("/profil", "Mon profil");
+    add("/aide", "Aide");
   }
 
   if (!links.length) {

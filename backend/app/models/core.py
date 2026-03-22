@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -132,6 +132,19 @@ class NotificationPreferenceORM(Base):
     email_inspection: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     email_weekly_briefing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     push_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class LoginHistoryORM(Base):
+    __tablename__ = "login_history"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False, index=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    method: Mapped[str] = mapped_column(String(20), nullable=False, server_default="password")
+    success: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    failure_reason: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class RefreshTokenORM(Base):

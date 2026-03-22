@@ -1,9 +1,10 @@
 """PNPI / PNPI — Endpoints d'authentification."""
 from __future__ import annotations
 
+import uuid
 from typing import Dict
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -27,7 +28,7 @@ from ..core.auth import (
 from ..core.audit import write_audit_event
 from ..database import get_db, now_utc, as_utc
 from ..config import settings
-from ..models.core import RefreshTokenORM, UserAccountORM
+from ..models.core import LoginHistoryORM, RefreshTokenORM, UserAccountORM
 
 
 def get_client_ip(request: Request) -> str:
@@ -56,6 +57,17 @@ async def login(
     enforce_rate_limit(key=f"auth:token:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
     user, error_detail = authenticate_user(db, form_data.username, form_data.password)
     if not user:
+        failed_record = LoginHistoryORM(
+            id=str(uuid.uuid4()),
+            username=form_data.username,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent", "")[:500],
+            method="password",
+            success=False,
+            failure_reason="Invalid credentials",
+        )
+        db.add(failed_record)
+        db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=error_detail or "Identifiants invalides.",
@@ -70,6 +82,15 @@ async def login(
         {"sub": user.username, "roles": [role.value for role in user.roles]}
     )
     refresh_token = issue_refresh_token(db, username=user.username, client_ip=client_ip)
+    login_record = LoginHistoryORM(
+        id=str(uuid.uuid4()),
+        username=user.username,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent", "")[:500],
+        method="password",
+        success=True,
+    )
+    db.add(login_record)
     write_audit_event(
         db,
         actor=user.username,
@@ -250,6 +271,35 @@ async def change_password(
     db.commit()
 
     return {"message": "Mot de passe modifie avec succes."}
+
+
+@router.get("/auth/me/login-history")
+async def get_login_history(
+    limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    records = db.execute(
+        select(LoginHistoryORM)
+        .where(LoginHistoryORM.username == current_user.username)
+        .order_by(LoginHistoryORM.created_at.desc())
+        .limit(limit)
+    ).scalars().all()
+
+    return {
+        "history": [
+            {
+                "id": r.id,
+                "ip_address": r.ip_address,
+                "user_agent": r.user_agent,
+                "method": r.method,
+                "success": r.success,
+                "failure_reason": r.failure_reason,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in records
+        ]
+    }
 
 
 @router.get("/auth/me/preferences")
