@@ -152,6 +152,17 @@ class UserFavoriteORM(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ATICommentORM(Base):
+    __tablename__ = "ati_comments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    ati_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    author_username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    is_internal: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class DocumentDossierORM(Base):
     __tablename__ = "documents_dossier"
 

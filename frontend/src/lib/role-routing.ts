@@ -36,7 +36,10 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/dashboard-config", "Config Dashboard");
     add("/pnpi/calendar", "Calendrier");
     add("/pnpi/reports", "Rapports");
+    add("/pnpi/search", "Recherche");
+    add("/pnpi/presentation", "Presentation");
     add("/admin/audit-log", "Audit");
+    add("/pnpi/kanban", "Kanban");
     add("/changelog", "Changelog");
   }
 
@@ -50,9 +53,12 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/comparison", "Comparaison");
     add("/pnpi/impact", "Impact");
     add("/pilotage", "Pilotage");
+    add("/pnpi/search", "Recherche");
+    add("/pnpi/presentation", "Presentation");
     add("/pnpi/dashboard-config", "Config Dashboard");
     add("/pnpi/calendar", "Calendrier");
     add("/pnpi/reports", "Rapports");
+    add("/pnpi/kanban", "Kanban");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -65,9 +71,12 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/stats", "Statistiques");
     add("/pnpi/comparison", "Comparaison");
     add("/pnpi/impact", "Impact");
+    add("/pnpi/search", "Recherche");
+    add("/pnpi/presentation", "Presentation");
     add("/pnpi/dashboard-config", "Config Dashboard");
     add("/pnpi/calendar", "Calendrier");
     add("/pnpi/reports", "Rapports");
+    add("/pnpi/kanban", "Kanban");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -76,7 +85,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/ati", "File ATI");
     add("/pnpi/operateurs", "Opérateurs");
     add("/pnpi/stats", "Statistiques");
+    add("/pnpi/search", "Recherche");
     add("/pnpi/calendar", "Calendrier");
+    add("/pnpi/kanban", "Kanban");
   }
 
   if (hasRole(roles, "operateur")) {

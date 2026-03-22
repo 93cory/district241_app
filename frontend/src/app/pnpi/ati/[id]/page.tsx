@@ -7,6 +7,7 @@ import { DocumentUpload } from "../components/DocumentUpload";
 import { AssignInstructeur } from "../components/AssignInstructeur";
 import { ResubmitForm } from "./ResubmitForm";
 import { ATITimeline } from "./ATITimeline";
+import { ATIComments } from "./Comments";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -206,6 +207,11 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
       {/* Documents section */}
       <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
         <DocumentUpload atiId={ati.id} initialDocs={documents} />
+      </div>
+
+      {/* Comments / Annotations */}
+      <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+        <ATIComments atiId={ati.id} />
       </div>
     </section>
   );

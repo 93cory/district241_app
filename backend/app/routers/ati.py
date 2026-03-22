@@ -11,11 +11,12 @@ from fastapi.responses import Response as FastAPIResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from ..core.auth import Role, User, require_roles
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
+    ATICommentORM,
     ATITransitionORM,
     InspectionConformiteORM,
     OperateurIndustrielORM,
@@ -943,3 +944,129 @@ async def toggle_favorite(
     db.add(fav)
     db.commit()
     return {"status": "added", "ati_id": ati_id, "id": fav.id}
+
+
+# ─── ATI Comments / Annotations ─────────────────────────────────────────
+
+
+@router.get("/ati/{ati_id}/comments", summary="Commentaires d'un ATI")
+async def get_ati_comments(
+    ati_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    query = select(ATICommentORM).where(ATICommentORM.ati_id == ati_id)
+    # Operators only see non-internal comments
+    user_roles = set(current_user.roles)
+    if user_roles == {"operateur"}:
+        query = query.where(ATICommentORM.is_internal.is_(False))
+
+    comments = db.execute(query.order_by(ATICommentORM.created_at.asc())).scalars().all()
+    return {
+        "comments": [
+            {
+                "id": c.id,
+                "author": c.author_username,
+                "body": c.body,
+                "is_internal": c.is_internal,
+                "created_at": c.created_at.isoformat(),
+            }
+            for c in comments
+        ]
+    }
+
+
+@router.post("/ati/{ati_id}/comments", summary="Ajouter un commentaire a un ATI")
+async def add_ati_comment(
+    ati_id: str,
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    body = (data.get("body") or "").strip()
+    if not body:
+        raise HTTPException(400, "Le commentaire ne peut pas etre vide.")
+
+    is_internal = bool(data.get("is_internal", False))
+    # Only staff can post internal comments
+    if is_internal and set(current_user.roles) == {"operateur"}:
+        is_internal = False
+
+    comment = ATICommentORM(
+        id=str(uuid.uuid4()),
+        ati_id=ati_id,
+        author_username=current_user.username,
+        body=body,
+        is_internal=is_internal,
+    )
+    db.add(comment)
+    db.commit()
+
+    return {"status": "ok", "id": comment.id}
+
+
+# ─── Kanban transition endpoint ──────────────────────────────────────────
+
+
+@router.post("/ati/{ati_id}/transition", summary="Changer le statut d'un ATI (Kanban)",
+             description="Endpoint simplifie pour le drag-and-drop Kanban. Effectue une transition de statut.")
+async def transition_ati_kanban(
+    ati_id: str,
+    data: dict,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur, Role.ministre)),
+    db: Session = Depends(get_db),
+):
+    new_statut = data.get("new_statut")
+    if not new_statut:
+        raise HTTPException(400, "new_statut est requis.")
+
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+
+    prev_statut = ati.statut
+    allowed = _STATUT_TRANSITIONS.get(ati.statut, set())
+    if new_statut not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Transition invalide: {ati.statut} -> {new_statut}. Transitions autorisees: {', '.join(allowed) or 'aucune'}",
+        )
+
+    now = now_utc()
+    ati.statut = new_statut
+    ati.updated_at = now
+
+    # Handle approval
+    if new_statut == "approuve" and not ati.date_decision:
+        ati.date_decision = now
+        ati.date_expiration = now + timedelta(days=3 * 365)
+        ati.qr_code_data = (
+            f"PNPI-QR|{ati.numero_ati}|{ati.operateur_id}|"
+            f"{ati.date_decision.date().isoformat()}|{ati.date_expiration.date().isoformat()}"
+        )
+
+    # Handle rejection
+    if new_statut == "rejete" and not ati.date_decision:
+        ati.date_decision = now
+
+    transition = ATITransitionORM(
+        id=f"TR-{uuid.uuid4().hex[:10].upper()}",
+        ati_id=ati.id,
+        changed_by=current_user.username,
+        previous_statut=prev_statut,
+        new_statut=new_statut,
+        note=data.get("note", "Transition via Kanban"),
+        changed_at=now,
+    )
+    db.add(transition)
+
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="ati.transition_kanban",
+        target=ati_id,
+        details=f"statut:{prev_statut}->{new_statut}",
+    )
+    db.commit()
+
+    return {"status": "ok", "previous": prev_statut, "new": new_statut}

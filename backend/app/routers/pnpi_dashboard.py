@@ -787,3 +787,107 @@ async def period_comparison(
         "period2": {"start": period2_start, "end": period2_end, "stats": p2},
         "deltas_pct": deltas,
     }
+
+
+@router.get("/dashboard/search/advanced")
+async def advanced_search(
+    q: str = Query("", min_length=1),
+    type: Optional[str] = Query(None, description="ati|operateur|inspection|all"),
+    statut: Optional[str] = Query(None),
+    secteur: Optional[str] = Query(None),
+    date_start: Optional[str] = Query(None),
+    date_end: Optional[str] = Query(None),
+    limit: int = Query(20, ge=1, le=50),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    """Advanced full-text search across ATIs, operators, and inspections."""
+    from datetime import datetime as dt, timezone
+
+    results = []
+    search_term = q.lower().strip()
+    search_types = [type] if type and type != "all" else ["ati", "operateur", "inspection"]
+
+    if "ati" in search_types:
+        query = select(AgrementTechniqueIndustrielORM)
+        atis = db.execute(query).scalars().all()
+        for ati in atis:
+            op = ati.operateur
+            searchable = " ".join(filter(None, [
+                ati.numero_ati,
+                ati.type_activite,
+                ati.secteur,
+                ati.observations if hasattr(ati, 'observations') else "",
+                op.raison_sociale if op else "",
+                op.nif_gabon if op else "",
+            ])).lower()
+
+            if search_term in searchable:
+                if statut and ati.statut != statut:
+                    continue
+                if secteur and ati.secteur != secteur:
+                    continue
+                results.append({
+                    "type": "ati",
+                    "id": ati.id,
+                    "title": f"ATI {ati.numero_ati}",
+                    "subtitle": f"{op.raison_sociale if op else 'Inconnu'} — {ati.secteur}",
+                    "statut": ati.statut,
+                    "date": ati.date_soumission.isoformat(),
+                    "link": f"/pnpi/ati/{ati.id}",
+                    "relevance": searchable.count(search_term),
+                })
+
+    if "operateur" in search_types:
+        ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
+        for op in ops:
+            searchable = " ".join(filter(None, [
+                op.raison_sociale, op.nif_gabon, op.secteur,
+                op.province, op.ville, op.email,
+            ])).lower()
+
+            if search_term in searchable:
+                if secteur and op.secteur != secteur:
+                    continue
+                results.append({
+                    "type": "operateur",
+                    "id": op.id,
+                    "title": op.raison_sociale,
+                    "subtitle": f"{op.secteur} — {op.province or ''}".replace("_", " ").title(),
+                    "statut": "actif" if op.is_active else "inactif",
+                    "date": None,
+                    "link": f"/pnpi/operateurs/{op.id}",
+                    "relevance": searchable.count(search_term),
+                })
+
+    if "inspection" in search_types:
+        inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
+        for insp in inspections:
+            op = insp.operateur
+            searchable = " ".join(filter(None, [
+                insp.observations or "",
+                insp.inspecteur_username,
+                op.raison_sociale if op else "",
+                insp.statut_conformite,
+            ])).lower()
+
+            if search_term in searchable:
+                results.append({
+                    "type": "inspection",
+                    "id": insp.id,
+                    "title": f"Inspection — {insp.statut_conformite}",
+                    "subtitle": f"{op.raison_sociale if op else 'Inconnu'} — {insp.inspecteur_username}",
+                    "statut": insp.statut_conformite,
+                    "date": insp.date_inspection.isoformat(),
+                    "link": f"/pnpi/inspections/{insp.id}",
+                    "relevance": searchable.count(search_term),
+                })
+
+    # Sort by relevance
+    results.sort(key=lambda r: r["relevance"], reverse=True)
+
+    return {
+        "query": q,
+        "total": len(results),
+        "results": results[:limit],
+    }
