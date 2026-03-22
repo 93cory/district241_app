@@ -1312,3 +1312,87 @@ async def annual_report(
         "sectors": [{"secteur": k, "count": v} for k, v in sorted(sector_counts.items(), key=lambda x: -x[1])],
         "provinces": [{"province": k.replace("_", " ").title(), "count": v} for k, v in sorted(province_counts.items(), key=lambda x: -x[1])],
     }
+
+
+@router.get("/dashboard/province-benchmark")
+async def province_benchmark(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Compare performance metrics across all provinces."""
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
+    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    now = now_utc()
+
+    provinces: dict = defaultdict(lambda: {
+        "operateurs": 0, "atis": 0, "approuves": 0, "rejetes": 0,
+        "en_cours": 0, "inspections": 0, "conformes": 0,
+        "total_days": 0, "decided": 0, "overdue": 0,
+    })
+
+    for op in all_ops:
+        prov = op.province or "inconnu"
+        provinces[prov]["operateurs"] += 1
+
+    for ati in all_atis:
+        prov = ati.operateur.province if ati.operateur else "inconnu"
+        p = provinces[prov]
+        p["atis"] += 1
+        if ati.statut == "approuve":
+            p["approuves"] += 1
+        elif ati.statut == "rejete":
+            p["rejetes"] += 1
+        elif ati.statut not in ("expire",):
+            p["en_cours"] += 1
+
+        if ati.statut in ("approuve", "rejete") and ati.date_decision:
+            days = (ati.date_decision.date() - ati.date_soumission.date()).days
+            p["total_days"] += days
+            p["decided"] += 1
+
+        if ati.statut not in ("approuve", "rejete", "expire"):
+            age = (now.date() - ati.date_soumission.date()).days
+            if age > ati.sla_jours:
+                p["overdue"] += 1
+
+    for insp in all_insp:
+        prov = insp.operateur.province if insp.operateur else "inconnu"
+        provinces[prov]["inspections"] += 1
+        if insp.statut_conformite == "conforme":
+            provinces[prov]["conformes"] += 1
+
+    result = []
+    for prov, m in sorted(provinces.items()):
+        avg_days = round(m["total_days"] / m["decided"], 1) if m["decided"] else 0
+        approval_rate = round(m["approuves"] / max(m["decided"], 1) * 100, 1)
+        conformity_rate = round(m["conformes"] / max(m["inspections"], 1) * 100, 1)
+
+        # Score composite (0-100)
+        score = round(
+            approval_rate * 0.3 +
+            conformity_rate * 0.3 +
+            max(0, (1 - m["overdue"] / max(m["en_cours"], 1)) * 100) * 0.2 +
+            min(m["operateurs"] / 5, 1) * 100 * 0.1 +
+            min(m["atis"] / 10, 1) * 100 * 0.1
+        , 1)
+
+        result.append({
+            "province": prov,
+            "label": prov.replace("_", " ").title(),
+            "operateurs": m["operateurs"],
+            "atis": m["atis"],
+            "approuves": m["approuves"],
+            "rejetes": m["rejetes"],
+            "en_cours": m["en_cours"],
+            "overdue": m["overdue"],
+            "inspections": m["inspections"],
+            "conformes": m["conformes"],
+            "avg_days": avg_days,
+            "approval_rate": approval_rate,
+            "conformity_rate": conformity_rate,
+            "score": score,
+        })
+
+    result.sort(key=lambda r: r["score"], reverse=True)
+    return {"provinces": result}

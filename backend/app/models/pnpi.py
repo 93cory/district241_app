@@ -225,3 +225,15 @@ class StickyNoteORM(Base):
     is_pinned: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class OperatorFeedbackORM(Base):
+    __tablename__ = "operator_feedback"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    ati_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    category: Mapped[str] = mapped_column(String(30), nullable=False, server_default="general")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

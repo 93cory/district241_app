@@ -27,6 +27,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
 
   if (hasRole(roles, "admin")) {
     add("/pnpi", "Dashboard PNPI");
+    add("/pnpi/executive", "Synthese");
     add("/pnpi/live", "Temps reel");
     add("/pnpi/stats", "Statistiques PNPI");
     add("/pnpi/briefing", "Briefing PNPI");
@@ -52,10 +53,12 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/changelog", "Changelog");
     add("/pnpi/annual-report", "Bilan annuel");
     add("/pnpi/objectives", "Objectifs");
+    add("/pnpi/benchmark", "Benchmark");
   }
 
   if (hasRole(roles, "ministre")) {
     add("/pnpi", "Dashboard Ministériel");
+    add("/pnpi/executive", "Synthese");
     add("/pnpi/live", "Temps reel");
     add("/pnpi/ati", "Agréments ATI");
     add("/pnpi/operateurs", "Opérateurs");
@@ -76,10 +79,12 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/predictions", "Predictions");
     add("/pnpi/advanced-stats", "Stats+");
     add("/pnpi/annual-report", "Bilan annuel");
+    add("/pnpi/benchmark", "Benchmark");
   }
 
   if (hasRole(roles, "directeur")) {
     add("/pnpi", "Dashboard PNPI");
+    add("/pnpi/executive", "Synthese");
     add("/pnpi/live", "Temps reel");
     add("/pnpi/mes-dossiers", "Mes Dossiers");
     add("/pnpi/ati", "Agréments ATI");
@@ -103,6 +108,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/admin/raci", "RACI");
     add("/pnpi/annual-report", "Bilan annuel");
     add("/pnpi/objectives", "Objectifs");
+    add("/pnpi/benchmark", "Benchmark");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -140,6 +146,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/favorites", "Favoris");
     add("/pnpi/messages", "Messages");
     add("/profil", "Mon profil");
+    add("/pnpi/feedback", "Feedback");
     add("/aide", "Aide");
   }
 

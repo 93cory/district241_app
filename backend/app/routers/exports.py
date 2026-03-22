@@ -8,6 +8,8 @@ import zipfile
 from datetime import date
 from typing import List, Optional
 
+import qrcode
+
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
@@ -1021,6 +1023,102 @@ async def verify_document_signature(
 
     result = verify_signature(signature_data, bytes.fromhex("00"))  # Placeholder
     return result
+
+
+@router.get("/exports/batch-qr.pdf")
+async def export_batch_qr_pdf(
+    statut: str = Query("approuve"),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Generate a PDF with QR codes for all approved ATIs (or filtered by status)."""
+    query = select(AgrementTechniqueIndustrielORM).where(
+        AgrementTechniqueIndustrielORM.statut == statut
+    ).order_by(AgrementTechniqueIndustrielORM.numero_ati)
+
+    atis = db.execute(query).scalars().all()
+
+    if not atis:
+        raise HTTPException(404, f"Aucun ATI avec le statut '{statut}'.")
+
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=1.5*cm, rightMargin=1.5*cm, topMargin=2*cm, bottomMargin=1.5*cm)
+    styles = getSampleStyleSheet()
+    center = ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER, fontSize=10)
+
+    story = []
+    story.append(Paragraph("PNPI — QR Codes de Verification", ParagraphStyle("title", parent=center, fontSize=16, fontName="Helvetica-Bold", textColor=colors.HexColor("#006233"))))
+    story.append(Paragraph(f"Statut: {statut} — {len(atis)} ATI(s)", ParagraphStyle("sub", parent=center, fontSize=10, textColor=colors.gray)))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Build rows of 3 QR codes
+    rows = []
+    current_row = []
+
+    for ati in atis:
+        qr_url = f"https://pnpi-gabon.ga/verify/ati/{ati.numero_ati}"
+        qr = qrcode.QRCode(version=1, box_size=6, border=2)
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="#003F8F", back_color="white")
+        qr_buf = io.BytesIO()
+        qr_img.save(qr_buf, format="PNG")
+        qr_buf.seek(0)
+
+        op_name = ati.operateur.raison_sociale[:25] if ati.operateur else "—"
+
+        cell_content = [
+            RLImage(qr_buf, width=3.5*cm, height=3.5*cm),
+            Paragraph(f"<b>{ati.numero_ati}</b>", ParagraphStyle("qr_num", parent=center, fontSize=8, fontName="Helvetica-Bold")),
+            Paragraph(op_name, ParagraphStyle("qr_op", parent=center, fontSize=7, textColor=colors.gray)),
+        ]
+
+        current_row.append(cell_content)
+
+        if len(current_row) == 3:
+            rows.append(current_row)
+            current_row = []
+
+    if current_row:
+        while len(current_row) < 3:
+            current_row.append(["", "", ""])
+        rows.append(current_row)
+
+    for row in rows:
+        t = Table(
+            [[c[0] if c else "" for c in row],
+             [c[1] if c and len(c) > 1 else "" for c in row],
+             [c[2] if c and len(c) > 2 else "" for c in row]],
+            colWidths=[6*cm, 6*cm, 6*cm],
+        )
+        t.setStyle(TableStyle([
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 8),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        story.append(t)
+        story.append(Spacer(1, 0.3*cm))
+
+    doc.build(story)
+    buf.seek(0)
+
+    write_audit_event(db, actor=current_user.username, action="export.batch_qr",
+                     target=statut, details=f"Batch QR PDF {len(atis)} ATIs")
+    db.commit()
+
+    return Response(
+        content=buf.read(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="qr_codes_ati_{statut}.pdf"'},
+    )
 
 
 # ---------------------------------------------------------------------------
