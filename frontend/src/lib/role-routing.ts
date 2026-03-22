@@ -74,6 +74,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/map", "Carte");
     add("/pnpi/conventions", "Conventions");
     add("/pnpi/odd", "ODD");
+    add("/pnpi/cemac", "CEMAC");
+    add("/pnpi/social-impact", "Impact social");
+    add("/pnpi/certifications", "Certifications");
   }
 
   if (hasRole(roles, "ministre")) {
@@ -111,6 +114,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/map", "Carte");
     add("/pnpi/conventions", "Conventions");
     add("/pnpi/odd", "ODD");
+    add("/pnpi/cemac", "CEMAC");
+    add("/pnpi/social-impact", "Impact social");
+    add("/pnpi/certifications", "Certifications");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -153,6 +159,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/map", "Carte");
     add("/pnpi/conventions", "Conventions");
     add("/pnpi/odd", "ODD");
+    add("/pnpi/cemac", "CEMAC");
+    add("/pnpi/social-impact", "Impact social");
+    add("/pnpi/certifications", "Certifications");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -167,6 +176,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/delegations", "Delegations");
     add("/pnpi/objectives", "Objectifs");
     add("/pnpi/renewals", "Renouvellements");
+    add("/pnpi/certifications", "Certifications");
   }
 
   if (hasRole(roles, "operateur")) {

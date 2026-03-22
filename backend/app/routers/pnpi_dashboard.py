@@ -1684,3 +1684,43 @@ async def budget_tracking(
             "certificat": COST_CERTIFICATE,
         },
     }
+
+
+@router.get("/dashboard/social-impact")
+async def social_impact(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Social impact metrics from industrial activity."""
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    approved = [a for a in all_atis if a.statut == "approuve"]
+
+    JOBS = {"bois": 45, "mines": 80, "agroalimentaire": 35, "peche": 25, "chimie": 30, "btp": 55, "energie": 20, "autre": 15}
+    WOMEN_PCT = {"agroalimentaire": 45, "textile": 60, "peche": 30, "bois": 15, "mines": 10, "chimie": 20, "btp": 8, "energie": 12, "autre": 25}
+    YOUTH_PCT = {"btp": 55, "agroalimentaire": 40, "bois": 50, "mines": 35, "peche": 45, "chimie": 30, "energie": 25, "autre": 35}
+
+    total_jobs = sum(JOBS.get(a.secteur, 15) for a in approved)
+    women_jobs = sum(JOBS.get(a.secteur, 15) * WOMEN_PCT.get(a.secteur, 20) / 100 for a in approved)
+    youth_jobs = sum(JOBS.get(a.secteur, 15) * YOUTH_PCT.get(a.secteur, 35) / 100 for a in approved)
+
+    province_jobs: Dict[str, int] = defaultdict(int)
+    for a in approved:
+        prov = a.operateur.province if a.operateur else "inconnu"
+        province_jobs[prov] += JOBS.get(a.secteur, 15)
+
+    return {
+        "emplois_total": round(total_jobs),
+        "emplois_femmes": round(women_jobs),
+        "emplois_jeunes": round(youth_jobs),
+        "pct_femmes": round(women_jobs / max(total_jobs, 1) * 100, 1),
+        "pct_jeunes": round(youth_jobs / max(total_jobs, 1) * 100, 1),
+        "operateurs_actifs": len(all_ops),
+        "provinces_couvertes": len(set(o.province for o in all_ops if o.province)),
+        "secteurs_actifs": len(set(a.secteur for a in approved)),
+        "by_province": [
+            {"province": k.replace("_", " ").title(), "emplois": v}
+            for k, v in sorted(province_jobs.items(), key=lambda x: -x[1])
+        ],
+    }
