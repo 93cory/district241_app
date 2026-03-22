@@ -10,12 +10,13 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from ..core.auth import Role, User, require_roles
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
 from ..core.scoring import compute_operator_score, compute_all_scores
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
+    InspectionConformiteORM,
     OperateurIndustrielORM,
 )
 from ..schemas.pnpi import ATIBrief, OperateurBrief, OperateurCreate, OperateurRead
@@ -291,3 +292,71 @@ async def get_operator_score(
     db: Session = Depends(get_db),
 ):
     return compute_operator_score(db, operateur_id)
+
+
+@router.get("/operateurs/{operateur_id}/timeline")
+async def get_operator_timeline(
+    operateur_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get chronological compliance timeline for an operator."""
+    events = []
+
+    # ATI events
+    atis = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.operateur_id == operateur_id
+        )
+    ).scalars().all()
+
+    for ati in atis:
+        events.append({
+            "date": ati.date_soumission.isoformat(),
+            "type": "ati_submission",
+            "icon": "\U0001f4cb",
+            "title": f"ATI {ati.numero_ati} soumis",
+            "detail": ati.type_activite[:80] if ati.type_activite else "",
+            "color": "#0c7eb4",
+        })
+        if ati.date_decision:
+            color = "#006233" if ati.statut == "approuve" else "#b42318"
+            events.append({
+                "date": ati.date_decision.isoformat(),
+                "type": "ati_decision",
+                "icon": "\u2713" if ati.statut == "approuve" else "\u2715",
+                "title": f"ATI {ati.numero_ati} {ati.statut}",
+                "detail": "",
+                "color": color,
+            })
+        if ati.date_expiration:
+            events.append({
+                "date": ati.date_expiration.isoformat(),
+                "type": "ati_expiration",
+                "icon": "\u23f0",
+                "title": f"ATI {ati.numero_ati} expire",
+                "detail": "",
+                "color": "#d97706",
+            })
+
+    # Inspections
+    inspections = db.execute(
+        select(InspectionConformiteORM).where(
+            InspectionConformiteORM.operateur_id == operateur_id
+        )
+    ).scalars().all()
+
+    for insp in inspections:
+        colors = {"conforme": "#006233", "non_conforme": "#b42318", "partiel": "#d97706"}
+        icons = {"conforme": "\u2705", "non_conforme": "\u274c", "partiel": "\u26a0\ufe0f"}
+        events.append({
+            "date": insp.date_inspection.isoformat(),
+            "type": "inspection",
+            "icon": icons.get(insp.statut_conformite, "\U0001f50d"),
+            "title": f"Inspection — {insp.statut_conformite.replace('_', ' ')}",
+            "detail": f"Inspecteur: {insp.inspecteur_username}",
+            "color": colors.get(insp.statut_conformite, "#526175"),
+        })
+
+    events.sort(key=lambda e: e["date"])
+    return {"operateur_id": operateur_id, "events": events}

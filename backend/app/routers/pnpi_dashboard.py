@@ -1439,3 +1439,78 @@ async def activity_feed(
             for e in events
         ]
     }
+
+
+@router.get("/dashboard/economic-impact")
+async def economic_impact(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Economic impact indicators derived from ATI and operator data."""
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    now = now_utc()
+
+    approved = [a for a in all_atis if a.statut == "approuve"]
+
+    # Estimated jobs per sector (rough multipliers)
+    JOBS_MULTIPLIER = {
+        "bois": 45, "mines": 80, "agroalimentaire": 35, "peche": 25,
+        "chimie": 30, "btp": 55, "energie": 20, "textile": 40, "autre": 15,
+    }
+
+    # Estimated investment per ATI (millions FCFA)
+    INVESTMENT_MULTIPLIER = {
+        "mines": 5000, "energie": 3000, "btp": 2000, "chimie": 1500,
+        "bois": 800, "agroalimentaire": 600, "peche": 400, "textile": 300, "autre": 200,
+    }
+
+    total_jobs = 0
+    total_investment = 0
+    sector_impact = defaultdict(lambda: {"atis": 0, "jobs": 0, "investment": 0, "operateurs": 0})
+    province_impact = defaultdict(lambda: {"atis": 0, "jobs": 0, "investment": 0})
+
+    for ati in approved:
+        sector = ati.secteur
+        jobs = JOBS_MULTIPLIER.get(sector, 15)
+        invest = INVESTMENT_MULTIPLIER.get(sector, 200)
+        total_jobs += jobs
+        total_investment += invest
+        sector_impact[sector]["atis"] += 1
+        sector_impact[sector]["jobs"] += jobs
+        sector_impact[sector]["investment"] += invest
+
+        prov = ati.operateur.province if ati.operateur else "inconnu"
+        province_impact[prov]["atis"] += 1
+        province_impact[prov]["jobs"] += jobs
+        province_impact[prov]["investment"] += invest
+
+    for op in all_ops:
+        sector_impact[op.secteur]["operateurs"] += 1
+
+    # Year-over-year comparison
+    this_year = [a for a in approved if a.date_decision and a.date_decision.year == now.year]
+    last_year = [a for a in approved if a.date_decision and a.date_decision.year == now.year - 1]
+
+    this_year_jobs = sum(JOBS_MULTIPLIER.get(a.secteur, 15) for a in this_year)
+    last_year_jobs = sum(JOBS_MULTIPLIER.get(a.secteur, 15) for a in last_year)
+
+    return {
+        "summary": {
+            "atis_approuves": len(approved),
+            "operateurs_actifs": len(all_ops),
+            "emplois_estimes": total_jobs,
+            "investissement_mfcfa": total_investment,
+            "emplois_cette_annee": this_year_jobs,
+            "emplois_annee_precedente": last_year_jobs,
+            "croissance_emploi_pct": round((this_year_jobs - last_year_jobs) / max(last_year_jobs, 1) * 100, 1),
+        },
+        "by_sector": [
+            {"secteur": k, **v}
+            for k, v in sorted(sector_impact.items(), key=lambda x: -x[1]["investment"])
+        ],
+        "by_province": [
+            {"province": k.replace("_", " ").title(), **v}
+            for k, v in sorted(province_impact.items(), key=lambda x: -x[1]["jobs"])
+        ],
+    }

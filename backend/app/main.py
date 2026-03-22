@@ -1664,6 +1664,7 @@ from .routers.feedback import router as feedback_router
 from .routers.doc_versions import router as doc_versions_router
 from .routers.checklists import router as checklists_router
 from .routers.announcements import router as announcements_router
+from .routers.integration_health import router as integration_health_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1694,6 +1695,7 @@ app.include_router(feedback_router)
 app.include_router(doc_versions_router)
 app.include_router(checklists_router)
 app.include_router(announcements_router)
+app.include_router(integration_health_router)
 
 @app.get("/metrics", include_in_schema=False)
 async def prometheus_metrics():

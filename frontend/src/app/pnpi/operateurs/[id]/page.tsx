@@ -4,6 +4,7 @@ import { fetchPNPIOperateur, fetchPNPIOperateurATIs } from "../../../../lib/api"
 import { fetchBackendProfile, backendRequest } from "../../../../lib/backend";
 import { ToggleActiveButton } from "./components/ToggleActiveButton";
 import { ScoreCard } from "./ScoreCard";
+import { ComplianceTimeline } from "./ComplianceTimeline";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const CAN_TOGGLE = new Set(["admin", "directeur"]);
@@ -97,6 +98,9 @@ export default async function OperateurDetailPage({ params }: { params: { id: st
               <ScoreCard data={scoreData} />
             </div>
           )}
+          <div style={{ marginTop: "1.25rem" }}>
+            <ComplianceTimeline operateurId={params.id} />
+          </div>
         </div>
 
         {/* ATIs */}

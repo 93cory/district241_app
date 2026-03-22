@@ -57,6 +57,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
     add("/pnpi/renewals", "Renouvellements");
+    add("/pnpi/economic-impact", "Impact eco.");
+    add("/admin/integrations", "Integrations");
     add("/admin/announcements", "Annonces");
     add("/api-docs", "API Docs");
   }
@@ -86,6 +88,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/annual-report", "Bilan annuel");
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
+    add("/pnpi/economic-impact", "Impact eco.");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -118,6 +121,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
     add("/pnpi/renewals", "Renouvellements");
+    add("/pnpi/economic-impact", "Impact eco.");
   }
 
   if (hasRole(roles, "instructeur")) {

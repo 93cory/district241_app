@@ -10,6 +10,7 @@ import { ATITimeline } from "./ATITimeline";
 import { ATIComments } from "./Comments";
 import { TagsManager } from "./TagsManager";
 import { SLAClock } from "./SLAClock";
+import { RiskMatrix } from "./RiskMatrix";
 import { Checklist } from "./Checklist";
 import { FieldHistory } from "./FieldHistory";
 import { DocumentVersions } from "./DocumentVersions";
@@ -101,6 +102,11 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
       {/* SLA Countdown Clock */}
       <div style={{ marginBottom: "1.25rem" }}>
         <SLAClock dateSoumission={ati.date_soumission} slaJours={ati.sla_jours} statut={ati.statut} />
+      </div>
+
+      {/* Risk Assessment Matrix */}
+      <div style={{ marginBottom: "1.25rem" }}>
+        <RiskMatrix atiId={params.id} />
       </div>
 
       <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
