@@ -80,6 +80,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/roi-simulator", "Simulateur ROI");
     add("/pnpi/carbon", "Carbone");
     add("/admin/security", "Securite");
+    add("/admin/newsletter", "Newsletter");
     add("/pnpi/roadmap", "Roadmap");
   }
 
@@ -218,6 +219,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/notes", "Notes");
     add("/pnpi/favorites", "Favoris");
     add("/pnpi/annuaire", "Annuaire");
+    add("/pnpi/marketplace", "Marketplace");
     add("/pnpi/messages", "Messages");
     add("/profil", "Mon profil");
     add("/pnpi/polls", "Sondages");
