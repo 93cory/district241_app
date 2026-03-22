@@ -82,6 +82,10 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/admin/security", "Securite");
     add("/admin/newsletter", "Newsletter");
     add("/pnpi/roadmap", "Roadmap");
+    add("/pnpi/triage", "Triage");
+    add("/pnpi/before-after", "Avant/Apres");
+    add("/pnpi/email-alerts", "Alertes email");
+    add("/pnpi/mobile", "Mobile");
   }
 
   if (hasRole(roles, "ministre")) {
@@ -125,6 +129,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/roi-simulator", "Simulateur ROI");
     add("/pnpi/carbon", "Carbone");
     add("/pnpi/roadmap", "Roadmap");
+    add("/pnpi/before-after", "Avant/Apres");
+    add("/pnpi/email-alerts", "Alertes email");
+    add("/pnpi/mobile", "Mobile");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -173,6 +180,10 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/roi-simulator", "Simulateur ROI");
     add("/pnpi/carbon", "Carbone");
     add("/pnpi/roadmap", "Roadmap");
+    add("/pnpi/triage", "Triage");
+    add("/pnpi/before-after", "Avant/Apres");
+    add("/pnpi/email-alerts", "Alertes email");
+    add("/pnpi/mobile", "Mobile");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -189,6 +200,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/renewals", "Renouvellements");
     add("/pnpi/certifications", "Certifications");
     add("/pnpi/mentoring", "Parrainage");
+    add("/pnpi/triage", "Triage");
+    add("/pnpi/email-alerts", "Alertes email");
+    add("/pnpi/mobile", "Mobile");
   }
 
   if (hasRole(roles, "operateur")) {

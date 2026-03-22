@@ -1331,3 +1331,59 @@ async def generate_product_qr(
         media_type="image/png",
         headers={"Content-Disposition": f'inline; filename="qr_product_{ati.numero_ati}_{batch_number}.png"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# ATI Priority Triage
+# ---------------------------------------------------------------------------
+
+@router.get("/ati/triage")
+async def get_triage_queue(
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    """Get ATIs sorted by priority score for triage."""
+    now = now_utc()
+    pending = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.statut.notin_(["approuve", "rejete", "expire"])
+        )
+    ).scalars().all()
+
+    scored = []
+    for ati in pending:
+        age = (now.date() - ati.date_soumission.date()).days
+        sla_pct = age / ati.sla_jours * 100
+
+        # Priority score (higher = more urgent)
+        priority = 0
+        priority += min(sla_pct, 150)  # SLA urgency (max 150)
+
+        # Sector weight
+        SECTOR_PRIORITY = {"mines": 20, "energie": 15, "chimie": 10, "btp": 8, "bois": 5, "agroalimentaire": 5}
+        priority += SECTOR_PRIORITY.get(ati.secteur, 0)
+
+        # Resubmission bonus
+        if "REN" in ati.numero_ati or "RESUB" in ati.numero_ati:
+            priority += 15
+
+        level = "critique" if priority >= 120 else "urgent" if priority >= 80 else "normal" if priority >= 40 else "faible"
+        color = "#b42318" if priority >= 120 else "#e65100" if priority >= 80 else "#d97706" if priority >= 40 else "#006233"
+
+        scored.append({
+            "id": ati.id,
+            "numero_ati": ati.numero_ati,
+            "operateur": ati.operateur.raison_sociale if ati.operateur else None,
+            "secteur": ati.secteur,
+            "statut": ati.statut,
+            "age_jours": age,
+            "sla_jours": ati.sla_jours,
+            "sla_pct": round(sla_pct, 1),
+            "priority_score": round(priority),
+            "priority_level": level,
+            "color": color,
+            "instructeur": getattr(ati, 'instructeur_username', None),
+        })
+
+    scored.sort(key=lambda x: -x["priority_score"])
+    return {"queue": scored, "total": len(scored)}
