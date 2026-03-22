@@ -83,6 +83,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/admin/newsletter", "Newsletter");
     add("/pnpi/roadmap", "Roadmap");
     add("/pnpi/triage", "Triage");
+    add("/pnpi/realtime-stats", "Stats live");
     add("/pnpi/before-after", "Avant/Apres");
     add("/pnpi/email-alerts", "Alertes email");
     add("/pnpi/mobile", "Mobile");
@@ -129,6 +130,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/roi-simulator", "Simulateur ROI");
     add("/pnpi/carbon", "Carbone");
     add("/pnpi/roadmap", "Roadmap");
+    add("/pnpi/realtime-stats", "Stats live");
     add("/pnpi/before-after", "Avant/Apres");
     add("/pnpi/email-alerts", "Alertes email");
     add("/pnpi/mobile", "Mobile");
@@ -181,6 +183,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/carbon", "Carbone");
     add("/pnpi/roadmap", "Roadmap");
     add("/pnpi/triage", "Triage");
+    add("/pnpi/realtime-stats", "Stats live");
     add("/pnpi/before-after", "Avant/Apres");
     add("/pnpi/email-alerts", "Alertes email");
     add("/pnpi/mobile", "Mobile");

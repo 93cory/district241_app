@@ -1285,6 +1285,106 @@ async def generate_official_letter(
     )
 
 
+@router.get("/exports/province/{province}/report.pdf")
+async def export_province_report(
+    province: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Generate a PDF report for a specific province."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
+
+    prov_ops = [o for o in all_ops if o.province == province]
+    prov_atis = [a for a in all_atis if a.operateur and a.operateur.province == province]
+    prov_insp = [i for i in all_insp if i.operateur and i.operateur.province == province]
+
+    approved = sum(1 for a in prov_atis if a.statut == "approuve")
+    conformes = sum(1 for i in prov_insp if i.statut_conformite == "conforme")
+
+    now = now_utc()
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2.5*cm, rightMargin=2.5*cm, topMargin=2*cm, bottomMargin=2*cm)
+    styles = getSampleStyleSheet()
+    center = ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER)
+    body = ParagraphStyle("body", parent=styles["Normal"], fontSize=11, leading=16)
+
+    BLEU = colors.HexColor("#003F8F")
+    VERT = colors.HexColor("#006233")
+
+    story = []
+
+    prov_label = province.replace("_", " ").title()
+
+    story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=center, fontSize=11, textColor=colors.gray)))
+    story.append(Paragraph("Ministere de l'Industrie et de la Transformation Locale", ParagraphStyle("min", parent=center, fontSize=9, textColor=BLEU, fontName="Helvetica-Bold")))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(HRFlowable(width="100%", thickness=3, color=VERT))
+    story.append(Spacer(1, 0.5*cm))
+    story.append(Paragraph(f"RAPPORT PROVINCIAL — {prov_label.upper()}", ParagraphStyle("title", parent=center, fontSize=18, textColor=BLEU, fontName="Helvetica-Bold")))
+    story.append(Paragraph(f"Genere le {now.strftime('%d/%m/%Y')}", ParagraphStyle("date", parent=center, fontSize=10, textColor=colors.gray)))
+    story.append(Spacer(1, 0.6*cm))
+
+    # KPIs table
+    kpis = [
+        ["Indicateur", "Valeur"],
+        ["Operateurs actifs", str(len(prov_ops))],
+        ["ATIs soumis", str(len(prov_atis))],
+        ["ATIs approuves", str(approved)],
+        ["Taux d'approbation", f"{round(approved / max(len([a for a in prov_atis if a.statut in ('approuve', 'rejete')]), 1) * 100)}%"],
+        ["Inspections", str(len(prov_insp))],
+        ["Taux de conformite", f"{round(conformes / max(len(prov_insp), 1) * 100)}%"],
+    ]
+
+    t = Table(kpis, colWidths=[8*cm, 6*cm])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), BLEU),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("PADDING", (0, 0), (-1, -1), 8),
+        ("LINEBELOW", (0, 0), (-1, -2), 0.5, colors.HexColor("#e5e7eb")),
+        ("LINEBELOW", (0, -1), (-1, -1), 1, BLEU),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 0.6*cm))
+
+    # Sector breakdown
+    from collections import Counter
+    sectors = Counter(a.secteur for a in prov_atis)
+    if sectors:
+        story.append(Paragraph("<b>Repartition sectorielle</b>", ParagraphStyle("h3", parent=body, textColor=BLEU)))
+        story.append(Spacer(1, 0.2*cm))
+        for sect, count in sectors.most_common():
+            story.append(Paragraph(f"• {sect.capitalize()} : {count} ATI(s)", body))
+
+    story.append(Spacer(1, 1*cm))
+    story.append(HRFlowable(width="100%", thickness=1, color=VERT))
+    story.append(Paragraph("Document genere automatiquement par la PNPI", ParagraphStyle("footer", parent=center, fontSize=8, textColor=colors.gray, spaceBefore=8)))
+
+    doc.build(story)
+    buf.seek(0)
+
+    write_audit_event(db, actor=current_user.username, action="export.province_pdf",
+                     target=province, details=f"Rapport provincial {prov_label}")
+    db.commit()
+
+    return Response(
+        content=buf.read(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="rapport_{province}.pdf"'},
+    )
+
+
 @router.post("/exports/create-archive")
 async def create_digital_archive(
     data: dict,

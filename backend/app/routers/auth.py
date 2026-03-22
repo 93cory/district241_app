@@ -31,6 +31,7 @@ from ..core.badges import compute_badges
 from ..database import get_db, now_utc, as_utc
 from ..config import settings
 from ..models.core import LoginHistoryORM, RefreshTokenORM, UserAccountORM
+from ..models.pnpi import InstructorRatingORM
 
 
 def get_client_ip(request: Request) -> str:
@@ -367,3 +368,55 @@ async def get_my_badges(
     badges = compute_badges(db, current_user.username)
     earned_count = sum(1 for b in badges if b["earned"])
     return {"badges": badges, "earned": earned_count, "total": len(badges)}
+
+
+@router.post("/auth/rate-instructor")
+async def rate_instructor(
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Rate an instructor after ATI decision (operator only)."""
+    import uuid as _uuid
+    rating_val = data.get("rating", 0)
+    if not (1 <= rating_val <= 5):
+        raise HTTPException(400, "Note entre 1 et 5.")
+
+    r = InstructorRatingORM(
+        id=str(_uuid.uuid4()),
+        instructor_username=data.get("instructor_username", ""),
+        operator_username=current_user.username,
+        ati_id=data.get("ati_id"),
+        rating=rating_val,
+        comment=(data.get("comment") or "")[:300],
+    )
+    db.add(r)
+    db.commit()
+    return {"status": "ok"}
+
+
+@router.get("/auth/instructor-ratings/{username}")
+async def get_instructor_ratings(
+    username: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ratings = db.execute(
+        select(InstructorRatingORM).where(InstructorRatingORM.instructor_username == username)
+        .order_by(InstructorRatingORM.created_at.desc())
+    ).scalars().all()
+
+    if not ratings:
+        return {"username": username, "average": 0, "count": 0, "ratings": []}
+
+    avg = round(sum(r.rating for r in ratings) / len(ratings), 1)
+    return {
+        "username": username,
+        "average": avg,
+        "count": len(ratings),
+        "ratings": [{
+            "rating": r.rating, "comment": r.comment,
+            "operator": r.operator_username, "ati_id": r.ati_id,
+            "created_at": r.created_at.isoformat(),
+        } for r in ratings[:20]],
+    }

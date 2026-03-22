@@ -314,3 +314,14 @@ class ConventionORM(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class InstructorRatingORM(Base):
+    __tablename__ = "instructor_ratings"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    instructor_username: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    operator_username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    ati_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    comment: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
