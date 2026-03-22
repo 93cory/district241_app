@@ -9,7 +9,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, status
 from fastapi.responses import Response as FastAPIResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
@@ -1205,3 +1205,75 @@ async def get_ati_field_history(
 ):
     history = get_field_history(db, "ati", ati_id)
     return {"history": history}
+
+
+@router.post("/ati/{ati_id}/renew")
+async def renew_ati(
+    ati_id: str,
+    data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create a renewal application from an existing approved/expired ATI."""
+    original = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not original:
+        raise HTTPException(404, "ATI introuvable.")
+    if original.statut not in ("approuve", "expire"):
+        raise HTTPException(400, "Seuls les ATI approuves ou expires peuvent etre renouveles.")
+
+    # Generate new ATI number
+    count = db.execute(select(func.count()).select_from(AgrementTechniqueIndustrielORM)).scalar() or 0
+    numero = f"ATI-REN-{count + 1:04d}"
+
+    renewed = AgrementTechniqueIndustrielORM(
+        id=str(uuid.uuid4()),
+        numero_ati=numero,
+        operateur_id=original.operateur_id,
+        secteur=original.secteur,
+        type_activite=data.get("type_activite", original.type_activite),
+        observations=data.get("observations", f"Renouvellement de {original.numero_ati}"),
+        statut="soumis",
+        date_soumission=now_utc(),
+        sla_jours=original.sla_jours,
+    )
+    db.add(renewed)
+
+    write_audit_event(db, actor=current_user.username, action="ati.renew",
+                     target=renewed.id, details=f"Renouvellement de {original.numero_ati} → {numero}")
+    db.commit()
+
+    return {
+        "status": "ok",
+        "new_ati_id": renewed.id,
+        "numero_ati": numero,
+        "original_ati": original.numero_ati,
+    }
+
+
+@router.get("/ati/expiring-soon")
+async def expiring_soon(
+    days: int = Query(60, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List ATIs expiring within N days."""
+    now = now_utc()
+    cutoff = now + timedelta(days=days)
+
+    atis = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.statut == "approuve",
+            AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
+            AgrementTechniqueIndustrielORM.date_expiration <= cutoff,
+            AgrementTechniqueIndustrielORM.date_expiration >= now,
+        ).order_by(AgrementTechniqueIndustrielORM.date_expiration.asc())
+    ).scalars().all()
+
+    return {"count": len(atis), "days_threshold": days, "atis": [{
+        "id": a.id,
+        "numero_ati": a.numero_ati,
+        "operateur": a.operateur.raison_sociale if a.operateur else None,
+        "secteur": a.secteur,
+        "date_expiration": a.date_expiration.isoformat(),
+        "days_remaining": (a.date_expiration.date() - now.date()).days,
+    } for a in atis]}

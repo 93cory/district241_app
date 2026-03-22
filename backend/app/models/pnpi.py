@@ -251,3 +251,31 @@ class OperatorFeedbackORM(Base):
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(String(30), nullable=False, server_default="general")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AnnouncementORM(Base):
+    __tablename__ = "announcements"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False, server_default="info")
+    target_roles: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    created_by: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ATIChecklistItemORM(Base):
+    __tablename__ = "ati_checklist_items"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    ati_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    label: Mapped[str] = mapped_column(String(200), nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False, server_default="general")
+    is_checked: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    checked_by: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    notes: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")

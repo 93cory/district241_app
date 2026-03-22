@@ -56,6 +56,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/objectives", "Objectifs");
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
+    add("/pnpi/renewals", "Renouvellements");
+    add("/admin/announcements", "Annonces");
+    add("/api-docs", "API Docs");
   }
 
   if (hasRole(roles, "ministre")) {
@@ -114,6 +117,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/objectives", "Objectifs");
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
+    add("/pnpi/renewals", "Renouvellements");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -127,12 +131,14 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/kanban", "Kanban");
     add("/pnpi/delegations", "Delegations");
     add("/pnpi/objectives", "Objectifs");
+    add("/pnpi/renewals", "Renouvellements");
   }
 
   if (hasRole(roles, "operateur")) {
     add("/pnpi/guichet", "Mon espace");
     add("/pnpi/ati", "Mes ATI");
     add("/pnpi/operateurs", "Opérateurs");
+    add("/pnpi/renewals", "Renouvellements");
   }
 
   if (hasRole(roles, "inspecteur")) {

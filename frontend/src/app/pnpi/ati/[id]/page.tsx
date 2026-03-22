@@ -10,6 +10,7 @@ import { ATITimeline } from "./ATITimeline";
 import { ATIComments } from "./Comments";
 import { TagsManager } from "./TagsManager";
 import { SLAClock } from "./SLAClock";
+import { Checklist } from "./Checklist";
 import { FieldHistory } from "./FieldHistory";
 import { DocumentVersions } from "./DocumentVersions";
 
@@ -89,6 +90,12 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Compliance Checklist */}
+      <div className="chart-card" style={{ padding: "1.25rem", marginBottom: "1.25rem" }}>
+        <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Checklist de conformite</h3>
+        <Checklist atiId={params.id} />
       </div>
 
       {/* SLA Countdown Clock */}

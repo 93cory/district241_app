@@ -13,6 +13,7 @@ import { OnboardingTour } from "./components/OnboardingTour";
 import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { ServerLoad } from "./components/ServerLoad";
+import { AnnouncementBanner } from "./components/AnnouncementBanner";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -64,6 +65,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </MobileNav>
             </nav>
           </header>
+          <AnnouncementBanner />
           <main id="main-content">
             <ToastProvider>{children}</ToastProvider>
             <SessionTimeout />
