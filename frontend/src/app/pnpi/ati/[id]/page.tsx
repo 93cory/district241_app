@@ -9,6 +9,7 @@ import { ResubmitForm } from "./ResubmitForm";
 import { ATITimeline } from "./ATITimeline";
 import { ATIComments } from "./Comments";
 import { TagsManager } from "./TagsManager";
+import { SLAClock } from "./SLAClock";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -86,6 +87,11 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
             ))}
           </div>
         </div>
+      </div>
+
+      {/* SLA Countdown Clock */}
+      <div style={{ marginBottom: "1.25rem" }}>
+        <SLAClock dateSoumission={ati.date_soumission} slaJours={ati.sla_jours} statut={ati.statut} />
       </div>
 
       <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>

@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 
 from ..core.auth import Role, User, require_roles
 from ..core.audit import write_audit_event
+from ..core.signature import generate_signature
 from ..database import get_db, now_utc
 from ..models.core import FieldReportORM, TraceBatchORM, UnitORM, UserAccountORM
 from ..models.pilotage import ProjectDossierORM, ProjectDossierTransitionORM
@@ -937,6 +938,89 @@ async def export_briefing_pptx(
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": f'attachment; filename="briefing_pnpi_{now.strftime("%Y%m%d")}.pptx"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# Signed certificate & signature verification
+# ---------------------------------------------------------------------------
+
+@router.get("/exports/ati/{ati_id}/signed-certificate.pdf")
+async def export_signed_certificate(
+    ati_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Generate a digitally signed ATI certificate."""
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati or ati.statut != "approuve":
+        raise HTTPException(400, "Certificat disponible uniquement pour les ATI approuves.")
+
+    # Generate certificate PDF
+    from ..core.certificate import generate_ati_certificate
+    op = ati.operateur
+    pdf_content = generate_ati_certificate(
+        numero_ati=ati.numero_ati,
+        operateur=op.raison_sociale if op else "Inconnu",
+        nif=op.nif_gabon if op else "",
+        secteur=ati.secteur,
+        province=op.province if op else "",
+        type_activite=ati.type_activite,
+        date_soumission=ati.date_soumission,
+        date_decision=ati.date_decision,
+        date_expiration=ati.date_expiration,
+        reference_decision=ati.numero_reference_decision if hasattr(ati, 'numero_reference_decision') else None,
+        sla_jours=ati.sla_jours,
+    )
+
+    # Generate digital signature
+    sig = generate_signature(
+        document_content=pdf_content,
+        signer_username=current_user.username,
+        signer_role=current_user.roles[0] if current_user.roles else "admin",
+        document_type="certificat_ati",
+        reference=ati.numero_ati,
+    )
+
+    # Store signature in audit log
+    write_audit_event(
+        db, actor=current_user.username, action="ati.sign_certificate",
+        target=ati.id,
+        details=f"Certificat signe: {sig['signature'][:16]}... par {current_user.username}",
+    )
+    db.commit()
+
+    return Response(
+        content=pdf_content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="certificat_signe_ATI_{ati.numero_ati}.pdf"',
+            "X-PNPI-Signature": sig["signature"],
+            "X-PNPI-Signer": sig["signer"],
+            "X-PNPI-Signed-At": sig["timestamp"],
+        },
+    )
+
+
+@router.post("/exports/verify-signature")
+async def verify_document_signature(
+    data: dict,
+):
+    """Public endpoint to verify a document signature."""
+    from ..core.signature import verify_signature
+
+    # In production, would accept file upload + signature data
+    signature_data = data.get("signature_data", {})
+    content_hash = data.get("content_hash", "")
+
+    if not signature_data:
+        raise HTTPException(400, "Donnees de signature requises.")
+
+    # Simple hash-based verification (no file upload needed)
+    if content_hash:
+        signature_data["content_hash"] = content_hash
+
+    result = verify_signature(signature_data, bytes.fromhex("00"))  # Placeholder
+    return result
 
 
 # ---------------------------------------------------------------------------
