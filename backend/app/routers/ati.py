@@ -15,6 +15,7 @@ from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
 from ..core.field_tracker import get_field_history
 from ..core.risk_assessment import assess_risk
+from ..core.decision_engine import recommend_decision
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -1287,3 +1288,12 @@ async def expiring_soon(
         "date_expiration": a.date_expiration.isoformat(),
         "days_remaining": (a.date_expiration.date() - now.date()).days,
     } for a in atis]}
+
+
+@router.get("/ati/{ati_id}/recommendation")
+async def get_ati_recommendation(
+    ati_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    return recommend_decision(db, ati_id)

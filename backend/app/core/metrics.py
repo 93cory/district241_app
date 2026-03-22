@@ -36,6 +36,41 @@ class Metrics:
             err_key = f'{method}:{path}:{status}'
             self.error_count[err_key] = self.error_count.get(err_key, 0) + 1
 
+    def get_usage_stats(self) -> dict:
+        """Get aggregated API usage statistics."""
+        from collections import defaultdict
+
+        endpoint_stats = defaultdict(lambda: {"count": 0, "errors": 0, "avg_ms": 0})
+
+        for key, count in self.request_count.items():
+            method, path, status = key.split(":", 2)
+            ep = f"{method} {path}"
+            endpoint_stats[ep]["count"] += count
+            if int(status) >= 400:
+                endpoint_stats[ep]["errors"] += count
+
+        for key, durations in self.request_duration.items():
+            method, path = key.split(":", 1)
+            ep = f"{method} {path}"
+            if durations:
+                endpoint_stats[ep]["avg_ms"] = round(sum(durations) / len(durations) * 1000, 1)
+
+        sorted_endpoints = sorted(endpoint_stats.items(), key=lambda x: -x[1]["count"])
+
+        total_requests = sum(v for v in self.request_count.values())
+        total_errors = sum(v for v in self.error_count.values())
+
+        return {
+            "total_requests": total_requests,
+            "total_errors": total_errors,
+            "error_rate": round(total_errors / max(total_requests, 1) * 100, 2),
+            "uptime_hours": round((time.time() - self._start_time) / 3600, 1),
+            "endpoints": [
+                {"endpoint": ep, **stats}
+                for ep, stats in sorted_endpoints[:30]
+            ],
+        }
+
     def to_prometheus(self) -> str:
         lines = []
         uptime = time.time() - self._start_time

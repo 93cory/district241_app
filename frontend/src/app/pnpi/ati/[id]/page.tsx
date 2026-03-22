@@ -14,6 +14,7 @@ import { RiskMatrix } from "./RiskMatrix";
 import { Checklist } from "./Checklist";
 import { FieldHistory } from "./FieldHistory";
 import { DocumentVersions } from "./DocumentVersions";
+import { Recommendation } from "./Recommendation";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -107,6 +108,11 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
       {/* Risk Assessment Matrix */}
       <div style={{ marginBottom: "1.25rem" }}>
         <RiskMatrix atiId={params.id} />
+      </div>
+
+      {/* AI Decision Recommendation */}
+      <div style={{ marginBottom: "1.25rem" }}>
+        <Recommendation atiId={params.id} />
       </div>
 
       <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>

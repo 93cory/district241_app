@@ -1665,6 +1665,7 @@ from .routers.doc_versions import router as doc_versions_router
 from .routers.checklists import router as checklists_router
 from .routers.announcements import router as announcements_router
 from .routers.integration_health import router as integration_health_router
+from .routers.scheduled_reports import router as scheduled_reports_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1696,6 +1697,13 @@ app.include_router(doc_versions_router)
 app.include_router(checklists_router)
 app.include_router(announcements_router)
 app.include_router(integration_health_router)
+app.include_router(scheduled_reports_router)
+
+@app.get("/metrics/usage", include_in_schema=False)
+async def api_usage_stats(
+    _: User = Depends(require_roles(Role.admin)),
+):
+    return metrics.get_usage_stats()
 
 @app.get("/metrics", include_in_schema=False)
 async def prometheus_metrics():

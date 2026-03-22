@@ -60,6 +60,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/economic-impact", "Impact eco.");
     add("/admin/integrations", "Integrations");
     add("/admin/announcements", "Annonces");
+    add("/admin/api-usage", "API Usage");
+    add("/embed", "Widgets");
+    add("/admin/scheduled-reports", "Rapports auto");
     add("/api-docs", "API Docs");
   }
 
