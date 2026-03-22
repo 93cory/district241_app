@@ -8,6 +8,7 @@ import { NavLinks } from "./components/NavLinks";
 import { MobileNav } from "./components/MobileNav";
 import { ToastProvider } from "./components/Toast";
 import { SessionTimeout } from "./components/SessionTimeout";
+import { PWAInstall } from "./components/PWAInstall";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -32,6 +33,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="fr">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#006233" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
       <body>
         <div className="page-shell">
           <a href="#main-content" className="skip-link" style={{position:'absolute',left:'-9999px',top:'auto',width:'1px',height:'1px',overflow:'hidden'}}
@@ -56,6 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <ToastProvider>{children}</ToastProvider>
             <SessionTimeout />
           </main>
+          <PWAInstall />
         </div>
       </body>
     </html>

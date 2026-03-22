@@ -59,6 +59,7 @@ class User(BaseModel):
     username: str
     full_name: str
     roles: List[Role]
+    province: Optional[str] = None
 
 
 class UserInDB(User):
@@ -221,6 +222,7 @@ def user_from_row(row) -> UserInDB:
         full_name=row.full_name,
         roles=csv_to_roles(row.roles_csv),
         hashed_password=row.hashed_password,
+        province=getattr(row, "province", None),
     )
 
 
@@ -283,12 +285,12 @@ async def get_current_user(
     row = db.get(UserAccountORM, token_data.username)
     if row and row.is_active:
         user = user_from_row(row)
-        return User(username=user.username, full_name=user.full_name, roles=user.roles)
+        return User(username=user.username, full_name=user.full_name, roles=user.roles, province=user.province)
 
     user = get_fake_users_db().get(token_data.username)
     if user is None:
         raise credentials_exception
-    return User(username=user.username, full_name=user.full_name, roles=user.roles)
+    return User(username=user.username, full_name=user.full_name, roles=user.roles, province=getattr(user, "province", None))
 
 
 def require_roles(*allowed: Role):

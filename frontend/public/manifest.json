@@ -1,0 +1,27 @@
+{
+  "name": "PNPI — Plateforme Nationale de la Politique Industrielle",
+  "short_name": "PNPI",
+  "description": "Suivi et tracabilite industrielle du Gabon",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#051B36",
+  "theme_color": "#006233",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/pnpi-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/pnpi-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["government", "business", "productivity"],
+  "lang": "fr",
+  "dir": "ltr"
+}

@@ -59,6 +59,7 @@ from .core.auth import (
     validate_password_policy,
     verify_password,
 )
+from .core.metrics import MetricsMiddleware, metrics
 from .core.audit import (
     _emit_audit_event,
     _emit_sla_notifications,
@@ -1597,6 +1598,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(MetricsMiddleware)
+
 
 @app.middleware("http")
 async def request_context_middleware(request: Request, call_next):
@@ -1665,6 +1668,11 @@ app.include_router(geo_router)
 app.include_router(totp_router)
 app.include_router(ws_router)
 app.include_router(integration_router)
+
+@app.get("/metrics", include_in_schema=False)
+async def prometheus_metrics():
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(metrics.to_prometheus(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 # ── Fichiers statiques (logo, assets) ────────────────────────────────────────
 _static_dir = os.path.join(os.path.dirname(__file__), "..", "static")

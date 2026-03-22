@@ -23,6 +23,7 @@ def _to_user_account_read(row: UserAccountORM) -> dict:
         "roles": csv_to_roles(row.roles_csv),
         "is_active": row.is_active,
         "created_at": row.created_at,
+        "province": row.province,
     }
 
 
@@ -75,6 +76,7 @@ async def create_user_account(
         failed_login_attempts=0,
         locked_until=None,
         password_updated_at=now_utc(),
+        province=payload.get("province"),
     )
     db.add(row)
     db.commit()
@@ -104,6 +106,9 @@ async def update_user_account(
 
     if "is_active" in payload:
         row.is_active = bool(payload["is_active"])
+
+    if "province" in payload:
+        row.province = payload["province"] or None
 
     if "password" in payload and payload["password"]:
         policy_error = validate_password_policy(payload["password"])

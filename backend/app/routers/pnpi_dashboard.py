@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 
 from ..core.auth import Role, User, require_roles
+from ..core.tenant import TenantFilter, get_user_province
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -46,11 +47,23 @@ def _ati_is_overdue(ati: AgrementTechniqueIndustrielORM) -> bool:
 
 @router.get("/dashboard/kpis", response_model=PNPIDashboardKpis)
 async def pnpi_dashboard_kpis(
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ) -> PNPIDashboardKpis:
     now = now_utc()
-    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+
+    # Multi-tenant province filtering
+    province = get_user_province(current_user)
+    tenant = TenantFilter(province)
+
+    # Fetch ATIs, filtered by province if user is province-scoped
+    ati_query = select(AgrementTechniqueIndustrielORM)
+    if not tenant.is_global:
+        # Filter ATIs via their operateur's province — join through operateur
+        ati_query = ati_query.join(OperateurIndustrielORM, AgrementTechniqueIndustrielORM.operateur_id == OperateurIndustrielORM.id).where(
+            OperateurIndustrielORM.province == tenant.province
+        )
+    all_atis = db.execute(ati_query).scalars().all()
 
     atis_total = len(all_atis)
     atis_en_cours = sum(1 for a in all_atis if a.statut not in _TERMINAL_STATUTS)
@@ -80,15 +93,18 @@ async def pnpi_dashboard_kpis(
     )
     taux_sla_pct = round((compliant / len(durations) * 100) if durations else 0.0, 2)
 
-    # Operateurs actifs
-    operateurs_actifs = db.execute(
-        select(func.count(OperateurIndustrielORM.id)).where(OperateurIndustrielORM.is_active.is_(True))
-    ).scalar_one()
+    # Operateurs actifs (filtered by province)
+    ops_count_query = select(func.count(OperateurIndustrielORM.id)).where(OperateurIndustrielORM.is_active.is_(True))
+    ops_count_query = tenant.apply(ops_count_query, OperateurIndustrielORM)
+    operateurs_actifs = db.execute(ops_count_query).scalar_one()
 
     # Taux conformite: % conforme parmi les dernieres inspections par operateur
-    all_inspections = db.execute(
-        select(InspectionConformiteORM).order_by(InspectionConformiteORM.date_inspection.desc())
-    ).scalars().all()
+    insp_query = select(InspectionConformiteORM).order_by(InspectionConformiteORM.date_inspection.desc())
+    if not tenant.is_global:
+        insp_query = insp_query.join(OperateurIndustrielORM, InspectionConformiteORM.operateur_id == OperateurIndustrielORM.id).where(
+            OperateurIndustrielORM.province == tenant.province
+        )
+    all_inspections = db.execute(insp_query).scalars().all()
     last_inspection_per_op: Dict[str, str] = {}
     for insp in all_inspections:
         if insp.operateur_id not in last_inspection_per_op:

@@ -116,10 +116,44 @@ services:
     networks:
       - pnpi-net
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pnpi-prometheus
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - pnpi-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pnpi-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${PNPI_GRAFANA_PASSWORD:-pnpi_grafana_2026}
+      GF_SERVER_ROOT_URL: https://pnpi-gabon.ga/grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      - pnpi-net
+
 volumes:
   pnpi_postgres_data:
   pnpi_nginx_logs:
   minio_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   pnpi-net:

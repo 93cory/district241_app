@@ -76,6 +76,7 @@ class UserAccountORM(Base):
     totp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     totp_confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     backup_codes_hash: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    province: Mapped[Optional[str]] = mapped_column(String(60), nullable=True, index=True)
 
 
 class NotificationORM(Base):

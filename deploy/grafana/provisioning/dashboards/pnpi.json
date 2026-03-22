@@ -1,0 +1,43 @@
+{
+  "dashboard": {
+    "title": "PNPI — Monitoring",
+    "uid": "pnpi-main",
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "Uptime",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "targets": [{"expr": "pnpi_uptime_seconds / 3600", "legendFormat": "heures"}],
+        "fieldConfig": {"defaults": {"unit": "h"}}
+      },
+      {
+        "title": "Requetes actives",
+        "type": "gauge",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+        "targets": [{"expr": "pnpi_active_requests"}]
+      },
+      {
+        "title": "Requetes / seconde",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [{"expr": "rate(pnpi_http_requests_total[5m])", "legendFormat": "{{method}} {{path}}"}]
+      },
+      {
+        "title": "Latence P95 (ms)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+        "targets": [{"expr": "pnpi_http_request_duration_seconds{quantile=\"0.95\"} * 1000", "legendFormat": "{{path}}"}],
+        "fieldConfig": {"defaults": {"unit": "ms"}}
+      },
+      {
+        "title": "Erreurs HTTP",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [{"expr": "rate(pnpi_http_errors_total[5m])", "legendFormat": "{{status}} {{path}}"}]
+      }
+    ],
+    "time": {"from": "now-1h", "to": "now"},
+    "refresh": "30s"
+  }
+}
