@@ -1,6 +1,7 @@
 """PNPI — Endpoints de gestion des inspections de conformité."""
 from __future__ import annotations
 
+import math
 import os
 import uuid
 from pathlib import Path
@@ -418,3 +419,58 @@ async def delete_inspection_photo(
     )
     db.commit()
     return FastAPIResponse(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/inspections/validate-location", summary="Valider la geolocalisation d'un inspecteur")
+async def validate_inspection_location(
+    data: dict,
+    current_user: User = Depends(require_roles(Role.inspecteur, Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Validate that the inspector is within range of the operator's registered location."""
+    lat = data.get("latitude")
+    lng = data.get("longitude")
+    operateur_id = data.get("operateur_id")
+    max_distance_km = data.get("max_distance_km", 5.0)
+
+    if lat is None or lng is None or not operateur_id:
+        raise HTTPException(400, "latitude, longitude et operateur_id requis.")
+
+    op = db.get(OperateurIndustrielORM, operateur_id)
+    if not op:
+        raise HTTPException(404, "Operateur introuvable.")
+
+    # Get operator coordinates (from province centroids or stored coords)
+    op_lat = getattr(op, 'latitude', None)
+    op_lng = getattr(op, 'longitude', None)
+
+    PROVINCE_COORDS = {
+        "estuaire": (0.4, 9.45), "haut_ogooue": (-1.6, 13.95),
+        "moyen_ogooue": (-0.45, 10.75), "ngounie": (-1.5, 11.4),
+        "nyanga": (-2.85, 11.15), "ogooue_ivindo": (0.8, 12.0),
+        "ogooue_lolo": (-0.85, 12.65), "ogooue_maritime": (-1.6, 9.7),
+        "woleu_ntem": (2.15, 11.75),
+    }
+
+    if not op_lat or not op_lng:
+        coords = PROVINCE_COORDS.get(op.province, (0.0, 11.0))
+        op_lat, op_lng = coords
+
+    # Haversine distance
+    R = 6371  # km
+    dlat = math.radians(op_lat - lat)
+    dlng = math.radians(op_lng - lng)
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat)) * math.cos(math.radians(op_lat)) * math.sin(dlng / 2) ** 2
+    distance = R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    within_range = distance <= max_distance_km
+
+    return {
+        "within_range": within_range,
+        "distance_km": round(distance, 2),
+        "max_distance_km": max_distance_km,
+        "inspector_location": {"lat": lat, "lng": lng},
+        "operator_location": {"lat": op_lat, "lng": op_lng},
+        "operator": op.raison_sociale,
+        "message": "Localisation validee." if within_range else f"Vous etes a {distance:.1f}km du site. Maximum autorise: {max_distance_km}km.",
+    }

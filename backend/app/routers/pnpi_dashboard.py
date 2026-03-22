@@ -1617,3 +1617,70 @@ async def workflow_timing(
             })
 
     return {"stages": result}
+
+
+@router.get("/dashboard/budget-tracking")
+async def budget_tracking(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Estimated processing costs per ATI and aggregate budget metrics."""
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    now = now_utc()
+
+    # Cost model (FCFA)
+    COST_PER_INSTRUCTION_DAY = 15000  # ~23 EUR/day
+    COST_PER_INSPECTION = 250000      # ~380 EUR
+    COST_CERTIFICATE = 50000          # ~76 EUR
+
+    total_cost = 0
+    sector_costs: Dict[str, float] = defaultdict(float)
+    monthly_costs: Dict[str, float] = defaultdict(float)
+
+    for ati in all_atis:
+        # Instruction cost
+        if ati.date_decision:
+            days = (ati.date_decision.date() - ati.date_soumission.date()).days
+        else:
+            days = (now.date() - ati.date_soumission.date()).days
+
+        instruction_cost = days * COST_PER_INSTRUCTION_DAY
+        cert_cost = COST_CERTIFICATE if ati.statut == "approuve" else 0
+        ati_cost = instruction_cost + cert_cost
+
+        total_cost += ati_cost
+        sector_costs[ati.secteur] += ati_cost
+        month = ati.date_soumission.strftime("%Y-%m")
+        monthly_costs[month] += ati_cost
+
+    # Inspections cost
+    all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
+    inspection_total = len(all_insp) * COST_PER_INSPECTION
+    total_cost += inspection_total
+
+    return {
+        "total_cost_fcfa": round(total_cost),
+        "total_cost_eur": round(total_cost / 655.957),
+        "breakdown": {
+            "instruction": round(sum(
+                ((a.date_decision.date() - a.date_soumission.date()).days if a.date_decision else (now.date() - a.date_soumission.date()).days) * COST_PER_INSTRUCTION_DAY
+                for a in all_atis
+            )),
+            "certificats": round(sum(COST_CERTIFICATE for a in all_atis if a.statut == "approuve")),
+            "inspections": round(inspection_total),
+        },
+        "by_sector": [
+            {"secteur": k, "cost_fcfa": round(v), "cost_eur": round(v / 655.957)}
+            for k, v in sorted(sector_costs.items(), key=lambda x: -x[1])
+        ],
+        "monthly": [
+            {"month": k, "cost_fcfa": round(v)}
+            for k, v in sorted(monthly_costs.items())[-12:]
+        ],
+        "avg_cost_per_ati": round(total_cost / max(len(all_atis), 1)),
+        "cost_model": {
+            "instruction_par_jour": COST_PER_INSTRUCTION_DAY,
+            "inspection": COST_PER_INSPECTION,
+            "certificat": COST_CERTIFICATE,
+        },
+    }

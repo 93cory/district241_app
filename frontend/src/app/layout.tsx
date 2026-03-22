@@ -15,6 +15,7 @@ import { ThemeToggle } from "./components/ThemeToggle";
 import { ServerLoad } from "./components/ServerLoad";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
 import { AccessibilityPanel } from "./components/AccessibilityPanel";
+import { ChatAssistant } from "./components/ChatAssistant";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -75,6 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <PWAInstall />
           <OnboardingTour />
           <KeyboardShortcuts />
+          <ChatAssistant />
         </div>
       </body>
     </html>
