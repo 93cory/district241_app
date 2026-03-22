@@ -10,6 +10,7 @@ import { ToastProvider } from "./components/Toast";
 import { SessionTimeout } from "./components/SessionTimeout";
 import { PWAInstall } from "./components/PWAInstall";
 import { OnboardingTour } from "./components/OnboardingTour";
+import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
@@ -67,6 +68,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </main>
           <PWAInstall />
           <OnboardingTour />
+          <KeyboardShortcuts />
         </div>
       </body>
     </html>

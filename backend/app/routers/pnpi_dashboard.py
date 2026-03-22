@@ -1396,3 +1396,46 @@ async def province_benchmark(
 
     result.sort(key=lambda r: r["score"], reverse=True)
     return {"provinces": result}
+
+
+@router.get("/dashboard/activity-feed")
+async def activity_feed(
+    limit: int = Query(20, ge=1, le=50),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Recent activity feed across all entities."""
+    from ..models.core import AuditEventORM
+
+    events = db.execute(
+        select(AuditEventORM)
+        .order_by(AuditEventORM.timestamp.desc())
+        .limit(limit)
+    ).scalars().all()
+
+    ACTION_ICONS = {
+        "ati.": "📋", "inspection.": "🔍", "auth.": "🔐",
+        "admin.": "⚙️", "export.": "📤", "operateurs.": "🏭",
+        "ati.sign": "✍️", "ati.certificate": "📜",
+    }
+
+    def get_icon(action: str) -> str:
+        for prefix, icon in ACTION_ICONS.items():
+            if action.startswith(prefix):
+                return icon
+        return "📌"
+
+    return {
+        "events": [
+            {
+                "id": e.id,
+                "icon": get_icon(e.action),
+                "actor": e.actor,
+                "action": e.action,
+                "target": e.target,
+                "details": e.details[:150] if e.details else "",
+                "timestamp": e.timestamp.isoformat(),
+            }
+            for e in events
+        ]
+    }

@@ -227,6 +227,20 @@ class StickyNoteORM(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class DocumentVersionORM(Base):
+    __tablename__ = "document_versions"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    document_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    ati_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    uploaded_by: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    comment: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class OperatorFeedbackORM(Base):
     __tablename__ = "operator_feedback"
 

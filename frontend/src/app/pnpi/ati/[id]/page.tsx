@@ -11,6 +11,7 @@ import { ATIComments } from "./Comments";
 import { TagsManager } from "./TagsManager";
 import { SLAClock } from "./SLAClock";
 import { FieldHistory } from "./FieldHistory";
+import { DocumentVersions } from "./DocumentVersions";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -218,6 +219,11 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
       {/* Documents section */}
       <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
         <DocumentUpload atiId={ati.id} initialDocs={documents} />
+      </div>
+
+      {/* Document Versions */}
+      <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+        <DocumentVersions atiId={ati.id} />
       </div>
 
       {/* Comments / Annotations */}

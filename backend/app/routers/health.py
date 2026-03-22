@@ -31,6 +31,48 @@ async def health() -> Dict[str, str]:
     return {"status": "ok", "service": "PNPI/PNPI Backend", "database": settings.database_url}
 
 
+@router.get("/health/status")
+async def system_status(db: Session = Depends(get_db)):
+    """Public system status page — no auth required."""
+    checks = []
+    overall = "operational"
+
+    # Database
+    try:
+        start = time.perf_counter()
+        db.execute(text("SELECT 1"))
+        latency = round((time.perf_counter() - start) * 1000, 1)
+        checks.append({"name": "Base de donnees", "status": "operational", "latency_ms": latency})
+    except Exception:
+        checks.append({"name": "Base de donnees", "status": "down", "latency_ms": None})
+        overall = "degraded"
+
+    # Backend API
+    checks.append({"name": "API Backend", "status": "operational", "latency_ms": 0})
+
+    # Check table counts as health proxy
+    try:
+        from ..models.pnpi import AgrementTechniqueIndustrielORM, OperateurIndustrielORM
+        ati_count = db.execute(select(func.count()).select_from(AgrementTechniqueIndustrielORM)).scalar() or 0
+        op_count = db.execute(select(func.count()).select_from(OperateurIndustrielORM)).scalar() or 0
+        checks.append({"name": "Donnees ATI", "status": "operational", "detail": f"{ati_count} enregistrements"})
+        checks.append({"name": "Donnees Operateurs", "status": "operational", "detail": f"{op_count} enregistrements"})
+    except Exception:
+        checks.append({"name": "Donnees", "status": "degraded", "detail": "Erreur de lecture"})
+        overall = "degraded"
+
+    from ..core.metrics import metrics as _metrics_singleton
+    uptime_hours = round((time.time() - _metrics_singleton._start_time) / 3600, 1)
+
+    return {
+        "status": overall,
+        "uptime_hours": uptime_hours,
+        "checks": checks,
+        "version": "1.26.0",
+        "timestamp": now_utc().isoformat(),
+    }
+
+
 @router.get("/health/detailed")
 async def health_detailed(
     _: User = Depends(require_roles(Role.admin, Role.ministre)),

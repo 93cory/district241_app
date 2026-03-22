@@ -39,6 +39,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/reports", "Rapports");
     add("/pnpi/search", "Recherche");
     add("/pnpi/presentation", "Presentation");
+    add("/pnpi/activity", "Activite");
     add("/admin/audit-log", "Audit");
     add("/admin/workflows", "Workflows");
     add("/pnpi/heatmap", "Heatmap");
@@ -95,6 +96,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/impact", "Impact");
     add("/pnpi/search", "Recherche");
     add("/pnpi/presentation", "Presentation");
+    add("/pnpi/activity", "Activite");
     add("/pnpi/dashboard-config", "Config Dashboard");
     add("/pnpi/calendar", "Calendrier");
     add("/pnpi/reports", "Rapports");
