@@ -279,3 +279,22 @@ class ATIChecklistItemORM(Base):
     checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(String(300), nullable=True)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+
+
+class PollORM(Base):
+    __tablename__ = "polls"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    question: Mapped[str] = mapped_column(String(300), nullable=False)
+    options: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PollVoteORM(Base):
+    __tablename__ = "poll_votes"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    poll_id: Mapped[str] = mapped_column(String(36), ForeignKey("polls.id"), nullable=False)
+    username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    option_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
