@@ -1,0 +1,14 @@
+# PNPI — Taches planifiees
+# Installer: crontab deploy/crontab.example
+
+# Rapport executif hebdomadaire (lundi 7h)
+0 7 * * 1 cd /opt/pnpi && docker exec pnpi-backend python scripts/cron_tasks.py weekly-report >> /var/log/pnpi/cron.log 2>&1
+
+# Verification SLA (tous les jours 8h et 14h)
+0 8,14 * * * cd /opt/pnpi && docker exec pnpi-backend python scripts/cron_tasks.py sla-check >> /var/log/pnpi/cron.log 2>&1
+
+# Nettoyage tokens expires (tous les jours 3h)
+0 3 * * * cd /opt/pnpi && docker exec pnpi-backend python scripts/cron_tasks.py cleanup >> /var/log/pnpi/cron.log 2>&1
+
+# Backup PostgreSQL (tous les jours 2h)
+0 2 * * * cd /opt/pnpi && docker exec pnpi-postgres pg_dump -U pnpi_user pnpi | gzip > /backup/pnpi_$(date +\%Y\%m\%d).sql.gz 2>&1

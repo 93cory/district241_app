@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from ..core.auth import Role, User, require_roles
 from ..core.audit import write_audit_event
+from ..core.scoring import compute_operator_score, compute_all_scores
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -75,6 +76,14 @@ def _to_ati_brief(ati: AgrementTechniqueIndustrielORM) -> ATIBrief:
         age_jours=_ati_age_jours(ati),
         is_overdue=_ati_is_overdue(ati),
     )
+
+
+@router.get("/operateurs/scores/ranking", summary="Classement des operateurs par score de conformite")
+async def get_operators_ranking(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    return compute_all_scores(db)
 
 
 @router.get("/operateurs", response_model=List[OperateurBrief], summary="Lister les operateurs industriels")
@@ -193,3 +202,12 @@ async def toggle_operateur_active(
     db.commit()
     db.refresh(op)
     return _to_operateur_read(op)
+
+
+@router.get("/operateurs/{operateur_id}/score", summary="Score de conformite d'un operateur")
+async def get_operator_score(
+    operateur_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    return compute_operator_score(db, operateur_id)

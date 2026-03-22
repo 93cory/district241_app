@@ -708,3 +708,66 @@ async def export_recap_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="recap_pnpi_{now.strftime("%Y%m")}.pdf"'},
     )
+
+
+@router.get("/dashboard/comparison", summary="Comparaison entre deux periodes")
+async def period_comparison(
+    period1_start: str = Query(..., description="ISO date YYYY-MM-DD"),
+    period1_end: str = Query(...),
+    period2_start: str = Query(...),
+    period2_end: str = Query(...),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Compare two periods (e.g., Q1 vs Q2)."""
+    from datetime import timezone as tz
+
+    p1_start = datetime.fromisoformat(period1_start).replace(tzinfo=tz.utc)
+    p1_end = datetime.fromisoformat(period1_end).replace(tzinfo=tz.utc)
+    p2_start = datetime.fromisoformat(period2_start).replace(tzinfo=tz.utc)
+    p2_end = datetime.fromisoformat(period2_end).replace(tzinfo=tz.utc)
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
+
+    def period_stats(start, end):
+        atis = [a for a in all_atis if start <= a.date_soumission <= end]
+        approved = sum(1 for a in atis if a.statut == "approuve")
+        rejected = sum(1 for a in atis if a.statut == "rejete")
+        inspections = [i for i in all_inspections if start <= i.date_inspection <= end]
+        conformes = sum(1 for i in inspections if i.statut_conformite == "conforme")
+
+        decided = [a for a in atis if a.statut in {"approuve", "rejete"} and a.date_decision]
+        avg_days = 0
+        if decided:
+            durations = [(a.date_decision.date() - a.date_soumission.date()).days for a in decided]
+            avg_days = round(sum(durations) / len(durations), 1)
+
+        return {
+            "soumissions": len(atis),
+            "approuves": approved,
+            "rejetes": rejected,
+            "taux_approbation": round(approved / len([a for a in atis if a.statut in {"approuve", "rejete"}]) * 100, 1) if any(a.statut in {"approuve", "rejete"} for a in atis) else 0,
+            "inspections": len(inspections),
+            "conformes": conformes,
+            "taux_conformite": round(conformes / len(inspections) * 100, 1) if inspections else 0,
+            "delai_moyen_jours": avg_days,
+        }
+
+    p1 = period_stats(p1_start, p1_end)
+    p2 = period_stats(p2_start, p2_end)
+
+    # Compute deltas
+    deltas = {}
+    for key in p1:
+        v1, v2 = p1[key], p2[key]
+        if isinstance(v1, (int, float)) and v1 != 0:
+            deltas[key] = round((v2 - v1) / v1 * 100, 1)
+        else:
+            deltas[key] = 0
+
+    return {
+        "period1": {"start": period1_start, "end": period1_end, "stats": p1},
+        "period2": {"start": period2_start, "end": period2_end, "stats": p2},
+        "deltas_pct": deltas,
+    }

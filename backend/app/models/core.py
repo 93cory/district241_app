@@ -121,6 +121,18 @@ class AuditEventORM(Base):
     details: Mapped[str] = mapped_column(String(1500), nullable=False, default="")
 
 
+class NotificationPreferenceORM(Base):
+    __tablename__ = "notification_preferences"
+
+    username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), primary_key=True)
+    email_ati_approved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_ati_rejected: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_sla_alert: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_inspection: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    email_weekly_briefing: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    push_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
 class RefreshTokenORM(Base):
     __tablename__ = "refresh_tokens"
 

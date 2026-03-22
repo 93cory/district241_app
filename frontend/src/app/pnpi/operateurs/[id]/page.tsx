@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { fetchPNPIOperateur, fetchPNPIOperateurATIs } from "../../../../lib/api";
-import { fetchBackendProfile } from "../../../../lib/backend";
+import { fetchBackendProfile, backendRequest } from "../../../../lib/backend";
 import { ToggleActiveButton } from "./components/ToggleActiveButton";
+import { ScoreCard } from "./ScoreCard";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const CAN_TOGGLE = new Set(["admin", "directeur"]);
@@ -25,6 +26,12 @@ export default async function OperateurDetailPage({ params }: { params: { id: st
   try {
     [op, atis] = await Promise.all([fetchPNPIOperateur(params.id), fetchPNPIOperateurATIs(params.id)]);
   } catch { notFound(); }
+
+  let scoreData: any = null;
+  try {
+    const scoreRes = await backendRequest(`/pnpi/operateurs/${encodeURIComponent(params.id)}/score`);
+    if (scoreRes.ok) scoreData = await scoreRes.json();
+  } catch { /* score not available */ }
 
   const nbApprouves = atis.filter((a) => a.statut === "approuve").length;
   const nbEnCours = atis.filter((a) => ["soumis", "en_instruction", "en_validation"].includes(a.statut)).length;
@@ -85,6 +92,11 @@ export default async function OperateurDetailPage({ params }: { params: { id: st
               ))}
             </dl>
           </div>
+          {scoreData && !scoreData.error && (
+            <div style={{ marginTop: "1.25rem" }}>
+              <ScoreCard data={scoreData} />
+            </div>
+          )}
         </div>
 
         {/* ATIs */}

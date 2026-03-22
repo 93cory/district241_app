@@ -533,6 +533,47 @@ async def download_ati_pdf(
     )
 
 
+@router.get("/ati/{ati_id}/certificate.pdf", summary="Certificat officiel ATI avec QR code",
+            description="Genere un certificat officiel PDF avec QR code pour un ATI approuve.")
+async def download_ati_certificate(
+    ati_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.operateur)),
+    db: Session = Depends(get_db),
+) -> FastAPIResponse:
+    from ..core.certificate import generate_ati_certificate
+
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    if ati.statut != "approuve":
+        raise HTTPException(status_code=400, detail="Certificat disponible uniquement pour les ATI approuves.")
+
+    op = ati.operateur
+    pdf = generate_ati_certificate(
+        numero_ati=ati.numero_ati,
+        operateur=op.raison_sociale if op else "Inconnu",
+        nif=op.nif_gabon if op else "",
+        secteur=ati.secteur,
+        province=op.province if op else "",
+        type_activite=ati.type_activite,
+        date_soumission=ati.date_soumission,
+        date_decision=ati.date_decision,
+        date_expiration=ati.date_expiration,
+        reference_decision=ati.numero_reference_decision,
+        sla_jours=ati.sla_jours,
+    )
+
+    write_audit_event(db, actor=current_user.username, action="ati.certificate",
+                     target=ati.id, details=f"Certificat ATI {ati.numero_ati} telecharge")
+    db.commit()
+
+    return FastAPIResponse(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="certificat_ATI_{ati.numero_ati}.pdf"'},
+    )
+
+
 @router.post("/ati/bulk-assign", summary="Assigner des ATI en lot a un instructeur",
              description="Permet a un directeur ou admin d'assigner plusieurs ATI a un instructeur en une seule operation.")
 async def bulk_assign_ati(

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import csv
 import io
+import os
+import zipfile
 from datetime import date
 from typing import List, Optional
 
@@ -16,7 +18,7 @@ from ..core.audit import write_audit_event
 from ..database import get_db, now_utc
 from ..models.core import FieldReportORM, TraceBatchORM, UnitORM, UserAccountORM
 from ..models.pilotage import ProjectDossierORM, ProjectDossierTransitionORM
-from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
+from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM, InspectionConformiteORM, OperateurIndustrielORM
 
 
 from ..core.executive_report import generate_executive_report
@@ -568,6 +570,44 @@ async def email_briefing_to_roles(
     db.commit()
 
     return {"sent": sent, "recipients_found": len(recipients), "target_roles": target_roles}
+
+
+@router.get("/exports/ati/{ati_id}/documents.zip")
+async def export_ati_documents_zip(
+    ati_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.operateur)),
+    db: Session = Depends(get_db),
+):
+    """Download all documents for an ATI as a ZIP archive."""
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+
+    docs = db.execute(
+        select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)
+    ).scalars().all()
+
+    if not docs:
+        raise HTTPException(status_code=404, detail="Aucun document pour cet ATI.")
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for doc in docs:
+            file_path = doc.chemin_stockage
+            if os.path.exists(file_path):
+                zf.write(file_path, doc.nom_fichier)
+
+    buf.seek(0)
+
+    write_audit_event(db, actor=current_user.username, action="export.zip",
+                     target=ati_id, details=f"ZIP {len(docs)} documents ATI {ati.numero_ati}")
+    db.commit()
+
+    return Response(
+        content=buf.read(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="documents_ATI_{ati.numero_ati}.zip"'},
+    )
 
 
 # ---------------------------------------------------------------------------

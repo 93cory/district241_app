@@ -250,3 +250,50 @@ async def change_password(
     db.commit()
 
     return {"message": "Mot de passe modifie avec succes."}
+
+
+@router.get("/auth/me/preferences")
+async def get_preferences(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from ..models.core import NotificationPreferenceORM
+    prefs = db.get(NotificationPreferenceORM, current_user.username)
+    if not prefs:
+        return {
+            "email_ati_approved": True,
+            "email_ati_rejected": True,
+            "email_sla_alert": True,
+            "email_inspection": True,
+            "email_weekly_briefing": True,
+            "push_enabled": True,
+        }
+    return {
+        "email_ati_approved": prefs.email_ati_approved,
+        "email_ati_rejected": prefs.email_ati_rejected,
+        "email_sla_alert": prefs.email_sla_alert,
+        "email_inspection": prefs.email_inspection,
+        "email_weekly_briefing": prefs.email_weekly_briefing,
+        "push_enabled": prefs.push_enabled,
+    }
+
+
+@router.patch("/auth/me/preferences")
+async def update_preferences(
+    prefs_data: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from ..models.core import NotificationPreferenceORM
+    prefs = db.get(NotificationPreferenceORM, current_user.username)
+    if not prefs:
+        prefs = NotificationPreferenceORM(username=current_user.username)
+        db.add(prefs)
+
+    allowed = {"email_ati_approved", "email_ati_rejected", "email_sla_alert", "email_inspection", "email_weekly_briefing", "push_enabled"}
+    for key, value in prefs_data.items():
+        if key in allowed and isinstance(value, bool):
+            setattr(prefs, key, value)
+
+    db.commit()
+    return {"status": "ok", "message": "Preferences mises a jour."}

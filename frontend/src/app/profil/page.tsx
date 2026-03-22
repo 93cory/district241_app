@@ -4,6 +4,7 @@ import { fetchBackendProfile } from "../../lib/backend";
 import { fetchPNPIATIs, fetchPNPIInspections } from "../../lib/api";
 import TwoFactorSetup from "./TwoFactorSetup";
 import { ChangePasswordForm } from "./ChangePasswordForm";
+import { NotificationPreferences } from "./NotificationPreferences";
 
 const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   admin: { label: "Administrateur", color: "#7c3aed", bg: "#f5f3ff" },
@@ -134,6 +135,11 @@ export default async function ProfilPage() {
           {/* Changement de mot de passe */}
           <div className="chart-card" style={{ padding: "1.5rem", marginTop: "1.25rem" }}>
             <ChangePasswordForm />
+          </div>
+
+          {/* Preferences de notification */}
+          <div className="chart-card" style={{ padding: "1.5rem", marginTop: "1.25rem" }}>
+            <NotificationPreferences />
           </div>
         </div>
 
