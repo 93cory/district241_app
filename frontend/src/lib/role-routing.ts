@@ -27,6 +27,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
 
   if (hasRole(roles, "admin")) {
     add("/pnpi", "Dashboard PNPI");
+    add("/pnpi/live", "Temps reel");
     add("/pnpi/stats", "Statistiques PNPI");
     add("/pnpi/briefing", "Briefing PNPI");
     add("/admin", "Administration");
@@ -36,10 +37,12 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/calendar", "Calendrier");
     add("/pnpi/reports", "Rapports");
     add("/admin/audit-log", "Audit");
+    add("/changelog", "Changelog");
   }
 
   if (hasRole(roles, "ministre")) {
     add("/pnpi", "Dashboard Ministériel");
+    add("/pnpi/live", "Temps reel");
     add("/pnpi/ati", "Agréments ATI");
     add("/pnpi/operateurs", "Opérateurs");
     add("/pnpi/inspections", "Inspections");
@@ -54,6 +57,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
 
   if (hasRole(roles, "directeur")) {
     add("/pnpi", "Dashboard PNPI");
+    add("/pnpi/live", "Temps reel");
     add("/pnpi/mes-dossiers", "Mes Dossiers");
     add("/pnpi/ati", "Agréments ATI");
     add("/pnpi/operateurs", "Opérateurs");
@@ -90,6 +94,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
   }
 
   if (links.length > 0) {
+    add("/pnpi/favorites", "Favoris");
     add("/pnpi/messages", "Messages");
     add("/profil", "Mon profil");
     add("/aide", "Aide");

@@ -142,6 +142,16 @@ class MessageORM(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class UserFavoriteORM(Base):
+    __tablename__ = "user_favorites"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False, index=True)
+    ati_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    note: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class DocumentDossierORM(Base):
     __tablename__ = "documents_dossier"
 

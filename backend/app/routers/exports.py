@@ -22,6 +22,8 @@ from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM, In
 
 
 from ..core.executive_report import generate_executive_report
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 router = APIRouter(tags=["Exports"])
 
@@ -607,6 +609,187 @@ async def export_ati_documents_zip(
         content=buf.read(),
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="documents_ATI_{ati.numero_ati}.zip"'},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Excel (XLSX) exports
+# ---------------------------------------------------------------------------
+
+@router.get("/exports/atis.xlsx")
+async def export_atis_xlsx(
+    statut: Optional[str] = Query(None),
+    secteur: Optional[str] = Query(None),
+    province: Optional[str] = Query(None),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    """Export ATI list as Excel workbook with formatting."""
+    query = select(AgrementTechniqueIndustrielORM)
+    if statut:
+        query = query.where(AgrementTechniqueIndustrielORM.statut == statut)
+    if secteur:
+        query = query.where(AgrementTechniqueIndustrielORM.secteur == secteur)
+
+    atis = db.execute(query.order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())).scalars().all()
+
+    if province:
+        atis = [a for a in atis if a.operateur and a.operateur.province == province]
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "ATIs PNPI"
+
+    # Header style
+    header_font = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
+    header_fill = PatternFill(start_color="006233", end_color="006233", fill_type="solid")
+    header_align = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    headers = ["N\u00b0 ATI", "Operateur", "NIF", "Secteur", "Province", "Type activite",
+               "Statut", "Date soumission", "Date decision", "SLA (jours)", "Age (jours)"]
+
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_align
+        cell.border = thin_border
+
+    # Status colors
+    STATUS_FILLS = {
+        "approuve": PatternFill(start_color="DCFCE7", end_color="DCFCE7", fill_type="solid"),
+        "rejete": PatternFill(start_color="FEF2F2", end_color="FEF2F2", fill_type="solid"),
+        "soumis": PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid"),
+    }
+
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+
+    for row_idx, ati in enumerate(atis, 2):
+        op = ati.operateur
+        age = (now.date() - ati.date_soumission.date()).days
+
+        values = [
+            ati.numero_ati,
+            op.raison_sociale if op else "",
+            op.nif_gabon if op else "",
+            ati.secteur,
+            (op.province if op else "").replace("_", " ").title(),
+            ati.type_activite,
+            ati.statut,
+            ati.date_soumission.strftime("%d/%m/%Y"),
+            ati.date_decision.strftime("%d/%m/%Y") if ati.date_decision else "",
+            ati.sla_jours,
+            age,
+        ]
+
+        for col, val in enumerate(values, 1):
+            cell = ws.cell(row=row_idx, column=col, value=val)
+            cell.border = thin_border
+            cell.alignment = Alignment(vertical="center")
+
+        # Color status cell
+        status_cell = ws.cell(row=row_idx, column=7)
+        if ati.statut in STATUS_FILLS:
+            status_cell.fill = STATUS_FILLS[ati.statut]
+
+        # Highlight overdue
+        if age > ati.sla_jours and ati.statut not in ("approuve", "rejete", "expire"):
+            ws.cell(row=row_idx, column=11).fill = PatternFill(
+                start_color="FEF2F2", end_color="FEF2F2", fill_type="solid"
+            )
+            ws.cell(row=row_idx, column=11).font = Font(color="B42318", bold=True)
+
+    # Auto-width columns
+    for col in ws.columns:
+        max_length = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(max_length + 4, 40)
+
+    # Freeze header
+    ws.freeze_panes = "A2"
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    write_audit_event(db, actor=current_user.username, action="export.xlsx",
+                     target="atis", details=f"Export Excel {len(atis)} ATIs")
+    db.commit()
+
+    return Response(
+        content=buf.read(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="atis_pnpi.xlsx"'},
+    )
+
+
+@router.get("/exports/operateurs.xlsx")
+async def export_operateurs_xlsx(
+    secteur: Optional[str] = Query(None),
+    province: Optional[str] = Query(None),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Export operators as Excel workbook."""
+    query = select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))
+    if secteur:
+        query = query.where(OperateurIndustrielORM.secteur == secteur)
+    if province:
+        query = query.where(OperateurIndustrielORM.province == province)
+
+    ops = db.execute(query.order_by(OperateurIndustrielORM.raison_sociale)).scalars().all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Operateurs PNPI"
+
+    header_font = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
+    header_fill = PatternFill(start_color="0C7EB4", end_color="0C7EB4", fill_type="solid")
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    headers = ["Raison sociale", "NIF", "Secteur", "Province", "Ville", "Email", "Telephone"]
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+
+    for row_idx, op in enumerate(ops, 2):
+        values = [
+            op.raison_sociale, op.nif_gabon, op.secteur,
+            op.province.replace("_", " ").title() if op.province else "",
+            op.ville or "", op.email or "", op.telephone or "",
+        ]
+        for col, val in enumerate(values, 1):
+            cell = ws.cell(row=row_idx, column=col, value=val)
+            cell.border = thin_border
+
+    for col in ws.columns:
+        max_length = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(max_length + 4, 40)
+
+    ws.freeze_panes = "A2"
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    write_audit_event(db, actor=current_user.username, action="export.xlsx",
+                     target="operateurs", details=f"Export Excel {len(ops)} operateurs")
+    db.commit()
+
+    return Response(
+        content=buf.read(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": 'attachment; filename="operateurs_pnpi.xlsx"'},
     )
 
 

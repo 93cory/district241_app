@@ -19,6 +19,7 @@ from ..models.pnpi import (
     ATITransitionORM,
     InspectionConformiteORM,
     OperateurIndustrielORM,
+    UserFavoriteORM,
 )
 from ..schemas.pnpi import ATIBrief, ATICreate, ATIRead, ATIStatusUpdate, ATITransitionRead
 
@@ -882,3 +883,63 @@ async def verify_ati_public(numero_ati: str, db: Session = Depends(get_db)):
         "date_expiration": ati.date_expiration.isoformat() if ati.date_expiration else None,
         "verified_at": now.isoformat(),
     }
+
+
+# ─── Favorites / Pinned ATIs ──────────────────────────────────────────────
+
+
+@router.get("/ati/favorites", summary="Liste des ATI favoris de l'utilisateur")
+async def get_favorites(
+    current_user: User = Depends(require_roles(
+        Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.operateur, Role.inspecteur
+    )),
+    db: Session = Depends(get_db),
+):
+    favs = db.execute(
+        select(UserFavoriteORM).where(UserFavoriteORM.username == current_user.username)
+        .order_by(UserFavoriteORM.created_at.desc())
+    ).scalars().all()
+
+    result = []
+    for f in favs:
+        ati = db.get(AgrementTechniqueIndustrielORM, f.ati_id)
+        result.append({
+            "id": f.id,
+            "ati_id": f.ati_id,
+            "numero_ati": ati.numero_ati if ati else None,
+            "statut": ati.statut if ati else None,
+            "operateur": ati.operateur.raison_sociale if ati and ati.operateur else None,
+            "note": f.note,
+            "created_at": f.created_at.isoformat(),
+        })
+    return {"favorites": result}
+
+
+@router.post("/ati/{ati_id}/favorite", summary="Epingler / desepingler un ATI")
+async def toggle_favorite(
+    ati_id: str,
+    current_user: User = Depends(require_roles(
+        Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.operateur, Role.inspecteur
+    )),
+    db: Session = Depends(get_db),
+):
+    existing = db.execute(
+        select(UserFavoriteORM).where(
+            UserFavoriteORM.username == current_user.username,
+            UserFavoriteORM.ati_id == ati_id,
+        )
+    ).scalar_one_or_none()
+
+    if existing:
+        db.delete(existing)
+        db.commit()
+        return {"status": "removed", "ati_id": ati_id}
+
+    fav = UserFavoriteORM(
+        id=str(uuid.uuid4()),
+        username=current_user.username,
+        ati_id=ati_id,
+    )
+    db.add(fav)
+    db.commit()
+    return {"status": "added", "ati_id": ati_id, "id": fav.id}
