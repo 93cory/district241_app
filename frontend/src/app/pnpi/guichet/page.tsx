@@ -3,6 +3,7 @@ import Link from "next/link";
 import { fetchPNPIATIs, fetchPNPIOperateurs } from "../../../lib/api";
 import { fetchBackendProfile } from "../../../lib/backend";
 import { ATICreateForm } from "./components/ATICreateForm";
+import { MonEspace } from "./MonEspace";
 
 const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "operateur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -138,6 +139,12 @@ export default async function GuichetPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Mon Espace — enriched operator dashboard */}
+        <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+          <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Mon espace — Vue enrichie</h3>
+          <MonEspace />
         </div>
       </section>
     );

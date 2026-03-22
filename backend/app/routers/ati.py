@@ -17,6 +17,7 @@ from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
     ATICommentORM,
+    ATITagORM,
     ATITransitionORM,
     InspectionConformiteORM,
     OperateurIndustrielORM,
@@ -1070,3 +1071,71 @@ async def transition_ati_kanban(
     db.commit()
 
     return {"status": "ok", "previous": prev_statut, "new": new_statut}
+
+
+# ─── ATI Tags ─────────────────────────────────────────────────────────────
+
+
+@router.get("/ati/{ati_id}/tags")
+async def get_ati_tags(
+    ati_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    tags = db.execute(
+        select(ATITagORM).where(ATITagORM.ati_id == ati_id)
+        .order_by(ATITagORM.created_at.asc())
+    ).scalars().all()
+    return {"tags": [{"id": t.id, "label": t.label, "color": t.color, "created_by": t.created_by} for t in tags]}
+
+
+@router.post("/ati/{ati_id}/tags")
+async def add_ati_tag(
+    ati_id: str,
+    data: dict,
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    label = (data.get("label") or "").strip()[:50]
+    if not label:
+        raise HTTPException(400, "Label requis.")
+    color = data.get("color", "#0c7eb4")
+
+    tag = ATITagORM(
+        id=str(uuid.uuid4()),
+        ati_id=ati_id,
+        label=label,
+        color=color,
+        created_by=current_user.username,
+    )
+    db.add(tag)
+    db.commit()
+    return {"status": "ok", "id": tag.id}
+
+
+@router.delete("/ati/tags/{tag_id}")
+async def remove_ati_tag(
+    tag_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    tag = db.get(ATITagORM, tag_id)
+    if not tag:
+        raise HTTPException(404, "Tag introuvable.")
+    db.delete(tag)
+    db.commit()
+    return {"status": "ok"}
+
+
+@router.get("/ati/tags/all")
+async def list_all_tags(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List all unique tag labels used across ATIs."""
+    from sqlalchemy import distinct
+    labels = db.execute(
+        select(distinct(ATITagORM.label), ATITagORM.color)
+        .order_by(ATITagORM.label)
+    ).all()
+    return {"tags": [{"label": l, "color": c} for l, c in labels]}

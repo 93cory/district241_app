@@ -163,6 +163,17 @@ class ATICommentORM(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ATITagORM(Base):
+    __tablename__ = "ati_tags"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    ati_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    label: Mapped[str] = mapped_column(String(50), nullable=False)
+    color: Mapped[str] = mapped_column(String(7), nullable=False, server_default="#0c7eb4")
+    created_by: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class DocumentDossierORM(Base):
     __tablename__ = "documents_dossier"
 

@@ -9,6 +9,7 @@ import { MobileNav } from "./components/MobileNav";
 import { ToastProvider } from "./components/Toast";
 import { SessionTimeout } from "./components/SessionTimeout";
 import { PWAInstall } from "./components/PWAInstall";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -53,6 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <MobileNav>
                 <NavLinks links={navLinks} />
                 <SessionStatusBadge />
+                <ThemeToggle />
                 {roles.length ? <NotificationsBell /> : null}
                 {roles.length ? <WebLogoutButton /> : null}
               </MobileNav>

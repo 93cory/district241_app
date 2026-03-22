@@ -5,6 +5,7 @@ import { fetchPNPIATIs, fetchPNPIInspections } from "../../lib/api";
 import TwoFactorSetup from "./TwoFactorSetup";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { NotificationPreferences } from "./NotificationPreferences";
+import { PushNotifications } from "../components/PushNotifications";
 import { LoginHistory } from "./LoginHistory";
 
 const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
@@ -141,6 +142,14 @@ export default async function ProfilPage() {
           {/* Preferences de notification */}
           <div className="chart-card" style={{ padding: "1.5rem", marginTop: "1.25rem" }}>
             <NotificationPreferences />
+          </div>
+
+          {/* Notifications push */}
+          <div className="chart-card" style={{ padding: "1.5rem", marginTop: "1.25rem" }}>
+            <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>
+              Notifications push
+            </h3>
+            <PushNotifications />
           </div>
 
           {/* Historique de connexion */}

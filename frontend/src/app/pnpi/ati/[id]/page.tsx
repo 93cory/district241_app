@@ -8,6 +8,7 @@ import { AssignInstructeur } from "../components/AssignInstructeur";
 import { ResubmitForm } from "./ResubmitForm";
 import { ATITimeline } from "./ATITimeline";
 import { ATIComments } from "./Comments";
+import { TagsManager } from "./TagsManager";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -51,6 +52,9 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
               <h2 style={{ margin: 0, color: "#003F8F", fontFamily: "monospace" }}>{ati.numero_ati}</h2>
               <span style={{ padding: "0.25rem 0.75rem", borderRadius: "999px", background: `${color}18`, color, fontWeight: 700, fontSize: "0.8rem" }}>{STATUT_LABELS[ati.statut] ?? ati.statut}</span>
               {ati.is_overdue && <span style={{ padding: "0.2rem 0.5rem", borderRadius: "4px", background: "#fef3c7", color: "#d97706", fontWeight: 700, fontSize: "0.72rem" }}>EN RETARD</span>}
+            </div>
+            <div style={{ margin: "0.5rem 0" }}>
+              <TagsManager atiId={params.id} />
             </div>
             <p style={{ margin: 0, color: "#374151", fontWeight: 500 }}>{ati.type_activite}</p>
             <p style={{ margin: "0.25rem 0 0", color: "#6b7280", fontSize: "0.875rem" }}>
