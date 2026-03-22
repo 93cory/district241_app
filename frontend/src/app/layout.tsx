@@ -16,6 +16,7 @@ import { ServerLoad } from "./components/ServerLoad";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
 import { AccessibilityPanel } from "./components/AccessibilityPanel";
 import { ChatAssistant } from "./components/ChatAssistant";
+import { CookieConsent } from "./components/CookieConsent";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -77,6 +78,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <OnboardingTour />
           <KeyboardShortcuts />
           <ChatAssistant />
+          <CookieConsent />
         </div>
       </body>
     </html>

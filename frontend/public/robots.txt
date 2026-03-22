@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /investors
+Allow: /open-data
+Allow: /contact
+Allow: /status
+Allow: /verify/
+Allow: /legal/
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /pnpi/
+Disallow: /profil
+Disallow: /kiosk
+Disallow: /embed/
+
+Sitemap: https://pnpi-gabon.ga/sitemap.xml
