@@ -364,6 +364,45 @@ async def pnpi_dashboard_recents(
     return result
 
 
+from ..core.executive_report import _compute_national_index
+
+
+@router.get("/dashboard/transformation-index")
+async def national_transformation_index(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
+    all_inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
+
+    index = _compute_national_index(all_atis, all_ops, all_inspections)
+
+    # Breakdown
+    now = now_utc()
+    month_ago = now - timedelta(days=30)
+    decided = [a for a in all_atis if a.statut in {"approuve", "rejete"}]
+    approved = sum(1 for a in decided if a.statut == "approuve")
+    sectors = len(set(o.secteur for o in all_ops if o.is_active))
+    recent_insp = [i for i in all_inspections if i.date_inspection >= month_ago]
+    conformes = sum(1 for i in recent_insp if i.statut_conformite == "conforme") if recent_insp else 0
+    actifs = sum(1 for o in all_ops if o.is_active)
+    recent_subs = sum(1 for a in all_atis if a.date_soumission >= month_ago)
+
+    return {
+        "index": index,
+        "max": 100,
+        "breakdown": {
+            "approbation": {"score": round(approved / len(decided) * 30, 1) if decided else 0, "max": 30, "detail": f"{approved}/{len(decided)} approuves"},
+            "couverture_sectorielle": {"score": round(min(sectors / 7 * 20, 20), 1), "max": 20, "detail": f"{sectors}/7 secteurs couverts"},
+            "conformite": {"score": round(conformes / len(recent_insp) * 25, 1) if recent_insp else 0, "max": 25, "detail": f"{conformes}/{len(recent_insp)} conformes (30j)"},
+            "densite_operateurs": {"score": round(min(actifs / 100 * 15, 15), 1), "max": 15, "detail": f"{actifs} operateurs actifs"},
+            "dynamisme": {"score": round(min(recent_subs / 20 * 10, 10), 1), "max": 10, "detail": f"{recent_subs} soumissions (30j)"},
+        },
+        "generated_at": now.isoformat(),
+    }
+
+
 from pydantic import BaseModel as PydanticBaseModel
 
 class SearchResult(PydanticBaseModel):
@@ -474,6 +513,86 @@ async def pnpi_health(
             "derniere_soumission_ati": latest_ati.isoformat() if latest_ati else None,
             "derniere_inspection": latest_inspection.isoformat() if latest_inspection else None,
         },
+    }
+
+
+@router.get("/dashboard/forecast")
+async def pnpi_forecast(
+    months: int = Query(default=6, ge=1, le=12),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Prevision des soumissions et approbations ATI pour les N prochains mois."""
+    now = now_utc()
+
+    # Historical data (last 12 months)
+    twelve_months_ago = now - timedelta(days=365)
+    all_atis = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.date_soumission >= twelve_months_ago
+        )
+    ).scalars().all()
+
+    # Monthly submission counts
+    monthly_subs: Dict[str, int] = defaultdict(int)
+    monthly_approvals: Dict[str, int] = defaultdict(int)
+    for ati in all_atis:
+        key = ati.date_soumission.strftime("%Y-%m")
+        monthly_subs[key] += 1
+        if ati.statut == "approuve" and ati.date_decision:
+            akey = ati.date_decision.strftime("%Y-%m")
+            monthly_approvals[akey] += 1
+
+    # Simple linear trend forecast
+    sorted_months = sorted(monthly_subs.keys())
+    if len(sorted_months) >= 3:
+        recent_3 = [monthly_subs[m] for m in sorted_months[-3:]]
+        avg_growth = (recent_3[-1] - recent_3[0]) / 2
+        last_value = recent_3[-1]
+
+        recent_3_app = [monthly_approvals.get(m, 0) for m in sorted_months[-3:]]
+        avg_growth_app = (recent_3_app[-1] - recent_3_app[0]) / 2
+        last_value_app = recent_3_app[-1]
+    else:
+        avg_growth = 0
+        last_value = sum(monthly_subs.values()) / max(len(monthly_subs), 1)
+        avg_growth_app = 0
+        last_value_app = sum(monthly_approvals.values()) / max(len(monthly_approvals), 1)
+
+    # Generate forecast
+    forecast = []
+    current_month = now.replace(day=1)
+    for i in range(1, months + 1):
+        next_month = current_month + timedelta(days=32 * i)
+        next_month = next_month.replace(day=1)
+        month_key = next_month.strftime("%Y-%m")
+
+        predicted_subs = max(0, round(last_value + avg_growth * i))
+        predicted_apps = max(0, round(last_value_app + avg_growth_app * i))
+
+        forecast.append({
+            "mois": month_key,
+            "prevision_soumissions": predicted_subs,
+            "prevision_approbations": predicted_apps,
+            "confidence": max(0.5, 1.0 - 0.08 * i),  # Decreasing confidence
+        })
+
+    # Historical for context
+    historical = [
+        {"mois": m, "soumissions": monthly_subs[m], "approbations": monthly_approvals.get(m, 0)}
+        for m in sorted_months[-6:]
+    ]
+
+    return {
+        "historical": historical,
+        "forecast": forecast,
+        "trend": {
+            "avg_monthly_submissions": round(sum(monthly_subs.values()) / max(len(monthly_subs), 1), 1),
+            "avg_monthly_approvals": round(sum(monthly_approvals.values()) / max(len(monthly_approvals), 1), 1),
+            "growth_rate_submissions": round(avg_growth, 1),
+            "growth_rate_approvals": round(avg_growth_app, 1),
+        },
+        "generated_at": now.isoformat(),
     }
 
 

@@ -327,6 +327,22 @@ export const fetchPNPITendances = (): Promise<MensuelStats[]> =>
 
 export const fetchPNPIRecents = (): Promise<ATIResume[]> =>
   request("/pnpi/dashboard/recents");
+
+export interface TransformationIndexBreakdownItem {
+  score: number;
+  max: number;
+  detail: string;
+}
+
+export interface TransformationIndexData {
+  index: number;
+  max: number;
+  breakdown: Record<string, TransformationIndexBreakdownItem>;
+  generated_at: string;
+}
+
+export const fetchTransformationIndex = (): Promise<TransformationIndexData> =>
+  request("/pnpi/dashboard/transformation-index");
 // ATI detail types
 export interface ATIRead {
   id: string; numero_ati: string; operateur_id: string; type_activite: string;

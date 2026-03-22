@@ -4,12 +4,13 @@ from __future__ import annotations
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from ..core.auth import Role, User, require_roles
-from ..database import get_db
+from ..database import get_db, now_utc
 from ..models.pnpi import InspectionConformiteORM, OperateurIndustrielORM
 from ..models.core import TraceBatchORM
 
@@ -220,3 +221,90 @@ def inspections_heatmap(
         )
         for row in rows
     ]
+
+
+@router.get("/export/operateurs.geojson")
+async def export_operateurs_geojson(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Export operators as GeoJSON FeatureCollection."""
+    ops = db.execute(
+        select(OperateurIndustrielORM).where(
+            OperateurIndustrielORM.latitude.isnot(None),
+            OperateurIndustrielORM.longitude.isnot(None),
+        )
+    ).scalars().all()
+
+    features = []
+    for op in ops:
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [op.longitude, op.latitude],
+            },
+            "properties": {
+                "id": op.id,
+                "raison_sociale": op.raison_sociale,
+                "nif_gabon": op.nif_gabon,
+                "secteur": op.secteur,
+                "province": op.province,
+                "ville": op.ville,
+                "effectif_declare": op.effectif_declare,
+                "is_active": op.is_active,
+            },
+        })
+
+    geojson = {
+        "type": "FeatureCollection",
+        "features": features,
+        "properties": {
+            "generated_at": now_utc().isoformat(),
+            "count": len(features),
+            "source": "PNPI — Ministere de l'Industrie du Gabon",
+        },
+    }
+
+    return JSONResponse(
+        content=geojson,
+        media_type="application/geo+json",
+        headers={"Content-Disposition": 'attachment; filename="operateurs_pnpi.geojson"'},
+    )
+
+
+@router.get("/export/inspections.geojson")
+async def export_inspections_geojson(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+):
+    """Export inspections as GeoJSON."""
+    inspections = db.execute(
+        select(InspectionConformiteORM).where(
+            InspectionConformiteORM.latitude.isnot(None),
+            InspectionConformiteORM.longitude.isnot(None),
+        )
+    ).scalars().all()
+
+    features = []
+    for insp in inspections:
+        features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [insp.longitude, insp.latitude],
+            },
+            "properties": {
+                "id": insp.id,
+                "statut_conformite": insp.statut_conformite,
+                "inspecteur": insp.inspecteur_username,
+                "date_inspection": insp.date_inspection.isoformat() if insp.date_inspection else None,
+                "observations": insp.observations[:200] if insp.observations else "",
+            },
+        })
+
+    return JSONResponse(
+        content={"type": "FeatureCollection", "features": features},
+        media_type="application/geo+json",
+        headers={"Content-Disposition": 'attachment; filename="inspections_pnpi.geojson"'},
+    )

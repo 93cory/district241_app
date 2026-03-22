@@ -19,7 +19,26 @@ from ..models.pilotage import ProjectDossierORM, ProjectDossierTransitionORM
 from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
 
 
+from ..core.executive_report import generate_executive_report
+
 router = APIRouter(tags=["Exports"])
+
+
+@router.get("/exports/executive-report.pdf", summary="Rapport executif hebdomadaire")
+async def export_executive_report(
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    pdf_bytes = generate_executive_report(db)
+    now = now_utc()
+    write_audit_event(db, actor=current_user.username, action="export.executive_report",
+                     target="weekly", details="Rapport executif hebdomadaire genere")
+    db.commit()
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="rapport_executif_pnpi_{now.strftime("%Y%m%d")}.pdf"'},
+    )
 
 
 def _csv_generator(rows, header):

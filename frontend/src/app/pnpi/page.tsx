@@ -9,11 +9,14 @@ import {
   fetchPNPIPipeline,
   fetchPNPITendances,
   fetchPNPIRecents,
+  fetchTransformationIndex,
   type ATIResume,
+  type TransformationIndexData,
 } from "../../lib/api";
 import { fetchBackendProfile } from "../../lib/backend";
 import { KpiCard } from "../components/KpiCard";
 import { SearchBar } from "./components/SearchBar";
+import { TransformationIndex } from "./TransformationIndex";
 
 const DashboardRefresh = dynamic(() => import("./components/DashboardRefresh"), { ssr: false });
 const CarteOperateurs = dynamic(() => import("./components/CarteOperateurs"), {
@@ -94,9 +97,10 @@ export default async function PNPIDashboardPage() {
   } catch { redirect("/connexion"); }
 
   try {
-    const [kpis, carte, secteurs, pipeline, tendances, recents] = await Promise.all([
+    const [kpis, carte, secteurs, pipeline, tendances, recents, transformationIndex] = await Promise.all([
       fetchPNPIKpis(), fetchPNPICarte(), fetchPNPISecteurs(),
       fetchPNPIPipeline(), fetchPNPITendances(), fetchPNPIRecents(),
+      fetchTransformationIndex().catch(() => null),
     ]);
 
     const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -125,6 +129,7 @@ export default async function PNPIDashboardPage() {
               <Link href="/pnpi/historique" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Historique</Link>
               <Link href="/pnpi/stats" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Statistiques</Link>
               <a href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/dashboard/export-recap.pdf`} target="_blank" rel="noopener noreferrer" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>&#8595; Recap PDF</a>
+              <a href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/exports/executive-report.pdf`} target="_blank" rel="noopener noreferrer" style={{ padding: "0.5rem 1rem", background: "#003F8F", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>&#8595; Rapport Executif</a>
             </div>
           </div>
         </section>
@@ -182,6 +187,24 @@ export default async function PNPIDashboardPage() {
           </div>
         </section>
 
+        {/* Transformation Index */}
+        {transformationIndex && (
+          <section className="section" style={{ paddingTop: 0 }}>
+            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 320px", maxWidth: "420px" }}>
+                <TransformationIndex data={transformationIndex} />
+              </div>
+              <div style={{ flex: "2 1 400px", display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
+                  <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "1rem" }}>Pipeline ATI</h3>
+                  <p style={{ margin: "0 0 1rem", color: "#6c7a8c", fontSize: "0.8rem" }}>Distribution par statut de traitement</p>
+                  <ATIPipelineChart pipeline={pipeline} />
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Carte + Pipeline */}
         <section className="section" style={{ paddingTop: 0 }}>
           <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
@@ -192,13 +215,15 @@ export default async function PNPIDashboardPage() {
                 <CarteOperateurs operateurs={carte} />
               </div>
             </div>
-            <div style={{ flex: "2 1 280px" }}>
-              <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-                <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "1rem" }}>Pipeline ATI</h3>
-                <p style={{ margin: "0 0 1rem", color: "#6c7a8c", fontSize: "0.8rem" }}>Distribution par statut de traitement</p>
-                <ATIPipelineChart pipeline={pipeline} />
+            {!transformationIndex && (
+              <div style={{ flex: "2 1 280px" }}>
+                <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
+                  <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "1rem" }}>Pipeline ATI</h3>
+                  <p style={{ margin: "0 0 1rem", color: "#6c7a8c", fontSize: "0.8rem" }}>Distribution par statut de traitement</p>
+                  <ATIPipelineChart pipeline={pipeline} />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </section>
 
