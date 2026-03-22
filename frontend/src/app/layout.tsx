@@ -17,6 +17,8 @@ import { AnnouncementBanner } from "./components/AnnouncementBanner";
 import { AccessibilityPanel } from "./components/AccessibilityPanel";
 import { ChatAssistant } from "./components/ChatAssistant";
 import { CookieConsent } from "./components/CookieConsent";
+import { CommandPalette } from "./components/CommandPalette";
+import { Footer } from "./components/Footer";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -74,11 +76,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <ToastProvider>{children}</ToastProvider>
             <SessionTimeout />
           </main>
+          <Footer />
           <PWAInstall />
           <OnboardingTour />
           <KeyboardShortcuts />
           <ChatAssistant />
           <CookieConsent />
+          <CommandPalette />
         </div>
       </body>
     </html>
