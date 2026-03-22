@@ -297,6 +297,106 @@ async def pnpi_dashboard_tendances(
     ]
 
 
+@router.get("/dashboard/data-quality")
+async def data_quality_score(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Compute a data quality score based on completeness and consistency."""
+
+    ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
+    atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
+
+    checks = []
+
+    # 1. Operator completeness (email, phone, province filled)
+    if ops:
+        complete_ops = sum(1 for o in ops if o.email and o.telephone and o.province)
+        score = round(complete_ops / len(ops) * 100)
+        checks.append({
+            "name": "Completude operateurs",
+            "description": f"{complete_ops}/{len(ops)} operateurs avec email, telephone et province",
+            "score": score,
+            "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
+        })
+
+    # 2. ATI with linked operator
+    if atis:
+        linked = sum(1 for a in atis if a.operateur_id)
+        score = round(linked / len(atis) * 100)
+        checks.append({
+            "name": "ATIs lies a un operateur",
+            "description": f"{linked}/{len(atis)} ATIs correctement lies",
+            "score": score,
+            "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+        })
+
+    # 3. ATI with observations filled
+    if atis:
+        with_obs = sum(1 for a in atis if hasattr(a, 'observations') and a.observations and len(a.observations) > 10)
+        score = round(with_obs / len(atis) * 100)
+        checks.append({
+            "name": "ATIs avec observations",
+            "description": f"{with_obs}/{len(atis)} ATIs ont des observations detaillees",
+            "score": score,
+            "status": "ok" if score >= 70 else "warning" if score >= 40 else "critical",
+        })
+
+    # 4. Decided ATIs have decision date
+    decided = [a for a in atis if a.statut in ("approuve", "rejete")]
+    if decided:
+        with_date = sum(1 for a in decided if a.date_decision)
+        score = round(with_date / len(decided) * 100)
+        checks.append({
+            "name": "Dates de decision renseignees",
+            "description": f"{with_date}/{len(decided)} decisions avec date",
+            "score": score,
+            "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+        })
+
+    # 5. Inspections with observations
+    if inspections:
+        with_obs = sum(1 for i in inspections if i.observations and len(i.observations) > 10)
+        score = round(with_obs / len(inspections) * 100)
+        checks.append({
+            "name": "Inspections documentees",
+            "description": f"{with_obs}/{len(inspections)} inspections avec observations",
+            "score": score,
+            "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
+        })
+
+    # 6. Orphan inspections (no operateur)
+    if inspections:
+        orphans = sum(1 for i in inspections if not i.operateur_id)
+        score = round((1 - orphans / len(inspections)) * 100) if inspections else 100
+        checks.append({
+            "name": "Inspections liees",
+            "description": f"{len(inspections) - orphans}/{len(inspections)} inspections avec operateur",
+            "score": score,
+            "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+        })
+
+    # Global score
+    if checks:
+        global_score = round(sum(c["score"] for c in checks) / len(checks))
+    else:
+        global_score = 0
+
+    grade = "A" if global_score >= 90 else "B" if global_score >= 75 else "C" if global_score >= 60 else "D" if global_score >= 40 else "E"
+
+    return {
+        "global_score": global_score,
+        "grade": grade,
+        "checks": checks,
+        "stats": {
+            "operateurs": len(ops),
+            "atis": len(atis),
+            "inspections": len(inspections),
+        },
+    }
+
+
 @router.get("/dashboard/sla-analytics")
 async def sla_analytics(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
@@ -891,3 +991,61 @@ async def advanced_search(
         "total": len(results),
         "results": results[:limit],
     }
+
+
+@router.get("/dashboard/instructor-performance")
+async def instructor_performance(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Performance metrics per instructor."""
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+
+    instructors: dict = defaultdict(lambda: {
+        "assigned": 0, "decided": 0, "approved": 0, "rejected": 0,
+        "total_days": 0, "overdue": 0,
+    })
+
+    now = now_utc()
+
+    for ati in all_atis:
+        instr = ati.instructeur_username if hasattr(ati, 'instructeur_username') and ati.instructeur_username else None
+        if not instr:
+            continue
+
+        data = instructors[instr]
+        data["assigned"] += 1
+
+        if ati.statut in ("approuve", "rejete"):
+            data["decided"] += 1
+            if ati.statut == "approuve":
+                data["approved"] += 1
+            else:
+                data["rejected"] += 1
+            if ati.date_decision:
+                days = (ati.date_decision.date() - ati.date_soumission.date()).days
+                data["total_days"] += days
+
+        if ati.statut not in ("approuve", "rejete", "expire"):
+            age = (now.date() - ati.date_soumission.date()).days
+            if age > ati.sla_jours:
+                data["overdue"] += 1
+
+    results = []
+    for username, metrics in sorted(instructors.items()):
+        avg_days = round(metrics["total_days"] / metrics["decided"], 1) if metrics["decided"] else 0
+        approval_rate = round(metrics["approved"] / metrics["decided"] * 100, 1) if metrics["decided"] else 0
+        results.append({
+            "username": username,
+            "assigned": metrics["assigned"],
+            "decided": metrics["decided"],
+            "approved": metrics["approved"],
+            "rejected": metrics["rejected"],
+            "overdue": metrics["overdue"],
+            "avg_days": avg_days,
+            "approval_rate": approval_rate,
+        })
+
+    results.sort(key=lambda r: r["decided"], reverse=True)
+    return {"instructors": results}

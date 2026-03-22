@@ -40,6 +40,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/presentation", "Presentation");
     add("/admin/audit-log", "Audit");
     add("/pnpi/kanban", "Kanban");
+    add("/pnpi/data-quality", "Qualite");
+    add("/pnpi/performance", "Performance");
     add("/changelog", "Changelog");
   }
 
@@ -59,6 +61,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/calendar", "Calendrier");
     add("/pnpi/reports", "Rapports");
     add("/pnpi/kanban", "Kanban");
+    add("/pnpi/data-quality", "Qualite");
+    add("/pnpi/performance", "Performance");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -77,6 +81,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/calendar", "Calendrier");
     add("/pnpi/reports", "Rapports");
     add("/pnpi/kanban", "Kanban");
+    add("/pnpi/data-quality", "Qualite");
+    add("/pnpi/performance", "Performance");
   }
 
   if (hasRole(roles, "instructeur")) {

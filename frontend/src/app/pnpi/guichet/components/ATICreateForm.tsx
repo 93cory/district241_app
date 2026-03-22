@@ -4,6 +4,7 @@ import { createATI } from "../actions";
 import type { OperateurBrief } from "../../../../lib/api";
 import { useToast } from "../../../components/Toast";
 import { ConfirmDialog } from "../../../components/ConfirmDialog";
+import { TemplateSelector } from "../TemplateSelector";
 
 const SECTEURS = ["bois", "mines", "agroalimentaire", "btp", "petrole", "services"];
 const SECTEUR_LABELS: Record<string, string> = { bois: "Bois & Foret", mines: "Mines", agroalimentaire: "Agro-alimentaire", btp: "BTP", petrole: "Petrole", services: "Services" };
@@ -19,6 +20,30 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
   const [pendingData, setPendingData] = useState<{ operateur_id: string; type_activite: string; secteur: string; priorite: string; observations?: string } | null>(null);
   const [pendingForm, setPendingForm] = useState<HTMLFormElement | null>(null);
   const { showToast } = useToast();
+
+  const handleTemplate = (tpl: any) => {
+    // Pre-fill form fields from template
+    const form = document.querySelector<HTMLFormElement>("form");
+    if (!form) return;
+    const secteurSelect = form.querySelector<HTMLSelectElement>("[name=secteur]");
+    const typeInput = form.querySelector<HTMLInputElement>("[name=type_activite]");
+    if (secteurSelect && tpl.secteur) {
+      // Map template secteur to form secteur options
+      const mapping: Record<string, string> = { bois: "bois", mines: "mines", agroalimentaire: "agroalimentaire", peche: "services", chimie: "services", btp: "btp", energie: "services" };
+      secteurSelect.value = mapping[tpl.secteur] || tpl.secteur;
+    }
+    if (typeInput && tpl.type_activite) {
+      // Trigger React state update via native input setter
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+      if (nativeInputValueSetter) {
+        nativeInputValueSetter.call(typeInput, tpl.type_activite);
+        typeInput.dispatchEvent(new Event("input", { bubbles: true }));
+      } else {
+        typeInput.value = tpl.type_activite;
+      }
+    }
+    showToast(`Modele "${tpl.nom}" applique`, "success");
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -79,6 +104,7 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
       onConfirm={handleConfirm}
       onCancel={handleCancel}
     />
+    <TemplateSelector onSelect={handleTemplate} />
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <div>
         <label style={labelStyle}>Operateur industriel *</label>

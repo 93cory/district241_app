@@ -25,6 +25,11 @@ from ..core.executive_report import generate_executive_report
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
+from pptx import Presentation as PptxPresentation
+from pptx.util import Inches, Pt, Emu
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN
+
 router = APIRouter(tags=["Exports"])
 
 
@@ -790,6 +795,147 @@ async def export_operateurs_xlsx(
         content=buf.read(),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": 'attachment; filename="operateurs_pnpi.xlsx"'},
+    )
+
+
+# ---------------------------------------------------------------------------
+# PowerPoint (PPTX) export
+# ---------------------------------------------------------------------------
+
+@router.get("/exports/briefing.pptx")
+async def export_briefing_pptx(
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Export executive briefing as PowerPoint presentation."""
+
+    # Fetch data
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
+
+    now = now_utc()
+
+    prs = PptxPresentation()
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
+
+    VERT = RGBColor(0x00, 0x62, 0x33)
+    BLEU = RGBColor(0x05, 0x1B, 0x36)
+    BLANC = RGBColor(0xFF, 0xFF, 0xFF)
+    GRIS = RGBColor(0x52, 0x61, 0x75)
+
+    def add_title_slide(title, subtitle):
+        slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank
+        # Background
+        bg = slide.background
+        fill = bg.fill
+        fill.solid()
+        fill.fore_color.rgb = BLEU
+        # Title
+        txBox = slide.shapes.add_textbox(Inches(1), Inches(2.5), Inches(11), Inches(1.5))
+        tf = txBox.text_frame
+        p = tf.paragraphs[0]
+        p.text = title
+        p.font.size = Pt(44)
+        p.font.bold = True
+        p.font.color.rgb = BLANC
+        p.alignment = PP_ALIGN.CENTER
+        # Subtitle
+        p2 = tf.add_paragraph()
+        p2.text = subtitle
+        p2.font.size = Pt(20)
+        p2.font.color.rgb = RGBColor(0x9E, 0xB4, 0xCF)
+        p2.alignment = PP_ALIGN.CENTER
+
+    def add_kpi_slide(title, kpis_data):
+        slide = prs.slides.add_slide(prs.slide_layouts[6])
+        bg = slide.background
+        fill = bg.fill
+        fill.solid()
+        fill.fore_color.rgb = BLANC
+        # Title
+        txBox = slide.shapes.add_textbox(Inches(0.5), Inches(0.3), Inches(12), Inches(0.8))
+        tf = txBox.text_frame
+        p = tf.paragraphs[0]
+        p.text = title
+        p.font.size = Pt(28)
+        p.font.bold = True
+        p.font.color.rgb = BLEU
+        # KPI boxes
+        cols = min(len(kpis_data), 4)
+        box_w = 2.8
+        gap = 0.3
+        start_x = (13.333 - (cols * box_w + (cols - 1) * gap)) / 2
+        for i, kpi in enumerate(kpis_data[:4]):
+            x = start_x + i * (box_w + gap)
+            shape = slide.shapes.add_textbox(Inches(x), Inches(1.8), Inches(box_w), Inches(2.2))
+            tf = shape.text_frame
+            tf.word_wrap = True
+            p = tf.paragraphs[0]
+            p.text = str(kpi["value"])
+            p.font.size = Pt(48)
+            p.font.bold = True
+            p.font.color.rgb = VERT
+            p.alignment = PP_ALIGN.CENTER
+            p2 = tf.add_paragraph()
+            p2.text = kpi["label"]
+            p2.font.size = Pt(14)
+            p2.font.color.rgb = GRIS
+            p2.alignment = PP_ALIGN.CENTER
+
+    # Slide 1: Title
+    add_title_slide(
+        "PNPI \u2014 Briefing Executif",
+        f"Ministere de l'Industrie et de la Transformation Locale\n{now.strftime('%d/%m/%Y')}",
+    )
+
+    # Slide 2: ATI KPIs
+    approved = sum(1 for a in all_atis if a.statut == "approuve")
+    rejected = sum(1 for a in all_atis if a.statut == "rejete")
+    in_progress = sum(1 for a in all_atis if a.statut not in ("approuve", "rejete", "expire"))
+    add_kpi_slide("Agrements Techniques Industriels", [
+        {"label": "Total ATIs", "value": len(all_atis)},
+        {"label": "Approuves", "value": approved},
+        {"label": "Rejetes", "value": rejected},
+        {"label": "En cours", "value": in_progress},
+    ])
+
+    # Slide 3: Operators & Inspections
+    conformes = sum(1 for i in all_insp if i.statut_conformite == "conforme")
+    add_kpi_slide("Operateurs & Inspections", [
+        {"label": "Operateurs actifs", "value": len(all_ops)},
+        {"label": "Inspections", "value": len(all_insp)},
+        {"label": "Conformes", "value": conformes},
+        {"label": "Taux conformite", "value": f"{round(conformes/len(all_insp)*100)}%" if all_insp else "0%"},
+    ])
+
+    # Slide 4: SLA
+    terminal = {"approuve", "rejete", "expire"}
+    overdue = sum(1 for a in all_atis if a.statut not in terminal and (now.date() - a.date_soumission.date()).days > a.sla_jours)
+    decided = [a for a in all_atis if a.statut in ("approuve", "rejete") and a.date_decision]
+    avg_days = round(sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided) / len(decided)) if decided else 0
+    add_kpi_slide("Performance SLA", [
+        {"label": "Depassements SLA", "value": overdue},
+        {"label": "Delai moyen (jours)", "value": avg_days},
+        {"label": "Taux respect SLA", "value": f"{round((1-overdue/len(all_atis))*100)}%" if all_atis else "100%"},
+    ])
+
+    # Slide 5: Closing
+    add_title_slide("Merci", "Questions ?\npnpi-gabon.ga")
+
+    buf = io.BytesIO()
+    prs.save(buf)
+    buf.seek(0)
+
+    write_audit_event(db, actor=current_user.username, action="export.pptx",
+                     target="briefing", details="Export PowerPoint briefing executif")
+    db.commit()
+
+    return Response(
+        content=buf.read(),
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": f'attachment; filename="briefing_pnpi_{now.strftime("%Y%m%d")}.pptx"'},
     )
 
 
