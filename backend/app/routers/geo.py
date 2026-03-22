@@ -9,10 +9,26 @@ from pydantic import BaseModel
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
-from ..core.auth import Role, User, require_roles
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..database import get_db, now_utc
-from ..models.pnpi import InspectionConformiteORM, OperateurIndustrielORM
+from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
 from ..models.core import TraceBatchORM
+
+# ---------------------------------------------------------------------------
+# Province centroids (fallback when coordinates are missing)
+# ---------------------------------------------------------------------------
+
+PROVINCE_CENTROIDS = {
+    "estuaire": {"lat": 0.4, "lng": 9.45},
+    "haut_ogooue": {"lat": -1.6, "lng": 13.95},
+    "moyen_ogooue": {"lat": -0.45, "lng": 10.75},
+    "ngounie": {"lat": -1.5, "lng": 11.4},
+    "nyanga": {"lat": -2.85, "lng": 11.15},
+    "ogooue_ivindo": {"lat": 0.8, "lng": 12.0},
+    "ogooue_lolo": {"lat": -0.85, "lng": 12.65},
+    "ogooue_maritime": {"lat": -1.6, "lng": 9.7},
+    "woleu_ntem": {"lat": 2.15, "lng": 11.75},
+}
 
 # ---------------------------------------------------------------------------
 # Pydantic response models
@@ -307,4 +323,92 @@ async def export_inspections_geojson(
         content={"type": "FeatureCollection", "features": features},
         media_type="application/geo+json",
         headers={"Content-Disposition": 'attachment; filename="inspections_pnpi.geojson"'},
+    )
+
+
+@router.get("/export.geojson")
+async def export_geojson(
+    secteur: Optional[str] = Query(None),
+    province: Optional[str] = Query(None),
+    statut_conformite: Optional[str] = Query(None),
+    include_atis: bool = Query(True),
+    include_inspections: bool = Query(False),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Export filtered GeoJSON for mapping tools (QGIS, Leaflet, etc.)."""
+    features = []
+
+    query = select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))
+    if secteur:
+        query = query.where(OperateurIndustrielORM.secteur == secteur)
+    if province:
+        query = query.where(OperateurIndustrielORM.province == province)
+
+    ops = db.execute(query).scalars().all()
+
+    for op in ops:
+        lat = getattr(op, 'latitude', None)
+        lng = getattr(op, 'longitude', None)
+
+        # Fallback to province centroids
+        if not lat or not lng:
+            coords = PROVINCE_CENTROIDS.get(op.province, {})
+            lat = coords.get("lat", 0.0)
+            lng = coords.get("lng", 11.0)
+
+        props = {
+            "type": "operateur",
+            "id": op.id,
+            "raison_sociale": op.raison_sociale,
+            "nif": op.nif_gabon,
+            "secteur": op.secteur,
+            "province": op.province,
+            "ville": op.ville or "",
+        }
+
+        if include_atis:
+            atis = db.execute(
+                select(AgrementTechniqueIndustrielORM).where(
+                    AgrementTechniqueIndustrielORM.operateur_id == op.id
+                )
+            ).scalars().all()
+            props["atis_count"] = len(atis)
+            props["atis_approuves"] = sum(1 for a in atis if a.statut == "approuve")
+
+        if include_inspections:
+            insps = db.execute(
+                select(InspectionConformiteORM).where(
+                    InspectionConformiteORM.operateur_id == op.id
+                )
+            ).scalars().all()
+
+            if statut_conformite:
+                insps = [i for i in insps if i.statut_conformite == statut_conformite]
+
+            props["inspections_count"] = len(insps)
+            if insps:
+                props["derniere_conformite"] = insps[-1].statut_conformite
+
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lng, lat]},
+            "properties": props,
+        })
+
+    geojson = {
+        "type": "FeatureCollection",
+        "features": features,
+        "metadata": {
+            "source": "PNPI — Plateforme Nationale de la Politique Industrielle",
+            "generated_at": now_utc().isoformat(),
+            "filters": {"secteur": secteur, "province": province},
+            "count": len(features),
+        },
+    }
+
+    return JSONResponse(
+        content=geojson,
+        media_type="application/geo+json",
+        headers={"Content-Disposition": 'attachment; filename="pnpi_operateurs.geojson"'},
     )

@@ -198,3 +198,16 @@ class DelegationORM(Base):
     end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ATIReminderORM(Base):
+    __tablename__ = "ati_reminders"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    ati_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    type: Mapped[str] = mapped_column(String(30), nullable=False)
+    recipient_username: Mapped[str] = mapped_column(String(80), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

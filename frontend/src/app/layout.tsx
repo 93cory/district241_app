@@ -9,6 +9,7 @@ import { MobileNav } from "./components/MobileNav";
 import { ToastProvider } from "./components/Toast";
 import { SessionTimeout } from "./components/SessionTimeout";
 import { PWAInstall } from "./components/PWAInstall";
+import { OnboardingTour } from "./components/OnboardingTour";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
@@ -65,6 +66,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <SessionTimeout />
           </main>
           <PWAInstall />
+          <OnboardingTour />
         </div>
       </body>
     </html>

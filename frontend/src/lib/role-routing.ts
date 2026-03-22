@@ -47,6 +47,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/predictions", "Predictions");
     add("/pnpi/delegations", "Delegations");
     add("/pnpi/advanced-stats", "Stats+");
+    add("/admin/orgchart", "Organigramme");
     add("/changelog", "Changelog");
   }
 
