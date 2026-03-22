@@ -1657,6 +1657,7 @@ from .routers.reports import router as reports_router
 from .routers.templates import router as templates_router
 from .routers.workflows import router as workflows_router
 from .routers.heatmap import router as heatmap_router
+from .routers.delegations import router as delegations_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1680,6 +1681,7 @@ app.include_router(reports_router)
 app.include_router(templates_router)
 app.include_router(workflows_router)
 app.include_router(heatmap_router)
+app.include_router(delegations_router)
 
 @app.get("/metrics", include_in_schema=False)
 async def prometheus_metrics():

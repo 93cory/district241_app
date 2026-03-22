@@ -1049,3 +1049,187 @@ async def instructor_performance(
 
     results.sort(key=lambda r: r["decided"], reverse=True)
     return {"instructors": results}
+
+
+@router.get("/dashboard/predictions")
+async def predictions(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Simple predictive analytics based on historical trends."""
+    from collections import defaultdict
+    from datetime import timedelta
+
+    now = now_utc()
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+
+    # Monthly submission trends (last 12 months)
+    monthly = defaultdict(int)
+    for ati in all_atis:
+        key = ati.date_soumission.strftime("%Y-%m")
+        monthly[key] += 1
+
+    sorted_months = sorted(monthly.items())[-12:]
+
+    # Linear trend for next 3 months
+    if len(sorted_months) >= 3:
+        recent = [v for _, v in sorted_months[-6:]]
+        avg_recent = sum(recent) / len(recent)
+        older = [v for _, v in sorted_months[:max(1, len(sorted_months)-6)]]
+        avg_older = sum(older) / len(older) if older else avg_recent
+        trend = (avg_recent - avg_older) / max(avg_older, 1)
+
+        forecasts = []
+        for i in range(1, 4):
+            month_dt = now + timedelta(days=30 * i)
+            predicted = max(0, round(avg_recent * (1 + trend * 0.1 * i)))
+            forecasts.append({
+                "month": month_dt.strftime("%Y-%m"),
+                "label": month_dt.strftime("%b %Y"),
+                "predicted_submissions": predicted,
+                "confidence": max(50, round(90 - i * 10)),
+            })
+    else:
+        forecasts = []
+
+    # Approval rate trend
+    decided = [a for a in all_atis if a.statut in ("approuve", "rejete")]
+    if decided:
+        recent_decided = [a for a in decided if (now - a.date_soumission).days < 180]
+        older_decided = [a for a in decided if (now - a.date_soumission).days >= 180]
+        recent_rate = sum(1 for a in recent_decided if a.statut == "approuve") / max(len(recent_decided), 1) * 100
+        older_rate = sum(1 for a in older_decided if a.statut == "approuve") / max(len(older_decided), 1) * 100
+    else:
+        recent_rate = 0
+        older_rate = 0
+
+    # Backlog prediction
+    in_progress = [a for a in all_atis if a.statut not in ("approuve", "rejete", "expire")]
+    if decided:
+        avg_processing = sum(
+            (a.date_decision.date() - a.date_soumission.date()).days
+            for a in decided if a.date_decision
+        ) / len([a for a in decided if a.date_decision]) if any(a.date_decision for a in decided) else 30
+    else:
+        avg_processing = 30
+
+    est_clearance_days = round(len(in_progress) * avg_processing / max(len(set(
+        a.instructeur_username for a in all_atis if hasattr(a, 'instructeur_username') and a.instructeur_username
+    )), 1))
+
+    # Sector growth
+    sector_counts = defaultdict(lambda: {"recent": 0, "older": 0})
+    for ati in all_atis:
+        if (now - ati.date_soumission).days < 180:
+            sector_counts[ati.secteur]["recent"] += 1
+        else:
+            sector_counts[ati.secteur]["older"] += 1
+
+    growing_sectors = []
+    for sect, counts in sector_counts.items():
+        if counts["older"] > 0:
+            growth = round((counts["recent"] - counts["older"]) / counts["older"] * 100)
+        elif counts["recent"] > 0:
+            growth = 100
+        else:
+            growth = 0
+        growing_sectors.append({"secteur": sect, "recent": counts["recent"], "older": counts["older"], "growth_pct": growth})
+
+    growing_sectors.sort(key=lambda s: s["growth_pct"], reverse=True)
+
+    return {
+        "monthly_trend": [{"month": m, "count": c} for m, c in sorted_months],
+        "forecasts": forecasts,
+        "approval_rate": {
+            "recent_6m": round(recent_rate, 1),
+            "older": round(older_rate, 1),
+            "trend": "hausse" if recent_rate > older_rate else "baisse" if recent_rate < older_rate else "stable",
+        },
+        "backlog": {
+            "in_progress": len(in_progress),
+            "avg_processing_days": round(avg_processing, 1),
+            "est_clearance_days": est_clearance_days,
+        },
+        "sector_growth": growing_sectors[:8],
+    }
+
+
+@router.get("/dashboard/advanced-stats")
+async def advanced_statistics(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Advanced statistics: funnel, cohorts, conversion rates."""
+    from collections import defaultdict
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    now = now_utc()
+
+    # 1. Funnel analysis
+    total = len(all_atis)
+    soumis = sum(1 for a in all_atis if a.statut != "brouillon")
+    en_instruction = sum(1 for a in all_atis if a.statut in ("en_instruction", "valide", "approuve", "rejete"))
+    valide = sum(1 for a in all_atis if a.statut in ("valide", "approuve"))
+    approuve = sum(1 for a in all_atis if a.statut == "approuve")
+
+    funnel = [
+        {"stage": "Soumis", "count": soumis, "pct": 100},
+        {"stage": "En instruction", "count": en_instruction, "pct": round(en_instruction / max(soumis, 1) * 100, 1)},
+        {"stage": "Valide", "count": valide, "pct": round(valide / max(soumis, 1) * 100, 1)},
+        {"stage": "Approuve", "count": approuve, "pct": round(approuve / max(soumis, 1) * 100, 1)},
+    ]
+
+    # 2. Monthly cohort analysis
+    cohorts = defaultdict(lambda: {"submitted": 0, "approved": 0, "rejected": 0, "pending": 0, "avg_days": 0})
+    for ati in all_atis:
+        cohort = ati.date_soumission.strftime("%Y-%m")
+        cohorts[cohort]["submitted"] += 1
+        if ati.statut == "approuve":
+            cohorts[cohort]["approved"] += 1
+        elif ati.statut == "rejete":
+            cohorts[cohort]["rejected"] += 1
+        else:
+            cohorts[cohort]["pending"] += 1
+
+    # Avg days per cohort
+    for ati in all_atis:
+        if ati.date_decision:
+            cohort = ati.date_soumission.strftime("%Y-%m")
+            days = (ati.date_decision.date() - ati.date_soumission.date()).days
+            decided_in_cohort = cohorts[cohort]["approved"] + cohorts[cohort]["rejected"]
+            if decided_in_cohort > 0:
+                cohorts[cohort]["avg_days"] = round(
+                    (cohorts[cohort]["avg_days"] * (decided_in_cohort - 1) + days) / decided_in_cohort, 1
+                )
+
+    sorted_cohorts = [
+        {"cohort": k, **v, "conversion_rate": round(v["approved"] / max(v["submitted"], 1) * 100, 1)}
+        for k, v in sorted(cohorts.items())[-12:]
+    ]
+
+    # 3. Day of week distribution
+    dow_counts = defaultdict(int)
+    dow_labels = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+    for ati in all_atis:
+        dow = ati.date_soumission.weekday()
+        dow_counts[dow] += 1
+
+    day_distribution = [{"day": dow_labels[i], "count": dow_counts.get(i, 0)} for i in range(7)]
+
+    # 4. Processing time distribution
+    time_buckets = {"0-15j": 0, "15-30j": 0, "30-45j": 0, "45-60j": 0, "60j+": 0}
+    for ati in all_atis:
+        if ati.date_decision:
+            days = (ati.date_decision.date() - ati.date_soumission.date()).days
+            if days <= 15: time_buckets["0-15j"] += 1
+            elif days <= 30: time_buckets["15-30j"] += 1
+            elif days <= 45: time_buckets["30-45j"] += 1
+            elif days <= 60: time_buckets["45-60j"] += 1
+            else: time_buckets["60j+"] += 1
+
+    return {
+        "funnel": funnel,
+        "cohorts": sorted_cohorts,
+        "day_distribution": day_distribution,
+        "processing_time": [{"bucket": k, "count": v} for k, v in time_buckets.items()],
+    }

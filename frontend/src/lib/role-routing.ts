@@ -44,6 +44,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/kanban", "Kanban");
     add("/pnpi/data-quality", "Qualite");
     add("/pnpi/performance", "Performance");
+    add("/pnpi/predictions", "Predictions");
+    add("/pnpi/delegations", "Delegations");
+    add("/pnpi/advanced-stats", "Stats+");
     add("/changelog", "Changelog");
   }
 
@@ -66,6 +69,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/kanban", "Kanban");
     add("/pnpi/data-quality", "Qualite");
     add("/pnpi/performance", "Performance");
+    add("/pnpi/predictions", "Predictions");
+    add("/pnpi/advanced-stats", "Stats+");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -87,6 +92,9 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/kanban", "Kanban");
     add("/pnpi/data-quality", "Qualite");
     add("/pnpi/performance", "Performance");
+    add("/pnpi/predictions", "Predictions");
+    add("/pnpi/delegations", "Delegations");
+    add("/pnpi/advanced-stats", "Stats+");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -98,6 +106,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/search", "Recherche");
     add("/pnpi/calendar", "Calendrier");
     add("/pnpi/kanban", "Kanban");
+    add("/pnpi/delegations", "Delegations");
   }
 
   if (hasRole(roles, "operateur")) {
@@ -113,6 +122,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/operateurs", "Opérateurs");
     add("/pnpi/heatmap", "Heatmap");
     add("/pnpi/calendar", "Calendrier");
+    add("/pnpi/delegations", "Delegations");
   }
 
   if (links.length > 0) {

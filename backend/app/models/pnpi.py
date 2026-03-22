@@ -185,3 +185,16 @@ class DocumentDossierORM(Base):
     chemin_stockage: Mapped[str] = mapped_column(String(512), nullable=False)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     uploaded_by: Mapped[str] = mapped_column(String(80), nullable=False)
+
+
+class DelegationORM(Base):
+    __tablename__ = "delegations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    from_username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    to_username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

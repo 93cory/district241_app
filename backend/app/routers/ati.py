@@ -13,6 +13,7 @@ from sqlalchemy import select
 
 from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
+from ..core.field_tracker import get_field_history
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -1139,3 +1140,13 @@ async def list_all_tags(
         .order_by(ATITagORM.label)
     ).all()
     return {"tags": [{"label": l, "color": c} for l, c in labels]}
+
+
+@router.get("/ati/{ati_id}/field-history")
+async def get_ati_field_history(
+    ati_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    history = get_field_history(db, "ati", ati_id)
+    return {"history": history}

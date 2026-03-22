@@ -10,6 +10,7 @@ import { ATITimeline } from "./ATITimeline";
 import { ATIComments } from "./Comments";
 import { TagsManager } from "./TagsManager";
 import { SLAClock } from "./SLAClock";
+import { FieldHistory } from "./FieldHistory";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -222,6 +223,11 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
       {/* Comments / Annotations */}
       <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
         <ATIComments atiId={ati.id} />
+      </div>
+
+      {/* Field-level change history */}
+      <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+        <FieldHistory atiId={ati.id} />
       </div>
     </section>
   );
