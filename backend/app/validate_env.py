@@ -91,4 +91,15 @@ def validate_environment() -> bool:
     if not errors and not warnings:
         logger.info("[ENV] Validation environnement: OK")
 
+    # --- Integration API keys (optional) ---
+    integration_keys = {
+        "PNPI_DGDI_KEY": "Cle API Douanes (DGDI)",
+        "PNPI_DGI_KEY": "Cle API Impots (DGI)",
+        "PNPI_MTEPS_KEY": "Cle API Emploi (MTEPS)",
+    }
+    for var, desc in integration_keys.items():
+        value = os.getenv(var, "").strip()
+        if value:
+            logger.info(f"[ENV] Integration API key configured: {var} — {desc}")
+
     return True

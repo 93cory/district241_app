@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/biometric_service.dart';
 import '../theme/pnpi_theme.dart';
 import '../widgets/pnpi_branding.dart';
 import 'landing_screen.dart';
@@ -21,6 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _busy = false;
   String? _error;
   bool _showDemoRoles = false;
+  bool _biometricAvailable = false;
+  String _biometricLabel = '';
 
   // Rôles démo disponibles pour la présentation Ministère
   static const _demoRoles = [
@@ -31,6 +35,48 @@ class _LoginScreenState extends State<LoginScreen> {
     (role: 'instructeur', label: 'Instructeur', icon: Icons.rate_review_rounded, color: Color(0xFF00695C)),
     (role: 'operateur', label: 'Opérateur', icon: Icons.factory_rounded, color: Color(0xFFBF360C)),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometric();
+  }
+
+  Future<void> _checkBiometric() async {
+    final available = await BiometricService.instance.isAvailable();
+    final enabled = await BiometricService.instance.isEnabled();
+    if (available && enabled) {
+      final label = await BiometricService.instance.biometricLabel();
+      if (mounted) {
+        setState(() {
+          _biometricAvailable = true;
+          _biometricLabel = label;
+        });
+        // Auto-prompt biometric
+        _loginWithBiometric();
+      }
+    }
+  }
+
+  Future<void> _loginWithBiometric() async {
+    final success = await BiometricService.instance.authenticate(
+      reason: 'Connectez-vous a PNPI',
+    );
+    if (success && mounted) {
+      // Use stored credentials to auto-login
+      final prefs = await SharedPreferences.getInstance();
+      final username = prefs.getString('last_username') ?? '';
+      final token = prefs.getString('auth_token') ?? '';
+      if (username.isNotEmpty && token.isNotEmpty) {
+        // Fetch profile and navigate to landing screen
+        final profile = await ApiService.instance.fetchCurrentUser(forceRefresh: true);
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => LandingScreen(profile: profile)),
+        );
+      }
+    }
+  }
 
   Future<void> _signIn() async {
     setState(() {
@@ -162,6 +208,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           label: const Text('Se connecter'),
                         ),
                       ),
+                      if (_biometricAvailable) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _loginWithBiometric,
+                          icon: Icon(
+                            _biometricLabel.contains('Face') ? Icons.face_rounded : Icons.fingerprint_rounded,
+                            size: 22,
+                          ),
+                          label: Text('Se connecter avec $_biometricLabel'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: PnpiColors.lagoon,
+                            side: const BorderSide(color: PnpiColors.lagoon),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       // Démo role picker
                       AnimatedSize(

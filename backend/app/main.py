@@ -1647,6 +1647,7 @@ from .routers.documents import router as documents_router
 from .routers.geo import router as geo_router
 from .routers.totp import router as totp_router
 from .routers.ws import router as ws_router
+from .routers.integration import router as integration_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1663,6 +1664,7 @@ app.include_router(documents_router)
 app.include_router(geo_router)
 app.include_router(totp_router)
 app.include_router(ws_router)
+app.include_router(integration_router)
 
 # ── Fichiers statiques (logo, assets) ────────────────────────────────────────
 _static_dir = os.path.join(os.path.dirname(__file__), "..", "static")

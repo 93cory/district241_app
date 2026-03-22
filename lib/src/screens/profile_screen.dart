@@ -1,15 +1,48 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/biometric_service.dart';
 import '../theme/pnpi_theme.dart';
 import '../widgets/pnpi_branding.dart';
 import 'login_screen.dart';
 import 'two_factor_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   final AuthUserProfile profile;
 
   const ProfileScreen({super.key, required this.profile});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _biometricAvailable = false;
+  bool _biometricEnabled = false;
+  String _biometricLabel = '';
+
+  AuthUserProfile get profile => widget.profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBiometric();
+  }
+
+  Future<void> _loadBiometric() async {
+    final available = await BiometricService.instance.isAvailable();
+    if (available) {
+      final enabled = await BiometricService.instance.isEnabled();
+      final label = await BiometricService.instance.biometricLabel();
+      if (mounted) {
+        setState(() {
+          _biometricAvailable = true;
+          _biometricEnabled = enabled;
+          _biometricLabel = label;
+        });
+      }
+    }
+  }
 
   Color _roleColor(String role) => switch (role) {
         'admin' => Colors.red.shade700,
@@ -62,6 +95,48 @@ class ProfileScreen extends StatelessWidget {
           _buildRolesCard(),
           const SizedBox(height: 18),
           _buildTwoFactorCard(context),
+          if (_biometricAvailable) ...[
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: PnpiTheme.softShadows,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Connexion biometrique',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    title: Text('Connexion $_biometricLabel'),
+                    subtitle: const Text('Se connecter rapidement avec la biometrie'),
+                    value: _biometricEnabled,
+                    activeColor: PnpiColors.lagoon,
+                    secondary: Icon(
+                      _biometricLabel.contains('Face') ? Icons.face_rounded : Icons.fingerprint_rounded,
+                      color: PnpiColors.oceanPulse,
+                    ),
+                    onChanged: (val) async {
+                      if (val) {
+                        // Verify biometric before enabling
+                        final success = await BiometricService.instance.authenticate(
+                          reason: 'Confirmez pour activer la biometrie',
+                        );
+                        if (!success) return;
+                      }
+                      await BiometricService.instance.setEnabled(val);
+                      setState(() => _biometricEnabled = val);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           _buildLogoutButton(context),
           const SizedBox(height: 32),

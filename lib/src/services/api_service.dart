@@ -1596,6 +1596,16 @@ class ApiService {
     }
     throw Exception('Ouverture fichier non supportee sur cette plateforme');
   }
+
+  /// Public ATI verification (no auth required) — used after QR code scan.
+  Future<Map<String, dynamic>> verifyAtiPublic(String numeroAti) async {
+    final uri = Uri.parse('$_backendUrl/pnpi/ati/verify/$numeroAti');
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+    throw Exception('ATI introuvable');
+  }
 }
 
 // ─── PNPI Dashboard models ─────────────────────────────────────────────────

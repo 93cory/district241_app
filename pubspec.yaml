@@ -41,6 +41,7 @@ dependencies:
   google_fonts: ^6.3.3
   http: ^1.6.0
   latlong2: ^0.9.1
+  local_auth: ^2.3.0
   mobile_scanner: ^3.5.7
   provider: ^6.1.2
   shared_preferences: ^2.5.3

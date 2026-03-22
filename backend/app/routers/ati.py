@@ -844,3 +844,41 @@ async def bulk_reject(
                          details=f"IDs: {', '.join(results['rejected'][:10])}")
         db.commit()
     return results
+
+
+# ─── Public verification (no auth — used by QR code scanning) ─────────────
+
+
+@router.get("/ati/verify/{numero_ati}", summary="Verification publique d'un ATI",
+            description="Endpoint public sans authentification. Utilise par le scan du QR code sur le certificat ATI.")
+async def verify_ati_public(numero_ati: str, db: Session = Depends(get_db)):
+    """Public endpoint — no authentication required. Used by QR code scanning."""
+    ati = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.numero_ati == numero_ati
+        )
+    ).scalar_one_or_none()
+
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+
+    op = ati.operateur
+    now = now_utc()
+
+    # Check expiration
+    is_expired = False
+    if ati.date_expiration and ati.date_expiration.date() < now.date():
+        is_expired = True
+
+    return {
+        "valid": ati.statut == "approuve" and not is_expired,
+        "numero_ati": ati.numero_ati,
+        "statut": "expire" if is_expired else ati.statut,
+        "operateur": op.raison_sociale if op else None,
+        "nif": op.nif_gabon if op else None,
+        "secteur": ati.secteur,
+        "type_activite": ati.type_activite,
+        "date_approbation": ati.date_decision.isoformat() if ati.date_decision else None,
+        "date_expiration": ati.date_expiration.isoformat() if ati.date_expiration else None,
+        "verified_at": now.isoformat(),
+    }

@@ -173,6 +173,45 @@ async def update_inspection(
     return _to_inspection_read(insp, db)
 
 
+@router.get("/inspections/{inspection_id}/report.pdf", summary="Rapport d'inspection de conformite PDF (nouveau format)")
+async def download_inspection_report_pdf(
+    inspection_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> FastAPIResponse:
+    from ..core.inspection_report import generate_inspection_report
+
+    insp = db.get(InspectionConformiteORM, inspection_id)
+    if not insp:
+        raise HTTPException(status_code=404, detail="Inspection introuvable.")
+
+    op = insp.operateur if hasattr(insp, 'operateur') else (db.get(OperateurIndustrielORM, insp.operateur_id) if insp.operateur_id else None)
+
+    pdf = generate_inspection_report(
+        numero_inspection=insp.id[:12].upper(),
+        operateur=op.raison_sociale if op else "Inconnu",
+        nif=op.nif_gabon if op else "",
+        province=op.province if op else "",
+        site=insp.site_inspecte if hasattr(insp, 'site_inspecte') else "",
+        inspecteur=insp.inspecteur_username,
+        date_inspection=insp.date_inspection,
+        statut_conformite=insp.statut_conformite,
+        observations=insp.observations or "",
+        recommandations=insp.recommandations if hasattr(insp, 'recommandations') else None,
+        score_conformite=insp.score_conformite if hasattr(insp, 'score_conformite') else None,
+    )
+
+    write_audit_event(db, actor=current_user.username, action="inspection.report_pdf",
+                     target=inspection_id, details=f"Rapport inspection PDF telecharge")
+    db.commit()
+
+    return FastAPIResponse(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="rapport_inspection_{insp.id[:12]}.pdf"'},
+    )
+
+
 @router.get("/inspections/{inspection_id}/pdf", summary="Rapport PDF d'inspection")
 async def download_inspection_pdf(
     inspection_id: str,
