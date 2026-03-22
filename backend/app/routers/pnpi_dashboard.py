@@ -1233,3 +1233,82 @@ async def advanced_statistics(
         "day_distribution": day_distribution,
         "processing_time": [{"bucket": k, "count": v} for k, v in time_buckets.items()],
     }
+
+
+@router.get("/dashboard/annual-report/{year}")
+async def annual_report(
+    year: int,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Generate annual activity summary."""
+    from datetime import datetime as dt, timezone
+
+    start = dt(year, 1, 1, tzinfo=timezone.utc)
+    end = dt(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    year_atis = [a for a in all_atis if start <= a.date_soumission <= end]
+
+    all_ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
+    all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
+    year_insp = [i for i in all_insp if start <= i.date_inspection <= end]
+
+    # Monthly breakdown
+    monthly = defaultdict(lambda: {"soumissions": 0, "approuves": 0, "rejetes": 0, "inspections": 0})
+    for ati in year_atis:
+        m = ati.date_soumission.strftime("%m")
+        monthly[m]["soumissions"] += 1
+        if ati.statut == "approuve":
+            monthly[m]["approuves"] += 1
+        elif ati.statut == "rejete":
+            monthly[m]["rejetes"] += 1
+    for insp in year_insp:
+        m = insp.date_inspection.strftime("%m")
+        monthly[m]["inspections"] += 1
+
+    months_data = []
+    month_names = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"]
+    for i in range(12):
+        m = str(i + 1).zfill(2)
+        data = monthly[m]
+        months_data.append({"month": month_names[i], **data})
+
+    # Sector breakdown
+    sector_counts = defaultdict(int)
+    for ati in year_atis:
+        sector_counts[ati.secteur] += 1
+
+    # Province breakdown
+    province_counts = defaultdict(int)
+    for ati in year_atis:
+        if ati.operateur:
+            province_counts[ati.operateur.province or "inconnu"] += 1
+
+    # SLA performance
+    decided = [a for a in year_atis if a.statut in ("approuve", "rejete") and a.date_decision]
+    avg_days = round(sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided) / len(decided), 1) if decided else 0
+    sla_respect = sum(1 for a in decided if (a.date_decision.date() - a.date_soumission.date()).days <= a.sla_jours)
+
+    approved = sum(1 for a in year_atis if a.statut == "approuve")
+    rejected = sum(1 for a in year_atis if a.statut == "rejete")
+    conformes = sum(1 for i in year_insp if i.statut_conformite == "conforme")
+
+    return {
+        "year": year,
+        "summary": {
+            "soumissions": len(year_atis),
+            "approuves": approved,
+            "rejetes": rejected,
+            "taux_approbation": round(approved / max(len(decided), 1) * 100, 1),
+            "inspections": len(year_insp),
+            "conformes": conformes,
+            "taux_conformite": round(conformes / max(len(year_insp), 1) * 100, 1),
+            "operateurs_actifs": len([o for o in all_ops if o.is_active]),
+            "delai_moyen": avg_days,
+            "taux_sla": round(sla_respect / max(len(decided), 1) * 100, 1),
+        },
+        "monthly": months_data,
+        "sectors": [{"secteur": k, "count": v} for k, v in sorted(sector_counts.items(), key=lambda x: -x[1])],
+        "provinces": [{"province": k.replace("_", " ").title(), "count": v} for k, v in sorted(province_counts.items(), key=lambda x: -x[1])],
+    }

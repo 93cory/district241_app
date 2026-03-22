@@ -1659,6 +1659,7 @@ from .routers.workflows import router as workflows_router
 from .routers.heatmap import router as heatmap_router
 from .routers.delegations import router as delegations_router
 from .routers.reminders import router as reminders_router
+from .routers.notes import router as notes_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1684,6 +1685,7 @@ app.include_router(workflows_router)
 app.include_router(heatmap_router)
 app.include_router(delegations_router)
 app.include_router(reminders_router)
+app.include_router(notes_router)
 
 @app.get("/metrics", include_in_schema=False)
 async def prometheus_metrics():
