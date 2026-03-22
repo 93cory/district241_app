@@ -77,6 +77,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/cemac", "CEMAC");
     add("/pnpi/social-impact", "Impact social");
     add("/pnpi/certifications", "Certifications");
+    add("/pnpi/roi-simulator", "Simulateur ROI");
+    add("/pnpi/carbon", "Carbone");
   }
 
   if (hasRole(roles, "ministre")) {
@@ -117,6 +119,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/cemac", "CEMAC");
     add("/pnpi/social-impact", "Impact social");
     add("/pnpi/certifications", "Certifications");
+    add("/pnpi/roi-simulator", "Simulateur ROI");
+    add("/pnpi/carbon", "Carbone");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -162,6 +166,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/cemac", "CEMAC");
     add("/pnpi/social-impact", "Impact social");
     add("/pnpi/certifications", "Certifications");
+    add("/pnpi/roi-simulator", "Simulateur ROI");
+    add("/pnpi/carbon", "Carbone");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -184,6 +190,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/ati", "Mes ATI");
     add("/pnpi/operateurs", "Opérateurs");
     add("/pnpi/renewals", "Renouvellements");
+    add("/pnpi/roi-simulator", "Simulateur ROI");
   }
 
   if (hasRole(roles, "inspecteur")) {
@@ -199,6 +206,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
   }
 
   if (links.length > 0) {
+    add("/pnpi/reglementation", "Reglementation");
     add("/pnpi/formation", "Formation");
     add("/pnpi/notes", "Notes");
     add("/pnpi/favorites", "Favoris");
