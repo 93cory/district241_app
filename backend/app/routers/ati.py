@@ -1297,3 +1297,37 @@ async def get_ati_recommendation(
     db: Session = Depends(get_db),
 ):
     return recommend_decision(db, ati_id)
+
+
+@router.get("/ati/{ati_id}/product-qr")
+async def generate_product_qr(
+    ati_id: str,
+    product_name: str = Query(...),
+    batch_number: str = Query(""),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Generate a QR code for product authenticity verification."""
+    import qrcode  # type: ignore
+
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati or ati.statut != "approuve":
+        raise HTTPException(400, "ATI approuve requis pour generer un QR produit.")
+
+    op = ati.operateur
+    verify_url = f"https://pnpi-gabon.ga/verify/product?ati={ati.numero_ati}&product={product_name}&batch={batch_number}"
+
+    qr = qrcode.QRCode(version=1, box_size=10, border=2)
+    qr.add_data(verify_url)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="#003F8F", back_color="white")
+
+    buf = io.BytesIO()
+    qr_img.save(buf, format="PNG")
+    buf.seek(0)
+
+    return FastAPIResponse(
+        content=buf.read(),
+        media_type="image/png",
+        headers={"Content-Disposition": f'inline; filename="qr_product_{ati.numero_ati}_{batch_number}.png"'},
+    )

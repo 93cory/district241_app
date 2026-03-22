@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 
 from ..core.auth import Role, User, require_roles, get_password_hash, validate_password_policy, roles_to_csv, csv_to_roles
 from ..core.audit import write_audit_event
+from ..core.sms import send_sms, SMS_ENABLED
 from ..database import get_db, now_utc
 from ..models.core import AuditEventORM, NotificationORM, UserAccountORM
 
@@ -350,3 +351,17 @@ async def search_audit_logs(
             for e in events
         ],
     }
+
+
+@router.post("/admin/send-sms")
+async def admin_send_sms(
+    data: dict,
+    _: User = Depends(require_roles(Role.admin)),
+):
+    """Send a test SMS (admin only)."""
+    to = data.get("to", "")
+    message = data.get("message", "")
+    if not to or not message:
+        raise HTTPException(400, "Numero et message requis.")
+    result = send_sms(to, message)
+    return {"sms_enabled": SMS_ENABLED, **result}
