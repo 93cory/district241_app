@@ -15,7 +15,7 @@ from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 
-from ..core.auth import Role, User, require_roles
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
 from ..core.signature import generate_signature
 from ..database import get_db, now_utc
@@ -1282,4 +1282,60 @@ async def generate_official_letter(
         content=buf.read(),
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="lettre_{letter_type}_{ati.numero_ati}.pdf"'},
+    )
+
+
+@router.post("/exports/create-archive")
+async def create_digital_archive(
+    data: dict,
+    current_user: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Create a sealed digital archive of ATI data for long-term preservation."""
+    import hashlib
+    import json as json_lib
+    from datetime import datetime as dt
+
+    year = data.get("year", now_utc().year)
+
+    all_atis = db.execute(
+        select(AgrementTechniqueIndustrielORM)
+    ).scalars().all()
+    year_atis = [a for a in all_atis if a.date_soumission.year == year]
+
+    archive_data = {
+        "metadata": {
+            "type": "PNPI_DIGITAL_ARCHIVE",
+            "version": "1.0",
+            "year": year,
+            "created_at": now_utc().isoformat(),
+            "created_by": current_user.username,
+            "record_count": len(year_atis),
+        },
+        "records": [{
+            "numero_ati": a.numero_ati,
+            "operateur": a.operateur.raison_sociale if a.operateur else None,
+            "nif": a.operateur.nif_gabon if a.operateur else None,
+            "secteur": a.secteur,
+            "type_activite": a.type_activite,
+            "statut": a.statut,
+            "date_soumission": a.date_soumission.isoformat(),
+            "date_decision": a.date_decision.isoformat() if a.date_decision else None,
+            "sla_jours": a.sla_jours,
+        } for a in year_atis],
+    }
+
+    # Compute integrity hash
+    content = json_lib.dumps(archive_data, sort_keys=True, ensure_ascii=False)
+    integrity_hash = hashlib.sha256(content.encode()).hexdigest()
+    archive_data["metadata"]["integrity_sha256"] = integrity_hash
+
+    write_audit_event(db, actor=current_user.username, action="archive.create",
+                     target=str(year), details=f"Archive {year}: {len(year_atis)} ATIs, hash={integrity_hash[:16]}")
+    db.commit()
+
+    return Response(
+        content=json_lib.dumps(archive_data, indent=2, ensure_ascii=False),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="archive_pnpi_{year}.json"', "X-PNPI-Integrity": integrity_hash},
     )

@@ -72,6 +72,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/budget", "Budget");
     add("/pnpi/governor", "Province");
     add("/pnpi/map", "Carte");
+    add("/pnpi/conventions", "Conventions");
+    add("/pnpi/odd", "ODD");
   }
 
   if (hasRole(roles, "ministre")) {
@@ -107,6 +109,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/budget", "Budget");
     add("/pnpi/governor", "Province");
     add("/pnpi/map", "Carte");
+    add("/pnpi/conventions", "Conventions");
+    add("/pnpi/odd", "ODD");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -147,6 +151,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/budget", "Budget");
     add("/pnpi/governor", "Province");
     add("/pnpi/map", "Carte");
+    add("/pnpi/conventions", "Conventions");
+    add("/pnpi/odd", "ODD");
   }
 
   if (hasRole(roles, "instructeur")) {

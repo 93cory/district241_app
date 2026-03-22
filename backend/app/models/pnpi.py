@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func, text
+from sqlalchemy import BigInteger, Boolean, DateTime, Float, ForeignKey, Integer, String, Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -297,4 +297,20 @@ class PollVoteORM(Base):
     poll_id: Mapped[str] = mapped_column(String(36), ForeignKey("polls.id"), nullable=False)
     username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
     option_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ConventionORM(Base):
+    __tablename__ = "conventions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    numero: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    titre: Mapped[str] = mapped_column(String(300), nullable=False)
+    partenaire: Mapped[str] = mapped_column(String(200), nullable=False)
+    type_convention: Mapped[str] = mapped_column(String(30), nullable=False)
+    date_signature: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    date_expiration: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    montant_fcfa: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    statut: Mapped[str] = mapped_column(String(20), nullable=False, server_default="active")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
