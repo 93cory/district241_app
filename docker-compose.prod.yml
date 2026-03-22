@@ -40,6 +40,11 @@ services:
       PNPI_DATABASE_URL: postgresql://${POSTGRES_USER:-pnpi_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pnpi}
       PNPI_ENV: production
       PNPI_CORS_ALLOW_ORIGINS: ${PNPI_CORS_ALLOW_ORIGINS:-https://pnpi.gouv.ga}
+      PNPI_S3_ENDPOINT: http://minio:9000
+      PNPI_S3_BUCKET: pnpi-backups
+      PNPI_S3_ACCESS_KEY: ${PNPI_S3_ACCESS_KEY:-pnpi_minio}
+      PNPI_S3_SECRET_KEY: ${PNPI_S3_SECRET_KEY:-changeme_minio_secret}
+      PNPI_BACKUP_RETAIN_DAYS: "30"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 15s
@@ -66,6 +71,22 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    networks:
+      - pnpi-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: pnpi-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${PNPI_S3_ACCESS_KEY:-pnpi_minio}
+      MINIO_ROOT_PASSWORD: ${PNPI_S3_SECRET_KEY:-changeme_minio_secret}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    restart: unless-stopped
     networks:
       - pnpi-net
 
@@ -98,6 +119,7 @@ services:
 volumes:
   pnpi_postgres_data:
   pnpi_nginx_logs:
+  minio_data:
 
 networks:
   pnpi-net:

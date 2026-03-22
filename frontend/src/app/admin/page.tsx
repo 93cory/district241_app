@@ -13,6 +13,7 @@ import { AdminModeration } from "./AdminModeration";
 import { AdminCreateUser } from "./AdminCreateUser";
 import { AdminUserImport } from "./AdminUserImport";
 import { AdminUserList } from "./AdminUserList";
+import { ImportOperateurs } from "./ImportOperateurs";
 
 export default async function AdminPage() {
   let profile;
@@ -47,6 +48,7 @@ export default async function AdminPage() {
 
       <AdminCreateUser />
       <AdminUserImport />
+      <ImportOperateurs />
       <AdminActions />
       <AdminModeration
         declarations={declarations}

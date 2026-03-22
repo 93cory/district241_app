@@ -12,3 +12,6 @@
 
 # Backup PostgreSQL (tous les jours 2h)
 0 2 * * * cd /opt/pnpi && docker exec pnpi-postgres pg_dump -U pnpi_user pnpi | gzip > /backup/pnpi_$(date +\%Y\%m\%d).sql.gz 2>&1
+
+# Backup S3/MinIO (tous les jours 1h30)
+30 1 * * * cd /opt/pnpi && docker exec pnpi-backend python scripts/backup_s3.py backup >> /var/log/pnpi/backup.log 2>&1
