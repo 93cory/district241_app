@@ -1555,20 +1555,29 @@ _openapi_tags = [
 ]
 
 app = FastAPI(
-    title="PNPI — Plateforme Nationale de Pilotage Industriel",
-    description=(
-        "API du Ministere de l'Industrie du Gabon pour le pilotage des unites "
-        "industrielles, la gestion des agrements techniques (ATI), le suivi "
-        "de la tracabilite des lots et les inspections de conformite.\n\n"
-        "**Roles RBAC** : `admin`, `ministre`, `directeur`, `instructeur`, "
-        "`inspecteur`, `operateur`.\n\n"
-        "**Authentification** : Bearer JWT via `/auth/token`."
-    ),
-    version="1.1.0",
+    title="PNPI — Plateforme Nationale de la Politique Industrielle",
+    description="API du Ministere de l'Industrie et de la Transformation Locale du Gabon. "
+                "Gestion des Agrements Techniques Industriels, inspections de conformite, "
+                "pilotage ministeriel et tracabilite des lots.",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
     lifespan=lifespan,
     openapi_tags=_openapi_tags,
-    contact={"name": "Equipe PNPI", "email": "pnpi@industrie.gouv.ga"},
-    license_info={"name": "Proprietary"},
+    swagger_ui_parameters={
+        "defaultModelsExpandDepth": -1,
+        "docExpansion": "none",
+        "filter": True,
+        "persistAuthorization": True,
+        "syntaxHighlight.theme": "monokai",
+    },
+    license_info={
+        "name": "Ministere de l'Industrie — Gabon",
+    },
+    contact={
+        "name": "PNPI Support",
+        "email": "support@pnpi-gabon.ga",
+    },
 )
 
 if CORS_ALLOW_ORIGINS_RAW == "*":

@@ -12,6 +12,7 @@ import { AdminActions } from "./AdminActions";
 import { AdminModeration } from "./AdminModeration";
 import { AdminCreateUser } from "./AdminCreateUser";
 import { AdminUserImport } from "./AdminUserImport";
+import { AdminUserList } from "./AdminUserList";
 
 export default async function AdminPage() {
   let profile;
@@ -55,34 +56,7 @@ export default async function AdminPage() {
 
       <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
         <div className="table-card" style={{ flex: "1 1 420px" }}>
-          <h3 style={{ marginTop: 0 }}>Utilisateurs</h3>
-          {users.map((user) => (
-            <div
-              key={user.username}
-              style={{
-                padding: "0.75rem 0",
-                borderBottom: "1px solid #eef1f5",
-                display: "flex",
-                justifyContent: "space-between",
-                gap: "0.75rem",
-              }}
-            >
-              <div>
-                <strong>{user.full_name}</strong>
-                <p style={{ margin: "0.25rem 0", color: "#3a4351" }}>@{user.username}</p>
-                <p style={{ margin: 0, color: "#6c7a8c" }}>{user.roles.join(", ")}</p>
-              </div>
-              <span
-                style={{
-                  alignSelf: "center",
-                  color: user.is_active ? "#0f6b3f" : "#bf1a1a",
-                  fontWeight: 600,
-                }}
-              >
-                {user.is_active ? "Actif" : "Inactif"}
-              </span>
-            </div>
-          ))}
+          <AdminUserList users={users} />
         </div>
 
         <div className="table-card" style={{ flex: "1 1 420px" }}>

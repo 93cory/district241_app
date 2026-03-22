@@ -41,6 +41,28 @@ export async function middleware(request: NextRequest) {
   const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
 
   if (!refreshToken || !shouldRefreshAccessToken(accessToken)) {
+    // Role-based redirect for root path (when token is still valid)
+    if (pathname === "/") {
+      const token = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
+      if (token) {
+        try {
+          const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
+          const roles: string[] = payload.roles || [];
+
+          if (roles.includes("admin")) {
+            return NextResponse.redirect(new URL("/admin", request.url));
+          } else if (roles.includes("ministre") || roles.includes("directeur")) {
+            return NextResponse.redirect(new URL("/pnpi", request.url));
+          } else if (roles.includes("instructeur")) {
+            return NextResponse.redirect(new URL("/pnpi/mes-dossiers", request.url));
+          } else if (roles.includes("inspecteur")) {
+            return NextResponse.redirect(new URL("/pnpi/inspections", request.url));
+          } else if (roles.includes("operateur")) {
+            return NextResponse.redirect(new URL("/pnpi/guichet", request.url));
+          }
+        } catch {}
+      }
+    }
     return NextResponse.next();
   }
 
@@ -75,6 +97,101 @@ export async function middleware(request: NextRequest) {
       access_token: string;
       refresh_token: string;
     };
+
+    // Role-based redirect for root path (after token refresh)
+    if (pathname === "/") {
+      try {
+        const payload = JSON.parse(Buffer.from(tokens.access_token.split(".")[1], "base64").toString());
+        const roles: string[] = payload.roles || [];
+
+        if (roles.includes("admin")) {
+          const response = NextResponse.redirect(new URL("/admin", request.url));
+          response.cookies.set(ACCESS_TOKEN_COOKIE, tokens.access_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 60 * 60,
+          });
+          response.cookies.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 14 * 24 * 60 * 60,
+          });
+          return response;
+        } else if (roles.includes("ministre") || roles.includes("directeur")) {
+          const response = NextResponse.redirect(new URL("/pnpi", request.url));
+          response.cookies.set(ACCESS_TOKEN_COOKIE, tokens.access_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 60 * 60,
+          });
+          response.cookies.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 14 * 24 * 60 * 60,
+          });
+          return response;
+        } else if (roles.includes("instructeur")) {
+          const response = NextResponse.redirect(new URL("/pnpi/mes-dossiers", request.url));
+          response.cookies.set(ACCESS_TOKEN_COOKIE, tokens.access_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 60 * 60,
+          });
+          response.cookies.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 14 * 24 * 60 * 60,
+          });
+          return response;
+        } else if (roles.includes("inspecteur")) {
+          const response = NextResponse.redirect(new URL("/pnpi/inspections", request.url));
+          response.cookies.set(ACCESS_TOKEN_COOKIE, tokens.access_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 60 * 60,
+          });
+          response.cookies.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 14 * 24 * 60 * 60,
+          });
+          return response;
+        } else if (roles.includes("operateur")) {
+          const response = NextResponse.redirect(new URL("/pnpi/guichet", request.url));
+          response.cookies.set(ACCESS_TOKEN_COOKIE, tokens.access_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 60 * 60,
+          });
+          response.cookies.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 14 * 24 * 60 * 60,
+          });
+          return response;
+        }
+      } catch {}
+    }
 
     const response = NextResponse.next();
     response.cookies.set(ACCESS_TOKEN_COOKIE, tokens.access_token, {
