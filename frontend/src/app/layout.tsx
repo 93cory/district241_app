@@ -12,6 +12,7 @@ import { PWAInstall } from "./components/PWAInstall";
 import { OnboardingTour } from "./components/OnboardingTour";
 import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { ServerLoad } from "./components/ServerLoad";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -56,6 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <MobileNav>
                 <NavLinks links={navLinks} />
                 <SessionStatusBadge />
+                <ServerLoad />
                 <ThemeToggle />
                 {roles.length ? <NotificationsBell /> : null}
                 {roles.length ? <WebLogoutButton /> : null}

@@ -55,6 +55,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/annual-report", "Bilan annuel");
     add("/pnpi/objectives", "Objectifs");
     add("/pnpi/benchmark", "Benchmark");
+    add("/pnpi/pivot", "Tableau croise");
   }
 
   if (hasRole(roles, "ministre")) {
@@ -81,6 +82,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/advanced-stats", "Stats+");
     add("/pnpi/annual-report", "Bilan annuel");
     add("/pnpi/benchmark", "Benchmark");
+    add("/pnpi/pivot", "Tableau croise");
   }
 
   if (hasRole(roles, "directeur")) {
@@ -111,6 +113,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/annual-report", "Bilan annuel");
     add("/pnpi/objectives", "Objectifs");
     add("/pnpi/benchmark", "Benchmark");
+    add("/pnpi/pivot", "Tableau croise");
   }
 
   if (hasRole(roles, "instructeur")) {
@@ -146,6 +149,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
   if (links.length > 0) {
     add("/pnpi/notes", "Notes");
     add("/pnpi/favorites", "Favoris");
+    add("/pnpi/annuaire", "Annuaire");
     add("/pnpi/messages", "Messages");
     add("/profil", "Mon profil");
     add("/pnpi/feedback", "Feedback");

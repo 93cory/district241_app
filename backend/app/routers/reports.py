@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-from ..database import get_db
+from ..database import get_db, now_utc
 from ..core.auth import User, require_roles, Role
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -153,4 +153,85 @@ def _report_operateurs(db, group_by, secteur, province):
         "group_by": group_by,
         "total": len(ops),
         "data": [{"group": k, "count": v} for k, v in sorted(groups.items(), key=lambda x: -x[1])],
+    }
+
+
+@router.get("/pivot")
+async def pivot_table(
+    rows: str = Query("secteur", description="Row dimension: secteur|province|mois|statut"),
+    cols: str = Query("statut", description="Column dimension: secteur|province|mois|statut"),
+    metric: str = Query("count", description="Metric: count|avg_days"),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Dynamic pivot table for ATI data."""
+    from collections import defaultdict
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    now = now_utc()
+
+    def get_dim(ati, dim):
+        if dim == "secteur": return ati.secteur
+        if dim == "province": return (ati.operateur.province if ati.operateur else "inconnu").replace("_", " ").title()
+        if dim == "mois": return ati.date_soumission.strftime("%Y-%m")
+        if dim == "statut": return ati.statut
+        return "total"
+
+    # Build pivot
+    pivot = defaultdict(lambda: defaultdict(list))
+    row_keys = set()
+    col_keys = set()
+
+    for ati in all_atis:
+        r = get_dim(ati, rows)
+        c = get_dim(ati, cols)
+        row_keys.add(r)
+        col_keys.add(c)
+
+        if metric == "avg_days" and ati.date_decision:
+            days = (ati.date_decision.date() - ati.date_soumission.date()).days
+            pivot[r][c].append(days)
+        else:
+            pivot[r][c].append(1)
+
+    sorted_rows = sorted(row_keys)
+    sorted_cols = sorted(col_keys)
+
+    # Compute values
+    data = []
+    for r in sorted_rows:
+        row_data = {"_row": r}
+        row_total = 0
+        for c in sorted_cols:
+            values = pivot[r][c]
+            if metric == "avg_days":
+                val = round(sum(values) / len(values), 1) if values else 0
+            else:
+                val = len(values)
+            row_data[c] = val
+            row_total += val if metric == "count" else 0
+        if metric == "count":
+            row_data["_total"] = row_total
+        data.append(row_data)
+
+    # Column totals
+    col_totals = {"_row": "TOTAL"}
+    for c in sorted_cols:
+        all_vals = []
+        for r in sorted_rows:
+            all_vals.extend(pivot[r][c])
+        if metric == "avg_days":
+            col_totals[c] = round(sum(all_vals) / len(all_vals), 1) if all_vals else 0
+        else:
+            col_totals[c] = len(all_vals)
+    if metric == "count":
+        col_totals["_total"] = len(all_atis)
+
+    return {
+        "rows_dimension": rows,
+        "cols_dimension": cols,
+        "metric": metric,
+        "columns": sorted_cols,
+        "data": data,
+        "totals": col_totals,
     }

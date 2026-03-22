@@ -888,6 +888,61 @@ async def verify_ati_public(numero_ati: str, db: Session = Depends(get_db)):
     }
 
 
+@router.post("/ati/archive-expired")
+async def archive_expired_atis(
+    current_user: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Archive all expired ATIs (set status to 'expire')."""
+    now = now_utc()
+    all_atis = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.statut == "approuve",
+            AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
+            AgrementTechniqueIndustrielORM.date_expiration < now,
+        )
+    ).scalars().all()
+
+    archived = 0
+    for ati in all_atis:
+        ati.statut = "expire"
+        archived += 1
+
+    if archived:
+        db.commit()
+        write_audit_event(db, actor=current_user.username, action="ati.bulk_archive",
+                         target="expired", details=f"{archived} ATI(s) archives automatiquement")
+        db.commit()
+
+    return {"status": "ok", "archived": archived}
+
+
+@router.get("/ati/archived")
+async def list_archived_atis(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(25, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List archived/expired ATIs."""
+    query = (
+        select(AgrementTechniqueIndustrielORM)
+        .where(AgrementTechniqueIndustrielORM.statut == "expire")
+        .order_by(AgrementTechniqueIndustrielORM.date_expiration.desc())
+        .offset(skip).limit(limit)
+    )
+    atis = db.execute(query).scalars().all()
+
+    return {"atis": [{
+        "id": a.id,
+        "numero_ati": a.numero_ati,
+        "operateur": a.operateur.raison_sociale if a.operateur else None,
+        "secteur": a.secteur,
+        "date_expiration": a.date_expiration.isoformat() if a.date_expiration else None,
+        "date_soumission": a.date_soumission.isoformat(),
+    } for a in atis]}
+
+
 # ─── Favorites / Pinned ATIs ──────────────────────────────────────────────
 
 
