@@ -1,200 +1,126 @@
-# Guide de Deploiement PNPI
+# PNPI — Guide de deploiement production
 
-## Pre-requis
+## Prerequis serveur
 
-- Docker >= 24.0 et Docker Compose >= 2.20
-- PostgreSQL 16 avec PostGIS 3.4 (inclus dans l'image Docker)
-- Node.js >= 20 (pour le build frontend hors Docker)
-- Python 3.12 (pour le backend hors Docker)
-- Certificat SSL (Let's Encrypt ou certificat ministeriel)
-- Serveur Linux (Ubuntu 22.04 recommande) avec 4 Go RAM minimum
+- Ubuntu 22.04 LTS ou Debian 12
+- Docker 24+ et Docker Compose v2
+- 4 Go RAM minimum (8 Go recommande)
+- 50 Go stockage SSD
+- Domaine DNS configure (ex: pnpi-gabon.ga)
+- Certificat SSL (Let's Encrypt recommande)
 
-## Deploiement rapide (Docker Compose)
-
-### 1. Configuration de l'environnement
+## Etape 1 : Cloner le projet
 
 ```bash
-cp deploy/env.prod.example .env.prod
-nano .env.prod
+git clone https://github.com/ministere-industrie-gabon/pnpi.git /opt/pnpi
+cd /opt/pnpi
+```
+
+## Etape 2 : Configurer l'environnement
+
+```bash
+cp deploy/env.prod.example .env
+nano .env
 ```
 
 Variables obligatoires :
-| Variable | Description | Exemple |
-|----------|-------------|---------|
-| `PNPI_SECRET_KEY` | Cle JWT (min 32 chars) | `openssl rand -hex 32` |
-| `PNPI_DATABASE_URL` | URL PostgreSQL | `postgresql://user:pass@postgres:5432/pnpi` |
-| `POSTGRES_PASSWORD` | Mot de passe PostgreSQL | Generer avec `openssl rand -base64 24` |
-| `PNPI_ADMIN_PASSWORD` | Mot de passe admin | Min 12 chars, maj+min+chiffre+special |
-| `PNPI_MINISTRE_PASSWORD` | Mot de passe ministre | Idem |
-| ... | Tous les mots de passe par role | Conformes a la politique |
+- `PNPI_DATABASE_URL` : URL PostgreSQL
+- `PNPI_SECRET_KEY` : cle secrete JWT (min 32 caracteres)
+- `PNPI_ADMIN_PASSWORD` : mot de passe admin initial
 
-### 2. Certificats SSL
+Variables optionnelles :
+- `PNPI_SMTP_HOST/PORT/USER/PASSWORD` : envoi d'emails
+- `PNPI_S3_ENDPOINT/BUCKET/ACCESS_KEY/SECRET_KEY` : backups MinIO
+- `PNPI_SMS_PROVIDER` : africastalking ou twilio
+- `PNPI_VAPID_KEY` : notifications push web
+- `PNPI_GRAFANA_PASSWORD` : dashboard Grafana
 
-```bash
-mkdir -p /etc/ssl/pnpi
-# Option A: Let's Encrypt
-certbot certonly --standalone -d pnpi-gabon.ga
-cp /etc/letsencrypt/live/pnpi-gabon.ga/fullchain.pem /etc/ssl/pnpi/cert.pem
-cp /etc/letsencrypt/live/pnpi-gabon.ga/privkey.pem /etc/ssl/pnpi/key.pem
-
-# Option B: Certificat ministeriel
-# Placer cert.pem et key.pem dans /etc/ssl/pnpi/
-```
-
-### 3. Lancement
+## Etape 3 : Deployer
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Services :
-- **Nginx** : ports 80 (redirect) et 443 (HTTPS)
-- **Backend** : port 8000 (interne)
-- **Frontend** : port 3000 (interne)
-- **PostgreSQL** : port 5432 (interne)
+Services deployes :
+- **backend** : FastAPI sur port 8000
+- **frontend** : Next.js sur port 3000
+- **postgres** : PostgreSQL 16 + PostGIS
+- **nginx** : reverse proxy SSL sur ports 80/443
+- **minio** : stockage S3 sur ports 9000/9001
+- **prometheus** : monitoring sur port 9090
+- **grafana** : dashboards sur port 3001
 
-### 4. Verification
+## Etape 4 : Initialiser la base
 
 ```bash
-# Health check
-curl -k https://localhost/health
-
-# Health detaille (authentifie)
-curl -k -H "Authorization: Bearer $(curl -s -X POST https://localhost/auth/token \
-  -d 'username=admin&password=VOTRE_MOT_DE_PASSE' | jq -r .access_token)" \
-  https://localhost/health/detailed
+docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
+docker compose -f docker-compose.prod.yml exec backend python scripts/seed_pnpi.py
 ```
 
-## Deploiement hors Docker
-
-### Backend FastAPI
-
-Variables critiques :
-- `PNPI_DATABASE_URL`
-- `PNPI_SECRET_KEY`
-- `PNPI_ENV` (`development`/`production`)
-- `PNPI_ADMIN_PASSWORD`
-- `PNPI_MINISTRE_PASSWORD`
-- `PNPI_OPERATEUR_PASSWORD`
-- `PNPI_INSPECTEUR_PASSWORD`
+## Etape 5 : Configurer le cron
 
 ```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m alembic -c alembic.ini upgrade head
-python scripts/seed_db.py
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+crontab deploy/crontab.example
 ```
 
-Securite active :
-- politique mot de passe (12+, maj/min/chiffre/special),
-- verrouillage temporaire apres echecs auth,
-- refresh token avec rotation/revocation (`/auth/refresh`, `/auth/logout`),
-- rate limiting auth/endpoints sensibles,
-- verification ops alerting via `POST /ops/alerts/check`.
+Taches planifiees :
+- Rapport executif hebdomadaire (lundi 7h)
+- Verification SLA (quotidien 8h et 14h)
+- Nettoyage tokens (quotidien 3h)
+- Backup S3 (quotidien 1h30)
+- Backup PostgreSQL (quotidien 2h)
 
-### Frontend Next.js
-
-Variables :
-- `NEXT_PUBLIC_BACKEND_URL`
-- `PNPI_BACKEND_USERNAME`
-- `PNPI_BACKEND_PASSWORD`
+## Etape 6 : Verifier
 
 ```bash
-cd frontend
-npm ci
-npm run lint
-npm run build
-npx playwright install
-npm run test:e2e
+curl https://pnpi-gabon.ga/health
+curl https://pnpi-gabon.ga/health/status
+curl https://pnpi-gabon.ga/status
 ```
 
-### Mobile Flutter
+## Maintenance
 
-```bash
-flutter build apk
-flutter build ios
-```
-
-Points operationnels :
-- mode offline inspecteur (file locale des rapports),
-- synchronisation manuelle des rapports en attente.
-
-## Mise a jour
+### Mise a jour
 
 ```bash
 cd /opt/pnpi
-git pull origin main
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+git pull
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml exec backend alembic upgrade head
 ```
 
-Les migrations Alembic s'executent automatiquement au demarrage du backend.
-
-## Sauvegarde
-
-### Base de donnees
+### Logs
 
 ```bash
-# Sauvegarde quotidienne (ajouter en crontab)
-docker exec pnpi-postgres pg_dump -U pnpi_user pnpi | gzip > /backup/pnpi_$(date +%Y%m%d).sql.gz
-
-# Restauration
-gunzip < /backup/pnpi_20260322.sql.gz | docker exec -i pnpi-postgres psql -U pnpi_user pnpi
+docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml logs -f frontend
 ```
 
-### Fichiers uploades
+### Backup manuel
 
 ```bash
-docker cp pnpi-backend:/app/uploads /backup/uploads_$(date +%Y%m%d)
+docker compose -f docker-compose.prod.yml exec backend python scripts/backup_s3.py backup
 ```
 
-## Surveillance
+### Restauration
 
-- **Logs** : `docker compose -f docker-compose.prod.yml logs -f`
-- **Health** : GET /health (public) et /health/detailed (admin)
-- **Metriques** : GET /metrics (admin)
-- **Analytics** : GET /analytics/usage?days=30 (admin)
-
-## Depannage
-
-| Probleme | Solution |
-|----------|----------|
-| Backend ne demarre pas | Verifier `.env.prod` (validate_env.py bloque si incomplet) |
-| Erreur 502 | `docker compose restart backend` |
-| Base inaccessible | `docker compose restart postgres && docker compose restart backend` |
-| Certificat expire | Renouveler avec `certbot renew` |
-| Espace disque | Nettoyer les uploads anciens et les logs Docker |
-
-## Architecture reseau
-
-```
-Internet -> Nginx (443) -> Frontend (3000) / Backend (8000)
-                              |
-                        PostgreSQL (5432)
+```bash
+docker compose -f docker-compose.prod.yml exec backend python scripts/backup_s3.py restore <filename>
 ```
 
-## CI/CD
+## Monitoring
 
-Le pipeline `.github/workflows/cd.yml` :
-1. Build les images Docker
-2. Push vers GitHub Container Registry (ghcr.io)
-3. SSH vers le serveur de production
-4. Pull les nouvelles images
-5. `docker compose up -d`
-6. Health check automatique
+- **Prometheus** : https://pnpi-gabon.ga:9090
+- **Grafana** : https://pnpi-gabon.ga/grafana (admin / mot de passe configure)
+- **API Usage** : https://pnpi-gabon.ga/admin/api-usage (connexion admin requise)
+- **Statut public** : https://pnpi-gabon.ga/status
 
-Pipeline de test : `.github/workflows/ci.yml`
-Controle local unifie : `scripts/ci_check.ps1`
+## Securite
 
-## Gouvernance d'acces
-
-- Matrice RBAC : `docs/rbac_matrix.md`
-- Audit trail enrichi sur les actions sensibles
-
-## PRA/PCA
-
-- Backup : `scripts/backup_db.ps1`
-- Restore : `scripts/restore_db.ps1`
-- Procedure PRA/PCA : `docs/pra_pca.md`
+- [ ] Changer tous les mots de passe par defaut
+- [ ] Configurer le certificat SSL
+- [ ] Activer le backup S3
+- [ ] Verifier les headers de securite (CSP, HSTS)
+- [ ] Configurer les cles API d'integration (DGDI, DGI, MTEPS)
+- [ ] Tester la 2FA pour tous les comptes admin
+- [ ] Verifier les permissions par role

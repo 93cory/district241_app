@@ -1,191 +1,219 @@
 # PNPI — Plateforme Nationale de la Politique Industrielle
 
-Outil souverain du **Ministere de l'Industrie et de la Transformation Locale du Gabon**. La plateforme couvre le cycle complet des Autorisations Temporaires d'Importation (ATI), le suivi des operateurs industriels, les inspections terrain, le pilotage ministeriel et l'aide a la decision, avec pour objectifs de mesurer la transformation locale, reduire les importations et accelerer la creation d'emplois dans les secteurs industriels prioritaires.
+**Republique Gabonaise — Ministere de l'Industrie et de la Transformation Locale**
+
+Plateforme souveraine de gouvernance industrielle numerique couvrant le cycle complet des Agrements Techniques Industriels (ATI), le suivi des operateurs, les inspections de conformite, l'aide a la decision par IA, et le pilotage strategique de la politique industrielle.
 
 ---
 
-## Vision strategique
+## Chiffres cles
 
-- **Souverainete economique** : piloter la transformation locale du bois, de l'agroalimentaire, de la peche, du cacao et du manioc.
-- **Transformation industrielle** : suivre les operateurs, gerer les ATI, tracer chaque lot via QR code et calculer l'Indice National de Transformation Locale.
-- **Impact socio-economique** : aligner les politiques sur la creation d'emplois, les clusters industriels et la reduction des importations.
+| Metrique | Valeur |
+|---|---|
+| Pages frontend | 103 |
+| Backend routers | 35 |
+| Core modules | 23 |
+| Migrations DB | 27 |
+| Tests | 8 suites E2E + 7 backend |
+| Lignes de code | ~37 000 |
+| Fonctionnalites | 200+ |
 
 ---
 
-## Architecture
+## Architecture technique
 
 ### Backend — FastAPI + PostgreSQL/PostGIS
 
-- **Framework** : FastAPI (Python 3.12), async, OpenAPI auto-generee.
-- **Base de donnees** : PostgreSQL 16 + PostGIS 3.4, migrations Alembic.
-- **16 routers** : `auth`, `totp`, `ati`, `operateurs`, `inspections`, `documents`, `exports`, `pnpi_dashboard`, `pilotage`, `notifications`, `ws`, `admin`, `units`, `geo`, `health`, plus les endpoints legacy (`batches`, `logs`, `field-reports`).
-- **WebSocket** : notifications temps reel via `/ws/notifications`.
-- **Securite** : JWT + refresh tokens, RBAC (`ministre`, `instructeur`, `operateur`, `admin`), 2FA/TOTP, rate limiting, politique mot de passe, verrouillage apres echecs.
-- **Observabilite** : middleware `x-request-id`, logs structures, endpoint `/metrics`, health-check `/health`.
+- **Framework** : FastAPI (Python 3.12), async, OpenAPI
+- **Base de donnees** : PostgreSQL 16 + PostGIS 3.4, 27 migrations Alembic
+- **35 routers** : auth, totp, ati, operateurs, inspections, exports, pnpi_dashboard, pilotage, admin, geo, health, ws, messages, calendar, delegations, reminders, notes, feedback, polls, conventions, reports, templates, workflows, checklists, announcements, scheduled_reports, doc_versions, heatmap, integration, integration_health, graphql_api
+- **23 core modules** : scoring, risk_assessment, decision_engine, anomaly_detection, certificate, inspection_report, signature, workflow_engine, field_tracker, metrics, tenant, digest, badges, email, sms, webhooks, analytics, executive_report, email_templates
+- **WebSocket** : notifications temps reel
+- **Securite** : JWT + refresh, RBAC (6 roles), 2FA/TOTP, rate limiting, backup codes
+- **Monitoring** : Prometheus metrics, health checks detailles
+- **API GraphQL** : endpoint complementaire POST /graphql
 
-### Frontend — Next.js 14
+### Frontend — Next.js 15
 
-- **Framework** : Next.js 14 App Router, TypeScript, Tailwind CSS.
-- **25+ pages** dont : dashboard PNPI, liste/detail ATI, guichet, operateurs, inspections, mes-dossiers, historique, notifications, stats, briefing, profil, pilotage, admin.
-- **Temps reel** : notifications WebSocket, auto-refresh dashboard.
-- **Cartographie** : Leaflet avec rapports terrain superposes aux zones industrielles.
-- **Exports** : proxy vers CSV/PDF backend.
+- **Framework** : Next.js 15 App Router, React 19, TypeScript
+- **103 pages** couvrant 10 categories fonctionnelles
+- **PWA** : Service Worker, manifest, installation offline
+- **Dark mode** : automatique + toggle manuel (3 etats)
+- **Accessibilite** : WCAG 2.1 AA, haut contraste, police dyslexie, taille ajustable
+- **Command palette** : Ctrl+K pour navigation rapide
+- **Raccourcis clavier** : g+d (dashboard), g+a (ATI), g+m (messages), etc.
+- **Chatbot** : assistant FAQ integre avec 17 reponses
+- **SEO** : sitemap.xml, robots.txt, meta tags
 
 ### Mobile — Flutter
 
-- **27 ecrans** : dashboard, ATI, operateurs, inspections, conformite, QR scanner, alertes, historique, notifications, profil, 2FA, carte, briefing, pilotage, pitch, landing, login, etc.
-- **State management** : Provider.
-- **Typographie** : `google_fonts` (palette institutionnelle vert/jaune/bleu).
-- **Graphiques** : `fl_chart`.
-- **Mode hors ligne** : file d'attente des rapports inspecteur + synchronisation manuelle.
-- **QR** : scan via `mobile_scanner`, consultation lot en temps reel.
+- **28 ecrans** : dashboard, ATI, inspections, operateurs, carte, profil, 2FA, etc.
+- **Providers** : Auth, Notifications, Connectivity (offline banner)
+- **Biometrie** : fingerprint / Face ID
+- **Deep links** : pnpi://ati/{id}, pnpi://inspection/{id}
+- **Offline** : cache API avec TTL, file d'attente hors-ligne
+- **i18n** : francais + anglais
+- **Dark mode** : ThemeData.dark automatique
+
+### Infrastructure
+
+- **Docker** : docker-compose.yml (dev) + docker-compose.prod.yml (prod)
+- **Nginx** : reverse proxy SSL, compression gzip
+- **CI/CD** : GitHub Actions (build → GHCR → deploy SSH)
+- **Monitoring** : Prometheus + Grafana dashboards
+- **Backup** : S3/MinIO automatise avec retention 30 jours
+- **Cron** : rapport hebdo, SLA check, cleanup tokens
 
 ---
 
-## Fonctionnalites par module
+## Pages publiques (sans authentification)
 
-### Gestion des ATI
-- CRUD complet (creation, lecture, mise a jour, suppression)
-- Workflow multi-etapes : soumission, instruction, approbation/rejet, resoumission
-- Attribution des dossiers aux instructeurs
-- Gestion des documents attaches
-- Guichet unique de depot
-
-### Inspections
-- CRUD inspections avec photos
-- Grille de conformite
-- Rapports terrain (field reports) avec workflow de moderation
-- Briefing terrain exportable en PDF
-
-### Dashboard & Pilotage
-- KPIs : total ATI, ATI en cours, taux d'approbation, delai moyen
-- Pipeline par statut
-- Tendances temporelles
-- Carte geographique (Leaflet/PostGIS)
-- Repartition par secteur
-- Briefing executif avec plan 30/60/90 jours
-- Mode comite (impression optimisee `@media print`)
-- SLA configurable (`/pilotage/sla-policy`)
-
-### Securite
-- Authentification JWT + refresh tokens avec rotation et revocation
-- 2FA / TOTP avec codes de secours
-- Politique mot de passe (12+ caracteres, maj/min/chiffre/special)
-- Verrouillage temporaire apres echecs repetes
-- Rate limiting sur routes sensibles
-- Audit trail complet (before/after sur mises a jour workflow)
-- RBAC strict par role
-
-### Exports
-- CSV : indicateurs, listes ATI
-- PDF : dashboard, briefing inspecteur (avec filigrane)
-- Export streaming pour grands volumes
-
-### Notifications
-- WebSocket temps reel
-- Filtres par severite (critique, importante, info)
-- Escalade SLA automatique
-- Alertes operationnelles configurables (seuils + webhook)
-
-### Administration
-- CRUD utilisateurs avec attribution de roles
-- Gestion des notifications systeme
-- Moderation des rapports terrain
+| Page | URL | Description |
+|---|---|---|
+| Investisseurs | /investors | Vitrine pour investisseurs internationaux |
+| Open Data | /open-data | Jeux de donnees et transparence |
+| Contact | /contact | Formulaire de contact ministeriel |
+| Statut | /status | Etat operationnel du systeme |
+| Uptime | /status/history | 90 jours de disponibilite |
+| Verification ATI | /verify/ati/{num} | Verification publique par QR code |
+| Verification produit | /verify/product | Authenticite des produits industriels |
+| Verification operateur | /verify/operateur/{nif} | Carte d'identite numerique operateur |
+| A propos | /about | Presentation de la plateforme |
+| Kiosque | /kiosk | Affichage TV/ecran public |
+| Widgets | /embed | Widgets iframe embarquables |
+| CGU | /legal/cgu | Conditions d'utilisation |
+| Confidentialite | /legal/confidentialite | Politique de confidentialite |
+| Accessibilite | /legal/accessibilite | Declaration WCAG |
+| Plan du site | /plan-du-site | 103 pages repertoriees |
 
 ---
 
-## Resume des endpoints API
+## Fonctionnalites (200+)
 
-| Groupe | Endpoints principaux |
-|---|---|
-| **Auth** | `POST /auth/token`, `POST /auth/refresh`, `POST /auth/logout` |
-| **TOTP** | `POST /totp/setup`, `POST /totp/verify`, `POST /totp/backup-codes` |
-| **ATI** | `GET/POST /ati`, `GET/PATCH /ati/{id}`, `POST /ati/{id}/assign`, `POST /ati/{id}/resubmit` |
-| **Operateurs** | `GET/POST /operateurs`, `GET/PATCH /operateurs/{id}` |
-| **Inspections** | `GET/POST /inspections`, `GET/PATCH /inspections/{id}`, `POST /inspections/{id}/photos` |
-| **Documents** | `GET/POST /documents`, `GET /documents/{id}/download` |
-| **Dashboard** | `GET /pnpi/dashboard`, `GET /pnpi/dashboard/kpis`, `GET /pnpi/dashboard/pipeline` |
-| **Pilotage** | `GET /pilotage/dossiers`, `GET/PUT /pilotage/sla-policy` |
-| **Exports** | `GET /exports/indicators`, `GET /exports/dashboard.pdf`, `GET /exports/inspectors-briefing.pdf` |
-| **Notifications** | `GET /notifications`, `PATCH /notifications/{id}/read` |
-| **WebSocket** | `WS /ws/notifications` |
-| **Admin** | `GET/POST /admin/users`, `GET/POST /admin/notifications` |
-| **Geo** | `GET /geo/zones`, `GET /geo/clusters` |
-| **Health** | `GET /health` |
-| **Metrics** | `GET /metrics` |
-| **Ops** | `POST /ops/alerts/check` |
+### Intelligence artificielle
+- Recommandation de decision ATI (scoring de similarite)
+- Scoring de risque composite (6 facteurs)
+- Scoring conformite operateur (5 piliers, grades A-E)
+- Alertes intelligentes (6 detecteurs d'anomalies)
+- Predictions (tendances, previsions 3 mois, croissance sectorielle)
+
+### Workflow & Process
+- Pipeline ATI complet (soumission → instruction → validation → decision)
+- Kanban drag-and-drop
+- Workflow engine avec regles personnalisables
+- Checklists de conformite par secteur
+- Renouvellements automatises
+- Templates ATI pre-remplis (10 modeles, 7 secteurs)
+- Delegations temporaires entre instructeurs
+
+### Documents & Exports
+- Certificat officiel PDF avec QR code
+- Lettres ministerielles (approbation, rejet, accuse)
+- Rapport d'inspection PDF
+- Export Excel (ATI, operateurs) avec mise en forme
+- Export PowerPoint briefing executif
+- Export ZIP documents
+- Export GeoJSON filtre
+- QR codes en lot (batch PDF)
+- Signature electronique SHA-256
+- Archivage numerique longue duree
+
+### Analytics & Reporting
+- Dashboard temps reel (10s refresh)
+- Synthese executive
+- Comparaison periodique (trimestre vs trimestre)
+- Comparatif multi-annees (3 ans)
+- Benchmark provincial (score composite)
+- Benchmark CEMAC (6 pays)
+- Tableau croise dynamique (pivot table)
+- Constructeur de rapports no-code
+- Dashboard builder personnalisable (6 widgets)
+- Temps par etape workflow (moyenne/mediane/P90)
+- Performance instructeurs
+
+### Impact & Strategie
+- Impact economique (emplois, investissement, multiplicateurs sectoriels)
+- Impact social (femmes, jeunes, provinces)
+- Empreinte carbone (CO2 par secteur, arbres de compensation)
+- Dashboard ODD Nations Unies (objectifs 8, 9, 12, 13, 17)
+- Suivi budgetaire (couts FCFA/EUR par ATI)
+- Simulateur ROI investisseurs
+- Conventions et accords-cadres
+- Feuille de route strategique 2024-2028
+- Certifications qualite (ISO, FSC, HACCP, CEMAC NF)
+
+### Communication & Collaboration
+- Messagerie interne (inbox, threads)
+- Commentaires sur ATI (internes/visibles)
+- Tags personnalises avec couleurs
+- Sondages internes avec resultats en temps reel
+- Annuaire des contacts
+- Annonces broadcast par role
+- Newsletter avec templates
+- Feedback et satisfaction (etoiles + commentaires)
+- Calendrier (ATI, inspections, SLA, expirations)
+- Activity feed (timeline)
+- Notes personnelles (sticky notes)
+- Favoris / epingles ATI
+
+### Securite & Governance
+- 2FA TOTP + codes de secours
+- Authentification biometrique mobile
+- Geofencing des inspections (Haversine)
+- Journal d'audit avec recherche/export
+- Matrice RACI par etape
+- Organigramme des roles
+- Field-level change tracking
+- Versioning des documents
+- Multi-tenant par province
+- Dashboard securite (tentatives intrusion)
+- Signature electronique sur certificats
+
+### UX & Accessibilite
+- Dark mode (auto + manuel 3 etats)
+- PWA offline avec Service Worker
+- Command palette Ctrl+K
+- Raccourcis clavier (12 combinaisons)
+- Onboarding tour (7 etapes)
+- Chatbot FAQ integre (17 reponses)
+- Skeleton loaders anime
+- Toasts notifications
+- Dialogues de confirmation
+- Validation inline temps reel
+- Menu hamburger responsive
+- Taille texte ajustable (80-150%)
+- Mode haut contraste
+- Police dyslexie
+- Bandeau cookies
+- Badges/gamification (11 badges)
+- Mode presentation slides
 
 ---
 
-## Mise en route locale
+## Demarrage rapide
 
 ### Prerequis
-
-- Python 3.12+
+- Docker + Docker Compose
 - Node.js 20+
-- Flutter stable
-- PostgreSQL 16 + PostGIS 3.4 (ou Docker)
-- Git
+- Python 3.12+
+- Flutter SDK 3.11+
+- PostgreSQL 16 + PostGIS
 
-### Backend
-
-```bash
-# Copier la configuration
-copy backend\.env.example backend\.env
-
-# Creer le venv et installer les dependances
-py -3.12 -m venv backend\.venv312
-backend\.venv312\Scripts\python.exe -m pip install -r backend\requirements.txt
-
-# Appliquer les migrations et le seed
-backend\.venv312\Scripts\python.exe -m alembic -c backend\alembic.ini upgrade head
-backend\.venv312\Scripts\python.exe backend\scripts\seed_db.py
-
-# Lancer le serveur
-backend\.venv312\Scripts\python.exe -m uvicorn app.main:app --app-dir backend --reload
-```
-
-Option script (PowerShell) :
-```powershell
-.\scripts\setup_backend_env.ps1
-```
-
-### Frontend
+### Dev
 
 ```bash
-cd frontend
-cp .env.example .env.local  # ajuster NEXT_PUBLIC_BACKEND_URL, PNPI_BACKEND_USERNAME, PNPI_BACKEND_PASSWORD
-npm install
-npm run dev
+# Backend
+cd backend && pip install -r requirements.txt
+alembic upgrade head
+python scripts/seed_pnpi.py
+uvicorn app.main:app --reload
+
+# Frontend
+cd frontend && npm install && npm run dev
+
+# Flutter
+flutter pub get && flutter run
 ```
-
-### Mobile Flutter
-
-```bash
-flutter pub get
-flutter run --dart-define=PNPI_API_URL=http://localhost:8000 \
-            --dart-define=PNPI_API_USERNAME=ministere \
-            --dart-define=PNPI_API_PASSWORD=...
-```
-
-Dependances cles : `provider`, `google_fonts`, `fl_chart`, `mobile_scanner`, `leaflet`.
-
----
-
-## Docker Compose
-
-### Developpement
-
-```bash
-docker compose up --build
-```
-
-Services lances :
-- **PostgreSQL/PostGIS** : `localhost:5432` (db `pnpi`)
-- **Backend FastAPI** : `http://localhost:8000`
-- **Frontend Next.js** : `http://localhost:3000`
-
-Fichier : `docker-compose.yml`
 
 ### Production
 
@@ -193,104 +221,40 @@ Fichier : `docker-compose.yml`
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-- Images pre-construites depuis GHCR (`ghcr.io/<owner>/pnpi-backend`, `ghcr.io/<owner>/pnpi-frontend`)
-- Variables d'environnement via `.env.prod`
-- Reseau isole `pnpi-net`, healthchecks, `restart: always`
-
-Fichier : `docker-compose.prod.yml`
-
----
-
-## CI/CD
-
-### Pipeline CI (`.github/workflows/ci.yml`)
-
-| Job | Description |
-|---|---|
-| `backend` | Installation deps Python, `pytest tests -q` |
-| `frontend` | Installation deps Node, lint, build Next.js |
-| `frontend_e2e` | Installation Playwright + Chromium, `npm run test:e2e` |
-| `flutter` | `flutter pub get`, `flutter analyze`, `flutter test` |
-| `docker` | Build des images Docker backend + frontend |
-
-### Pipeline CD (`.github/workflows/cd.yml`)
-
-- Declenche sur push vers `main` apres validation CI
-- Build et push des images Docker vers GitHub Container Registry (GHCR)
-- Tags : `latest` + SHA court du commit
-
 ---
 
 ## Tests
 
-### Backend (pytest)
-
 ```bash
-cd backend
-python -m pytest tests -q
-```
+# Backend
+cd backend && pytest
 
-Fichiers de tests : `test_api.py`, `test_auth.py`, `test_ati.py`, `test_pnpi_dashboard.py`, `test_inspections.py`, `test_exports.py`.
+# Frontend E2E
+cd frontend && npx playwright test
 
-### Frontend (Playwright E2E)
-
-```bash
-cd frontend
-npx playwright install --with-deps chromium
-npm run test:e2e
-```
-
-Suites E2E :
-- `tests/e2e/ati-lifecycle.spec.ts` — cycle complet ATI, dashboard KPIs, filtres, pages fonctionnelles, exports, RBAC, 404
-- `tests/e2e/auth-2fa.spec.ts` — authentification, login/logout, credentials invalides, protection des routes, session timeout
-- `tests/e2e/pilotage-workflow.spec.ts` — workflow pilotage et SLA
-- `tests/e2e/pnpi-workflow.spec.ts` — workflow PNPI complet
-
-### Mobile Flutter
-
-```bash
+# Flutter
 flutter test
 ```
 
-Tests unitaires des widgets et modeles.
+---
+
+## Liens
+
+- **Statut** : /status
+- **API Docs** : /api/docs (Swagger UI)
+- **GraphQL** : POST /graphql
+- **Open Data** : /open-data
+- **Changelog** : /changelog
+- **Plan du site** : /plan-du-site
 
 ---
 
-## Checklist de deploiement production
+## Licence
 
-- [ ] Configurer `.env.prod` avec des secrets forts (`PNPI_SECRET_KEY`, mots de passe, `POSTGRES_PASSWORD`)
-- [ ] Activer HTTPS (reverse proxy Nginx/Caddy avec certificat Let's Encrypt)
-- [ ] Configurer PostgreSQL haute disponibilite + sauvegardes regulieres (`scripts/backup_db.ps1`)
-- [ ] Verifier la politique mot de passe (12+ caracteres)
-- [ ] Activer le rate limiting en production
-- [ ] Configurer les webhooks d'alertes operationnelles (`scripts/configure_ops_alerts.ps1`)
-- [ ] Configurer la politique SLA via `/pilotage/sla-policy`
-- [ ] Verifier les images Docker GHCR et les tags
-- [ ] Tester la restauration DB (`scripts/restore_db.ps1`)
-- [ ] Valider les tests CI avant merge (`pytest`, `flutter test`, Playwright E2E)
-- [ ] Configurer le monitoring (`/health`, `/metrics`)
-- [ ] Documenter la matrice RBAC (`docs/rbac_matrix.md`)
-- [ ] Consulter le plan de reprise/continuite (`docs/pra_pca.md`)
+Propriete du Ministere de l'Industrie et de la Transformation Locale de la Republique Gabonaise.
+Les donnees publiques sont disponibles sous licence Open Data Gabon.
 
 ---
 
-## Documentation complementaire
-
-- `docs/deployment.md` — scripts CI/CD, variables d'environnement, exports mensuels, monitoring
-- `docs/implementation_roadmap.md` — feuille de route d'implementation
-- `docs/presentation_playbook.md` — trame de presentation ministerielle
-- `docs/rbac_matrix.md` — matrice des roles et permissions
-- `docs/pra_pca.md` — plan de reprise et continuite d'activite
-
----
-
-## Scripts utilitaires
-
-| Script | Description |
-|---|---|
-| `scripts/setup_backend_env.ps1` | Creation venv, installation deps, migrations, seed |
-| `scripts/ci_check.ps1` | Controle qualite local (lint, tests, build) |
-| `scripts/backup_db.ps1` | Sauvegarde base de donnees |
-| `scripts/restore_db.ps1` | Restauration base de donnees |
-| `scripts/check_ops_alerts.ps1` | Evaluation manuelle des seuils d'alerte |
-| `scripts/configure_ops_alerts.ps1` | Configuration des alertes operationnelles |
+*Construit avec Next.js, FastAPI, Flutter, PostgreSQL, Docker, Prometheus.*
+*47 commits | 375 fichiers | +37 226 lignes.*
