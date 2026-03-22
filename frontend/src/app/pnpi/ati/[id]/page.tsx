@@ -6,6 +6,7 @@ import { WorkflowButtons } from "../components/WorkflowButton";
 import { DocumentUpload } from "../components/DocumentUpload";
 import { AssignInstructeur } from "../components/AssignInstructeur";
 import { ResubmitForm } from "./ResubmitForm";
+import { ATITimeline } from "./ATITimeline";
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
@@ -194,6 +195,12 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
             )}
           </div>
         </div>
+      </div>
+
+      {/* Timeline visualization */}
+      <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+        <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Chronologie des transitions</h3>
+        <ATITimeline transitions={historique} />
       </div>
 
       {/* Documents section */}

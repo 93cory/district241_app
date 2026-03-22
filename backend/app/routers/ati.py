@@ -6,7 +6,7 @@ import uuid
 from datetime import date as date_type, datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, status
 from fastapi.responses import Response as FastAPIResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -703,3 +703,103 @@ async def list_all_transitions(
         }
         for t in transitions
     ]
+
+
+class _BulkApprovePayload(_BaseModel):
+    ati_ids: List[str]
+    note: str = ""
+
+
+class _BulkRejectPayload(_BaseModel):
+    ati_ids: List[str]
+    motif_rejet: str
+
+
+@router.post("/ati/bulk-approve", summary="Approuver des ATI en lot",
+             description="Permet a un directeur, admin ou ministre d'approuver plusieurs ATI en validation en une seule operation.")
+async def bulk_approve(
+    payload: _BulkApprovePayload,
+    current_user: User = Depends(require_roles(Role.directeur, Role.admin, Role.ministre)),
+    db: Session = Depends(get_db),
+):
+    results: dict = {"approved": [], "errors": []}
+    for ati_id in payload.ati_ids:
+        ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+        if not ati:
+            results["errors"].append({"id": ati_id, "error": "ATI introuvable"})
+            continue
+        if ati.statut not in ("en_validation",):
+            results["errors"].append({"id": ati_id, "error": f"Statut actuel: {ati.statut}, transition impossible"})
+            continue
+        now = now_utc()
+        ati.statut = "approuve"
+        ati.etape = "decision"
+        ati.date_decision = now
+        ati.date_expiration = now + timedelta(days=3 * 365)
+        ati.qr_code_data = (
+            f"PNPI-QR|{ati.numero_ati}|{ati.operateur_id}|"
+            f"{ati.date_decision.date().isoformat()}|{ati.date_expiration.date().isoformat()}"
+        )
+        ati.updated_at = now
+        # Record transition
+        transition = ATITransitionORM(
+            id=f"TR-{uuid.uuid4().hex[:10].upper()}",
+            ati_id=ati.id,
+            changed_by=current_user.username,
+            previous_statut="en_validation",
+            new_statut="approuve",
+            note=payload.note or "Approbation groupee",
+            changed_at=now,
+        )
+        db.add(transition)
+        results["approved"].append(ati.id)
+
+    if results["approved"]:
+        write_audit_event(db, actor=current_user.username, action="ati.bulk_approve",
+                         target=f"{len(results['approved'])} ATIs",
+                         details=f"IDs: {', '.join(results['approved'][:10])}")
+        db.commit()
+    return results
+
+
+@router.post("/ati/bulk-reject", summary="Rejeter des ATI en lot",
+             description="Permet a un directeur, admin ou ministre de rejeter plusieurs ATI en validation en une seule operation.")
+async def bulk_reject(
+    payload: _BulkRejectPayload,
+    current_user: User = Depends(require_roles(Role.directeur, Role.admin, Role.ministre)),
+    db: Session = Depends(get_db),
+):
+    results: dict = {"rejected": [], "errors": []}
+    for ati_id in payload.ati_ids:
+        ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+        if not ati:
+            results["errors"].append({"id": ati_id, "error": "ATI introuvable"})
+            continue
+        if ati.statut not in ("en_validation",):
+            results["errors"].append({"id": ati_id, "error": f"Statut actuel: {ati.statut}, transition impossible"})
+            continue
+        now = now_utc()
+        ati.statut = "rejete"
+        ati.etape = "decision"
+        ati.date_decision = now
+        ati.motif_rejet = payload.motif_rejet
+        ati.updated_at = now
+        # Record transition
+        transition = ATITransitionORM(
+            id=f"TR-{uuid.uuid4().hex[:10].upper()}",
+            ati_id=ati.id,
+            changed_by=current_user.username,
+            previous_statut="en_validation",
+            new_statut="rejete",
+            note=f"Rejet groupe: {payload.motif_rejet}",
+            changed_at=now,
+        )
+        db.add(transition)
+        results["rejected"].append(ati.id)
+
+    if results["rejected"]:
+        write_audit_event(db, actor=current_user.username, action="ati.bulk_reject",
+                         target=f"{len(results['rejected'])} ATIs",
+                         details=f"IDs: {', '.join(results['rejected'][:10])}")
+        db.commit()
+    return results

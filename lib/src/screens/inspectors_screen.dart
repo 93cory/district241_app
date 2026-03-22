@@ -286,9 +286,176 @@ class _InspectorsScreenState extends State<InspectorsScreen> {
                 ),
               ),
             ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _actionCard(
+                icon: Icons.location_on_rounded,
+                label: 'Rapport\nterrain GPS',
+                color: Colors.deepOrange.shade700,
+                onTap: () => _showFieldReportDialog(),
+              ),
+            ),
           ],
         ),
       ],
+    );
+  }
+
+  void _showFieldReportDialog() {
+    final titleCtrl = TextEditingController();
+    final commentCtrl = TextEditingController();
+    final latCtrl = TextEditingController();
+    final lngCtrl = TextEditingController();
+    String severity = 'medium';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Rapport terrain avec GPS'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: titleCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Titre *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: commentCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Commentaire *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: severity,
+                  decoration: const InputDecoration(
+                    labelText: 'Severite',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'low', child: Text('Faible')),
+                    DropdownMenuItem(value: 'medium', child: Text('Moyenne')),
+                    DropdownMenuItem(value: 'high', child: Text('Haute')),
+                    DropdownMenuItem(value: 'critical', child: Text('Critique')),
+                  ],
+                  onChanged: (v) => setDialogState(() => severity = v ?? 'medium'),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.gps_fixed, size: 16, color: Colors.blue.shade700),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Coordonnees GPS',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.blue.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Position GPS sera capturee automatiquement en production',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue.shade400,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: latCtrl,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                              decoration: const InputDecoration(
+                                labelText: 'Latitude',
+                                hintText: 'ex: 0.3924',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: lngCtrl,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                              decoration: const InputDecoration(
+                                labelText: 'Longitude',
+                                hintText: 'ex: 9.4544',
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler'),
+            ),
+            FilledButton.icon(
+              icon: const Icon(Icons.send_rounded, size: 18),
+              label: const Text('Envoyer'),
+              onPressed: () async {
+                if (titleCtrl.text.trim().isEmpty || commentCtrl.text.trim().isEmpty) {
+                  PnpiToast.show(context, message: 'Titre et commentaire requis.', type: ToastType.error);
+                  return;
+                }
+                final lat = double.tryParse(latCtrl.text.trim());
+                final lng = double.tryParse(lngCtrl.text.trim());
+                Navigator.pop(ctx);
+                try {
+                  await ApiService.instance.submitFieldReport(
+                    title: titleCtrl.text.trim(),
+                    comment: commentCtrl.text.trim(),
+                    severity: severity,
+                    latitude: lat,
+                    longitude: lng,
+                  );
+                  if (mounted) {
+                    PnpiToast.show(context, message: 'Rapport terrain envoye avec succes !', type: ToastType.success);
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    PnpiToast.show(context, message: 'Erreur: $e', type: ToastType.error);
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

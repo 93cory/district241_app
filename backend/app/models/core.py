@@ -103,6 +103,9 @@ class FieldReportORM(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     created_by: Mapped[str] = mapped_column(String(80), nullable=False)
+    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    photo_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
 
     unit: Mapped[Optional[UnitORM]] = relationship(lazy="joined")
 

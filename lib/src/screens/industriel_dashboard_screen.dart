@@ -23,6 +23,40 @@ class _IndustrielDashboardScreenState
   List<AgrementTechniqueIndustriel> _atis = [];
   List<InspectionConformite> _inspections = [];
   bool _loading = true;
+  String _searchQuery = '';
+  String? _selectedStatut;
+  final TextEditingController _searchController = TextEditingController();
+
+  static const List<String> _statutFilters = [
+    'soumis',
+    'en_instruction',
+    'en_validation',
+    'approuve',
+    'rejete',
+  ];
+
+  static const Map<String, String> _statutLabels = {
+    'soumis': 'Soumis',
+    'en_instruction': 'En instruction',
+    'en_validation': 'En validation',
+    'approuve': 'Approuve',
+    'rejete': 'Rejete',
+  };
+
+  List<AgrementTechniqueIndustriel> get _filteredAtis {
+    var result = _atis;
+    if (_selectedStatut != null) {
+      result = result.where((a) => a.statut == _selectedStatut).toList();
+    }
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      result = result.where((a) =>
+        a.numeroAti.toLowerCase().contains(q) ||
+        a.typeActivite.toLowerCase().contains(q)
+      ).toList();
+    }
+    return result;
+  }
 
   @override
   void initState() {
@@ -77,12 +111,63 @@ class _IndustrielDashboardScreenState
           // ── Pipeline ATI ──────────────────────────────────────────────────
           _sectionTitle('Mes agréments (ATI)', Icons.approval_rounded),
           const SizedBox(height: 10),
+          // Search field
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Rechercher un ATI...',
+              hintStyle: const TextStyle(fontSize: 13, color: Colors.black38),
+              prefixIcon: const Icon(Icons.search, size: 20, color: Colors.black38),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: PnpiColors.lagoon),
+              ),
+            ),
+            onChanged: (v) => setState(() => _searchQuery = v),
+          ),
+          const SizedBox(height: 10),
+          // Filter chips
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildFilterChip(null, 'Tous'),
+                ..._statutFilters.map(
+                  (s) => _buildFilterChip(s, _statutLabels[s] ?? s),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
           if (_atis.isEmpty)
             _emptyHint('Aucun ATI enregistré pour votre dossier.')
+          else if (_filteredAtis.isEmpty)
+            _emptyHint('Aucun ATI avec ces filtres.')
           else ...[
             _AtiPipeline(atis: _atis),
             const SizedBox(height: 10),
-            ..._atis.take(3).map((a) => _AtiMiniCard(ati: a)),
+            ..._filteredAtis.take(3).map((a) => _AtiMiniCard(ati: a)),
           ],
           const SizedBox(height: 8),
           SizedBox(
@@ -194,6 +279,44 @@ class _IndustrielDashboardScreenState
       child: Text(text,
           style: const TextStyle(color: Colors.black38, fontSize: 13)),
     );
+  }
+
+  Widget _buildFilterChip(String? statut, String label) {
+    final isSelected = _selectedStatut == statut;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: FilterChip(
+        label: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? Colors.white : Colors.black54,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (_) {
+          setState(() => _selectedStatut = isSelected ? null : statut);
+        },
+        selectedColor: PnpiColors.deepSpace,
+        backgroundColor: Colors.grey.shade100,
+        checkmarkColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(
+            color: isSelected ? PnpiColors.deepSpace : Colors.grey.shade300,
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 }
 

@@ -11,6 +11,7 @@ import { fetchBackendProfile } from "../../lib/backend";
 import { AdminActions } from "./AdminActions";
 import { AdminModeration } from "./AdminModeration";
 import { AdminCreateUser } from "./AdminCreateUser";
+import { AdminUserImport } from "./AdminUserImport";
 
 export default async function AdminPage() {
   let profile;
@@ -44,6 +45,7 @@ export default async function AdminPage() {
       </div>
 
       <AdminCreateUser />
+      <AdminUserImport />
       <AdminActions />
       <AdminModeration
         declarations={declarations}

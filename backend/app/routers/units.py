@@ -4,7 +4,9 @@ from __future__ import annotations
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -75,6 +77,9 @@ def _to_field_report_read(row: FieldReportORM) -> dict:
         "status": row.status,
         "created_at": row.created_at,
         "created_by": row.created_by,
+        "latitude": row.latitude,
+        "longitude": row.longitude,
+        "photo_path": row.photo_path,
     }
 
 
@@ -273,6 +278,9 @@ async def list_field_reports(
     return [_to_field_report_read(row) for row in rows]
 
 
+UPLOAD_DIR = Path("uploads/field-reports")
+
+
 @router.post("/field-reports", status_code=status.HTTP_201_CREATED)
 async def create_field_report(
     payload: dict,
@@ -286,6 +294,14 @@ async def create_field_report(
         if not unit:
             raise HTTPException(status_code=404, detail="Unite introuvable.")
 
+    # GPS coordinates (optional)
+    latitude = payload.get("latitude")
+    longitude = payload.get("longitude")
+    if latitude is not None:
+        latitude = float(latitude)
+    if longitude is not None:
+        longitude = float(longitude)
+
     row = FieldReportORM(
         id=f"FR-{uuid.uuid4().hex[:8].upper()}",
         unit_id=normalized_unit_id,
@@ -296,6 +312,8 @@ async def create_field_report(
         status="open",
         created_at=now_utc(),
         created_by=current_user.username,
+        latitude=latitude,
+        longitude=longitude,
     )
     db.add(row)
     write_audit_event(
@@ -303,11 +321,37 @@ async def create_field_report(
         actor=current_user.username,
         action="field_reports.create",
         target=row.id,
-        details=f"severity={row.severity}; status={row.status}; unit_id={row.unit_id or 'Non renseigne'}",
+        details=f"severity={row.severity}; status={row.status}; unit_id={row.unit_id or 'Non renseigne'}; lat={latitude}; lng={longitude}",
     )
     db.commit()
     db.refresh(row)
     log_action(current_user.username, "declaration terrain", f"{row.id} enregistree ({row.severity}).")
+    return _to_field_report_read(row)
+
+
+@router.post("/field-reports/{report_id}/photo", status_code=status.HTTP_200_OK)
+async def upload_field_report_photo(
+    report_id: str,
+    photo: UploadFile = File(...),
+    current_user: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
+    db: Session = Depends(get_db),
+):
+    """Upload a photo attachment for an existing field report."""
+    row = db.get(FieldReportORM, report_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Rapport terrain introuvable.")
+
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    ext = Path(photo.filename).suffix if photo.filename else ".jpg"
+    filename = f"{report_id}{ext}"
+    filepath = UPLOAD_DIR / filename
+
+    content = await photo.read()
+    filepath.write_bytes(content)
+
+    row.photo_path = str(filepath)
+    db.commit()
+    db.refresh(row)
     return _to_field_report_read(row)
 
 

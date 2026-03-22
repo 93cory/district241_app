@@ -4,9 +4,9 @@ from __future__ import annotations
 import csv
 import io
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
@@ -14,7 +14,7 @@ from sqlalchemy import func, select
 from ..core.auth import Role, User, require_roles
 from ..core.audit import write_audit_event
 from ..database import get_db, now_utc
-from ..models.core import FieldReportORM, TraceBatchORM, UnitORM
+from ..models.core import FieldReportORM, TraceBatchORM, UnitORM, UserAccountORM
 from ..models.pilotage import ProjectDossierORM, ProjectDossierTransitionORM
 from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
 
@@ -498,6 +498,57 @@ async def export_pnpi_briefing_pdf(
     db.commit()
 
     return _build_pdf_response(lines, filename="pnpi-briefing-ministeriel.pdf", font_size=9, td_offset=12, start_y=770, start_x=36)
+
+
+@router.post("/admin/briefing/email")
+async def email_briefing_to_roles(
+    target_roles: List[str] = Body(default=["ministre", "directeur"]),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
+    db: Session = Depends(get_db),
+):
+    """Envoie un email de briefing aux utilisateurs ayant les roles cibles."""
+    from ..core.email import send_email
+
+    # Find users with target roles
+    all_users = db.execute(
+        select(UserAccountORM).where(UserAccountORM.is_active.is_(True))
+    ).scalars().all()
+    recipients: List[str] = []
+    for user in all_users:
+        user_roles = set(user.roles_csv.split(","))
+        if user_roles & set(target_roles):
+            # Use username as email placeholder (format: username@pnpi-gabon.ga)
+            recipients.append(f"{user.username}@pnpi-gabon.ga")
+
+    # Generate briefing content
+    now = now_utc()
+    subject = f"Briefing PNPI \u2014 {now.strftime('%d/%m/%Y')}"
+    html = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #0d3f78; color: white; padding: 20px; border-radius: 12px 12px 0 0;">
+        <h1 style="margin: 0; font-size: 20px;">PNPI \u2014 Briefing Quotidien</h1>
+      </div>
+      <div style="padding: 24px; background: #f6f8fb; border-radius: 0 0 12px 12px;">
+        <p>Le briefing du {now.strftime('%d/%m/%Y')} est disponible sur la plateforme.</p>
+        <a href="https://pnpi-gabon.ga/briefing" style="display: inline-block; padding: 12px 24px; background: #006233; color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">
+          Consulter le briefing
+        </a>
+      </div>
+    </div>
+    """
+
+    sent = 0
+    if recipients:
+        for email_addr in recipients:
+            if send_email([email_addr], subject, html):
+                sent += 1
+
+    write_audit_event(db, actor=current_user.username, action="briefing.email",
+                     target=f"{len(target_roles)} roles",
+                     details=f"Briefing envoye a {sent} destinataire(s)")
+    db.commit()
+
+    return {"sent": sent, "recipients_found": len(recipients), "target_roles": target_roles}
 
 
 # ---------------------------------------------------------------------------

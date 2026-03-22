@@ -281,6 +281,56 @@ async def pnpi_dashboard_tendances(
     ]
 
 
+@router.get("/dashboard/sla-analytics")
+async def sla_analytics(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Analyse SLA detaillee : conformite, delais moyens, repartition par priorite."""
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    now = now_utc()
+
+    total = len(all_atis)
+    active = [a for a in all_atis if a.statut not in _TERMINAL_STATUTS]
+    decided = [a for a in all_atis if a.statut in {"approuve", "rejete"} and a.date_decision]
+    overdue = [a for a in active if _ati_is_overdue(a)]
+
+    # SLA compliance rate
+    if decided:
+        compliant = sum(1 for a in decided if (a.date_decision.date() - a.date_soumission.date()).days <= a.sla_jours)
+        sla_compliance_pct = round(compliant / len(decided) * 100, 1)
+    else:
+        sla_compliance_pct = 0.0
+
+    # Average processing time
+    durations = [(a.date_decision.date() - a.date_soumission.date()).days for a in decided]
+    avg_days = round(sum(durations) / len(durations), 1) if durations else 0
+
+    # Distribution by SLA status
+    on_track = sum(1 for a in active if not _ati_is_overdue(a))
+    at_risk = sum(1 for a in active if not _ati_is_overdue(a) and _ati_age_jours(a) > a.sla_jours * 0.8)
+
+    # By priority
+    by_priority = {}
+    for p in ["normale", "elevee", "urgente"]:
+        p_atis = [a for a in active if a.priorite == p]
+        p_overdue = [a for a in p_atis if _ati_is_overdue(a)]
+        by_priority[p] = {"total": len(p_atis), "overdue": len(p_overdue)}
+
+    return {
+        "total_atis": total,
+        "active_atis": len(active),
+        "decided_atis": len(decided),
+        "overdue_atis": len(overdue),
+        "sla_compliance_pct": sla_compliance_pct,
+        "avg_processing_days": avg_days,
+        "on_track": on_track,
+        "at_risk": at_risk,
+        "by_priority": by_priority,
+        "generated_at": now.isoformat(),
+    }
+
+
 @router.get("/dashboard/recents", response_model=List[ATIResume])
 async def pnpi_dashboard_recents(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),

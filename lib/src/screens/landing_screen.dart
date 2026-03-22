@@ -17,6 +17,7 @@ import 'map_screen.dart';
 import 'notifications_screen.dart';
 import 'operateurs_screen.dart';
 import 'pilotage_workflow_screen.dart';
+import 'pitch_screen.dart';
 import 'pnpi_dashboard_screen.dart';
 import 'profile_screen.dart';
 import 'pnpi_alerts_screen.dart';
@@ -94,6 +95,15 @@ class _LandingScreenState extends State<LandingScreen> {
           ),
         ),
         actions: [
+          // Pitch mode for ministre/directeur
+          if (widget.profile.roles.any((r) => r == 'ministre' || r == 'directeur'))
+            IconButton(
+              icon: const Icon(Icons.slideshow_rounded),
+              tooltip: 'Mode Presentation',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PitchScreen()),
+              ),
+            ),
           // Notifications bell with unread badge
           Stack(
             clipBehavior: Clip.none,

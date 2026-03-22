@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
@@ -223,3 +223,72 @@ async def mark_notification_read(
     db.commit()
     db.refresh(row)
     return _to_notification_read(row)
+
+
+@router.post("/admin/users/bulk-import")
+async def bulk_import_users(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
+    db: Session = Depends(get_db),
+):
+    """Import users from CSV. Columns: username,full_name,roles,password"""
+    import csv, io
+
+    content = await file.read()
+    reader = csv.DictReader(io.StringIO(content.decode("utf-8-sig")))
+
+    created = []
+    errors = []
+
+    for i, row in enumerate(reader, start=2):
+        username = (row.get("username") or "").strip()
+        full_name = (row.get("full_name") or "").strip()
+        roles_raw = (row.get("roles") or "").strip()
+        password = (row.get("password") or "").strip()
+
+        if not username or not full_name or not roles_raw or not password:
+            errors.append({"line": i, "username": username, "error": "Champs obligatoires manquants"})
+            continue
+
+        # Validate roles
+        valid_roles = {"admin", "ministre", "directeur", "instructeur", "inspecteur", "operateur"}
+        user_roles = [r.strip() for r in roles_raw.split(",") if r.strip() in valid_roles]
+        if not user_roles:
+            errors.append({"line": i, "username": username, "error": f"Roles invalides: {roles_raw}"})
+            continue
+
+        # Validate password
+        policy_error = validate_password_policy(password)
+        if policy_error:
+            errors.append({"line": i, "username": username, "error": policy_error})
+            continue
+
+        # Check duplicate
+        existing = db.get(UserAccountORM, username)
+        if existing:
+            errors.append({"line": i, "username": username, "error": "Utilisateur existe deja"})
+            continue
+
+        # Create
+        row_obj = UserAccountORM(
+            username=username,
+            full_name=full_name,
+            roles_csv=",".join(sorted(user_roles)),
+            hashed_password=get_password_hash(password),
+            is_active=True,
+            created_at=now_utc(),
+        )
+        db.add(row_obj)
+        created.append(username)
+
+    if created:
+        write_audit_event(db, actor=current_user.username, action="admin.bulk_import",
+                         target=f"{len(created)} users", details=f"Imported: {', '.join(created[:10])}")
+        db.commit()
+
+    return {
+        "created": len(created),
+        "errors": len(errors),
+        "created_users": created,
+        "error_details": errors,
+    }

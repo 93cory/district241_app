@@ -97,6 +97,8 @@ class OfflineQueue {
           comment: action.payload['comment'],
           severity: action.payload['severity'],
           unitId: action.payload['unitId'],
+          latitude: (action.payload['latitude'] as num?)?.toDouble(),
+          longitude: (action.payload['longitude'] as num?)?.toDouble(),
         );
       case 'resubmit_ati':
         await ApiService.instance.resubmitATI(

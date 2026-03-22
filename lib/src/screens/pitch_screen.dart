@@ -1,25 +1,115 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/forecast_point.dart';
 import '../services/api_service.dart';
 import '../theme/pnpi_theme.dart';
 
-class PitchScreen extends StatelessWidget {
-  final DashboardSnapshot snapshot;
-  final List<DashboardAlert> alerts;
-  final List<ForecastPoint> forecast;
+class PitchScreen extends StatefulWidget {
+  final DashboardSnapshot? snapshot;
+  final List<DashboardAlert>? alerts;
+  final List<ForecastPoint>? forecast;
 
   const PitchScreen({
     super.key,
-    required this.snapshot,
-    required this.alerts,
-    required this.forecast,
+    this.snapshot,
+    this.alerts,
+    this.forecast,
   });
 
   @override
+  State<PitchScreen> createState() => _PitchScreenState();
+}
+
+class _PitchScreenState extends State<PitchScreen> {
+  DashboardSnapshot? _snapshot;
+  List<DashboardAlert> _alerts = [];
+  List<ForecastPoint> _forecast = [];
+  bool _loading = true;
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.snapshot != null) {
+      _snapshot = widget.snapshot;
+      _alerts = widget.alerts ?? [];
+      _forecast = widget.forecast ?? [];
+      _loading = false;
+    }
+    _loadData();
+    // Auto-refresh every 60 seconds
+    _refreshTimer = Timer.periodic(const Duration(seconds: 60), (_) => _loadData());
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final results = await Future.wait([
+        ApiService.instance.fetchDashboardSnapshot(),
+        ApiService.instance.fetchDashboardAlerts(),
+        ApiService.instance.fetchForecast(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _snapshot = results[0] as DashboardSnapshot;
+        _alerts = results[1] as List<DashboardAlert>;
+        _forecast = results[2] as List<ForecastPoint>;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted && _snapshot == null) {
+        setState(() => _loading = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final forecastDelta = forecast.isNotEmpty
-        ? forecast.last.volumeTons - forecast.first.volumeTons
+    if (_loading && _snapshot == null) {
+      return Scaffold(
+        backgroundColor: PnpiColors.deepSpace,
+        body: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
+    if (_snapshot == null) {
+      return Scaffold(
+        backgroundColor: PnpiColors.deepSpace,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off, color: Colors.white38, size: 48),
+                const SizedBox(height: 12),
+                const Text(
+                  'Impossible de charger les donnees',
+                  style: TextStyle(color: Colors.white60, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Retour', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final snapshot = _snapshot!;
+    final forecastDelta = _forecast.isNotEmpty
+        ? _forecast.last.volumeTons - _forecast.first.volumeTons
         : 0.0;
     final direction = forecastDelta >= 0 ? 'hausse' : 'repli';
 
@@ -44,6 +134,11 @@ class PitchScreen extends StatelessWidget {
                     ),
                   ),
                   IconButton(
+                    onPressed: () => _loadData(),
+                    icon: const Icon(Icons.refresh, color: Colors.white70),
+                    tooltip: 'Rafraichir',
+                  ),
+                  IconButton(
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close, color: Colors.white),
                   ),
@@ -64,7 +159,7 @@ class PitchScreen extends StatelessWidget {
               const SizedBox(height: 10),
               Expanded(
                 child: ListView(
-                  children: alerts.take(4).map((alert) {
+                  children: _alerts.take(4).map((alert) {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(12),

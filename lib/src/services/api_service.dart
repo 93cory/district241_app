@@ -183,6 +183,8 @@ class PendingFieldReport {
   final String comment;
   final String severity;
   final String? location;
+  final double? latitude;
+  final double? longitude;
   final DateTime queuedAt;
 
   const PendingFieldReport({
@@ -191,6 +193,8 @@ class PendingFieldReport {
     required this.comment,
     required this.severity,
     required this.location,
+    this.latitude,
+    this.longitude,
     required this.queuedAt,
   });
 
@@ -200,6 +204,8 @@ class PendingFieldReport {
         'comment': comment,
         'severity': severity,
         'location': location,
+        'latitude': latitude,
+        'longitude': longitude,
         'queued_at': queuedAt.toIso8601String(),
       };
 
@@ -209,6 +215,8 @@ class PendingFieldReport {
         comment: json['comment'],
         severity: json['severity'],
         location: json['location'],
+        latitude: (json['latitude'] as num?)?.toDouble(),
+        longitude: (json['longitude'] as num?)?.toDouble(),
         queuedAt: DateTime.parse(json['queued_at']),
       );
 }
@@ -364,6 +372,8 @@ class ApiService {
     required String comment,
     required String severity,
     String? location,
+    double? latitude,
+    double? longitude,
   }) async {
     final reports = await _loadPendingFieldReports();
     reports.add(
@@ -373,6 +383,8 @@ class ApiService {
         comment: comment,
         severity: severity,
         location: location,
+        latitude: latitude,
+        longitude: longitude,
         queuedAt: DateTime.now().toUtc(),
       ),
     );
@@ -393,6 +405,8 @@ class ApiService {
           comment: report.comment,
           severity: report.severity,
           location: report.location,
+          latitude: report.latitude,
+          longitude: report.longitude,
           queueOnFailure: false,
         );
         sent += 1;
@@ -620,20 +634,25 @@ class ApiService {
     required String comment,
     String severity = 'medium',
     String? location,
+    double? latitude,
+    double? longitude,
     bool queueOnFailure = true,
   }) async {
     try {
       await _ensureToken();
+      final body = <String, dynamic>{
+        'unit_id': unitId,
+        'title': title,
+        'comment': comment,
+        'severity': severity,
+        'location': location,
+      };
+      if (latitude != null) body['latitude'] = latitude;
+      if (longitude != null) body['longitude'] = longitude;
       final response = await _client.post(
         Uri.parse('$_backendUrl/field-reports'),
         headers: {..._authHeaders, 'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'unit_id': unitId,
-          'title': title,
-          'comment': comment,
-          'severity': severity,
-          'location': location,
-        }),
+        body: jsonEncode(body),
       );
       if (response.statusCode != 201) {
         throw Exception('Declaration terrain echouee');
@@ -648,6 +667,8 @@ class ApiService {
         comment: comment,
         severity: severity,
         location: location,
+        latitude: latitude,
+        longitude: longitude,
       );
       if (_strictBackend) {
         rethrow;
@@ -661,6 +682,8 @@ class ApiService {
     required String comment,
     String severity = 'medium',
     String? location,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final before = await getPendingFieldReportsCount();
@@ -670,6 +693,8 @@ class ApiService {
         comment: comment,
         severity: severity,
         location: location,
+        latitude: latitude,
+        longitude: longitude,
         queueOnFailure: true,
       );
       final after = await getPendingFieldReportsCount();
