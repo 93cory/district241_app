@@ -30,6 +30,7 @@ from ..schemas.pnpi import (
     ProvinceStats,
     SecteurStats,
 )
+from ..core.anomaly_detection import detect_anomalies
 
 
 router = APIRouter(prefix="/pnpi", tags=["PNPI Dashboard"])
@@ -1514,3 +1515,49 @@ async def economic_impact(
             for k, v in sorted(province_impact.items(), key=lambda x: -x[1]["jobs"])
         ],
     }
+
+
+@router.get("/dashboard/smart-alerts")
+async def smart_alerts(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    return {"alerts": detect_anomalies(db)}
+
+
+@router.get("/dashboard/multi-year")
+async def multi_year_comparison(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Compare KPIs across the last 3 years."""
+    now = now_utc()
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
+
+    years = []
+    for offset in range(3):
+        y = now.year - offset
+        y_atis = [a for a in all_atis if a.date_soumission.year == y]
+        y_decided = [a for a in y_atis if a.statut in ("approuve", "rejete")]
+        y_approved = sum(1 for a in y_decided if a.statut == "approuve")
+        y_insp = [i for i in all_insp if i.date_inspection.year == y]
+        y_conformes = sum(1 for i in y_insp if i.statut_conformite == "conforme")
+
+        avg_days = 0
+        decided_with_date = [a for a in y_decided if a.date_decision]
+        if decided_with_date:
+            avg_days = round(sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided_with_date) / len(decided_with_date), 1)
+
+        years.append({
+            "year": y,
+            "soumissions": len(y_atis),
+            "approuves": y_approved,
+            "rejetes": len(y_decided) - y_approved,
+            "taux_approbation": round(y_approved / max(len(y_decided), 1) * 100, 1),
+            "inspections": len(y_insp),
+            "taux_conformite": round(y_conformes / max(len(y_insp), 1) * 100, 1),
+            "delai_moyen": avg_days,
+        })
+
+    return {"years": years}

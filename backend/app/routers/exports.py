@@ -1174,3 +1174,112 @@ def _build_pdf_response(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
+@router.get("/exports/ati/{ati_id}/letter.pdf")
+async def generate_official_letter(
+    ati_id: str,
+    letter_type: str = Query("approval", description="approval|rejection|acknowledgment"),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Generate an official ministerial letter for an ATI."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import cm
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+    op = ati.operateur
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=3*cm, rightMargin=3*cm, topMargin=2.5*cm, bottomMargin=2.5*cm)
+    styles = getSampleStyleSheet()
+
+    center = ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER, fontSize=10)
+    justify = ParagraphStyle("justify", parent=styles["Normal"], alignment=TA_JUSTIFY, fontSize=11, leading=16)
+
+    story = []
+
+    # Header
+    story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=center, fontSize=11, textColor=colors.gray)))
+    story.append(Paragraph("Union \u2014 Travail \u2014 Justice", ParagraphStyle("motto", parent=center, fontSize=9, textColor=colors.gray, fontName="Helvetica-Oblique")))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("MINISTERE DE L'INDUSTRIE ET DE LA TRANSFORMATION LOCALE", ParagraphStyle("min", parent=center, fontSize=9, textColor=colors.HexColor("#003F8F"), fontName="Helvetica-Bold")))
+    story.append(Paragraph("Direction Generale de l'Industrie", ParagraphStyle("dgi", parent=center, fontSize=8, textColor=colors.HexColor("#003F8F"))))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#006233")))
+    story.append(Spacer(1, 0.8*cm))
+
+    now = now_utc()
+    story.append(Paragraph(f"Libreville, le {now.strftime('%d/%m/%Y')}", ParagraphStyle("date", parent=styles["Normal"], fontSize=10, alignment=2)))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Recipient
+    op_name = op.raison_sociale if op else "Operateur"
+    story.append(Paragraph(f"<b>A l'attention de :</b> {op_name}", ParagraphStyle("to", parent=styles["Normal"], fontSize=11)))
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph(f"<b>Objet :</b> Dossier ATI N\u00b0 {ati.numero_ati}", ParagraphStyle("obj", parent=styles["Normal"], fontSize=11)))
+    story.append(Spacer(1, 0.5*cm))
+
+    # Body
+    if letter_type == "approval":
+        story.append(Paragraph("Madame, Monsieur,", justify))
+        story.append(Spacer(1, 0.3*cm))
+        story.append(Paragraph(
+            f"J'ai l'honneur de vous informer que votre demande d'Agrement Technique Industriel "
+            f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}, "
+            f"portant sur l'activite de <i>{ati.type_activite[:100]}</i> dans le secteur <b>{ati.secteur}</b>, "
+            f"a ete examinee favorablement par nos services.", justify))
+        story.append(Spacer(1, 0.3*cm))
+        story.append(Paragraph(
+            "En consequence, votre agrement vous est accorde conformement aux dispositions "
+            "reglementaires en vigueur. Vous trouverez ci-joint votre certificat d'approbation.", justify))
+    elif letter_type == "rejection":
+        story.append(Paragraph("Madame, Monsieur,", justify))
+        story.append(Spacer(1, 0.3*cm))
+        story.append(Paragraph(
+            f"J'ai le regret de vous informer que votre demande d'Agrement Technique Industriel "
+            f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}, "
+            f"n'a pas pu recevoir une suite favorable en l'etat actuel de votre dossier.", justify))
+        story.append(Spacer(1, 0.3*cm))
+        story.append(Paragraph(
+            "Nous vous invitons a prendre connaissance des observations formulees par nos services "
+            "et a resoumettre votre dossier apres avoir apporte les corrections necessaires.", justify))
+    else:
+        story.append(Paragraph("Madame, Monsieur,", justify))
+        story.append(Spacer(1, 0.3*cm))
+        story.append(Paragraph(
+            f"J'accuse reception de votre demande d'Agrement Technique Industriel "
+            f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}. "
+            f"Votre dossier est en cours d'instruction par nos services.", justify))
+
+    story.append(Spacer(1, 0.3*cm))
+    story.append(Paragraph("Veuillez agreer, Madame, Monsieur, l'expression de ma consideration distinguee.", justify))
+
+    story.append(Spacer(1, 1.5*cm))
+    story.append(Paragraph("<b>Le Directeur General de l'Industrie</b>", ParagraphStyle("sig", parent=styles["Normal"], fontSize=10, alignment=2)))
+
+    story.append(Spacer(1, 2*cm))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.gray))
+    story.append(Paragraph(
+        "Document genere par la Plateforme Nationale de la Politique Industrielle (PNPI)",
+        ParagraphStyle("footer", parent=center, fontSize=7, textColor=colors.gray),
+    ))
+
+    doc.build(story)
+    buf.seek(0)
+
+    write_audit_event(db, actor=current_user.username, action="export.letter",
+                     target=ati_id, details=f"Lettre {letter_type} ATI {ati.numero_ati}")
+    db.commit()
+
+    return Response(
+        content=buf.read(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="lettre_{letter_type}_{ati.numero_ati}.pdf"'},
+    )

@@ -14,6 +14,7 @@ import { KeyboardShortcuts } from "./components/KeyboardShortcuts";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { ServerLoad } from "./components/ServerLoad";
 import { AnnouncementBanner } from "./components/AnnouncementBanner";
+import { AccessibilityPanel } from "./components/AccessibilityPanel";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
 import "./globals.css";
@@ -60,6 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <SessionStatusBadge />
                 <ServerLoad />
                 <ThemeToggle />
+                <AccessibilityPanel />
                 {roles.length ? <NotificationsBell /> : null}
                 {roles.length ? <WebLogoutButton /> : null}
               </MobileNav>

@@ -694,3 +694,21 @@ textarea:focus-visible {
 .text-soft, [class*="text-soft"] {
   color: #4a6178; /* Upgraded from #526175 for better contrast: 5.2:1 on white */
 }
+
+/* High contrast mode */
+[data-high-contrast] {
+  --text-main: #000 !important;
+  --text-soft: #333 !important;
+  --bg-base: #fff !important;
+  --bg-layer: #fff !important;
+  --line: #000 !important;
+}
+
+[data-high-contrast] .chart-card,
+[data-high-contrast] .table-card {
+  border: 2px solid #000 !important;
+}
+
+[data-high-contrast] a {
+  text-decoration: underline !important;
+}

@@ -56,6 +56,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/objectives", "Objectifs");
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
+    add("/pnpi/smart-alerts", "Alertes IA");
+    add("/pnpi/multi-year", "Multi-annees");
     add("/pnpi/renewals", "Renouvellements");
     add("/pnpi/economic-impact", "Impact eco.");
     add("/admin/integrations", "Integrations");
@@ -92,6 +94,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/annual-report", "Bilan annuel");
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
+    add("/pnpi/smart-alerts", "Alertes IA");
+    add("/pnpi/multi-year", "Multi-annees");
     add("/pnpi/economic-impact", "Impact eco.");
     add("/kiosk", "Kiosque");
   }
@@ -125,6 +129,8 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
     add("/pnpi/objectives", "Objectifs");
     add("/pnpi/benchmark", "Benchmark");
     add("/pnpi/pivot", "Tableau croise");
+    add("/pnpi/smart-alerts", "Alertes IA");
+    add("/pnpi/multi-year", "Multi-annees");
     add("/pnpi/renewals", "Renouvellements");
     add("/pnpi/economic-impact", "Impact eco.");
   }
