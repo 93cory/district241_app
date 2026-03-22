@@ -1667,6 +1667,7 @@ from .routers.announcements import router as announcements_router
 from .routers.integration_health import router as integration_health_router
 from .routers.scheduled_reports import router as scheduled_reports_router
 from .routers.polls import router as polls_router
+from .routers.graphql_api import router as graphql_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1700,6 +1701,7 @@ app.include_router(announcements_router)
 app.include_router(integration_health_router)
 app.include_router(scheduled_reports_router)
 app.include_router(polls_router)
+app.include_router(graphql_router)
 
 @app.get("/metrics/usage", include_in_schema=False)
 async def api_usage_stats(

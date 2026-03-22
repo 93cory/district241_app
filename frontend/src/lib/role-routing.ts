@@ -183,6 +183,7 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
   }
 
   if (links.length > 0) {
+    add("/pnpi/formation", "Formation");
     add("/pnpi/notes", "Notes");
     add("/pnpi/favorites", "Favoris");
     add("/pnpi/annuaire", "Annuaire");
