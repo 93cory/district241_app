@@ -187,6 +187,8 @@ async def list_operateurs(
         query = query.where(OperateurIndustrielORM.province == province)
     if is_active is not None:
         query = query.where(OperateurIndustrielORM.is_active.is_(is_active))
+    # Exclude soft-deleted by default
+    query = query.where(OperateurIndustrielORM.deleted_at.is_(None))
     query = query.order_by(OperateurIndustrielORM.raison_sociale).offset(skip).limit(limit)
     ops = db.execute(query).scalars().all()
     return [_to_operateur_brief(op) for op in ops]
@@ -393,3 +395,49 @@ async def get_operator_timeline(
 
     events.sort(key=lambda e: e["date"])
     return {"operateur_id": operateur_id, "events": events}
+
+
+@router.delete("/operateurs/{operateur_id}", summary="Supprimer un operateur (soft delete)")
+async def soft_delete_operateur(
+    operateur_id: str,
+    current_user: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Soft delete: marque l'operateur comme supprime sans le retirer de la base."""
+    op = db.get(OperateurIndustrielORM, operateur_id)
+    if not op:
+        raise HTTPException(status_code=404, detail="Operateur introuvable.")
+    if op.deleted_at:
+        raise HTTPException(status_code=400, detail="Operateur deja supprime.")
+
+    op.deleted_at = now_utc()
+    op.is_active = False
+    write_audit_event(
+        db, actor=current_user.username, action="operateur.soft_delete",
+        target=operateur_id, details=f"Operateur {op.raison_sociale} supprime",
+    )
+    db.commit()
+    return {"message": f"Operateur '{op.raison_sociale}' supprime.", "id": operateur_id}
+
+
+@router.post("/operateurs/{operateur_id}/restore", summary="Restaurer un operateur supprime")
+async def restore_operateur(
+    operateur_id: str,
+    current_user: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Restore a soft-deleted operator."""
+    op = db.get(OperateurIndustrielORM, operateur_id)
+    if not op:
+        raise HTTPException(status_code=404, detail="Operateur introuvable.")
+    if not op.deleted_at:
+        raise HTTPException(status_code=400, detail="Operateur non supprime.")
+
+    op.deleted_at = None
+    op.is_active = True
+    write_audit_event(
+        db, actor=current_user.username, action="operateur.restore",
+        target=operateur_id, details=f"Operateur {op.raison_sociale} restaure",
+    )
+    db.commit()
+    return {"message": f"Operateur '{op.raison_sociale}' restaure.", "id": operateur_id}

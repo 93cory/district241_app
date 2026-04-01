@@ -37,6 +37,7 @@ class OperateurIndustrielORM(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     created_by: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     agrements: Mapped[List["AgrementTechniqueIndustrielORM"]] = relationship(
         back_populates="operateur",

@@ -643,6 +643,50 @@ html[data-theme="light"] {
     break-before: page;
     page-break-before: always;
   }
+
+  /* Hide interactive elements */
+  header, footer, nav, .top-nav, .skip-link,
+  .mobile-nav, button:not(.print-keep),
+  .cookie-consent, .chat-assistant,
+  .command-palette, .pwa-install,
+  .onboarding-tour, .pagination,
+  .offline-banner, .accessibility-panel {
+    display: none !important;
+  }
+
+  /* Optimize tables for print */
+  table {
+    font-size: 9pt !important;
+    width: 100% !important;
+  }
+  th, td {
+    padding: 4px 6px !important;
+    border: 1px solid #ccc !important;
+  }
+
+  /* Ensure links show URLs */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    color: #666;
+  }
+
+  /* KPI cards in print */
+  .kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  /* Page margins */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+
+  @page :first {
+    margin-top: 2cm;
+  }
 }
 
 @keyframes shimmer {

@@ -44,4 +44,32 @@ class Settings:
         self.sla_high_days = int(os.getenv("PNPI_SLA_HIGH_DAYS", os.getenv("PNPI_SLA_HIGH_DAYS", "21")))
 
 
+    def validate(self) -> list[str]:
+        """Validate critical settings. Returns list of warnings."""
+        warnings: list[str] = []
+
+        if self.secret_key == "change-me-in-production" and self.env == "production":
+            warnings.append("CRITICAL: PNPI_SECRET_KEY is using default value in production!")
+
+        if self.env == "production" and self.cors_origins == "*":
+            warnings.append("WARNING: CORS allows all origins in production")
+
+        if self.env == "production" and "sqlite" in self.database_url:
+            warnings.append("WARNING: SQLite should not be used in production")
+
+        if self.sla_high_days >= self.sla_medium_days:
+            warnings.append(f"WARNING: SLA high ({self.sla_high_days}d) >= medium ({self.sla_medium_days}d)")
+
+        if self.sla_medium_days >= self.sla_low_days:
+            warnings.append(f"WARNING: SLA medium ({self.sla_medium_days}d) >= low ({self.sla_low_days}d)")
+
+        return warnings
+
+
 settings = Settings()
+
+# Log warnings at import time
+import logging as _logging
+_config_logger = _logging.getLogger("pnpi.config")
+for _w in settings.validate():
+    _config_logger.warning(_w)
