@@ -1431,6 +1431,65 @@ async def province_benchmark(
     return {"provinces": result}
 
 
+@router.get("/dashboard/period-comparison", summary="Comparaison de deux periodes")
+async def period_comparison(
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Compare les 30 derniers jours vs les 30 jours precedents."""
+    now = now_utc()
+    from datetime import timedelta
+    period_end = now
+    period_start = now - timedelta(days=30)
+    prev_end = period_start
+    prev_start = prev_end - timedelta(days=30)
+
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
+
+    def count_period(items, date_field, start, end):
+        return sum(1 for item in items if start <= getattr(item, date_field).replace(tzinfo=now.tzinfo) < end)
+
+    current_submissions = count_period(all_atis, "date_soumission", period_start, period_end)
+    prev_submissions = count_period(all_atis, "date_soumission", prev_start, prev_end)
+
+    current_decisions = sum(1 for a in all_atis if a.date_decision and period_start <= a.date_decision.replace(tzinfo=now.tzinfo) < period_end)
+    prev_decisions = sum(1 for a in all_atis if a.date_decision and prev_start <= a.date_decision.replace(tzinfo=now.tzinfo) < prev_end)
+
+    current_inspections = count_period(all_insp, "created_at", period_start, period_end)
+    prev_inspections = count_period(all_insp, "created_at", prev_start, prev_end)
+
+    def pct_change(current, previous):
+        if previous == 0:
+            return 100.0 if current > 0 else 0.0
+        return round((current - previous) / previous * 100, 1)
+
+    return {
+        "periode_courante": {"debut": period_start.date().isoformat(), "fin": period_end.date().isoformat()},
+        "periode_precedente": {"debut": prev_start.date().isoformat(), "fin": prev_end.date().isoformat()},
+        "metriques": [
+            {
+                "label": "ATI soumis",
+                "courant": current_submissions,
+                "precedent": prev_submissions,
+                "variation_pct": pct_change(current_submissions, prev_submissions),
+            },
+            {
+                "label": "Decisions rendues",
+                "courant": current_decisions,
+                "precedent": prev_decisions,
+                "variation_pct": pct_change(current_decisions, prev_decisions),
+            },
+            {
+                "label": "Inspections realisees",
+                "courant": current_inspections,
+                "precedent": prev_inspections,
+                "variation_pct": pct_change(current_inspections, prev_inspections),
+            },
+        ],
+    }
+
+
 @router.get("/dashboard/activity-feed")
 async def activity_feed(
     limit: int = Query(20, ge=1, le=50),
