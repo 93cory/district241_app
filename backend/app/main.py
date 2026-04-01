@@ -59,6 +59,8 @@ from .core.auth import (
     validate_password_policy,
     verify_password,
 )
+from .core.logging_config import setup_logging
+from .core.correlation_middleware import CorrelationMiddleware
 from .core.metrics import MetricsMiddleware, metrics
 from .core.audit import (
     _emit_audit_event,
@@ -103,9 +105,8 @@ ALERT_UNREAD_CRITICAL_THRESHOLD = settings.alert_unread_critical_threshold
 ALERT_ERROR_RATE_THRESHOLD = settings.alert_error_rate_threshold
 CORS_ALLOW_ORIGINS_RAW = settings.cors_origins
 
+setup_logging()
 logger = logging.getLogger("pnpi")
-if not logger.handlers:
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 _rate_limit_store: Dict[str, List[datetime]] = defaultdict(list)
 _request_metrics: Dict[str, int] = defaultdict(int)
@@ -1599,6 +1600,7 @@ app.add_middleware(
 )
 
 app.add_middleware(MetricsMiddleware)
+app.add_middleware(CorrelationMiddleware)
 
 
 @app.middleware("http")

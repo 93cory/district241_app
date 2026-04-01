@@ -31,6 +31,7 @@ from ..schemas.pnpi import (
     SecteurStats,
 )
 from ..core.anomaly_detection import detect_anomalies
+from ..core.cache import cache
 
 
 router = APIRouter(prefix="/pnpi", tags=["PNPI Dashboard"])
@@ -56,6 +57,12 @@ async def pnpi_dashboard_kpis(
     # Multi-tenant province filtering
     province = get_user_province(current_user)
     tenant = TenantFilter(province)
+
+    # Cache: 2 min per province scope
+    cache_key = f"dashboard:kpis:{province or 'global'}"
+    cached = await cache.get(cache_key)
+    if cached:
+        return PNPIDashboardKpis(**cached)
 
     # Fetch ATIs, filtered by province if user is province-scoped
     ati_query = select(AgrementTechniqueIndustrielORM)
@@ -115,7 +122,7 @@ async def pnpi_dashboard_kpis(
     nb_conformes = sum(1 for s in last_inspection_per_op.values() if s == "conforme")
     taux_conformite_pct = round((nb_conformes / nb_inspectes * 100) if nb_inspectes > 0 else 0.0, 2)
 
-    return PNPIDashboardKpis(
+    result = PNPIDashboardKpis(
         atis_total=atis_total,
         atis_en_cours=atis_en_cours,
         atis_approuves_ce_mois=atis_approuves_ce_mois,
@@ -126,6 +133,8 @@ async def pnpi_dashboard_kpis(
         taux_conformite_pct=taux_conformite_pct,
         generated_at=now,
     )
+    await cache.set(cache_key, result.model_dump(), ttl=120)
+    return result
 
 
 @router.get("/dashboard/carte", response_model=List[OperateurGeoPoint])
