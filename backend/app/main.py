@@ -1813,6 +1813,36 @@ async def system_stats(
     }
 
 
+@app.get("/admin/db-tables", tags=["Admin"], summary="Introspection des tables DB")
+async def db_tables_info(
+    _: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """List all database tables with row counts and column info."""
+    from sqlalchemy import inspect as sa_inspect
+    inspector = sa_inspect(engine)
+    tables = []
+    for table_name in sorted(inspector.get_table_names()):
+        columns = [
+            {"name": col["name"], "type": str(col["type"]), "nullable": col["nullable"]}
+            for col in inspector.get_columns(table_name)
+        ]
+        try:
+            row_count = db.execute(text(f'SELECT COUNT(*) FROM "{table_name}"')).scalar()
+        except Exception:
+            row_count = -1
+        indexes = [{"name": idx["name"], "columns": idx["column_names"]} for idx in inspector.get_indexes(table_name)]
+        tables.append({
+            "name": table_name,
+            "columns": len(columns),
+            "rows": row_count,
+            "indexes": len(indexes),
+            "column_details": columns,
+            "index_details": indexes,
+        })
+    return {"tables": tables, "total_tables": len(tables)}
+
+
 # ── Fichiers statiques (logo, assets) ────────────────────────────────────────
 _static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.isdir(_static_dir):

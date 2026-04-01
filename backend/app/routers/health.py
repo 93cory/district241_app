@@ -33,6 +33,16 @@ async def health() -> Dict[str, str]:
     return {"status": "ok", "service": "PNPI/PNPI Backend"}
 
 
+@router.get("/health/score", summary="Score de sante global (0-100)")
+async def health_score(
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
+    db: Session = Depends(get_db),
+):
+    """Score composite: DB, cache, disque, erreurs, retards, utilisateurs actifs."""
+    from ..core.health_score import compute_health_score
+    return await compute_health_score(db)
+
+
 @router.get("/health/live")
 async def liveness() -> Dict[str, str]:
     """Liveness probe — always returns 200 if the process is running."""
