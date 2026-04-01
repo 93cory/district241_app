@@ -33,22 +33,29 @@ async def dispatch_webhook(event_type: str, payload: Dict[str, Any]) -> bool:
         "data": payload,
     }
 
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
-                url,
-                json=body,
-                headers={
-                    "Content-Type": "application/json",
-                    "X-PNPI-Event": event_type,
-                    "X-PNPI-Signature": _sign_payload(json.dumps(body)),
-                },
-            )
-        logger.info(f"[WEBHOOK] {event_type} -> {url} ({response.status_code})")
-        return response.status_code < 400
-    except Exception as e:
-        logger.error(f"[WEBHOOK] Echec {event_type} -> {url}: {e}")
-        return False
+    headers = {
+        "Content-Type": "application/json",
+        "X-PNPI-Event": event_type,
+        "X-PNPI-Signature": _sign_payload(json.dumps(body)),
+        "User-Agent": "PNPI-Webhook/1.0",
+    }
+
+    # Retry up to 2 times with backoff
+    for attempt in range(3):
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(url, json=body, headers=headers)
+            if response.status_code < 400:
+                logger.info(f"[WEBHOOK] {event_type} -> {url} ({response.status_code})")
+                return True
+            logger.warning(f"[WEBHOOK] {event_type} -> {url} ({response.status_code}), attempt {attempt + 1}")
+        except Exception as e:
+            logger.error(f"[WEBHOOK] Echec {event_type} -> {url}: {e}, attempt {attempt + 1}")
+        if attempt < 2:
+            import asyncio
+            await asyncio.sleep(1 * (attempt + 1))  # 1s, 2s backoff
+
+    return False
 
 
 def _sign_payload(payload: str) -> str:

@@ -1474,6 +1474,52 @@ async def activity_feed(
     }
 
 
+@router.get("/dashboard/instructeur-workload", summary="Charge de travail par instructeur")
+async def instructeur_workload(
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Statistiques de charge par instructeur: dossiers en cours, decides, delai moyen."""
+    from collections import defaultdict as dd
+
+    all_atis = db.execute(
+        select(AgrementTechniqueIndustrielORM)
+        .where(AgrementTechniqueIndustrielORM.instructeur_username.isnot(None))
+    ).scalars().all()
+
+    stats: Dict[str, dict] = dd(lambda: {
+        "en_cours": 0, "decides": 0, "approuves": 0, "rejetes": 0,
+        "en_retard": 0, "delais_jours": [],
+    })
+
+    terminal = {"approuve", "rejete", "expire"}
+
+    for ati in all_atis:
+        s = stats[ati.instructeur_username]
+        if ati.statut not in terminal:
+            s["en_cours"] += 1
+            if _ati_is_overdue(ati):
+                s["en_retard"] += 1
+        else:
+            s["decides"] += 1
+            if ati.statut == "approuve":
+                s["approuves"] += 1
+            elif ati.statut == "rejete":
+                s["rejetes"] += 1
+            if ati.date_decision:
+                jours = max((ati.date_decision.date() - ati.date_soumission.date()).days, 0)
+                s["delais_jours"].append(jours)
+
+    result = []
+    for username, s in sorted(stats.items(), key=lambda x: x[1]["en_cours"], reverse=True):
+        delais = s.pop("delais_jours")
+        s["delai_moyen_jours"] = round(sum(delais) / len(delais), 1) if delais else 0
+        s["instructeur"] = username
+        result.append(s)
+
+    return {"instructeurs": result, "total": len(result)}
+
+
 @router.get("/dashboard/economic-impact")
 async def economic_impact(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),

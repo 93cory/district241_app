@@ -1595,9 +1595,11 @@ app.add_middleware(
 from starlette.middleware.gzip import GZipMiddleware
 from .core.csrf import CSRFMiddleware
 from .core.timeout_middleware import TimeoutMiddleware
+from .core.request_size_limit import RequestSizeLimitMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(TimeoutMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)
 app.add_middleware(MetricsMiddleware)
 app.add_middleware(CorrelationMiddleware)
 
