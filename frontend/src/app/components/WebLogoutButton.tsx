@@ -10,7 +10,9 @@ export const WebLogoutButton = () => {
       type="button"
       className="export-link"
       onClick={async () => {
-        await fetch("/api/auth/logout", { method: "POST" });
+        try {
+          await fetch("/api/auth/logout", { method: "POST" });
+        } catch { /* proceed to redirect even if logout fetch fails */ }
         router.replace("/connexion");
         router.refresh();
       }}

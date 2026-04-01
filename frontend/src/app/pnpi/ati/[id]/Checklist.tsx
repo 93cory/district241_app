@@ -24,7 +24,7 @@ export function Checklist({ atiId }: { atiId: string }) {
 
   const load = () => {
     fetch(`/api/checklists/ati/${atiId}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : { items: [], total: 0, checked: 0, completion_pct: 0 })
       .then(d => {
         setItems(d.items || []);
         setTotal(d.total || 0);

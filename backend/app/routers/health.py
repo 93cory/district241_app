@@ -28,7 +28,7 @@ def _compute_dossier_age_days(row) -> int:
 
 @router.get("/health")
 async def health() -> Dict[str, str]:
-    return {"status": "ok", "service": "PNPI/PNPI Backend", "database": settings.database_url}
+    return {"status": "ok", "service": "PNPI/PNPI Backend"}
 
 
 @router.get("/health/status")

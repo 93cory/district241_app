@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import io
+import logging
 import uuid
 from datetime import date as date_type, datetime, timedelta, timezone
 from typing import List, Optional
@@ -10,6 +11,8 @@ from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, status
 from fastapi.responses import Response as FastAPIResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
+
+logger = logging.getLogger("pnpi")
 
 from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
@@ -114,12 +117,19 @@ def _to_ati_brief(ati: AgrementTechniqueIndustrielORM) -> ATIBrief:
 def _generate_numero_ati(db: Session) -> str:
     year = now_utc().year
     prefix = f"ATI-{year}-"
-    existing = db.execute(
-        select(AgrementTechniqueIndustrielORM.numero_ati).where(
+    max_num = db.execute(
+        select(func.max(AgrementTechniqueIndustrielORM.numero_ati)).where(
             AgrementTechniqueIndustrielORM.numero_ati.like(f"{prefix}%")
         )
-    ).scalars().all()
-    return f"{prefix}{len(existing) + 1:04d}"
+    ).scalar()
+    if max_num:
+        try:
+            last_num = int(max_num.split("-")[-1])
+        except (ValueError, IndexError):
+            last_num = 0
+    else:
+        last_num = 0
+    return f"{prefix}{last_num + 1:04d}"
 
 
 @router.get("/ati", response_model=List[ATIRead], summary="Lister les ATI",
@@ -131,7 +141,7 @@ async def list_atis(
     assigned_to_me: bool = Query(default=False),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=500),
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[ATIRead]:
     query = select(AgrementTechniqueIndustrielORM)
@@ -154,7 +164,7 @@ async def list_atis(
              description="Cree un agrement technique industriel et genere son numero unique.")
 async def create_ati(
     payload: ATICreate,
-    current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre, Role.ministre)),
+    current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> ATIRead:
     operateur = db.get(OperateurIndustrielORM, payload.operateur_id)
@@ -207,10 +217,193 @@ async def create_ati(
     return _to_ati_read(ati)
 
 
+# ─── Static /ati/* routes MUST be registered BEFORE /ati/{ati_id} ──────────
+
+
+@router.post("/ati/archive-expired")
+async def archive_expired_atis(
+    current_user: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Archive all expired ATIs (set status to 'expire')."""
+    now = now_utc()
+    all_atis = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.statut == "approuve",
+            AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
+            AgrementTechniqueIndustrielORM.date_expiration < now,
+        )
+    ).scalars().all()
+
+    archived = 0
+    for ati in all_atis:
+        ati.statut = "expire"
+        archived += 1
+
+    if archived:
+        db.commit()
+        write_audit_event(db, actor=current_user.username, action="ati.bulk_archive",
+                         target="expired", details=f"{archived} ATI(s) archives automatiquement")
+        db.commit()
+
+    return {"status": "ok", "archived": archived}
+
+
+@router.get("/ati/archived")
+async def list_archived_atis(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(25, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List archived/expired ATIs."""
+    query = (
+        select(AgrementTechniqueIndustrielORM)
+        .where(AgrementTechniqueIndustrielORM.statut == "expire")
+        .order_by(AgrementTechniqueIndustrielORM.date_expiration.desc())
+        .offset(skip).limit(limit)
+    )
+    atis = db.execute(query).scalars().all()
+
+    return {"atis": [{
+        "id": a.id,
+        "numero_ati": a.numero_ati,
+        "operateur": a.operateur.raison_sociale if a.operateur else None,
+        "secteur": a.secteur,
+        "date_expiration": a.date_expiration.isoformat() if a.date_expiration else None,
+        "date_soumission": a.date_soumission.isoformat(),
+    } for a in atis]}
+
+
+@router.get("/ati/favorites", summary="Liste des ATI favoris de l'utilisateur")
+async def get_favorites(
+    current_user: User = Depends(require_roles(
+        Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.operateur, Role.inspecteur
+    )),
+    db: Session = Depends(get_db),
+):
+    favs = db.execute(
+        select(UserFavoriteORM).where(UserFavoriteORM.username == current_user.username)
+        .order_by(UserFavoriteORM.created_at.desc())
+    ).scalars().all()
+
+    result = []
+    for f in favs:
+        ati = db.get(AgrementTechniqueIndustrielORM, f.ati_id)
+        result.append({
+            "id": f.id,
+            "ati_id": f.ati_id,
+            "numero_ati": ati.numero_ati if ati else None,
+            "statut": ati.statut if ati else None,
+            "operateur": ati.operateur.raison_sociale if ati and ati.operateur else None,
+            "note": f.note,
+            "created_at": f.created_at.isoformat(),
+        })
+    return {"favorites": result}
+
+
+@router.get("/ati/tags/all")
+async def list_all_tags(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List all unique tag labels used across ATIs."""
+    from sqlalchemy import distinct
+    labels = db.execute(
+        select(distinct(ATITagORM.label), ATITagORM.color)
+        .order_by(ATITagORM.label)
+    ).all()
+    return {"tags": [{"label": l, "color": c} for l, c in labels]}
+
+
+@router.get("/ati/expiring-soon")
+async def expiring_soon(
+    days: int = Query(60, ge=1, le=365),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List ATIs expiring within N days."""
+    now = now_utc()
+    cutoff = now + timedelta(days=days)
+
+    atis = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.statut == "approuve",
+            AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
+            AgrementTechniqueIndustrielORM.date_expiration <= cutoff,
+            AgrementTechniqueIndustrielORM.date_expiration >= now,
+        ).order_by(AgrementTechniqueIndustrielORM.date_expiration.asc())
+    ).scalars().all()
+
+    return {"count": len(atis), "days_threshold": days, "atis": [{
+        "id": a.id,
+        "numero_ati": a.numero_ati,
+        "operateur": a.operateur.raison_sociale if a.operateur else None,
+        "secteur": a.secteur,
+        "date_expiration": a.date_expiration.isoformat(),
+        "days_remaining": (a.date_expiration.date() - now.date()).days,
+    } for a in atis]}
+
+
+@router.get("/ati/triage")
+async def get_triage_queue(
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    """Get ATIs sorted by priority score for triage."""
+    now = now_utc()
+    pending = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.statut.notin_(["approuve", "rejete", "expire"])
+        )
+    ).scalars().all()
+
+    scored = []
+    for ati in pending:
+        age = (now.date() - ati.date_soumission.date()).days
+        sla_pct = age / max(ati.sla_jours, 1) * 100
+
+        # Priority score (higher = more urgent)
+        priority = 0
+        priority += min(sla_pct, 150)  # SLA urgency (max 150)
+
+        # Sector weight
+        SECTOR_PRIORITY = {"mines": 20, "energie": 15, "chimie": 10, "btp": 8, "bois": 5, "agroalimentaire": 5}
+        priority += SECTOR_PRIORITY.get(ati.secteur, 0)
+
+        # Resubmission bonus
+        if "REN" in ati.numero_ati or "RESUB" in ati.numero_ati:
+            priority += 15
+
+        level = "critique" if priority >= 120 else "urgent" if priority >= 80 else "normal" if priority >= 40 else "faible"
+        color = "#b42318" if priority >= 120 else "#e65100" if priority >= 80 else "#d97706" if priority >= 40 else "#006233"
+
+        scored.append({
+            "id": ati.id,
+            "numero_ati": ati.numero_ati,
+            "operateur": ati.operateur.raison_sociale if ati.operateur else None,
+            "secteur": ati.secteur,
+            "statut": ati.statut,
+            "age_jours": age,
+            "sla_jours": ati.sla_jours,
+            "sla_pct": round(sla_pct, 1),
+            "priority_score": round(priority),
+            "priority_level": level,
+            "color": color,
+            "instructeur": getattr(ati, 'instructeur_username', None),
+        })
+
+    scored.sort(key=lambda x: -x["priority_score"])
+    return {"queue": scored, "total": len(scored)}
+
+
+# ─── Parameterized /ati/{ati_id} routes below ─────────────────────────────
+
+
 @router.get("/ati/{ati_id}", response_model=ATIRead, summary="Detail d'un ATI")
 async def get_ati(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> ATIRead:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
@@ -311,8 +504,8 @@ async def update_ati_statut(
             notify_ati_approved(ati.numero_ati, raison, emails)
         elif ati.statut == "rejete" and prev_statut != "rejete" and emails:
             notify_ati_rejected(ati.numero_ati, raison, ati.motif_rejet or "", emails)
-    except Exception:
-        pass  # Ne bloque jamais le workflow si l'email echoue
+    except Exception as e:
+        logger.warning(f"Notification failed for ATI {ati.numero_ati}: {e}")
 
     return _to_ati_read(ati)
 
@@ -365,7 +558,7 @@ async def resubmit_ati(
             summary="Historique des transitions ATI")
 async def ati_historique(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[ATITransitionRead]:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
@@ -398,7 +591,7 @@ async def ati_historique(
             description="Genere un QR code PNG pour l'agrement technique.")
 async def download_ati_qrcode(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> FastAPIResponse:
     import qrcode  # type: ignore
@@ -423,81 +616,61 @@ async def download_ati_qrcode(
             description="Genere le certificat PDF d'un agrement approuve.")
 async def download_ati_pdf(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> FastAPIResponse:
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import cm
-    from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT
-
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
 
-    op = db.get(OperateurIndustrielORM, ati.operateur_id) if ati.operateur_id else None
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import cm
+        from reportlab.lib import colors
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
-    styles = getSampleStyleSheet()
-    bleu = colors.HexColor("#003F8F")
-    vert = colors.HexColor("#009440")
+        op = db.get(OperateurIndustrielORM, ati.operateur_id) if ati.operateur_id else None
 
-    title_style = ParagraphStyle("title", parent=styles["Title"], textColor=bleu, fontSize=16, spaceAfter=6)
-    sub_style = ParagraphStyle("sub", parent=styles["Normal"], textColor=vert, fontSize=10, spaceAfter=4)
-    label_style = ParagraphStyle("label", parent=styles["Normal"], textColor=colors.HexColor("#6b7280"), fontSize=8, spaceAfter=2)
-    value_style = ParagraphStyle("value", parent=styles["Normal"], fontSize=10, spaceAfter=8)
+        buf = io.BytesIO()
+        doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+        styles = getSampleStyleSheet()
+        bleu = colors.HexColor("#003F8F")
+        vert = colors.HexColor("#009440")
 
-    story = []
+        title_style = ParagraphStyle("title", parent=styles["Title"], textColor=bleu, fontSize=16, spaceAfter=6)
+        sub_style = ParagraphStyle("sub", parent=styles["Normal"], textColor=vert, fontSize=10, spaceAfter=4)
+        label_style = ParagraphStyle("label", parent=styles["Normal"], textColor=colors.HexColor("#6b7280"), fontSize=8, spaceAfter=2)
+        value_style = ParagraphStyle("value", parent=styles["Normal"], fontSize=10, spaceAfter=8)
 
-    # Header
-    story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray)))
-    story.append(Paragraph("Ministere de l'Industrie", ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray)))
-    story.append(Paragraph("Plateforme Nationale de Pilotage Industriel (PNPI)", ParagraphStyle("pnpi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu)))
-    story.append(Spacer(1, 0.4*cm))
-    story.append(HRFlowable(width="100%", thickness=2, color=bleu))
-    story.append(Spacer(1, 0.3*cm))
+        story = []
 
-    story.append(Paragraph(f"Agrement Technique Industriel", title_style))
-    story.append(Paragraph(f"N° {ati.numero_ati}", sub_style))
-    story.append(Spacer(1, 0.5*cm))
+        # Header
+        story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray)))
+        story.append(Paragraph("Ministere de l'Industrie", ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray)))
+        story.append(Paragraph("Plateforme Nationale de Pilotage Industriel (PNPI)", ParagraphStyle("pnpi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu)))
+        story.append(Spacer(1, 0.4*cm))
+        story.append(HRFlowable(width="100%", thickness=2, color=bleu))
+        story.append(Spacer(1, 0.3*cm))
 
-    # Infos ATI
-    statut_colors_map = {"approuve": "#10b981", "rejete": "#ef4444", "soumis": "#f59e0b", "en_instruction": "#3b82f6", "en_validation": "#8b5cf6", "expire": "#9ca3af"}
-    sc = statut_colors_map.get(ati.statut, "#6b7280")
-    data = [
-        ["Statut", ati.statut.upper().replace("_", " "), "Priorite", ati.priorite.capitalize()],
-        ["Secteur", ati.secteur.capitalize(), "Etape", ati.etape.replace("_", " ").capitalize()],
-        ["Date soumission", ati.date_soumission.strftime("%d/%m/%Y") if ati.date_soumission else "—", "SLA (jours)", str(ati.sla_jours)],
-    ]
-    if ati.date_decision:
-        data.append(["Date decision", ati.date_decision.strftime("%d/%m/%Y"), "Ref. decision", ati.numero_reference_decision or "—"])
+        story.append(Paragraph(f"Agrement Technique Industriel", title_style))
+        story.append(Paragraph(f"N° {ati.numero_ati}", sub_style))
+        story.append(Spacer(1, 0.5*cm))
 
-    t = Table(data, colWidths=[4*cm, 6*cm, 4*cm, 3*cm])
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f3f4f6")),
-        ("BACKGROUND", (2, 0), (2, -1), colors.HexColor("#f3f4f6")),
-        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
-        ("PADDING", (0, 0), (-1, -1), 5),
-    ]))
-    story.append(t)
-    story.append(Spacer(1, 0.5*cm))
-
-    # Operateur
-    if op:
-        story.append(Paragraph("Operateur industriel", ParagraphStyle("section", parent=styles["Heading2"], textColor=bleu, fontSize=12, spaceBefore=8, spaceAfter=4)))
-        story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb")))
-        op_data = [
-            ["Raison sociale", op.raison_sociale, "NIF", op.nif_gabon],
-            ["Province", op.province.replace("_", " ").capitalize(), "Ville", op.ville or "—"],
-            ["Secteur", op.secteur.capitalize(), "Effectif", str(op.effectif_declare or "—")],
+        # Infos ATI
+        statut_colors_map = {"approuve": "#10b981", "rejete": "#ef4444", "soumis": "#f59e0b", "en_instruction": "#3b82f6", "en_validation": "#8b5cf6", "expire": "#9ca3af"}
+        sc = statut_colors_map.get(ati.statut, "#6b7280")
+        data = [
+            ["Statut", ati.statut.upper().replace("_", " "), "Priorite", ati.priorite.capitalize()],
+            ["Secteur", ati.secteur.capitalize(), "Etape", ati.etape.replace("_", " ").capitalize()],
+            ["Date soumission", ati.date_soumission.strftime("%d/%m/%Y") if ati.date_soumission else "—", "SLA (jours)", str(ati.sla_jours)],
         ]
-        ot = Table(op_data, colWidths=[4*cm, 6*cm, 4*cm, 3*cm])
-        ot.setStyle(TableStyle([
+        if ati.date_decision:
+            data.append(["Date decision", ati.date_decision.strftime("%d/%m/%Y"), "Ref. decision", ati.numero_reference_decision or "—"])
+
+        t = Table(data, colWidths=[4*cm, 6*cm, 4*cm, 3*cm])
+        t.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f3f4f6")),
             ("BACKGROUND", (2, 0), (2, -1), colors.HexColor("#f3f4f6")),
             ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
@@ -505,38 +678,63 @@ async def download_ati_pdf(
             ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
             ("PADDING", (0, 0), (-1, -1), 5),
         ]))
-        story.append(ot)
-        story.append(Spacer(1, 0.3*cm))
+        story.append(t)
+        story.append(Spacer(1, 0.5*cm))
 
-    # Activite
-    story.append(Paragraph("Activite industrielle", ParagraphStyle("section", parent=styles["Heading2"], textColor=bleu, fontSize=12, spaceBefore=8, spaceAfter=4)))
-    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb")))
-    story.append(Paragraph(ati.type_activite, value_style))
+        # Operateur
+        if op:
+            story.append(Paragraph("Operateur industriel", ParagraphStyle("section", parent=styles["Heading2"], textColor=bleu, fontSize=12, spaceBefore=8, spaceAfter=4)))
+            story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb")))
+            op_data = [
+                ["Raison sociale", op.raison_sociale, "NIF", op.nif_gabon],
+                ["Province", op.province.replace("_", " ").capitalize(), "Ville", op.ville or "—"],
+                ["Secteur", op.secteur.capitalize(), "Effectif", str(op.effectif_declare or "—")],
+            ]
+            ot = Table(op_data, colWidths=[4*cm, 6*cm, 4*cm, 3*cm])
+            ot.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f3f4f6")),
+                ("BACKGROUND", (2, 0), (2, -1), colors.HexColor("#f3f4f6")),
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+                ("PADDING", (0, 0), (-1, -1), 5),
+            ]))
+            story.append(ot)
+            story.append(Spacer(1, 0.3*cm))
 
-    if ati.observations:
-        story.append(Paragraph("Observations", label_style))
-        story.append(Paragraph(ati.observations, value_style))
+        # Activite
+        story.append(Paragraph("Activite industrielle", ParagraphStyle("section", parent=styles["Heading2"], textColor=bleu, fontSize=12, spaceBefore=8, spaceAfter=4)))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb")))
+        story.append(Paragraph(ati.type_activite, value_style))
 
-    if ati.motif_rejet:
-        story.append(Paragraph("Motif de rejet", ParagraphStyle("rej", parent=styles["Normal"], textColor=colors.red, fontSize=9, spaceAfter=4)))
-        story.append(Paragraph(ati.motif_rejet, value_style))
+        if ati.observations:
+            story.append(Paragraph("Observations", label_style))
+            story.append(Paragraph(ati.observations, value_style))
 
-    # Footer
-    story.append(Spacer(1, 1*cm))
-    story.append(HRFlowable(width="100%", thickness=1, color=bleu))
-    story.append(Paragraph(
-        f"Document genere par la PNPI — {now_utc().strftime('%d/%m/%Y %H:%M')} UTC",
-        ParagraphStyle("footer", parent=styles["Normal"], alignment=TA_CENTER, fontSize=7, textColor=colors.gray)
-    ))
+        if ati.motif_rejet:
+            story.append(Paragraph("Motif de rejet", ParagraphStyle("rej", parent=styles["Normal"], textColor=colors.red, fontSize=9, spaceAfter=4)))
+            story.append(Paragraph(ati.motif_rejet, value_style))
 
-    doc.build(story)
-    buf.seek(0)
-    filename = f"ATI_{ati.numero_ati.replace('-', '_')}.pdf"
-    return FastAPIResponse(
-        content=buf.read(),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+        # Footer
+        story.append(Spacer(1, 1*cm))
+        story.append(HRFlowable(width="100%", thickness=1, color=bleu))
+        story.append(Paragraph(
+            f"Document genere par la PNPI — {now_utc().strftime('%d/%m/%Y %H:%M')} UTC",
+            ParagraphStyle("footer", parent=styles["Normal"], alignment=TA_CENTER, fontSize=7, textColor=colors.gray)
+        ))
+
+        doc.build(story)
+        buf.seek(0)
+        filename = f"ATI_{ati.numero_ati.replace('-', '_')}.pdf"
+        return FastAPIResponse(
+            content=buf.read(),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur generation PDF: {str(e)}")
 
 
 @router.get("/ati/{ati_id}/certificate.pdf", summary="Certificat officiel ATI avec QR code",
@@ -554,30 +752,36 @@ async def download_ati_certificate(
     if ati.statut != "approuve":
         raise HTTPException(status_code=400, detail="Certificat disponible uniquement pour les ATI approuves.")
 
-    op = ati.operateur
-    pdf = generate_ati_certificate(
-        numero_ati=ati.numero_ati,
-        operateur=op.raison_sociale if op else "Inconnu",
-        nif=op.nif_gabon if op else "",
-        secteur=ati.secteur,
-        province=op.province if op else "",
-        type_activite=ati.type_activite,
-        date_soumission=ati.date_soumission,
-        date_decision=ati.date_decision,
-        date_expiration=ati.date_expiration,
-        reference_decision=ati.numero_reference_decision,
-        sla_jours=ati.sla_jours,
-    )
+    try:
+        op = ati.operateur
+        op_name = op.raison_sociale if op else "Inconnu"
+        pdf = generate_ati_certificate(
+            numero_ati=ati.numero_ati,
+            operateur=op_name,
+            nif=op.nif_gabon if op else "",
+            secteur=ati.secteur,
+            province=op.province if op else "",
+            type_activite=ati.type_activite,
+            date_soumission=ati.date_soumission,
+            date_decision=ati.date_decision,
+            date_expiration=ati.date_expiration,
+            reference_decision=ati.numero_reference_decision,
+            sla_jours=ati.sla_jours,
+        )
 
-    write_audit_event(db, actor=current_user.username, action="ati.certificate",
-                     target=ati.id, details=f"Certificat ATI {ati.numero_ati} telecharge")
-    db.commit()
+        write_audit_event(db, actor=current_user.username, action="ati.certificate",
+                         target=ati.id, details=f"Certificat ATI {ati.numero_ati} telecharge")
+        db.commit()
 
-    return FastAPIResponse(
-        content=pdf,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="certificat_ATI_{ati.numero_ati}.pdf"'},
-    )
+        return FastAPIResponse(
+            content=pdf,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="certificat_ATI_{ati.numero_ati}.pdf"'},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur generation certificat: {str(e)}")
 
 
 @router.post("/ati/bulk-assign", summary="Assigner des ATI en lot a un instructeur",
@@ -890,91 +1094,6 @@ async def verify_ati_public(numero_ati: str, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/ati/archive-expired")
-async def archive_expired_atis(
-    current_user: User = Depends(require_roles(Role.admin)),
-    db: Session = Depends(get_db),
-):
-    """Archive all expired ATIs (set status to 'expire')."""
-    now = now_utc()
-    all_atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.statut == "approuve",
-            AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
-            AgrementTechniqueIndustrielORM.date_expiration < now,
-        )
-    ).scalars().all()
-
-    archived = 0
-    for ati in all_atis:
-        ati.statut = "expire"
-        archived += 1
-
-    if archived:
-        db.commit()
-        write_audit_event(db, actor=current_user.username, action="ati.bulk_archive",
-                         target="expired", details=f"{archived} ATI(s) archives automatiquement")
-        db.commit()
-
-    return {"status": "ok", "archived": archived}
-
-
-@router.get("/ati/archived")
-async def list_archived_atis(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(25, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """List archived/expired ATIs."""
-    query = (
-        select(AgrementTechniqueIndustrielORM)
-        .where(AgrementTechniqueIndustrielORM.statut == "expire")
-        .order_by(AgrementTechniqueIndustrielORM.date_expiration.desc())
-        .offset(skip).limit(limit)
-    )
-    atis = db.execute(query).scalars().all()
-
-    return {"atis": [{
-        "id": a.id,
-        "numero_ati": a.numero_ati,
-        "operateur": a.operateur.raison_sociale if a.operateur else None,
-        "secteur": a.secteur,
-        "date_expiration": a.date_expiration.isoformat() if a.date_expiration else None,
-        "date_soumission": a.date_soumission.isoformat(),
-    } for a in atis]}
-
-
-# ─── Favorites / Pinned ATIs ──────────────────────────────────────────────
-
-
-@router.get("/ati/favorites", summary="Liste des ATI favoris de l'utilisateur")
-async def get_favorites(
-    current_user: User = Depends(require_roles(
-        Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.operateur, Role.inspecteur
-    )),
-    db: Session = Depends(get_db),
-):
-    favs = db.execute(
-        select(UserFavoriteORM).where(UserFavoriteORM.username == current_user.username)
-        .order_by(UserFavoriteORM.created_at.desc())
-    ).scalars().all()
-
-    result = []
-    for f in favs:
-        ati = db.get(AgrementTechniqueIndustrielORM, f.ati_id)
-        result.append({
-            "id": f.id,
-            "ati_id": f.ati_id,
-            "numero_ati": ati.numero_ati if ati else None,
-            "statut": ati.statut if ati else None,
-            "operateur": ati.operateur.raison_sociale if ati and ati.operateur else None,
-            "note": f.note,
-            "created_at": f.created_at.isoformat(),
-        })
-    return {"favorites": result}
-
-
 @router.post("/ati/{ati_id}/favorite", summary="Epingler / desepingler un ATI")
 async def toggle_favorite(
     ati_id: str,
@@ -1185,20 +1304,6 @@ async def remove_ati_tag(
     return {"status": "ok"}
 
 
-@router.get("/ati/tags/all")
-async def list_all_tags(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """List all unique tag labels used across ATIs."""
-    from sqlalchemy import distinct
-    labels = db.execute(
-        select(distinct(ATITagORM.label), ATITagORM.color)
-        .order_by(ATITagORM.label)
-    ).all()
-    return {"tags": [{"label": l, "color": c} for l, c in labels]}
-
-
 @router.get("/ati/{ati_id}/risk")
 async def get_ati_risk(
     ati_id: str,
@@ -1261,35 +1366,6 @@ async def renew_ati(
     }
 
 
-@router.get("/ati/expiring-soon")
-async def expiring_soon(
-    days: int = Query(60, ge=1, le=365),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """List ATIs expiring within N days."""
-    now = now_utc()
-    cutoff = now + timedelta(days=days)
-
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.statut == "approuve",
-            AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
-            AgrementTechniqueIndustrielORM.date_expiration <= cutoff,
-            AgrementTechniqueIndustrielORM.date_expiration >= now,
-        ).order_by(AgrementTechniqueIndustrielORM.date_expiration.asc())
-    ).scalars().all()
-
-    return {"count": len(atis), "days_threshold": days, "atis": [{
-        "id": a.id,
-        "numero_ati": a.numero_ati,
-        "operateur": a.operateur.raison_sociale if a.operateur else None,
-        "secteur": a.secteur,
-        "date_expiration": a.date_expiration.isoformat(),
-        "days_remaining": (a.date_expiration.date() - now.date()).days,
-    } for a in atis]}
-
-
 @router.get("/ati/{ati_id}/recommendation")
 async def get_ati_recommendation(
     ati_id: str,
@@ -1333,57 +1409,3 @@ async def generate_product_qr(
     )
 
 
-# ---------------------------------------------------------------------------
-# ATI Priority Triage
-# ---------------------------------------------------------------------------
-
-@router.get("/ati/triage")
-async def get_triage_queue(
-    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
-    db: Session = Depends(get_db),
-):
-    """Get ATIs sorted by priority score for triage."""
-    now = now_utc()
-    pending = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.statut.notin_(["approuve", "rejete", "expire"])
-        )
-    ).scalars().all()
-
-    scored = []
-    for ati in pending:
-        age = (now.date() - ati.date_soumission.date()).days
-        sla_pct = age / ati.sla_jours * 100
-
-        # Priority score (higher = more urgent)
-        priority = 0
-        priority += min(sla_pct, 150)  # SLA urgency (max 150)
-
-        # Sector weight
-        SECTOR_PRIORITY = {"mines": 20, "energie": 15, "chimie": 10, "btp": 8, "bois": 5, "agroalimentaire": 5}
-        priority += SECTOR_PRIORITY.get(ati.secteur, 0)
-
-        # Resubmission bonus
-        if "REN" in ati.numero_ati or "RESUB" in ati.numero_ati:
-            priority += 15
-
-        level = "critique" if priority >= 120 else "urgent" if priority >= 80 else "normal" if priority >= 40 else "faible"
-        color = "#b42318" if priority >= 120 else "#e65100" if priority >= 80 else "#d97706" if priority >= 40 else "#006233"
-
-        scored.append({
-            "id": ati.id,
-            "numero_ati": ati.numero_ati,
-            "operateur": ati.operateur.raison_sociale if ati.operateur else None,
-            "secteur": ati.secteur,
-            "statut": ati.statut,
-            "age_jours": age,
-            "sla_jours": ati.sla_jours,
-            "sla_pct": round(sla_pct, 1),
-            "priority_score": round(priority),
-            "priority_level": level,
-            "color": color,
-            "instructeur": getattr(ati, 'instructeur_username', None),
-        })
-
-    scored.sort(key=lambda x: -x["priority_score"])
-    return {"queue": scored, "total": len(scored)}

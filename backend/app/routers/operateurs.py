@@ -110,46 +110,48 @@ async def import_operateurs_csv(
     skipped = 0
     errors: List[str] = []
 
-    for i, row in enumerate(reader, start=2):
-        raison = (row.get("raison_sociale") or "").strip()
-        nif = (row.get("nif_gabon") or "").strip()
+    try:
+        for i, row in enumerate(reader, start=2):
+            raison = (row.get("raison_sociale") or "").strip()
+            nif = (row.get("nif_gabon") or "").strip()
 
-        if not raison or not nif:
-            errors.append(f"Ligne {i}: raison_sociale ou nif_gabon manquant")
-            skipped += 1
-            continue
+            if not raison or not nif:
+                errors.append(f"Ligne {i}: raison_sociale ou nif_gabon manquant")
+                skipped += 1
+                continue
 
-        # Check duplicate NIF
-        existing = db.execute(
-            select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)
-        ).scalar_one_or_none()
+            # Check duplicate NIF
+            existing = db.execute(
+                select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)
+            ).scalar_one_or_none()
 
-        if existing:
-            skipped += 1
-            continue
+            if existing:
+                skipped += 1
+                continue
 
-        op = OperateurIndustrielORM(
-            id=f"OP-{uuid.uuid4().hex[:12].upper()}",
-            nif_gabon=nif,
-            raison_sociale=raison,
-            secteur=(row.get("secteur") or "autre").strip().lower(),
-            province=(row.get("province") or "").strip().lower().replace(" ", "_"),
-            ville=(row.get("ville") or "").strip(),
-            contact_email=(row.get("email") or "").strip(),
-            contact_telephone=(row.get("telephone") or "").strip(),
-            is_active=True,
-            created_at=now_utc(),
-            created_by=current_user.username,
-        )
-        db.add(op)
-        created += 1
+            op = OperateurIndustrielORM(
+                id=f"OP-{uuid.uuid4().hex[:12].upper()}",
+                nif_gabon=nif,
+                raison_sociale=raison,
+                secteur=(row.get("secteur") or "autre").strip().lower(),
+                province=(row.get("province") or "").strip().lower().replace(" ", "_"),
+                ville=(row.get("ville") or "").strip(),
+                contact_email=(row.get("email") or "").strip(),
+                contact_telephone=(row.get("telephone") or "").strip(),
+                is_active=True,
+                created_at=now_utc(),
+                created_by=current_user.username,
+            )
+            db.add(op)
+            created += 1
 
-    db.commit()
-
-    write_audit_event(db, actor=current_user.username, action="operateurs.import_csv",
-                      target=file.filename or "unknown.csv",
-                      details=f"{created} crees, {skipped} ignores, {len(errors)} erreurs")
-    db.commit()
+        write_audit_event(db, actor=current_user.username, action="operateurs.import_csv",
+                          target=file.filename or "unknown.csv",
+                          details=f"{created} crees, {skipped} ignores, {len(errors)} erreurs")
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Erreur import CSV: {str(e)}")
 
     return {
         "status": "ok",
@@ -174,7 +176,7 @@ async def list_operateurs(
     is_active: Optional[bool] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[OperateurBrief]:
     query = select(OperateurIndustrielORM)
@@ -235,7 +237,7 @@ async def create_operateur(
 @router.get("/operateurs/{operateur_id}", response_model=OperateurRead, summary="Detail d'un operateur")
 async def get_operateur(
     operateur_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> OperateurRead:
     op = db.get(OperateurIndustrielORM, operateur_id)
@@ -247,7 +249,7 @@ async def get_operateur(
 @router.get("/operateurs/{operateur_id}/ati", response_model=List[ATIBrief], summary="ATI d'un operateur")
 async def list_operateur_atis(
     operateur_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> List[ATIBrief]:
     op = db.get(OperateurIndustrielORM, operateur_id)

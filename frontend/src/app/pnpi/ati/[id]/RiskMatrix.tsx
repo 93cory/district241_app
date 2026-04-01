@@ -16,8 +16,8 @@ export function RiskMatrix({ atiId }: { atiId: string }) {
 
   useEffect(() => {
     fetch(`/api/pnpi/ati/${atiId}/risk`)
-      .then(r => r.json())
-      .then(d => { if (!d.error) setData(d); })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && !d.error) setData(d); })
       .catch(() => {});
   }, [atiId]);
 

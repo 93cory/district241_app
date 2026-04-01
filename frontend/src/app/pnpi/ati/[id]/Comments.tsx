@@ -20,7 +20,7 @@ export function ATIComments({ atiId }: { atiId: string }) {
 
   const load = () => {
     fetch(`/api/pnpi/ati/${atiId}/comments`)
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : { comments: [] })
       .then((data) => setComments(data.comments || []))
       .catch(() => {});
   };

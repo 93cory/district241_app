@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Conceptuelle — PNPI — Republique Gabonaise</title>
+    <style>
+        @page { size: A4; margin: 25mm 20mm 20mm 25mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; color: #1a1a1a; max-width: 210mm; margin: 0 auto; padding: 25mm 20mm; background: #fff; }
+        h1 { font-size: 18pt; font-weight: bold; color: #003366; text-align: center; margin-bottom: 6mm; letter-spacing: 1px; }
+        h2 { font-size: 14pt; font-weight: bold; color: #003366; margin-top: 8mm; margin-bottom: 4mm; border-bottom: 1.5pt solid #006233; padding-bottom: 2mm; }
+        h3 { font-size: 12pt; font-weight: bold; color: #006233; margin-top: 6mm; margin-bottom: 3mm; }
+        p { margin-bottom: 4mm; text-align: justify; }
+        ul, ol { margin-left: 8mm; margin-bottom: 4mm; }
+        li { margin-bottom: 2mm; }
+        table { width: 100%; border-collapse: collapse; margin: 4mm 0 6mm; font-size: 10pt; }
+        th { background: #003366; color: #fff; padding: 3mm 4mm; text-align: left; font-weight: bold; }
+        td { padding: 2.5mm 4mm; border-bottom: 0.5pt solid #ddd; }
+        tr:nth-child(even) td { background: #f8f9fa; }
+        .header-block { text-align: center; margin-bottom: 10mm; }
+        .flag-ribbon { height: 4mm; background: linear-gradient(90deg, #009E60 33%, #FCD116 33% 66%, #003DA5 66%); margin-bottom: 6mm; }
+        .republic { font-size: 11pt; color: #666; font-style: italic; }
+        .ministry { font-size: 10pt; color: #003366; font-weight: bold; margin-top: 2mm; }
+        .separator { border: none; border-top: 1pt solid #003366; margin: 6mm 0; }
+        .signature-block { margin-top: 15mm; text-align: right; }
+        .page-break { page-break-before: always; }
+        .highlight { background: #f0f7f0; padding: 4mm 5mm; border-left: 3pt solid #006233; margin: 4mm 0; border-radius: 0 4pt 4pt 0; }
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 4mm 0; }
+        .kpi-card { padding: 4mm 5mm; border: 1pt solid #ddd; border-radius: 4pt; text-align: center; }
+        .kpi-value { font-size: 20pt; font-weight: bold; color: #006233; }
+        .kpi-label { font-size: 9pt; color: #666; }
+        .badge { display: inline-block; padding: 1mm 3mm; border-radius: 3pt; font-size: 8pt; font-weight: bold; }
+        .badge-green { background: #e8f5e9; color: #006233; }
+        .badge-blue { background: #e3f2fd; color: #003366; }
+        .footer { margin-top: 10mm; padding-top: 4mm; border-top: 0.5pt solid #ccc; font-size: 8pt; color: #999; text-align: center; }
+        @media print { body { padding: 0; } .footer { position: fixed; bottom: 0; left: 0; right: 0; } }
+
+        /* Cover page styles */
+        .cover-page { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; text-align: center; }
+        .cover-title { font-size: 28pt; font-weight: bold; color: #003366; letter-spacing: 3px; margin: 15mm 0 6mm; }
+        .cover-subtitle { font-size: 16pt; color: #006233; font-weight: bold; margin-bottom: 10mm; }
+        .cover-ministry { font-size: 12pt; color: #666; margin-bottom: 4mm; }
+        .cover-date { font-size: 11pt; color: #999; margin-top: 15mm; }
+        .cover-ribbon { height: 6mm; width: 100%; background: linear-gradient(90deg, #009E60 33%, #FCD116 33% 66%, #003DA5 66%); margin: 8mm 0; }
+        .cover-divider { width: 40%; height: 1pt; background: #003366; margin: 6mm auto; }
+        td strong { color: #003366; }
+    </style>
+</head>
+<body>
+
+    <!-- ===================== COVER PAGE ===================== -->
+    <div class="cover-page">
+        <div class="cover-ribbon"></div>
+
+        <img src="pnpi_logo.png" alt="Logo PNPI" style="width: 120px; height: auto; margin: 0 auto 4mm; display: block;">
+
+        <div class="header-block">
+            <div class="republic">REPUBLIQUE GABONAISE</div>
+            <div class="republic" style="font-weight: bold; color: #003366;">Union — Travail — Justice</div>
+        </div>
+
+        <div class="cover-divider"></div>
+
+        <div class="cover-title">NOTE CONCEPTUELLE</div>
+
+        <div class="cover-subtitle">Plateforme Nationale du Pilotage Industriel (PNPI)</div>
+
+        <div class="cover-ministry">Republique Gabonaise — Ministere de l'Industrie et de la Transformation Locale</div>
+
+        <div class="cover-divider"></div>
+
+        <div class="cover-date">Mars 2026</div>
+
+        <div style="margin-top: 20mm;">
+            <span class="badge badge-green">Document officiel</span>
+            <span class="badge badge-blue">Version 2.0</span>
+        </div>
+    </div>
+
+    <!-- ===================== SECTION 1 ===================== -->
+    <div class="page-break"></div>
+    <div class="flag-ribbon"></div>
+
+    <h2>1. Contexte et Problematique</h2>
+
+    <p>Le Gabon, dans sa quete de diversification economique et de transformation structurelle, fait face a des defis majeurs dans la gestion de son pilotage industriel :</p>
+
+    <ul>
+        <li><strong>Delais excessifs</strong> : Le traitement des Agrements Techniques Industriels (ATI) prend actuellement entre 120 et 180 jours, decourageant les investisseurs</li>
+        <li><strong>Absence de tracabilite</strong> : Les dossiers sont geres manuellement (papier, classeurs), entrainant des pertes estimees a 15% par an</li>
+        <li><strong>Manque de visibilite</strong> : Aucun tableau de bord ne permet au Ministre de suivre en temps reel l'etat du secteur industriel</li>
+        <li><strong>Pas de mesure d'impact</strong> : Les retombees economiques et sociales du pilotage industriel ne sont pas quantifiees</li>
+        <li><strong>Fragmentation</strong> : Les differents acteurs (operateurs, instructeurs, inspecteurs, decideurs) ne disposent d'aucun outil collaboratif</li>
+    </ul>
+
+    <div class="highlight">
+        <strong>Constat :</strong> Le processus actuel de gestion des ATI est entierement manuel, avec des delais de 120 a 180 jours et un taux de perte de dossiers estime a 15% par an.
+    </div>
+
+    <!-- ===================== SECTION 2 ===================== -->
+    <h2>2. Solution Proposee : La PNPI</h2>
+
+    <p>La PNPI est une <strong>plateforme numerique souveraine</strong> qui digitalise l'integralite du processus de gouvernance industrielle :</p>
+
+    <h3>2.1 Cycle de vie ATI</h3>
+    <ul>
+        <li><strong>Soumission en ligne</strong> par les operateurs (avec modeles pre-remplis par secteur)</li>
+        <li><strong>Instruction numerique</strong> par les instructeurs (checklist de conformite, scoring de risque)</li>
+        <li><strong>Inspection terrain</strong> via application mobile (GPS, photos, rapport PDF automatique)</li>
+        <li><strong>Decision assistee par IA</strong> (recommandation basee sur l'historique)</li>
+        <li><strong>Certificat officiel</strong> avec QR code de verification publique</li>
+        <li><strong>Renouvellement automatise</strong> avec alertes d'expiration</li>
+    </ul>
+
+    <h3>2.2 Pilotage ministeriel</h3>
+    <ul>
+        <li>Dashboard en temps reel avec KPIs cles</li>
+        <li>Analyse predictive (previsions de soumissions, tendances)</li>
+        <li>Benchmarking provincial (score composite 9 provinces)</li>
+        <li>Comparaison CEMAC (positionnement regional)</li>
+        <li>Impact economique (emplois, investissements par secteur)</li>
+        <li>Impact social (inclusion femmes/jeunes, couverture provinciale)</li>
+        <li>Empreinte carbone sectorielle</li>
+        <li>Contribution aux ODD des Nations Unies</li>
+    </ul>
+
+    <h3>2.3 Transparence et ouverture</h3>
+    <ul>
+        <li>Page de verification publique (QR code → statut ATI)</li>
+        <li>Portail Open Data pour les donnees industrielles</li>
+        <li>Page investisseurs avec indicateurs en temps reel</li>
+        <li>Formulaire de contact public</li>
+    </ul>
+
+    <!-- ===================== SECTION 3 ===================== -->
+    <div class="page-break"></div>
+    <div class="flag-ribbon"></div>
+
+    <h2>3. Architecture Technique</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Composant</th>
+                <th>Technologie</th>
+                <th>Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Backend API</strong></td>
+                <td>FastAPI (Python)</td>
+                <td>34 modules, 206+ endpoints REST + GraphQL</td>
+            </tr>
+            <tr>
+                <td><strong>Frontend Web</strong></td>
+                <td>Next.js 14 (React)</td>
+                <td>110+ pages, PWA offline, dark mode</td>
+            </tr>
+            <tr>
+                <td><strong>Mobile</strong></td>
+                <td>Flutter (Dart)</td>
+                <td>27 ecrans, biometrie, QR scanner</td>
+            </tr>
+            <tr>
+                <td><strong>Base de donnees</strong></td>
+                <td>PostgreSQL + PostGIS</td>
+                <td>33 tables, geospatial</td>
+            </tr>
+            <tr>
+                <td><strong>Authentification</strong></td>
+                <td>JWT + 2FA TOTP</td>
+                <td>6 roles, biometrie mobile</td>
+            </tr>
+            <tr>
+                <td><strong>Monitoring</strong></td>
+                <td>Prometheus + Grafana</td>
+                <td>Metriques temps reel</td>
+            </tr>
+            <tr>
+                <td><strong>Backup</strong></td>
+                <td>S3/MinIO</td>
+                <td>Sauvegardes automatiques chiffrees</td>
+            </tr>
+            <tr>
+                <td><strong>CI/CD</strong></td>
+                <td>GitHub Actions</td>
+                <td>Deploiement continu Docker</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ===================== SECTION 4 ===================== -->
+    <h2>4. Fonctionnalites Cles (200+)</h2>
+
+    <h3>Gestion des ATI</h3>
+    <ul>
+        <li>Soumission avec modeles par secteur (10 modeles pre-configures)</li>
+        <li>Checklist de conformite automatique</li>
+        <li>Scoring de risque composite (6 facteurs)</li>
+        <li>Recommandation IA (approuver/rejeter)</li>
+        <li>File de triage par priorite</li>
+        <li>Vue Kanban drag-and-drop</li>
+        <li>Signature electronique des certificats</li>
+        <li>QR code de verification publique</li>
+    </ul>
+
+    <h3>Operateurs industriels</h3>
+    <ul>
+        <li>Scoring de conformite (0-100, grades A-E)</li>
+        <li>Timeline de conformite chronologique</li>
+        <li>Carte d'identite numerique verificable</li>
+        <li>Marketplace industrielle (offres/demandes)</li>
+        <li>Systeme de parrainage par experts</li>
+    </ul>
+
+    <h3>Inspections</h3>
+    <ul>
+        <li>Application mobile avec GPS et photos</li>
+        <li>Geofencing (verification localisation)</li>
+        <li>Rapport PDF automatique</li>
+        <li>Heatmap des non-conformites par province</li>
+    </ul>
+
+    <div class="page-break"></div>
+    <div class="flag-ribbon"></div>
+
+    <h3>Analytics et intelligence</h3>
+    <ul>
+        <li>Predictions de soumissions (3 mois)</li>
+        <li>Alertes intelligentes (6 detecteurs d'anomalies)</li>
+        <li>Tableau croise dynamique</li>
+        <li>Statistiques avancees (cohortes, entonnoir, tendances)</li>
+        <li>Comparaison periodique et multi-annees</li>
+    </ul>
+
+    <h3>Collaboration</h3>
+    <ul>
+        <li>Messagerie interne</li>
+        <li>Commentaires sur dossiers (publics et internes)</li>
+        <li>Sondages et feedback</li>
+        <li>Annuaire interne</li>
+        <li>Systeme de delegation</li>
+    </ul>
+
+    <h3>Exports et rapports</h3>
+    <ul>
+        <li>PDF (certificats, inspections, rapports provinciaux, lettres officielles)</li>
+        <li>Excel (ATIs, operateurs)</li>
+        <li>PowerPoint (briefing executif)</li>
+        <li>GeoJSON (donnees geospatiales)</li>
+        <li>ZIP (documents par ATI)</li>
+        <li>QR codes en lot</li>
+    </ul>
+
+    <!-- ===================== SECTION 5 ===================== -->
+    <h2>5. Roles et Permissions</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Role</th>
+                <th>Acces</th>
+                <th>Nombre de pages</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Ministre</strong></td>
+                <td>Vision strategique, decisions, briefings</td>
+                <td>65+</td>
+            </tr>
+            <tr>
+                <td><strong>Directeur</strong></td>
+                <td>Supervision operationnelle, validation</td>
+                <td>60+</td>
+            </tr>
+            <tr>
+                <td><strong>Instructeur</strong></td>
+                <td>Instruction dossiers, Kanban, triage</td>
+                <td>25+</td>
+            </tr>
+            <tr>
+                <td><strong>Inspecteur</strong></td>
+                <td>Terrain, inspections, heatmap</td>
+                <td>15+</td>
+            </tr>
+            <tr>
+                <td><strong>Operateur</strong></td>
+                <td>Guichet, soumission, suivi, marketplace</td>
+                <td>12+</td>
+            </tr>
+            <tr>
+                <td><strong>Admin</strong></td>
+                <td>Administration technique, monitoring</td>
+                <td>80+</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ===================== SECTION 6 ===================== -->
+    <div class="page-break"></div>
+    <div class="flag-ribbon"></div>
+
+    <h2>6. Impact Attendu</h2>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-value">-75%</div>
+            <div class="kpi-label">Reduction du delai de traitement ATI</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">0%</div>
+            <div class="kpi-label">Taux de perte de dossiers</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">-59%</div>
+            <div class="kpi-label">Reduction du cout par ATI</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">100%</div>
+            <div class="kpi-label">Transparence (Open Data)</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Indicateur</th>
+                <th>Avant PNPI</th>
+                <th>Avec PNPI</th>
+                <th>Gain</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Delai traitement ATI</strong></td>
+                <td>120-180 jours</td>
+                <td>35-45 jours</td>
+                <td><span class="badge badge-green">-75%</span></td>
+            </tr>
+            <tr>
+                <td><strong>Taux de perte dossiers</strong></td>
+                <td>~15%/an</td>
+                <td>0%</td>
+                <td><span class="badge badge-green">-100%</span></td>
+            </tr>
+            <tr>
+                <td><strong>Verification ATI</strong></td>
+                <td>Courrier/telephone</td>
+                <td>QR instantane</td>
+                <td><span class="badge badge-blue">Instantane</span></td>
+            </tr>
+            <tr>
+                <td><strong>Visibilite ministerielle</strong></td>
+                <td>Rapport trimestriel</td>
+                <td>Temps reel</td>
+                <td><span class="badge badge-blue">Continue</span></td>
+            </tr>
+            <tr>
+                <td><strong>Cout traitement/ATI</strong></td>
+                <td>~850 000 FCFA</td>
+                <td>~350 000 FCFA</td>
+                <td><span class="badge badge-green">-59%</span></td>
+            </tr>
+            <tr>
+                <td><strong>Transparence</strong></td>
+                <td>Aucune</td>
+                <td>Open data + verification publique</td>
+                <td><span class="badge badge-green">100%</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ===================== SECTION 7 ===================== -->
+    <h2>7. Conformite</h2>
+
+    <ul>
+        <li><strong>ODD 8</strong> : Travail decent et croissance economique</li>
+        <li><strong>ODD 9</strong> : Industrie, innovation et infrastructure</li>
+        <li><strong>ODD 12</strong> : Consommation et production responsables</li>
+        <li><strong>ODD 13</strong> : Mesures relatives au climat</li>
+        <li><strong>ODD 17</strong> : Partenariats pour les objectifs</li>
+        <li><strong>RGAA 4.1</strong> : Accessibilite numerique (haut contraste, taille ajustable, navigation clavier)</li>
+        <li><strong>Normes CEMAC</strong> : Compatibilite avec les standards regionaux</li>
+    </ul>
+
+    <!-- ===================== SECTION 8 ===================== -->
+    <div class="page-break"></div>
+    <div class="flag-ribbon"></div>
+
+    <h2>8. Calendrier de Deploiement</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Phase</th>
+                <th>Duree</th>
+                <th>Livrables</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Phase 1 — Pilote</strong></td>
+                <td>4 semaines</td>
+                <td>Installation, formation admin, test avec 10 operateurs</td>
+            </tr>
+            <tr>
+                <td><strong>Phase 2 — Extension</strong></td>
+                <td>8 semaines</td>
+                <td>Deploiement 3 provinces, formation instructeurs/inspecteurs</td>
+            </tr>
+            <tr>
+                <td><strong>Phase 3 — National</strong></td>
+                <td>12 semaines</td>
+                <td>Couverture 9 provinces, integration douanes/impots</td>
+            </tr>
+            <tr>
+                <td><strong>Phase 4 — Optimisation</strong></td>
+                <td>Continue</td>
+                <td>Ameliorations basees sur les retours terrain</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ===================== SECTION 9 ===================== -->
+    <h2>9. Budget Estimatif</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Poste</th>
+                <th>Montant (FCFA)</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Infrastructure cloud (1 an)</td>
+                <td>15 000 000</td>
+                <td>Serveurs, base de donnees, stockage, SSL</td>
+            </tr>
+            <tr>
+                <td>Formation et accompagnement</td>
+                <td>8 000 000</td>
+                <td>Formation 50 utilisateurs, documentation</td>
+            </tr>
+            <tr>
+                <td>Personnalisation et integration</td>
+                <td>12 000 000</td>
+                <td>Adaptation aux besoins specifiques</td>
+            </tr>
+            <tr>
+                <td>Maintenance et support (1 an)</td>
+                <td>6 000 000</td>
+                <td>Corrections, mises a jour, hotline</td>
+            </tr>
+            <tr>
+                <td><strong>TOTAL</strong></td>
+                <td><strong>41 000 000</strong></td>
+                <td><strong>~62 500 EUR</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="highlight">
+        <strong>Note :</strong> La plateforme est deja 100% developpee et operationnelle. Le budget ci-dessus couvre uniquement le deploiement et l'exploitation.
+    </div>
+
+    <!-- ===================== SECTION 10 ===================== -->
+    <h2>10. Conclusion</h2>
+
+    <p>La PNPI represente une opportunite unique pour le Gabon de se doter d'un outil numerique souverain de gouvernance industrielle, positionant le pays comme leader regional en matiere de digitalisation du pilotage industriel. La plateforme est <strong>prete pour un deploiement immediat</strong> et peut etre presentee en demonstration live a tout moment.</p>
+
+    <hr class="separator">
+
+    <!-- Signature -->
+    <div class="signature-block">
+        <p><strong>Document prepare par :</strong> MBA NDONG Jean Baptiste</p>
+        <p><strong>Date :</strong> 25 mars 2026</p>
+        <p><strong>Contact :</strong> corymba0@gmail.com | +241 77 30 71 93</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        PNPI — Note Conceptuelle — MBA NDONG Jean Baptiste — Mars 2026
+    </div>
+
+</body>
+</html>

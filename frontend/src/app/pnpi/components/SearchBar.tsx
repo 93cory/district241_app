@@ -41,7 +41,7 @@ export function SearchBar() {
         setResults(data);
         setOpen(true);
       }
-    } catch { /* ignore */ }
+    } catch { /* non-critical: search unavailable */ }
     setLoading(false);
   };
 

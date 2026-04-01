@@ -56,7 +56,7 @@ class TraceBatchORM(Base):
     origin_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     factory_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     factory_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     qr_code: Mapped[str] = mapped_column(String(255), nullable=False)
 
 
@@ -68,7 +68,7 @@ class UserAccountORM(Base):
     roles_csv: Mapped[str] = mapped_column(String(120), nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     failed_login_attempts: Mapped[int] = mapped_column(nullable=False, default=0)
     locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     password_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -88,7 +88,7 @@ class NotificationORM(Base):
     message: Mapped[str] = mapped_column(String(1000), nullable=False)
     severity: Mapped[str] = mapped_column(String(20), nullable=False, default="info")
     notification_key: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
 
@@ -102,7 +102,7 @@ class FieldReportORM(Base):
     severity: Mapped[str] = mapped_column(String(20), nullable=False, default="medium")
     location: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     created_by: Mapped[str] = mapped_column(String(80), nullable=False)
     latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -115,7 +115,7 @@ class AuditEventORM(Base):
     __tablename__ = "audit_events"
 
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     actor: Mapped[str] = mapped_column(String(80), nullable=False)
     action: Mapped[str] = mapped_column(String(120), nullable=False)
     target: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)

@@ -35,7 +35,7 @@ class OperateurIndustrielORM(Base):
     contact_telephone: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     effectif_declare: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     created_by: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
 
     agrements: Mapped[List["AgrementTechniqueIndustrielORM"]] = relationship(
@@ -92,7 +92,7 @@ class ATITransitionORM(Base):
     previous_etape: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     new_etape: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
     note: Mapped[str] = mapped_column(String(500), nullable=False, default="")
-    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     ati: Mapped[AgrementTechniqueIndustrielORM] = relationship(back_populates="transitions")
 
@@ -110,7 +110,7 @@ class InspectionConformiteORM(Base):
     mesures_correctives: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     operateur: Mapped[OperateurIndustrielORM] = relationship(back_populates="inspections", lazy="joined")
 
@@ -124,7 +124,7 @@ class InspectionPhotoORM(Base):
     chemin_stockage: Mapped[str] = mapped_column(String(512), nullable=False)
     taille_octets: Mapped[int] = mapped_column(nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
-    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     uploaded_by: Mapped[str] = mapped_column(String(80), nullable=False)
 
 
@@ -183,7 +183,7 @@ class DocumentDossierORM(Base):
     type_document: Mapped[str] = mapped_column(String(50), nullable=False)  # statuts, bilan, plan_site, certification, autre
     taille_octets: Mapped[int] = mapped_column(nullable=False)
     chemin_stockage: Mapped[str] = mapped_column(String(512), nullable=False)
-    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     uploaded_by: Mapped[str] = mapped_column(String(80), nullable=False)
 
 

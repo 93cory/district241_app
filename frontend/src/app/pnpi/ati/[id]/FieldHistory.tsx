@@ -32,7 +32,7 @@ export function FieldHistory({ atiId }: { atiId: string }) {
   useEffect(() => {
     if (!open) return;
     fetch(`/api/pnpi/ati/${atiId}/field-history`)
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : { history: [] })
       .then((d) => setHistory(d.history || []))
       .catch(() => {});
   }, [atiId, open]);

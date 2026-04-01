@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { fetchBackendProfile } from "../../lib/backend";
 import { fetchPNPIATIs, fetchPNPIInspections } from "../../lib/api";
-import TwoFactorSetup from "./TwoFactorSetup";
+import { TwoFactorSetup } from "./TwoFactorSetup";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { NotificationPreferences } from "./NotificationPreferences";
 import { PushNotifications } from "../components/PushNotifications";

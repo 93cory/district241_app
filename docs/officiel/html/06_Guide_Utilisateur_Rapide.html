@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNPI — Guide Utilisateur Rapide</title>
+    <style>
+        @page { size: A4; margin: 25mm 20mm 20mm 25mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; color: #1a1a1a; max-width: 210mm; margin: 0 auto; padding: 25mm 20mm; background: #fff; }
+        h1 { font-size: 18pt; font-weight: bold; color: #003366; text-align: center; margin-bottom: 6mm; letter-spacing: 1px; }
+        h2 { font-size: 14pt; font-weight: bold; color: #003366; margin-top: 8mm; margin-bottom: 4mm; border-bottom: 1.5pt solid #006233; padding-bottom: 2mm; }
+        h3 { font-size: 12pt; font-weight: bold; color: #006233; margin-top: 6mm; margin-bottom: 3mm; }
+        p { margin-bottom: 4mm; text-align: justify; }
+        ul, ol { margin-left: 8mm; margin-bottom: 4mm; }
+        li { margin-bottom: 2mm; }
+        table { width: 100%; border-collapse: collapse; margin: 4mm 0 6mm; font-size: 10pt; }
+        th { background: #003366; color: #fff; padding: 3mm 4mm; text-align: left; font-weight: bold; }
+        td { padding: 2.5mm 4mm; border-bottom: 0.5pt solid #ddd; }
+        tr:nth-child(even) td { background: #f8f9fa; }
+        .header-block { text-align: center; margin-bottom: 10mm; }
+        .flag-ribbon { height: 4mm; background: linear-gradient(90deg, #009E60 33%, #FCD116 33% 66%, #003DA5 66%); margin-bottom: 6mm; }
+        .republic { font-size: 11pt; color: #666; font-style: italic; }
+        .ministry { font-size: 10pt; color: #003366; font-weight: bold; margin-top: 2mm; }
+        .separator { border: none; border-top: 1pt solid #003366; margin: 6mm 0; }
+        .page-break { page-break-before: always; }
+        .highlight { background: #f0f7f0; padding: 4mm 5mm; border-left: 3pt solid #006233; margin: 4mm 0; border-radius: 0 4pt 4pt 0; }
+        .phase-card { border: 1pt solid #ddd; border-radius: 4pt; padding: 5mm; margin: 4mm 0; border-left: 4pt solid; }
+        .phase1 { border-left-color: #006233; }
+        .phase2 { border-left-color: #003366; }
+        .phase3 { border-left-color: #7c3aed; }
+        .total-row td { font-weight: bold; background: #003366 !important; color: #fff; }
+        .step-number { display: inline-block; width: 8mm; height: 8mm; border-radius: 50%; background: #006233; color: #fff; text-align: center; line-height: 8mm; font-weight: bold; font-size: 10pt; margin-right: 3mm; }
+        .shortcut-key { display: inline-block; padding: 1mm 3mm; background: #f0f0f0; border: 1pt solid #ccc; border-radius: 3pt; font-family: 'Courier New', monospace; font-size: 10pt; }
+        .role-badge { display: inline-block; padding: 1mm 4mm; border-radius: 3pt; font-size: 9pt; font-weight: bold; color: #fff; margin-right: 2mm; }
+        .role-ministre { background: #003366; }
+        .role-directeur { background: #006233; }
+        .role-instructeur { background: #0c7eb4; }
+        .role-inspecteur { background: #7c3aed; }
+        .role-operateur { background: #d97706; }
+        .role-admin { background: #b42318; }
+        .footer { margin-top: 10mm; padding-top: 4mm; border-top: 0.5pt solid #ccc; font-size: 8pt; color: #999; text-align: center; }
+        .step-item { display: flex; align-items: flex-start; margin-bottom: 4mm; }
+        .step-item .step-text { flex: 1; padding-top: 1mm; }
+        @media print { body { padding: 0; } }
+    </style>
+</head>
+<body>
+
+    <!-- Flag Ribbon -->
+    <div class="flag-ribbon"></div>
+
+    <img src="pnpi_logo.png" alt="Logo PNPI" style="width: 80px; height: auto; margin: 0 auto 4mm; display: block;">
+
+    <!-- Header Block -->
+    <div class="header-block">
+        <div class="republic">République Gabonaise</div>
+        <div class="ministry">Ministère du Commerce, de l'Industrie et des PME/PMI</div>
+        <div class="ministry">Direction Générale de l'Industrie</div>
+    </div>
+
+    <h1>GUIDE UTILISATEUR RAPIDE</h1>
+    <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 8mm;">
+        PNPI — Plateforme Nationale du Pilotage Industriel
+    </p>
+
+    <hr class="separator">
+
+    <p style="text-align: center; font-size: 10pt; color: #666;">
+        Auteur : <strong>MBA NDONG Jean Baptiste</strong> — corymba0@gmail.com — +241 77 30 71 93<br>
+        Mindoubé 1, Libreville — Mars 2026
+    </p>
+
+    <hr class="separator">
+
+    <!-- ============================================================ -->
+    <!-- CONNEXION -->
+    <!-- ============================================================ -->
+
+    <h2>CONNEXION</h2>
+
+    <div class="step-item">
+        <span class="step-number">1</span>
+        <span class="step-text">Ouvrez <strong>https://pnpi-gabon.ga</strong> dans votre navigateur (Chrome, Firefox, Edge ou Safari).</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">2</span>
+        <span class="step-text">Entrez votre <strong>identifiant</strong> et votre <strong>mot de passe</strong>.</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">3</span>
+        <span class="step-text">Si la 2FA est activée, entrez le <strong>code à 6 chiffres</strong> de votre application d'authentification.</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">4</span>
+        <span class="step-text">Vous êtes redirigé automatiquement vers votre espace selon votre rôle.</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ROLES ET ESPACES -->
+    <!-- ============================================================ -->
+
+    <h2>RÔLES ET ESPACES</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Rôle</th>
+                <th>Page d'accueil</th>
+                <th>Actions principales</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="role-badge role-ministre">Ministre</span></td>
+                <td>Dashboard ministériel</td>
+                <td>Consulter les KPIs, briefings, décisions stratégiques</td>
+            </tr>
+            <tr>
+                <td><span class="role-badge role-directeur">Directeur</span></td>
+                <td>Dashboard PNPI</td>
+                <td>Superviser, valider, déléguer, benchmarker</td>
+            </tr>
+            <tr>
+                <td><span class="role-badge role-instructeur">Instructeur</span></td>
+                <td>Mes Dossiers</td>
+                <td>Instruire les ATI, commenter, décider</td>
+            </tr>
+            <tr>
+                <td><span class="role-badge role-inspecteur">Inspecteur</span></td>
+                <td>Mon espace</td>
+                <td>Inspections terrain, rapports, heatmap</td>
+            </tr>
+            <tr>
+                <td><span class="role-badge role-operateur">Opérateur</span></td>
+                <td>Mon espace (Guichet)</td>
+                <td>Soumettre ATI, suivre, renouveler</td>
+            </tr>
+            <tr>
+                <td><span class="role-badge role-admin">Admin</span></td>
+                <td>Administration</td>
+                <td>Gérer utilisateurs, monitoring, sécurité</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ============================================================ -->
+    <!-- SOUMETTRE UN ATI -->
+    <!-- ============================================================ -->
+
+    <h2>SOUMETTRE UN ATI (Opérateur)</h2>
+
+    <div class="step-item">
+        <span class="step-number">1</span>
+        <span class="step-text">Allez dans <strong>Mon espace</strong>.</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">2</span>
+        <span class="step-text">Cliquez <strong>Soumettre un ATI</strong>.</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">3</span>
+        <span class="step-text"><em>(Optionnel)</em> Cliquez <strong>Utiliser un modèle pré-rempli</strong> pour gagner du temps.</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">4</span>
+        <span class="step-text">Remplissez le formulaire : <strong>secteur</strong>, <strong>type d'activité</strong>, <strong>observations</strong>.</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">5</span>
+        <span class="step-text">Cliquez <strong>Soumettre</strong>.</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">6</span>
+        <span class="step-text">Suivez votre dossier dans <strong>Mes ATI</strong> — le compteur SLA indique le temps restant.</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- INSTRUIRE UN ATI -->
+    <!-- ============================================================ -->
+
+    <h2>INSTRUIRE UN ATI (Instructeur)</h2>
+
+    <div class="step-item">
+        <span class="step-number">1</span>
+        <span class="step-text">Allez dans <strong>Mes Dossiers</strong> ou <strong>Kanban</strong>.</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">2</span>
+        <span class="step-text">Sélectionnez un ATI prioritaire (file de triage).</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">3</span>
+        <span class="step-text">Consultez les outils d'aide à la décision :</span>
+    </div>
+    <ul style="margin-left: 20mm; margin-bottom: 4mm;">
+        <li>La <strong>Checklist de conformité</strong> (générez-la si elle n'existe pas)</li>
+        <li>Le <strong>Scoring de risque</strong> (évaluation automatique)</li>
+        <li>La <strong>Recommandation IA</strong> (approuver / rejeter / approfondir)</li>
+    </ul>
+    <div class="step-item">
+        <span class="step-number">4</span>
+        <span class="step-text">Ajoutez des <strong>commentaires</strong> (publics ou internes).</span>
+    </div>
+    <div class="step-item">
+        <span class="step-number">5</span>
+        <span class="step-text">Cliquez le bouton de <strong>transition</strong> pour changer le statut du dossier.</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- RACCOURCIS CLAVIER -->
+    <!-- ============================================================ -->
+
+    <h2>RACCOURCIS CLAVIER</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Raccourci</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">K</span></td>
+                <td>Palette de commandes (navigation rapide)</td>
+            </tr>
+            <tr>
+                <td><span class="shortcut-key">?</span></td>
+                <td>Afficher tous les raccourcis</td>
+            </tr>
+            <tr>
+                <td><span class="shortcut-key">g</span> <span class="shortcut-key">d</span></td>
+                <td>Dashboard</td>
+            </tr>
+            <tr>
+                <td><span class="shortcut-key">g</span> <span class="shortcut-key">a</span></td>
+                <td>Liste ATI</td>
+            </tr>
+            <tr>
+                <td><span class="shortcut-key">g</span> <span class="shortcut-key">m</span></td>
+                <td>Messages</td>
+            </tr>
+            <tr>
+                <td><span class="shortcut-key">g</span> <span class="shortcut-key">k</span></td>
+                <td>Kanban</td>
+            </tr>
+            <tr>
+                <td><span class="shortcut-key">g</span> <span class="shortcut-key">s</span></td>
+                <td>Recherche</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ============================================================ -->
+    <!-- AIDE -->
+    <!-- ============================================================ -->
+
+    <h2>AIDE</h2>
+
+    <ul>
+        <li><strong>Assistant chatbot</strong> : Cliquez la bulle en bas à droite de l'écran.</li>
+        <li><strong>Formation</strong> : Allez dans <strong>Formation</strong> pour accéder aux modules interactifs.</li>
+        <li><strong>FAQ</strong> : Page <strong>Aide</strong> avec 22 questions fréquentes.</li>
+        <li><strong>Support</strong> : Envoyez un message à l'admin via la <strong>Messagerie</strong>.</li>
+    </ul>
+
+    <hr class="separator">
+
+    <div class="highlight">
+        <p style="margin-bottom: 0; text-align: center;">
+            Pour toute question technique : <strong>corymba0@gmail.com</strong> | <strong>+241 77 30 71 93</strong>
+        </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        PNPI — Guide Utilisateur — MBA NDONG Jean Baptiste — Mars 2026
+    </div>
+
+</body>
+</html>

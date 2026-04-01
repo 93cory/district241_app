@@ -209,7 +209,8 @@ export async function middleware(request: NextRequest) {
       maxAge: 14 * 24 * 60 * 60,
     });
     return response;
-  } catch {
+  } catch (err) {
+    console.error("[PNPI Middleware] Token refresh failed:", err);
     return NextResponse.next();
   }
 }

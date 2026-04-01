@@ -98,8 +98,12 @@ export default async function PNPIDashboardPage() {
 
   try {
     const [kpis, carte, secteurs, pipeline, tendances, recents, transformationIndex] = await Promise.all([
-      fetchPNPIKpis(), fetchPNPICarte(), fetchPNPISecteurs(),
-      fetchPNPIPipeline(), fetchPNPITendances(), fetchPNPIRecents(),
+      fetchPNPIKpis().catch(() => null),
+      fetchPNPICarte().catch(() => []),
+      fetchPNPISecteurs().catch(() => []),
+      fetchPNPIPipeline().catch(() => []),
+      fetchPNPITendances().catch(() => []),
+      fetchPNPIRecents().catch(() => []),
       fetchTransformationIndex().catch(() => null),
     ]);
 

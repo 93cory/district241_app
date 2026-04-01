@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNPI — Synthese Technique et Fonctionnelle</title>
+    <style>
+        @page { size: A4; margin: 25mm 20mm 20mm 25mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; color: #1a1a1a; max-width: 210mm; margin: 0 auto; padding: 25mm 20mm; background: #fff; }
+        h1 { font-size: 18pt; font-weight: bold; color: #003366; text-align: center; margin-bottom: 6mm; letter-spacing: 1px; }
+        h2 { font-size: 14pt; font-weight: bold; color: #003366; margin-top: 8mm; margin-bottom: 4mm; border-bottom: 1.5pt solid #006233; padding-bottom: 2mm; }
+        h3 { font-size: 12pt; font-weight: bold; color: #006233; margin-top: 6mm; margin-bottom: 3mm; }
+        p { margin-bottom: 4mm; text-align: justify; }
+        ul, ol { margin-left: 8mm; margin-bottom: 4mm; }
+        li { margin-bottom: 2mm; }
+        table { width: 100%; border-collapse: collapse; margin: 4mm 0 6mm; font-size: 10pt; }
+        th { background: #003366; color: #fff; padding: 3mm 4mm; text-align: left; font-weight: bold; }
+        td { padding: 2.5mm 4mm; border-bottom: 0.5pt solid #ddd; }
+        tr:nth-child(even) td { background: #f8f9fa; }
+        .header-block { text-align: center; margin-bottom: 10mm; }
+        .flag-ribbon { height: 4mm; background: linear-gradient(90deg, #009E60 33%, #FCD116 33% 66%, #003DA5 66%); margin-bottom: 6mm; }
+        .republic { font-size: 11pt; color: #666; font-style: italic; }
+        .ministry { font-size: 10pt; color: #003366; font-weight: bold; margin-top: 2mm; }
+        .separator { border: none; border-top: 1pt solid #003366; margin: 6mm 0; }
+        .page-break { page-break-before: always; }
+        .highlight { background: #f0f7f0; padding: 4mm 5mm; border-left: 3pt solid #006233; margin: 4mm 0; border-radius: 0 4pt 4pt 0; }
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 4mm 0; }
+        .kpi-card { padding: 4mm 5mm; border: 1pt solid #ddd; border-radius: 4pt; text-align: center; }
+        .kpi-value { font-size: 20pt; font-weight: bold; color: #006233; }
+        .kpi-label { font-size: 9pt; color: #666; }
+        .highlight-red { background: #fef2f2; padding: 4mm 5mm; border-left: 3pt solid #b42318; margin: 4mm 0; }
+        .highlight-blue { background: #e3f2fd; padding: 4mm 5mm; border-left: 3pt solid #003366; margin: 4mm 0; }
+        .roi-box { background: linear-gradient(135deg, #006233, #003366); color: #fff; padding: 8mm; border-radius: 4pt; text-align: center; margin: 6mm 0; }
+        .roi-value { font-size: 28pt; font-weight: bold; }
+        .footer { margin-top: 10mm; padding-top: 4mm; border-top: 0.5pt solid #ccc; font-size: 8pt; color: #999; text-align: center; }
+        @media print { body { padding: 0; } }
+
+        .tech-card {
+            border: 1pt solid #ddd;
+            border-radius: 4pt;
+            padding: 5mm 6mm;
+            margin-bottom: 4mm;
+            background: #fff;
+            border-top: 3pt solid #003366;
+        }
+        .tech-card.backend { border-top-color: #006233; }
+        .tech-card.frontend { border-top-color: #003DA5; }
+        .tech-card.mobile { border-top-color: #FCD116; }
+        .tech-card.infra { border-top-color: #b42318; }
+        .tech-card h3 { margin-top: 0; font-size: 11pt; }
+        .tech-card ul { font-size: 10pt; margin-bottom: 0; }
+        .tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 4mm 0; }
+        .module-list { column-count: 2; column-gap: 6mm; font-size: 10pt; }
+        .module-list li { break-inside: avoid; }
+        .badge { display: inline-block; background: #006233; color: #fff; font-size: 8pt; padding: 1mm 3mm; border-radius: 2pt; font-weight: bold; margin-right: 2mm; vertical-align: middle; }
+        .pages-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; margin: 4mm 0; font-size: 10pt; }
+        .pages-category { padding: 3mm 4mm; background: #f8f9fa; border-radius: 3pt; border-left: 2pt solid #003366; }
+        .pages-category strong { color: #003366; font-size: 10pt; }
+        .stat-banner { display: flex; justify-content: space-around; background: linear-gradient(135deg, #003366, #006233); color: #fff; padding: 6mm; border-radius: 4pt; margin: 6mm 0; text-align: center; }
+        .stat-banner .stat-item .stat-value { font-size: 22pt; font-weight: bold; }
+        .stat-banner .stat-item .stat-label { font-size: 8pt; opacity: 0.85; margin-top: 1mm; }
+    </style>
+</head>
+<body>
+
+    <!-- COVER -->
+    <div class="flag-ribbon"></div>
+
+    <img src="pnpi_logo.png" alt="Logo PNPI" style="width: 80px; height: auto; margin: 0 auto 4mm; display: block;">
+
+    <div class="header-block">
+        <div class="republic">Republique Gabonaise</div>
+        <div class="ministry">Ministere de l'Industrie et de la Competitivite Nationale</div>
+    </div>
+
+    <h1>SYNTHESE TECHNIQUE ET FONCTIONNELLE</h1>
+    <p style="text-align: center; color: #666; font-size: 11pt; margin-bottom: 8mm;">
+        Plateforme Nationale du Pilotage Industriel (PNPI)<br>
+        Version 2.0 — Mars 2026
+    </p>
+
+    <div class="stat-banner">
+        <div class="stat-item">
+            <div class="stat-value">34</div>
+            <div class="stat-label">Modules API</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">206+</div>
+            <div class="stat-label">Endpoints</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">110+</div>
+            <div class="stat-label">Pages</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value">27</div>
+            <div class="stat-label">Ecrans Mobile</div>
+        </div>
+    </div>
+
+    <hr class="separator">
+
+    <!-- VUE D'ENSEMBLE -->
+    <h2>1. VUE D'ENSEMBLE DE L'ARCHITECTURE</h2>
+
+    <p>La PNPI est construite sur une architecture moderne, securisee et evolutive, couvrant l'ensemble du cycle de vie de la gouvernance industrielle.</p>
+
+    <div class="tech-grid">
+        <div class="tech-card backend">
+            <h3><span class="badge" style="background:#006233;">API</span> Backend (REST + GraphQL)</h3>
+            <ul>
+                <li>Framework : FastAPI (Python 3.12)</li>
+                <li>34 modules API, 206+ endpoints</li>
+                <li>Authentification JWT avec refresh tokens</li>
+                <li>2FA/TOTP avec codes de secours</li>
+                <li>Rate limiting et protection anti-brute-force</li>
+                <li>Audit trail sur toutes les operations sensibles</li>
+                <li>WebSocket pour les notifications temps reel</li>
+            </ul>
+        </div>
+
+        <div class="tech-card frontend">
+            <h3><span class="badge" style="background:#003DA5;">WEB</span> Frontend (PWA)</h3>
+            <ul>
+                <li>Framework : Next.js 14 (React 19, TypeScript)</li>
+                <li>110+ pages fonctionnelles</li>
+                <li>Progressive Web App (installation, offline)</li>
+                <li>Dark mode automatique + manuel</li>
+                <li>Accessibilite WCAG 2.1 AA</li>
+                <li>Raccourcis clavier (Ctrl+K = palette)</li>
+                <li>Responsive (mobile, tablette, desktop)</li>
+            </ul>
+        </div>
+
+        <div class="tech-card mobile">
+            <h3><span class="badge" style="background:#b8860b;">MOBILE</span> Application Mobile</h3>
+            <ul>
+                <li>Framework : Flutter (Dart)</li>
+                <li>27 ecrans complets</li>
+                <li>Authentification biometrique (empreinte/Face ID)</li>
+                <li>QR code scanner</li>
+                <li>GPS + geofencing pour inspections</li>
+                <li>Mode offline avec synchronisation</li>
+                <li>Deep links (pnpi://ati/...)</li>
+            </ul>
+        </div>
+
+        <div class="tech-card infra">
+            <h3><span class="badge" style="background:#b42318;">INFRA</span> Infrastructure</h3>
+            <ul>
+                <li>Docker Compose (dev) + Production (Nginx SSL)</li>
+                <li>PostgreSQL 16 + PostGIS 3.4</li>
+                <li>MinIO pour le stockage objet</li>
+                <li>Prometheus + Grafana pour le monitoring</li>
+                <li>GitHub Actions pour le CI/CD</li>
+                <li>33 tables de donnees, 31 migrations Alembic</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SECURITE -->
+    <div class="page-break"></div>
+    <h2>2. SECURITE</h2>
+
+    <p>La securite est integree a chaque couche de la plateforme, conformement aux standards internationaux.</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 35%;">Mesure</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Chiffrement mots de passe</strong></td>
+                <td>bcrypt (salt automatique)</td>
+            </tr>
+            <tr>
+                <td><strong>Tokens JWT</strong></td>
+                <td>Access (60 min) + Refresh (14 jours)</td>
+            </tr>
+            <tr>
+                <td><strong>2FA</strong></td>
+                <td>TOTP compatible Google Authenticator</td>
+            </tr>
+            <tr>
+                <td><strong>Codes de secours</strong></td>
+                <td>10 codes a usage unique</td>
+            </tr>
+            <tr>
+                <td><strong>Verrouillage compte</strong></td>
+                <td>5 echecs consecutifs → blocage 15 minutes</td>
+            </tr>
+            <tr>
+                <td><strong>Rate limiting</strong></td>
+                <td>15 req/min sur /auth, 60/min general</td>
+            </tr>
+            <tr>
+                <td><strong>CORS</strong></td>
+                <td>Restreint aux domaines autorises</td>
+            </tr>
+            <tr>
+                <td><strong>Audit trail</strong></td>
+                <td>Chaque action tracee (acteur, horodatage, detail)</td>
+            </tr>
+            <tr>
+                <td><strong>Cookies</strong></td>
+                <td>httpOnly, SameSite=Lax, Secure en production</td>
+            </tr>
+            <tr>
+                <td><strong>API externe</strong></td>
+                <td>Cles API avec comparaison constant-time</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- MODULES -->
+    <h2>3. MODULES FONCTIONNELS (34)</h2>
+
+    <p>Chaque module est autonome, teste et documente. L'ensemble couvre la totalite des besoins de la gouvernance industrielle.</p>
+
+    <ol class="module-list">
+        <li><strong>auth</strong> — Authentification, tokens, refresh</li>
+        <li><strong>totp</strong> — 2FA, setup, verification, codes secours</li>
+        <li><strong>ati</strong> — CRUD ATI, transitions, certificats, triage, favoris, tags, commentaires, risque, recommandation</li>
+        <li><strong>operateurs</strong> — CRUD operateurs, scoring, timeline, import CSV</li>
+        <li><strong>inspections</strong> — CRUD inspections, photos, rapport PDF, geofencing</li>
+        <li><strong>documents</strong> — Upload, versioning</li>
+        <li><strong>exports</strong> — PDF, Excel, PowerPoint, ZIP, GeoJSON, QR batch, lettres officielles, archives</li>
+        <li><strong>pnpi_dashboard</strong> — KPIs, predictions, benchmark, comparaison, multi-annees, impact, qualite donnees, alertes, stats avancees, budget, social, timing workflow</li>
+        <li><strong>pilotage</strong> — Workflow ministeriel</li>
+        <li><strong>admin</strong> — Utilisateurs, audit log, SMS</li>
+        <li><strong>notifications</strong> — CRUD notifications</li>
+        <li><strong>messages</strong> — Messagerie interne</li>
+        <li><strong>calendar</strong> — Evenements ATI + inspections</li>
+        <li><strong>reports</strong> — Constructeur de rapports, tableau croise</li>
+        <li><strong>templates</strong> — Modeles ATI par secteur</li>
+        <li><strong>workflows</strong> — Regles automatiques</li>
+        <li><strong>heatmap</strong> — Non-conformites par province</li>
+        <li><strong>delegations</strong> — Transfert temporaire dossiers</li>
+        <li><strong>reminders</strong> — Rappels automatiques SLA</li>
+        <li><strong>notes</strong> — Notes personnelles</li>
+        <li><strong>feedback</strong> — Satisfaction operateur</li>
+        <li><strong>checklists</strong> — Conformite structuree</li>
+        <li><strong>announcements</strong> — Annonces broadcast</li>
+        <li><strong>polls</strong> — Sondages internes</li>
+        <li><strong>conventions</strong> — Accords-cadres</li>
+        <li><strong>geo</strong> — Endpoints geospatiaux, export GeoJSON</li>
+        <li><strong>health</strong> — Sante systeme, monitoring</li>
+        <li><strong>ws</strong> — WebSocket temps reel</li>
+        <li><strong>integration</strong> — API pour douanes/impots/emploi</li>
+        <li><strong>integration_health</strong> — Monitoring integrations</li>
+        <li><strong>scheduled_reports</strong> — Rapports planifies</li>
+        <li><strong>graphql_api</strong> — API GraphQL</li>
+        <li><strong>doc_versions</strong> — Versioning documents</li>
+        <li><strong>units</strong> — Unites industrielles</li>
+    </ol>
+
+    <!-- PAGES -->
+    <div class="page-break"></div>
+    <h2>4. PAGES FRONTEND (110+)</h2>
+
+    <div class="pages-grid">
+        <div class="pages-category">
+            <strong>Tableaux de bord</strong><br>
+            Dashboard principal, Synthese executive, Temps reel, Provincial, Personnalise
+        </div>
+        <div class="pages-category">
+            <strong>ATI</strong><br>
+            Liste, Detail (SLA clock, risque, recommandation IA, checklist, tags, commentaires, historique), Kanban, Triage, Favoris, Renouvellements
+        </div>
+        <div class="pages-category">
+            <strong>Operateurs</strong><br>
+            Liste, Detail (scoring, timeline, certifications), Carte interactive Leaflet
+        </div>
+        <div class="pages-category">
+            <strong>Inspections</strong><br>
+            Liste, Detail, Heatmap, Geofencing
+        </div>
+        <div class="pages-category">
+            <strong>Analytics</strong><br>
+            Statistiques, Stats avancees, Predictions, Comparaison, Multi-annees, Benchmark provincial, CEMAC, Tableau croise, Timing workflow, Alertes IA
+        </div>
+        <div class="pages-category">
+            <strong>Impact</strong><br>
+            Economique, Social, Carbone, ODD, Budget, Simulateur ROI
+        </div>
+        <div class="pages-category">
+            <strong>Communication</strong><br>
+            Messages, Calendrier, Annuaire, Notes, Sondages, Feedback, Annonces
+        </div>
+        <div class="pages-category">
+            <strong>Administration</strong><br>
+            Users, Audit log, Workflows, Securite, Integrations, API Usage, Newsletter, Rapports planifies, Organigramme, RACI
+        </div>
+        <div class="pages-category" style="grid-column: 1 / -1;">
+            <strong>Pages publiques</strong><br>
+            Investisseurs, Open Data, Contact, Statut systeme, Verification ATI/operateur/produit, About, Changelog, API Docs, Marketplace, Formation, Reglementation, Success stories, Roadmap
+        </div>
+    </div>
+
+    <!-- DEMO -->
+    <h2>5. DONNEES DE DEMONSTRATION</h2>
+
+    <div class="highlight">
+        <p style="margin-bottom: 2mm;"><strong>La plateforme est livree avec un jeu de donnees realiste :</strong></p>
+        <ul>
+            <li><strong>6 utilisateurs</strong> (1 par role : admin, directeur, instructeur, inspecteur, operateur, public)</li>
+            <li><strong>35 operateurs industriels</strong> repartis sur 9 provinces</li>
+            <li><strong>60 ATIs</strong> dans tous les statuts du workflow</li>
+            <li><strong>10 inspections</strong> de conformite</li>
+            <li>Donnees realistes : noms, NIF, secteurs gabonais</li>
+        </ul>
+    </div>
+
+    <div class="highlight-blue">
+        <p style="margin-bottom: 0;"><strong>La plateforme est 100% operationnelle et prete pour une demonstration live.</strong></p>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <div class="flag-ribbon" style="margin-top: 4mm;"></div>
+        PNPI — Synthese Technique — MBA NDONG Jean Baptiste — Mars 2026<br>
+        <span style="color: #003366;">corymba0@gmail.com</span> | +241 77 30 71 93
+    </div>
+
+</body>
+</html>

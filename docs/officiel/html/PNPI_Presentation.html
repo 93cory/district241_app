@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNPI — Présentation Ministérielle</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: #0a0a0a; color: #fff; overflow: hidden; height: 100vh; }
+
+/* === SLIDE SYSTEM === */
+.slide { display: none; width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+.slide.active { display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+/* === BACKGROUNDS === */
+.bg-dark { background: linear-gradient(135deg, #051B36 0%, #0a2a4a 50%, #051B36 100%); }
+.bg-green { background: linear-gradient(135deg, #003d1f 0%, #006233 50%, #004d28 100%); }
+.bg-blue { background: linear-gradient(135deg, #051B36 0%, #0c4a7e 100%); }
+.bg-white { background: #fff; color: #1a1a1a; }
+.bg-gradient { background: linear-gradient(135deg, #006233 0%, #003366 50%, #051B36 100%); }
+.bg-gold { background: linear-gradient(135deg, #051B36 0%, #1a3a5c 100%); }
+
+/* === FLAG RIBBON === */
+.slide-ribbon { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #009E60 33%, #FCD116 33% 66%, #003DA5 66%); z-index: 10; }
+
+/* === SLIDE CONTENT === */
+.slide-content { max-width: 1100px; width: 90%; text-align: center; z-index: 2; }
+.slide-content-left { text-align: left; }
+
+/* === TYPOGRAPHY === */
+.slide-tag { font-size: 14px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; opacity: 0.6; margin-bottom: 16px; }
+.slide-title { font-size: 56px; font-weight: 800; line-height: 1.15; margin-bottom: 16px; }
+.slide-title-small { font-size: 42px; }
+.slide-subtitle { font-size: 22px; font-weight: 400; opacity: 0.8; line-height: 1.5; }
+.slide-number { position: absolute; bottom: 20px; right: 30px; font-size: 13px; opacity: 0.3; font-weight: 700; }
+.slide-logo { position: absolute; bottom: 20px; left: 30px; font-size: 13px; opacity: 0.4; font-weight: 700; letter-spacing: 2px; }
+
+/* === KPIS === */
+.kpi-row { display: flex; gap: 24px; justify-content: center; margin: 32px 0; flex-wrap: wrap; }
+.kpi-box { flex: 1; min-width: 180px; max-width: 240px; padding: 28px 20px; border-radius: 16px; text-align: center; }
+.kpi-box-dark { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); }
+.kpi-box-white { background: #f8f9fa; border: 2px solid #e5e7eb; }
+.kpi-value { font-size: 48px; font-weight: 800; line-height: 1; }
+.kpi-value-green { color: #4ade80; }
+.kpi-value-blue { color: #60a5fa; }
+.kpi-value-gold { color: #fbbf24; }
+.kpi-value-red { color: #f87171; }
+.kpi-value-white { color: #006233; }
+.kpi-label { font-size: 13px; font-weight: 600; opacity: 0.6; margin-top: 8px; letter-spacing: 0.5px; }
+
+/* === COMPARISON TABLE === */
+.compare-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 16px; }
+.compare-table th { padding: 14px 16px; text-align: left; font-weight: 700; border-bottom: 2px solid rgba(255,255,255,0.2); }
+.compare-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.compare-table .col-before { color: #f87171; }
+.compare-table .col-after { color: #4ade80; font-weight: 700; }
+.compare-table .col-gain { color: #fbbf24; font-weight: 800; font-size: 18px; }
+
+/* === FEATURE GRID === */
+.feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; text-align: left; }
+.feature-card { padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); }
+.feature-icon { font-size: 28px; margin-bottom: 8px; }
+.feature-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.feature-desc { font-size: 13px; opacity: 0.6; line-height: 1.5; }
+
+/* === TIMELINE === */
+.timeline { display: flex; gap: 20px; justify-content: center; margin: 32px 0; }
+.timeline-step { flex: 1; max-width: 220px; text-align: center; position: relative; }
+.timeline-num { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; margin: 0 auto 12px; }
+.timeline-num-green { background: #006233; }
+.timeline-num-blue { background: #003366; }
+.timeline-num-purple { background: #7c3aed; }
+.timeline-num-gold { background: #d97706; }
+.timeline-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.timeline-desc { font-size: 12px; opacity: 0.5; line-height: 1.4; }
+.timeline-arrow { position: absolute; top: 24px; right: -14px; font-size: 18px; opacity: 0.3; }
+
+/* === BUDGET TABLE === */
+.budget-table { width: 80%; margin: 20px auto; border-collapse: collapse; font-size: 16px; }
+.budget-table th { padding: 12px 16px; background: rgba(255,255,255,0.1); text-align: left; }
+.budget-table td { padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.budget-total td { font-weight: 800; font-size: 18px; color: #4ade80; border-top: 2px solid rgba(255,255,255,0.2); }
+
+/* === CONTROLS === */
+.controls { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 100; }
+.controls button { padding: 10px 20px; border: none; border-radius: 8px; background: rgba(255,255,255,0.15); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; backdrop-filter: blur(10px); }
+.controls button:hover { background: rgba(255,255,255,0.25); }
+.dots { display: flex; gap: 6px; align-items: center; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); cursor: pointer; }
+.dot.active { background: #fff; width: 20px; border-radius: 4px; }
+
+/* === HIGHLIGHT === */
+.highlight-green { color: #4ade80; }
+.highlight-gold { color: #fbbf24; }
+.highlight-blue { color: #60a5fa; }
+.text-muted { opacity: 0.5; }
+
+/* === ANIMATION === */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.slide.active .slide-content { animation: fadeIn 0.6s ease-out; }
+
+/* === BIG LOGO === */
+.big-logo { width: 200px; height: auto; margin-bottom: 20px; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3)); }
+
+/* === ROI BOX === */
+.roi-mega { font-size: 120px; font-weight: 900; line-height: 1; background: linear-gradient(135deg, #4ade80, #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* === PRINT === */
+@media print {
+  .controls { display: none; }
+  .slide { display: flex !important; page-break-after: always; height: 100vh; }
+  body { overflow: visible; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== SLIDE 1: COVER ========== -->
+<div class="slide active bg-dark" id="s1">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">République Gabonaise — Ministère de l'Industrie</div>
+    <img src="pnpi_logo.png" alt="PNPI" class="big-logo">
+    <div class="slide-title">Plateforme Nationale<br>de Pilotage Industriel</div>
+    <div class="slide-subtitle" style="margin-top: 16px;">
+      Outil numérique souverain de gouvernance<br>et de traçabilité industrielle
+    </div>
+    <div style="margin-top: 32px; font-size: 14px; opacity: 0.4;">
+      MBA NDONG Jean Baptiste — Mars 2026
+    </div>
+  </div>
+  <div class="slide-number">1 / 12</div>
+</div>
+
+<!-- ========== SLIDE 2: LE PROBLÈME ========== -->
+<div class="slide bg-dark" id="s2">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">Constat</div>
+    <div class="slide-title slide-title-small">Le défi industriel<br>du Gabon aujourd'hui</div>
+    <div class="kpi-row" style="margin-top: 32px;">
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-red">180j</div>
+        <div class="kpi-label">Délai traitement ATI</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-red">15%</div>
+        <div class="kpi-label">Dossiers perdus / an</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-red">0</div>
+        <div class="kpi-label">Tableau de bord</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-red">169e</div>
+        <div class="kpi-label">Doing Business</div>
+      </div>
+    </div>
+    <div class="slide-subtitle" style="margin-top: 20px;">
+      Pas de traçabilité · Pas de visibilité · Pas de mesure d'impact
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">2 / 12</div>
+</div>
+
+<!-- ========== SLIDE 3: LA SOLUTION ========== -->
+<div class="slide bg-green" id="s3">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">La solution</div>
+    <div class="slide-title slide-title-small">La PNPI digitalise <span class="highlight-gold">100%</span><br>de la gouvernance industrielle</div>
+    <div class="feature-grid" style="margin-top: 24px;">
+      <div class="feature-card">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Cycle ATI complet</div>
+        <div class="feature-desc">Soumission → Instruction → Inspection → Décision → Certificat QR. Tout en ligne, tout traçable.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">Intelligence artificielle</div>
+        <div class="feature-desc">Recommandation de décision, scoring de risque, alertes automatiques, prédictions.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Pilotage temps réel</div>
+        <div class="feature-desc">Dashboard ministériel, KPIs, benchmark provincial, impact économique et social.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <div class="feature-title">Mobile + Terrain</div>
+        <div class="feature-desc">App mobile pour inspecteurs (GPS, photos), PWA offline, QR code vérifiable.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">3 / 12</div>
+</div>
+
+<!-- ========== SLIDE 4: AVANT / APRÈS ========== -->
+<div class="slide bg-dark" id="s4">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">Impact</div>
+    <div class="slide-title slide-title-small">Avant / Après <span class="highlight-green">PNPI</span></div>
+    <table class="compare-table" style="margin-top: 24px;">
+      <thead>
+        <tr><th>Indicateur</th><th>Avant</th><th>Avec PNPI</th><th>Gain</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Délai traitement ATI</td><td class="col-before">120-180 jours</td><td class="col-after">35-45 jours</td><td class="col-gain">-75%</td></tr>
+        <tr><td>Perte de dossiers</td><td class="col-before">~15% / an</td><td class="col-after">0%</td><td class="col-gain">-100%</td></tr>
+        <tr><td>Vérification ATI</td><td class="col-before">Courrier / téléphone</td><td class="col-after">QR code instantané</td><td class="col-gain">Instant</td></tr>
+        <tr><td>Visibilité ministérielle</td><td class="col-before">Rapport trimestriel</td><td class="col-after">Temps réel</td><td class="col-gain">Continue</td></tr>
+        <tr><td>Coût par ATI</td><td class="col-before">~850 000 FCFA</td><td class="col-after">~350 000 FCFA</td><td class="col-gain">-59%</td></tr>
+        <tr><td>Transparence</td><td class="col-before">Aucune</td><td class="col-after">Open Data + QR</td><td class="col-gain">100%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">4 / 12</div>
+</div>
+
+<!-- ========== SLIDE 5: EN CHIFFRES ========== -->
+<div class="slide bg-blue" id="s5">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">La plateforme</div>
+    <div class="slide-title slide-title-small">PNPI en chiffres</div>
+    <div class="kpi-row" style="margin-top: 32px;">
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-green">200+</div>
+        <div class="kpi-label">Fonctionnalités</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-blue">110+</div>
+        <div class="kpi-label">Pages web</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-gold">225</div>
+        <div class="kpi-label">Endpoints API</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-green">6</div>
+        <div class="kpi-label">Rôles utilisateurs</div>
+      </div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-blue">27</div>
+        <div class="kpi-label">Écrans mobile</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-gold">9</div>
+        <div class="kpi-label">Provinces couvertes</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-green">7</div>
+        <div class="kpi-label">Secteurs industriels</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-blue">33</div>
+        <div class="kpi-label">Tables de données</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">5 / 12</div>
+</div>
+
+<!-- ========== SLIDE 6: RÔLES ========== -->
+<div class="slide bg-dark" id="s6">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">Utilisateurs</div>
+    <div class="slide-title slide-title-small">Un espace dédié<br>pour <span class="highlight-gold">chaque acteur</span></div>
+    <div class="feature-grid" style="margin-top: 24px; grid-template-columns: 1fr 1fr 1fr;">
+      <div class="feature-card" style="border-left: 3px solid #003366;">
+        <div class="feature-icon">👔</div>
+        <div class="feature-title">Ministre</div>
+        <div class="feature-desc">Dashboard stratégique, briefings, prédictions IA, benchmark CEMAC</div>
+      </div>
+      <div class="feature-card" style="border-left: 3px solid #006233;">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Directeur</div>
+        <div class="feature-desc">Supervision, validation, performance instructeurs, délégations</div>
+      </div>
+      <div class="feature-card" style="border-left: 3px solid #0c7eb4;">
+        <div class="feature-icon">📋</div>
+        <div class="feature-title">Instructeur</div>
+        <div class="feature-desc">Kanban, triage, checklist, recommandation IA, commentaires</div>
+      </div>
+      <div class="feature-card" style="border-left: 3px solid #7c3aed;">
+        <div class="feature-icon">🔍</div>
+        <div class="feature-title">Inspecteur</div>
+        <div class="feature-desc">App mobile, GPS, photos, rapport PDF auto, heatmap</div>
+      </div>
+      <div class="feature-card" style="border-left: 3px solid #d97706;">
+        <div class="feature-icon">🏭</div>
+        <div class="feature-title">Opérateur</div>
+        <div class="feature-desc">Guichet en ligne, suivi dossier, renouvellement, marketplace</div>
+      </div>
+      <div class="feature-card" style="border-left: 3px solid #b42318;">
+        <div class="feature-icon">⚙️</div>
+        <div class="feature-title">Administrateur</div>
+        <div class="feature-desc">Gestion users, audit, monitoring, workflows, sécurité</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">6 / 12</div>
+</div>
+
+<!-- ========== SLIDE 7: SÉCURITÉ ========== -->
+<div class="slide bg-gradient" id="s7">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">Sécurité & Souveraineté</div>
+    <div class="slide-title slide-title-small">Une plateforme<br><span class="highlight-gold">100% souveraine</span></div>
+    <div class="feature-grid" style="margin-top: 24px;">
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <div class="feature-title">Authentification 2FA</div>
+        <div class="feature-desc">JWT + TOTP, biométrie mobile, verrouillage après 5 échecs</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📜</div>
+        <div class="feature-title">Audit trail complet</div>
+        <div class="feature-desc">Chaque action tracée : qui, quand, quoi. Export CSV pour conformité</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✍️</div>
+        <div class="feature-title">Signature électronique</div>
+        <div class="feature-desc">Certificats signés numériquement avec hash SHA-256</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌍</div>
+        <div class="feature-title">Conformité ODD & CEMAC</div>
+        <div class="feature-desc">Aligné sur 5 ODD, normes CEMAC, accessibilité RGAA 4.1</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">7 / 12</div>
+</div>
+
+<!-- ========== SLIDE 8: ROI ========== -->
+<div class="slide bg-dark" id="s8">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">Retour sur investissement</div>
+    <div class="roi-mega">215%</div>
+    <div class="slide-subtitle" style="margin-top: 8px;">ROI dès la première année · Payback &lt; 6 mois</div>
+    <div class="kpi-row" style="margin-top: 32px;">
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-green">88M+</div>
+        <div class="kpi-label">Économies FCFA / an</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-gold">41M</div>
+        <div class="kpi-label">Investissement total FCFA</div>
+      </div>
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value kpi-value-blue">&lt;6</div>
+        <div class="kpi-label">Mois de payback</div>
+      </div>
+    </div>
+    <div style="margin-top: 16px; font-size: 14px; opacity: 0.5;">
+      La plateforme est déjà développée. Le budget couvre uniquement le déploiement.
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">8 / 12</div>
+</div>
+
+<!-- ========== SLIDE 9: BUDGET ========== -->
+<div class="slide bg-blue" id="s9">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">Budget</div>
+    <div class="slide-title slide-title-small">Investissement <span class="highlight-gold">maîtrisé</span></div>
+    <table class="budget-table" style="margin-top: 24px;">
+      <thead><tr><th>Poste</th><th>Montant (FCFA)</th></tr></thead>
+      <tbody>
+        <tr><td>Infrastructure cloud (1 an)</td><td>15 000 000</td></tr>
+        <tr><td>Formation & accompagnement</td><td>8 000 000</td></tr>
+        <tr><td>Personnalisation & intégration</td><td>12 000 000</td></tr>
+        <tr><td>Maintenance & support (1 an)</td><td>6 000 000</td></tr>
+        <tr class="budget-total"><td>TOTAL</td><td>41 000 000 (~62 500 €)</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top: 16px; font-size: 15px; opacity: 0.7;">
+      Maintenance annuelle suivante : 16 000 000 FCFA / an
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">9 / 12</div>
+</div>
+
+<!-- ========== SLIDE 10: DÉPLOIEMENT ========== -->
+<div class="slide bg-dark" id="s10">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">Calendrier</div>
+    <div class="slide-title slide-title-small">Déploiement en <span class="highlight-green">3 phases</span></div>
+    <div class="timeline" style="margin-top: 40px;">
+      <div class="timeline-step">
+        <div class="timeline-num timeline-num-green">1</div>
+        <div class="timeline-title">Pilote</div>
+        <div class="timeline-desc">4 semaines<br>10 opérateurs<br>Formation admin</div>
+        <div class="timeline-arrow">→</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-num timeline-num-blue">2</div>
+        <div class="timeline-title">Extension</div>
+        <div class="timeline-desc">8 semaines<br>3 provinces<br>50+ opérateurs</div>
+        <div class="timeline-arrow">→</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-num timeline-num-purple">3</div>
+        <div class="timeline-title">National</div>
+        <div class="timeline-desc">12 semaines<br>9 provinces<br>Intégration douanes</div>
+        <div class="timeline-arrow">→</div>
+      </div>
+      <div class="timeline-step">
+        <div class="timeline-num timeline-num-gold">∞</div>
+        <div class="timeline-title">Optimisation</div>
+        <div class="timeline-desc">Continue<br>Retours terrain<br>Évolutions</div>
+      </div>
+    </div>
+    <div style="margin-top: 32px; padding: 16px 24px; background: rgba(0,98,51,0.2); border: 1px solid rgba(0,98,51,0.3); border-radius: 12px; font-size: 16px;">
+      La plateforme est <strong>prête pour un déploiement immédiat</strong>. La phase pilote peut démarrer dès validation.
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">10 / 12</div>
+</div>
+
+<!-- ========== SLIDE 11: AVANTAGE CEMAC ========== -->
+<div class="slide bg-green" id="s11">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <div class="slide-tag">Positionnement régional</div>
+    <div class="slide-title slide-title-small">Le Gabon, <span class="highlight-gold">premier pays CEMAC</span><br>avec une plateforme ATI digitale</div>
+    <div class="kpi-row" style="margin-top: 32px;">
+      <div class="kpi-box kpi-box-dark">
+        <div class="kpi-value" style="font-size: 36px;">🇬🇦</div>
+        <div class="kpi-label" style="font-size: 14px; font-weight: 700; opacity: 1;">Gabon ★ PNPI</div>
+      </div>
+      <div class="kpi-box kpi-box-dark" style="opacity: 0.4;">
+        <div class="kpi-value" style="font-size: 36px;">🇨🇲</div>
+        <div class="kpi-label">Cameroun — Aucun</div>
+      </div>
+      <div class="kpi-box kpi-box-dark" style="opacity: 0.4;">
+        <div class="kpi-value" style="font-size: 36px;">🇨🇬</div>
+        <div class="kpi-label">Congo — Aucun</div>
+      </div>
+      <div class="kpi-box kpi-box-dark" style="opacity: 0.4;">
+        <div class="kpi-value" style="font-size: 36px;">🇹🇩</div>
+        <div class="kpi-label">Tchad — Aucun</div>
+      </div>
+    </div>
+    <div class="slide-subtitle" style="margin-top: 20px;">
+      Un outil souverain qui positionne le Gabon comme leader régional<br>
+      en matière de digitalisation de la gouvernance industrielle.
+    </div>
+  </div>
+  <div class="slide-logo">PNPI</div>
+  <div class="slide-number">11 / 12</div>
+</div>
+
+<!-- ========== SLIDE 12: CLOSING ========== -->
+<div class="slide bg-dark" id="s12">
+  <div class="slide-ribbon"></div>
+  <div class="slide-content">
+    <img src="pnpi_logo.png" alt="PNPI" style="width: 140px; margin-bottom: 24px; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.3));">
+    <div class="slide-title" style="font-size: 48px;">Merci</div>
+    <div class="slide-subtitle" style="margin-top: 16px;">
+      La plateforme est prête.<br>
+      <strong style="color: #4ade80;">Démonstration live disponible.</strong>
+    </div>
+    <div style="margin-top: 40px; padding: 20px 32px; background: rgba(255,255,255,0.06); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); display: inline-block;">
+      <div style="font-size: 18px; font-weight: 700;">MBA NDONG Jean Baptiste</div>
+      <div style="font-size: 14px; opacity: 0.6; margin-top: 4px;">Concepteur et Développeur de la PNPI</div>
+      <div style="font-size: 14px; opacity: 0.8; margin-top: 8px; color: #4ade80;">
+        corymba0@gmail.com · +241 77 30 71 93
+      </div>
+    </div>
+    <div style="margin-top: 32px; font-size: 13px; opacity: 0.3;">
+      Questions ?
+    </div>
+  </div>
+  <div class="slide-number">12 / 12</div>
+</div>
+
+<!-- ========== CONTROLS ========== -->
+<div class="controls">
+  <button onclick="prev()">◀ Précédent</button>
+  <div class="dots" id="dots"></div>
+  <button onclick="next()">Suivant ▶</button>
+  <button onclick="toggleFullscreen()" style="margin-left: 8px;">⛶ Plein écran</button>
+</div>
+
+<script>
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+
+// Build dots
+const dotsEl = document.getElementById('dots');
+for (let i = 0; i < total; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+}
+
+function goTo(n) {
+  slides[current].classList.remove('active');
+  dotsEl.children[current].classList.remove('active');
+  current = Math.max(0, Math.min(n, total - 1));
+  slides[current].classList.add('active');
+  dotsEl.children[current].classList.add('active');
+}
+
+function next() { goTo(current + 1); }
+function prev() { goTo(current - 1); }
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+  if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+  if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen();
+});
+</script>
+
+</body>
+</html>

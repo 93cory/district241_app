@@ -21,7 +21,7 @@ const markRead = async (id: string) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_read: true }),
     });
-  } catch { /* ignore */ }
+  } catch { /* non-critical: notifications unavailable */ }
 };
 
 export function NotificationsBell() {

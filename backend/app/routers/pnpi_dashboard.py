@@ -305,97 +305,108 @@ async def data_quality_score(
 ):
     """Compute a data quality score based on completeness and consistency."""
 
-    ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
-    atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
+    try:
+        ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
+        atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+        inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
 
-    checks = []
+        checks = []
 
-    # 1. Operator completeness (email, phone, province filled)
-    if ops:
-        complete_ops = sum(1 for o in ops if o.email and o.telephone and o.province)
-        score = round(complete_ops / len(ops) * 100)
-        checks.append({
-            "name": "Completude operateurs",
-            "description": f"{complete_ops}/{len(ops)} operateurs avec email, telephone et province",
-            "score": score,
-            "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
-        })
+        # 1. Operator completeness (email, phone, province filled)
+        if ops:
+            complete_ops = sum(
+                1 for o in ops
+                if getattr(o, 'email', None) and getattr(o, 'telephone', None) and getattr(o, 'province', None)
+            )
+            score = round(complete_ops / max(len(ops), 1) * 100)
+            checks.append({
+                "name": "Completude operateurs",
+                "description": f"{complete_ops}/{len(ops)} operateurs avec email, telephone et province",
+                "score": score,
+                "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
+            })
 
-    # 2. ATI with linked operator
-    if atis:
-        linked = sum(1 for a in atis if a.operateur_id)
-        score = round(linked / len(atis) * 100)
-        checks.append({
-            "name": "ATIs lies a un operateur",
-            "description": f"{linked}/{len(atis)} ATIs correctement lies",
-            "score": score,
-            "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
-        })
+        # 2. ATI with linked operator
+        if atis:
+            linked = sum(1 for a in atis if getattr(a, 'operateur_id', None))
+            score = round(linked / max(len(atis), 1) * 100)
+            checks.append({
+                "name": "ATIs lies a un operateur",
+                "description": f"{linked}/{len(atis)} ATIs correctement lies",
+                "score": score,
+                "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+            })
 
-    # 3. ATI with observations filled
-    if atis:
-        with_obs = sum(1 for a in atis if hasattr(a, 'observations') and a.observations and len(a.observations) > 10)
-        score = round(with_obs / len(atis) * 100)
-        checks.append({
-            "name": "ATIs avec observations",
-            "description": f"{with_obs}/{len(atis)} ATIs ont des observations detaillees",
-            "score": score,
-            "status": "ok" if score >= 70 else "warning" if score >= 40 else "critical",
-        })
+        # 3. ATI with observations filled
+        if atis:
+            with_obs = sum(1 for a in atis if getattr(a, 'observations', None) and len(a.observations) > 10)
+            score = round(with_obs / max(len(atis), 1) * 100)
+            checks.append({
+                "name": "ATIs avec observations",
+                "description": f"{with_obs}/{len(atis)} ATIs ont des observations detaillees",
+                "score": score,
+                "status": "ok" if score >= 70 else "warning" if score >= 40 else "critical",
+            })
 
-    # 4. Decided ATIs have decision date
-    decided = [a for a in atis if a.statut in ("approuve", "rejete")]
-    if decided:
-        with_date = sum(1 for a in decided if a.date_decision)
-        score = round(with_date / len(decided) * 100)
-        checks.append({
-            "name": "Dates de decision renseignees",
-            "description": f"{with_date}/{len(decided)} decisions avec date",
-            "score": score,
-            "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
-        })
+        # 4. Decided ATIs have decision date
+        decided = [a for a in atis if a.statut in ("approuve", "rejete")]
+        if decided:
+            with_date = sum(1 for a in decided if a.date_decision)
+            score = round(with_date / max(len(decided), 1) * 100)
+            checks.append({
+                "name": "Dates de decision renseignees",
+                "description": f"{with_date}/{len(decided)} decisions avec date",
+                "score": score,
+                "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+            })
 
-    # 5. Inspections with observations
-    if inspections:
-        with_obs = sum(1 for i in inspections if i.observations and len(i.observations) > 10)
-        score = round(with_obs / len(inspections) * 100)
-        checks.append({
-            "name": "Inspections documentees",
-            "description": f"{with_obs}/{len(inspections)} inspections avec observations",
-            "score": score,
-            "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
-        })
+        # 5. Inspections with observations
+        if inspections:
+            with_obs = sum(1 for i in inspections if getattr(i, 'observations', None) and len(i.observations) > 10)
+            score = round(with_obs / max(len(inspections), 1) * 100)
+            checks.append({
+                "name": "Inspections documentees",
+                "description": f"{with_obs}/{len(inspections)} inspections avec observations",
+                "score": score,
+                "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
+            })
 
-    # 6. Orphan inspections (no operateur)
-    if inspections:
-        orphans = sum(1 for i in inspections if not i.operateur_id)
-        score = round((1 - orphans / len(inspections)) * 100) if inspections else 100
-        checks.append({
-            "name": "Inspections liees",
-            "description": f"{len(inspections) - orphans}/{len(inspections)} inspections avec operateur",
-            "score": score,
-            "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
-        })
+        # 6. Orphan inspections (no operateur)
+        if inspections:
+            orphans = sum(1 for i in inspections if not getattr(i, 'operateur_id', None))
+            score = round((1 - orphans / max(len(inspections), 1)) * 100)
+            checks.append({
+                "name": "Inspections liees",
+                "description": f"{len(inspections) - orphans}/{len(inspections)} inspections avec operateur",
+                "score": score,
+                "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+            })
 
-    # Global score
-    if checks:
-        global_score = round(sum(c["score"] for c in checks) / len(checks))
-    else:
-        global_score = 0
+        # Global score
+        if checks:
+            global_score = round(sum(c["score"] for c in checks) / max(len(checks), 1))
+        else:
+            global_score = 0
 
-    grade = "A" if global_score >= 90 else "B" if global_score >= 75 else "C" if global_score >= 60 else "D" if global_score >= 40 else "E"
+        grade = "A" if global_score >= 90 else "B" if global_score >= 75 else "C" if global_score >= 60 else "D" if global_score >= 40 else "E"
 
-    return {
-        "global_score": global_score,
-        "grade": grade,
-        "checks": checks,
-        "stats": {
-            "operateurs": len(ops),
-            "atis": len(atis),
-            "inspections": len(inspections),
-        },
-    }
+        return {
+            "global_score": global_score,
+            "grade": grade,
+            "checks": checks,
+            "stats": {
+                "operateurs": len(ops),
+                "atis": len(atis),
+                "inspections": len(inspections),
+            },
+        }
+    except Exception:
+        return {
+            "global_score": 0,
+            "grade": "E",
+            "checks": [],
+            "stats": {"operateurs": 0, "atis": 0, "inspections": 0},
+        }
 
 
 @router.get("/dashboard/sla-analytics")
@@ -1061,98 +1072,110 @@ async def predictions(
     from collections import defaultdict
     from datetime import timedelta
 
-    now = now_utc()
-    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    try:
+        now = now_utc()
+        all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
 
-    # Monthly submission trends (last 12 months)
-    monthly = defaultdict(int)
-    for ati in all_atis:
-        key = ati.date_soumission.strftime("%Y-%m")
-        monthly[key] += 1
+        # Monthly submission trends (last 12 months)
+        monthly = defaultdict(int)
+        for ati in all_atis:
+            key = ati.date_soumission.strftime("%Y-%m")
+            monthly[key] += 1
 
-    sorted_months = sorted(monthly.items())[-12:]
+        sorted_months = sorted(monthly.items())[-12:]
 
-    # Linear trend for next 3 months
-    if len(sorted_months) >= 3:
-        recent = [v for _, v in sorted_months[-6:]]
-        avg_recent = sum(recent) / len(recent)
-        older = [v for _, v in sorted_months[:max(1, len(sorted_months)-6)]]
-        avg_older = sum(older) / len(older) if older else avg_recent
-        trend = (avg_recent - avg_older) / max(avg_older, 1)
+        # Linear trend for next 3 months
+        if len(sorted_months) >= 3:
+            recent = [v for _, v in sorted_months[-6:]]
+            avg_recent = sum(recent) / max(len(recent), 1)
+            older = [v for _, v in sorted_months[:max(1, len(sorted_months)-6)]]
+            avg_older = sum(older) / max(len(older), 1) if older else avg_recent
+            trend = (avg_recent - avg_older) / max(avg_older, 1)
 
-        forecasts = []
-        for i in range(1, 4):
-            month_dt = now + timedelta(days=30 * i)
-            predicted = max(0, round(avg_recent * (1 + trend * 0.1 * i)))
-            forecasts.append({
-                "month": month_dt.strftime("%Y-%m"),
-                "label": month_dt.strftime("%b %Y"),
-                "predicted_submissions": predicted,
-                "confidence": max(50, round(90 - i * 10)),
-            })
-    else:
-        forecasts = []
-
-    # Approval rate trend
-    decided = [a for a in all_atis if a.statut in ("approuve", "rejete")]
-    if decided:
-        recent_decided = [a for a in decided if (now - a.date_soumission).days < 180]
-        older_decided = [a for a in decided if (now - a.date_soumission).days >= 180]
-        recent_rate = sum(1 for a in recent_decided if a.statut == "approuve") / max(len(recent_decided), 1) * 100
-        older_rate = sum(1 for a in older_decided if a.statut == "approuve") / max(len(older_decided), 1) * 100
-    else:
-        recent_rate = 0
-        older_rate = 0
-
-    # Backlog prediction
-    in_progress = [a for a in all_atis if a.statut not in ("approuve", "rejete", "expire")]
-    if decided:
-        avg_processing = sum(
-            (a.date_decision.date() - a.date_soumission.date()).days
-            for a in decided if a.date_decision
-        ) / len([a for a in decided if a.date_decision]) if any(a.date_decision for a in decided) else 30
-    else:
-        avg_processing = 30
-
-    est_clearance_days = round(len(in_progress) * avg_processing / max(len(set(
-        a.instructeur_username for a in all_atis if hasattr(a, 'instructeur_username') and a.instructeur_username
-    )), 1))
-
-    # Sector growth
-    sector_counts = defaultdict(lambda: {"recent": 0, "older": 0})
-    for ati in all_atis:
-        if (now - ati.date_soumission).days < 180:
-            sector_counts[ati.secteur]["recent"] += 1
+            forecasts = []
+            for i in range(1, 4):
+                month_dt = now + timedelta(days=30 * i)
+                predicted = max(0, round(avg_recent * (1 + trend * 0.1 * i)))
+                forecasts.append({
+                    "month": month_dt.strftime("%Y-%m"),
+                    "label": month_dt.strftime("%b %Y"),
+                    "predicted_submissions": predicted,
+                    "confidence": max(50, round(90 - i * 10)),
+                })
         else:
-            sector_counts[ati.secteur]["older"] += 1
+            forecasts = []
 
-    growing_sectors = []
-    for sect, counts in sector_counts.items():
-        if counts["older"] > 0:
-            growth = round((counts["recent"] - counts["older"]) / counts["older"] * 100)
-        elif counts["recent"] > 0:
-            growth = 100
+        # Approval rate trend
+        decided = [a for a in all_atis if a.statut in ("approuve", "rejete")]
+        if decided:
+            recent_decided = [a for a in decided if (now - a.date_soumission).days < 180]
+            older_decided = [a for a in decided if (now - a.date_soumission).days >= 180]
+            recent_rate = sum(1 for a in recent_decided if a.statut == "approuve") / max(len(recent_decided), 1) * 100
+            older_rate = sum(1 for a in older_decided if a.statut == "approuve") / max(len(older_decided), 1) * 100
         else:
-            growth = 0
-        growing_sectors.append({"secteur": sect, "recent": counts["recent"], "older": counts["older"], "growth_pct": growth})
+            recent_rate = 0
+            older_rate = 0
 
-    growing_sectors.sort(key=lambda s: s["growth_pct"], reverse=True)
+        # Backlog prediction
+        in_progress = [a for a in all_atis if a.statut not in ("approuve", "rejete", "expire")]
+        decided_with_date = [a for a in decided if a.date_decision] if decided else []
+        if decided_with_date:
+            avg_processing = sum(
+                (a.date_decision.date() - a.date_soumission.date()).days
+                for a in decided_with_date
+            ) / max(len(decided_with_date), 1)
+        else:
+            avg_processing = 30
 
-    return {
-        "monthly_trend": [{"month": m, "count": c} for m, c in sorted_months],
-        "forecasts": forecasts,
-        "approval_rate": {
-            "recent_6m": round(recent_rate, 1),
-            "older": round(older_rate, 1),
-            "trend": "hausse" if recent_rate > older_rate else "baisse" if recent_rate < older_rate else "stable",
-        },
-        "backlog": {
-            "in_progress": len(in_progress),
-            "avg_processing_days": round(avg_processing, 1),
-            "est_clearance_days": est_clearance_days,
-        },
-        "sector_growth": growing_sectors[:8],
-    }
+        instructor_set = set(
+            getattr(a, 'instructeur_username', None) for a in all_atis
+            if getattr(a, 'instructeur_username', None)
+        )
+        est_clearance_days = round(len(in_progress) * avg_processing / max(len(instructor_set), 1))
+
+        # Sector growth
+        sector_counts = defaultdict(lambda: {"recent": 0, "older": 0})
+        for ati in all_atis:
+            if (now - ati.date_soumission).days < 180:
+                sector_counts[ati.secteur]["recent"] += 1
+            else:
+                sector_counts[ati.secteur]["older"] += 1
+
+        growing_sectors = []
+        for sect, counts in sector_counts.items():
+            if counts["older"] > 0:
+                growth = round((counts["recent"] - counts["older"]) / max(counts["older"], 1) * 100)
+            elif counts["recent"] > 0:
+                growth = 100
+            else:
+                growth = 0
+            growing_sectors.append({"secteur": sect, "recent": counts["recent"], "older": counts["older"], "growth_pct": growth})
+
+        growing_sectors.sort(key=lambda s: s["growth_pct"], reverse=True)
+
+        return {
+            "monthly_trend": [{"month": m, "count": c} for m, c in sorted_months],
+            "forecasts": forecasts,
+            "approval_rate": {
+                "recent_6m": round(recent_rate, 1),
+                "older": round(older_rate, 1),
+                "trend": "hausse" if recent_rate > older_rate else "baisse" if recent_rate < older_rate else "stable",
+            },
+            "backlog": {
+                "in_progress": len(in_progress),
+                "avg_processing_days": round(avg_processing, 1),
+                "est_clearance_days": est_clearance_days,
+            },
+            "sector_growth": growing_sectors[:8],
+        }
+    except Exception:
+        return {
+            "monthly_trend": [],
+            "forecasts": [],
+            "approval_rate": {"recent_6m": 0, "older": 0, "trend": "stable"},
+            "backlog": {"in_progress": 0, "avg_processing_days": 0, "est_clearance_days": 0},
+            "sector_growth": [],
+        }
 
 
 @router.get("/dashboard/advanced-stats")

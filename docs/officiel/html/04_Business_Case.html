@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNPI — Proposition de Valeur / Business Case</title>
+    <style>
+        @page { size: A4; margin: 25mm 20mm 20mm 25mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Georgia', 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; color: #1a1a1a; max-width: 210mm; margin: 0 auto; padding: 25mm 20mm; background: #fff; }
+        h1 { font-size: 18pt; font-weight: bold; color: #003366; text-align: center; margin-bottom: 6mm; letter-spacing: 1px; }
+        h2 { font-size: 14pt; font-weight: bold; color: #003366; margin-top: 8mm; margin-bottom: 4mm; border-bottom: 1.5pt solid #006233; padding-bottom: 2mm; }
+        h3 { font-size: 12pt; font-weight: bold; color: #006233; margin-top: 6mm; margin-bottom: 3mm; }
+        p { margin-bottom: 4mm; text-align: justify; }
+        ul, ol { margin-left: 8mm; margin-bottom: 4mm; }
+        li { margin-bottom: 2mm; }
+        table { width: 100%; border-collapse: collapse; margin: 4mm 0 6mm; font-size: 10pt; }
+        th { background: #003366; color: #fff; padding: 3mm 4mm; text-align: left; font-weight: bold; }
+        td { padding: 2.5mm 4mm; border-bottom: 0.5pt solid #ddd; }
+        tr:nth-child(even) td { background: #f8f9fa; }
+        .header-block { text-align: center; margin-bottom: 10mm; }
+        .flag-ribbon { height: 4mm; background: linear-gradient(90deg, #009E60 33%, #FCD116 33% 66%, #003DA5 66%); margin-bottom: 6mm; }
+        .republic { font-size: 11pt; color: #666; font-style: italic; }
+        .ministry { font-size: 10pt; color: #003366; font-weight: bold; margin-top: 2mm; }
+        .separator { border: none; border-top: 1pt solid #003366; margin: 6mm 0; }
+        .page-break { page-break-before: always; }
+        .highlight { background: #f0f7f0; padding: 4mm 5mm; border-left: 3pt solid #006233; margin: 4mm 0; border-radius: 0 4pt 4pt 0; }
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 4mm 0; }
+        .kpi-card { padding: 4mm 5mm; border: 1pt solid #ddd; border-radius: 4pt; text-align: center; }
+        .kpi-value { font-size: 20pt; font-weight: bold; color: #006233; }
+        .kpi-label { font-size: 9pt; color: #666; }
+        .highlight-red { background: #fef2f2; padding: 4mm 5mm; border-left: 3pt solid #b42318; margin: 4mm 0; }
+        .highlight-blue { background: #e3f2fd; padding: 4mm 5mm; border-left: 3pt solid #003366; margin: 4mm 0; }
+        .roi-box { background: linear-gradient(135deg, #006233, #003366); color: #fff; padding: 8mm; border-radius: 4pt; text-align: center; margin: 6mm 0; }
+        .roi-value { font-size: 28pt; font-weight: bold; }
+        .footer { margin-top: 10mm; padding-top: 4mm; border-top: 0.5pt solid #ccc; font-size: 8pt; color: #999; text-align: center; }
+        @media print { body { padding: 0; } }
+
+        .axes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin: 4mm 0; }
+        .axe-card {
+            border: 1pt solid #ddd;
+            border-radius: 4pt;
+            padding: 5mm 6mm;
+            border-top: 3pt solid #003366;
+        }
+        .axe-card.axe1 { border-top-color: #006233; }
+        .axe-card.axe2 { border-top-color: #003DA5; }
+        .axe-card.axe3 { border-top-color: #FCD116; }
+        .axe-card.axe4 { border-top-color: #b42318; }
+        .axe-card h3 { margin-top: 0; }
+        .axe-number { display: inline-block; background: #003366; color: #fff; width: 7mm; height: 7mm; line-height: 7mm; text-align: center; border-radius: 50%; font-size: 9pt; font-weight: bold; margin-right: 2mm; vertical-align: middle; }
+        .axe-card.axe1 .axe-number { background: #006233; }
+        .axe-card.axe2 .axe-number { background: #003DA5; }
+        .axe-card.axe3 .axe-number { background: #b8860b; }
+        .axe-card.axe4 .axe-number { background: #b42318; }
+        .pain-point { font-size: 11pt; margin-bottom: 3mm; }
+        .pain-point strong { color: #b42318; }
+        .pain-number { display: inline-block; background: #b42318; color: #fff; width: 6mm; height: 6mm; line-height: 6mm; text-align: center; border-radius: 50%; font-size: 8pt; font-weight: bold; margin-right: 2mm; }
+        .cemac-box { background: linear-gradient(135deg, #009E60, #006233); color: #fff; padding: 6mm 8mm; border-radius: 4pt; text-align: center; margin: 6mm 0; font-size: 13pt; }
+        .cemac-box strong { font-size: 15pt; }
+        .total-row td { background: #006233 !important; color: #fff; font-weight: bold; font-size: 11pt; }
+        .closing-box { background: #003366; color: #fff; padding: 8mm; border-radius: 4pt; text-align: center; margin: 8mm 0; }
+        .closing-box p { color: #fff; text-align: center; margin-bottom: 0; font-size: 13pt; font-weight: bold; letter-spacing: 0.5px; }
+        .invest-label { font-size: 10pt; opacity: 0.85; margin-top: 2mm; }
+        .roi-sub { font-size: 13pt; margin-top: 2mm; opacity: 0.9; }
+    </style>
+</head>
+<body>
+
+    <!-- COVER -->
+    <div class="flag-ribbon"></div>
+
+    <img src="pnpi_logo.png" alt="Logo PNPI" style="width: 80px; height: auto; margin: 0 auto 4mm; display: block;">
+
+    <div class="header-block">
+        <div class="republic">Republique Gabonaise</div>
+        <div class="ministry">Ministere de l'Industrie et de la Competitivite Nationale</div>
+    </div>
+
+    <h1>PROPOSITION DE VALEUR</h1>
+    <p style="text-align: center; color: #666; font-size: 11pt; margin-bottom: 4mm;">
+        Plateforme Nationale du Pilotage Industriel (PNPI)<br>
+        Business Case — Mars 2026
+    </p>
+    <p style="text-align: center; font-size: 10pt; color: #003366; margin-bottom: 8mm;">
+        <strong>Pourquoi le Gabon a besoin de la PNPI</strong>
+    </p>
+
+    <hr class="separator">
+
+    <!-- LE PROBLEME -->
+    <h2>1. LE PROBLEME</h2>
+
+    <p>Le systeme actuel de gestion des agrements industriels au Gabon souffre de dysfonctionnements majeurs qui freinent le developpement economique du pays.</p>
+
+    <div class="highlight-red">
+        <div class="pain-point"><span class="pain-number">1</span> <strong>Lenteur extreme</strong> — 120 a 180 jours pour traiter un ATI (contre 30-45 jours dans les pays digitalises)</div>
+        <div class="pain-point"><span class="pain-number">2</span> <strong>Opacite totale</strong> — Les operateurs n'ont aucune visibilite sur l'avancement de leur dossier</div>
+        <div class="pain-point"><span class="pain-number">3</span> <strong>Perte de donnees</strong> — Environ 15% des dossiers papier perdus ou egares chaque annee</div>
+        <div class="pain-point"><span class="pain-number">4</span> <strong>Absence de mesure</strong> — Impossible de mesurer l'impact reel du pilotage industriel</div>
+        <div class="pain-point" style="margin-bottom:0;"><span class="pain-number">5</span> <strong>Image degradee</strong> — Le Gabon classe 169e au Doing Business, en partie a cause des lourdeurs administratives</div>
+    </div>
+
+    <!-- LA SOLUTION -->
+    <h2>2. LA SOLUTION</h2>
+
+    <p>La PNPI transforme radicalement la gouvernance industrielle en <strong>4 axes strategiques</strong> :</p>
+
+    <div class="axes-grid">
+        <div class="axe-card axe1">
+            <h3><span class="axe-number">1</span> Efficacite operationnelle</h3>
+            <table style="margin-bottom:0;">
+                <tr><td><strong>Delai ATI</strong></td><td style="text-align:right;color:#006233;font-weight:bold;">-75%</td></tr>
+                <tr><td><strong>Cout par dossier</strong></td><td style="text-align:right;color:#006233;font-weight:bold;">-59%</td></tr>
+                <tr><td><strong>Perte de dossiers</strong></td><td style="text-align:right;color:#006233;font-weight:bold;">0%</td></tr>
+                <tr><td><strong>Verification ATI</strong></td><td style="text-align:right;color:#006233;font-weight:bold;">Instantane</td></tr>
+            </table>
+        </div>
+
+        <div class="axe-card axe2">
+            <h3><span class="axe-number">2</span> Pilotage strategique</h3>
+            <ul style="font-size:10pt; margin-bottom:0;">
+                <li>Tableau de bord ministeriel temps reel</li>
+                <li>Intelligence artificielle pour l'aide a la decision</li>
+                <li>Benchmarking provincial et regional (CEMAC)</li>
+                <li>Previsions et alertes automatiques</li>
+            </ul>
+        </div>
+
+        <div class="axe-card axe3">
+            <h3><span class="axe-number">3</span> Attractivite economique</h3>
+            <ul style="font-size:10pt; margin-bottom:0;">
+                <li>Portail investisseurs avec KPIs en direct</li>
+                <li>Simulateur ROI par secteur</li>
+                <li>Open data pour la transparence</li>
+                <li>Certification QR verifiable a l'international</li>
+            </ul>
+        </div>
+
+        <div class="axe-card axe4">
+            <h3><span class="axe-number">4</span> Impact societal</h3>
+            <ul style="font-size:10pt; margin-bottom:0;">
+                <li>Emplois crees par secteur et province</li>
+                <li>Inclusion femmes/jeunes quantifiee</li>
+                <li>Empreinte carbone sectorielle</li>
+                <li>Contribution aux ODD des Nations Unies</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ROI -->
+    <div class="page-break"></div>
+    <h2>3. RETOUR SUR INVESTISSEMENT</h2>
+
+    <div class="highlight-blue">
+        <p style="margin-bottom:0;"><strong>Investissement total :</strong> 41 000 000 FCFA (~62 500 EUR)</p>
+    </div>
+
+    <h3>Economies annuelles estimees</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Source d'economie</th>
+                <th style="text-align: right;">Montant (FCFA/an)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Reduction temps de traitement (personnel)</td>
+                <td style="text-align: right;">25 000 000</td>
+            </tr>
+            <tr>
+                <td>Elimination papier / courrier / stockage</td>
+                <td style="text-align: right;">8 000 000</td>
+            </tr>
+            <tr>
+                <td>Reduction pertes de dossiers</td>
+                <td style="text-align: right;">5 000 000</td>
+            </tr>
+            <tr>
+                <td>Acceleration decisions (PIB industriel)</td>
+                <td style="text-align: right;">50 000 000+</td>
+            </tr>
+            <tr class="total-row">
+                <td>Total economies annuelles</td>
+                <td style="text-align: right; color: #fff;">88 000 000+</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="roi-box">
+        <div class="roi-value">215%</div>
+        <div class="roi-sub">ROI premiere annee</div>
+        <div class="invest-label">Payback &lt; 6 mois</div>
+    </div>
+
+    <!-- CEMAC -->
+    <h2>4. AVANTAGE CONCURRENTIEL CEMAC</h2>
+
+    <div class="cemac-box">
+        <strong>Premier pays CEMAC avec une plateforme ATI digitale</strong><br>
+        <span style="font-size: 10pt; opacity: 0.9;">
+            Le Gabon devancerait le Cameroun, le Congo, le Tchad, la RCA et la Guinee equatoriale<br>
+            en matiere de gouvernance industrielle numerique.
+        </span>
+    </div>
+
+    <div class="highlight">
+        <p style="margin-bottom:0;">Cette avance strategique positionne le Gabon comme leader regional de la transformation digitale industrielle, renforce l'attractivite pour les investisseurs internationaux et offre un modele replicable pour les pays voisins de la zone CEMAC.</p>
+    </div>
+
+    <!-- RISQUES -->
+    <div class="page-break"></div>
+    <h2>5. RISQUES ET MITIGATIONS</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Risque</th>
+                <th>Probabilite</th>
+                <th>Mitigation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Resistance au changement</strong></td>
+                <td style="color: #b8860b; font-weight: bold;">Moyenne</td>
+                <td>Formation integree, parrainage, modules e-learning</td>
+            </tr>
+            <tr>
+                <td><strong>Connectivite internet</strong></td>
+                <td style="color: #006233; font-weight: bold;">Faible</td>
+                <td>PWA offline, application mobile, SMS</td>
+            </tr>
+            <tr>
+                <td><strong>Securite des donnees</strong></td>
+                <td style="color: #006233; font-weight: bold;">Faible</td>
+                <td>2FA, chiffrement, audit trail, backups</td>
+            </tr>
+            <tr>
+                <td><strong>Scalabilite</strong></td>
+                <td style="color: #006233; font-weight: bold;">Tres faible</td>
+                <td>Architecture Docker, PostgreSQL, mise a l'echelle horizontale</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- CLOSING -->
+    <h2>6. CONCLUSION</h2>
+
+    <div class="closing-box">
+        <p>La PNPI n'est pas un projet a developper.<br>C'est une solution prete a deployer.</p>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-value">34</div>
+            <div class="kpi-label">Modules operationnels</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">110+</div>
+            <div class="kpi-label">Pages fonctionnelles</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">215%</div>
+            <div class="kpi-label">ROI premiere annee</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-value">&lt; 6 mois</div>
+            <div class="kpi-label">Delai de retour</div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        <div class="flag-ribbon" style="margin-top: 4mm;"></div>
+        PNPI — Business Case — MBA NDONG Jean Baptiste — Mars 2026<br>
+        <span style="color: #003366;">corymba0@gmail.com</span> | +241 77 30 71 93
+    </div>
+
+</body>
+</html>

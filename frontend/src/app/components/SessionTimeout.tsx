@@ -31,9 +31,9 @@ export function SessionTimeout() {
         setCountdown((prev) => {
           if (prev <= 1) {
             // Auto logout
-            fetch("/api/auth/logout", { method: "POST" }).then(() => {
-              router.push("/connexion");
-            });
+            fetch("/api/auth/logout", { method: "POST" })
+              .then(() => router.push("/connexion"))
+              .catch(() => router.push("/connexion"));
             return 0;
           }
           return prev - 1;
@@ -42,9 +42,9 @@ export function SessionTimeout() {
     }, IDLE_WARNING_MS);
 
     logoutTimerRef.current = setTimeout(() => {
-      fetch("/api/auth/logout", { method: "POST" }).then(() => {
-        router.push("/connexion");
-      });
+      fetch("/api/auth/logout", { method: "POST" })
+        .then(() => router.push("/connexion"))
+        .catch(() => router.push("/connexion"));
     }, IDLE_LOGOUT_MS);
   }, [router]);
 
@@ -70,9 +70,9 @@ export function SessionTimeout() {
   };
 
   const logout = () => {
-    fetch("/api/auth/logout", { method: "POST" }).then(() => {
-      router.push("/connexion");
-    });
+    fetch("/api/auth/logout", { method: "POST" })
+      .then(() => router.push("/connexion"))
+      .catch(() => router.push("/connexion"));
   };
 
   if (!showWarning) return null;

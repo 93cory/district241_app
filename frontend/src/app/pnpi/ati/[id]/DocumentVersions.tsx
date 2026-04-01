@@ -20,7 +20,7 @@ export function DocumentVersions({ atiId }: { atiId: string }) {
   useEffect(() => {
     if (!open) return;
     fetch(`/api/documents/ati/${atiId}/versions`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : { versions: [] })
       .then(d => setVersions(d.versions || []))
       .catch(() => {});
   }, [atiId, open]);

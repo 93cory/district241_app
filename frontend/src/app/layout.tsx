@@ -50,10 +50,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <div className="page-shell">
-          <a href="#main-content" className="skip-link" style={{position:'absolute',left:'-9999px',top:'auto',width:'1px',height:'1px',overflow:'hidden'}}
-            onFocus={(e) => { e.currentTarget.style.position='static'; e.currentTarget.style.width='auto'; e.currentTarget.style.height='auto'; }}
-            onBlur={(e) => { e.currentTarget.style.position='absolute'; e.currentTarget.style.left='-9999px'; e.currentTarget.style.width='1px'; e.currentTarget.style.height='1px'; }}
-          >Aller au contenu principal</a>
+          <a href="#main-content" className="skip-link">Aller au contenu principal</a>
           <header role="banner">
             <nav className="top-nav" aria-label="Navigation principale">
               <Link href="/" className="nav-brand">

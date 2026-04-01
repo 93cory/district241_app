@@ -27,10 +27,10 @@ export default async function AdminPage() {
   }
 
   const [users, notifications, declarations, fieldReports] = await Promise.all([
-    fetchAdminUsers(),
-    fetchNotifications(),
-    fetchDeclarations(),
-    fetchFieldReports(),
+    fetchAdminUsers().catch(() => []),
+    fetchNotifications().catch(() => []),
+    fetchDeclarations().catch(() => []),
+    fetchFieldReports().catch(() => []),
   ]);
 
   return (

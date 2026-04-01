@@ -648,6 +648,7 @@ html[data-theme="light"] {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
 
 /* --- Focus Visible (WCAG 2.1 AA) --- */
 :focus-visible {
@@ -665,7 +666,15 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
-/* Skip link visible on focus */
+/* Skip link hidden by default, visible on focus */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
 .skip-link:focus {
   position: static !important;
   width: auto !important;

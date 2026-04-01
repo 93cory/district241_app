@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNPI — Procédure de dépôt au Ministère</title>
+<style>
+@page { size: A4; margin: 20mm; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Georgia', 'Times New Roman', serif; font-size: 11.5pt; line-height: 1.65; color: #1a1a1a; max-width: 210mm; margin: 0 auto; padding: 20mm; background: #fff; }
+h1 { font-size: 20pt; font-weight: bold; color: #003366; text-align: center; margin-bottom: 3mm; letter-spacing: 1px; }
+h2 { font-size: 15pt; font-weight: bold; color: #003366; margin-top: 10mm; margin-bottom: 5mm; border-bottom: 2pt solid #006233; padding-bottom: 2mm; }
+h3 { font-size: 12pt; font-weight: bold; color: #006233; margin-top: 7mm; margin-bottom: 3mm; }
+p { margin-bottom: 3.5mm; text-align: justify; }
+ul, ol { margin-left: 7mm; margin-bottom: 4mm; }
+li { margin-bottom: 2.5mm; }
+table { width: 100%; border-collapse: collapse; margin: 5mm 0 7mm; font-size: 10.5pt; }
+th { background: #003366; color: #fff; padding: 3mm 4mm; text-align: left; font-weight: bold; }
+td { padding: 3mm 4mm; border-bottom: 0.5pt solid #ddd; vertical-align: top; }
+tr:nth-child(even) td { background: #f8f9fa; }
+
+.flag-ribbon { height: 5mm; background: linear-gradient(90deg, #009E60 33%, #FCD116 33% 66%, #003DA5 66%); margin-bottom: 6mm; border-radius: 2pt; }
+.subtitle { text-align: center; font-size: 11pt; color: #666; margin-bottom: 8mm; font-style: italic; }
+.author { text-align: center; font-size: 10pt; color: #006233; font-weight: bold; margin-bottom: 10mm; }
+
+.step-card { border: 1.5pt solid #ddd; border-radius: 6pt; padding: 5mm 6mm; margin: 5mm 0; page-break-inside: avoid; }
+.step-card-green { border-left: 5pt solid #006233; background: #f8fdf8; }
+.step-card-blue { border-left: 5pt solid #003366; background: #f5f8fc; }
+.step-card-gold { border-left: 5pt solid #d97706; background: #fffdf5; }
+.step-card-purple { border-left: 5pt solid #7c3aed; background: #faf5ff; }
+
+.step-number { display: inline-block; width: 10mm; height: 10mm; border-radius: 50%; color: #fff; text-align: center; line-height: 10mm; font-weight: bold; font-size: 13pt; margin-right: 3mm; vertical-align: middle; }
+.step-green { background: #006233; }
+.step-blue { background: #003366; }
+.step-gold { background: #d97706; }
+
+.step-title { font-size: 13pt; font-weight: bold; color: #003366; vertical-align: middle; }
+.step-when { font-size: 9pt; color: #666; font-weight: bold; background: #f0f0f0; padding: 1mm 3mm; border-radius: 3pt; margin-left: 3mm; }
+
+.docs-list { list-style: none; margin: 3mm 0; padding: 0; }
+.docs-list li { padding: 2mm 0 2mm 6mm; border-left: 2pt solid #006233; margin-bottom: 2mm; font-size: 10.5pt; }
+.docs-list li strong { color: #003366; }
+
+.warning-box { background: #fef2f2; border: 1.5pt solid #b42318; border-left: 5pt solid #b42318; padding: 4mm 5mm; border-radius: 0 4pt 4pt 0; margin: 5mm 0; }
+.warning-box strong { color: #b42318; }
+
+.success-box { background: #f0f7f0; border: 1.5pt solid #006233; border-left: 5pt solid #006233; padding: 4mm 5mm; border-radius: 0 4pt 4pt 0; margin: 5mm 0; }
+.success-box strong { color: #006233; }
+
+.info-box { background: #e8f0fe; border: 1.5pt solid #003366; border-left: 5pt solid #003366; padding: 4mm 5mm; border-radius: 0 4pt 4pt 0; margin: 5mm 0; }
+.info-box strong { color: #003366; }
+
+.timeline { position: relative; margin: 5mm 0 5mm 8mm; padding-left: 8mm; border-left: 2pt solid #006233; }
+.timeline-item { margin-bottom: 5mm; position: relative; }
+.timeline-item::before { content: ""; position: absolute; left: -10.5mm; top: 2mm; width: 5mm; height: 5mm; border-radius: 50%; background: #006233; border: 2pt solid #fff; box-shadow: 0 0 0 1pt #006233; }
+.timeline-date { font-size: 9pt; font-weight: bold; color: #006233; }
+.timeline-action { font-size: 10.5pt; }
+
+.demo-steps { counter-reset: demo; list-style: none; margin: 3mm 0; padding: 0; }
+.demo-steps li { counter-increment: demo; padding: 2.5mm 0 2.5mm 8mm; position: relative; margin-bottom: 1mm; }
+.demo-steps li::before { content: counter(demo); position: absolute; left: 0; top: 2mm; width: 5.5mm; height: 5.5mm; border-radius: 50%; background: #006233; color: #fff; text-align: center; line-height: 5.5mm; font-size: 8pt; font-weight: bold; }
+
+.dont-list { list-style: none; margin: 3mm 0; padding: 0; }
+.dont-list li { padding: 2mm 0 2mm 6mm; border-left: 2pt solid #b42318; margin-bottom: 2mm; font-size: 10.5pt; }
+.dont-list li::marker { content: ""; }
+
+.checklist { list-style: none; margin: 3mm 0; padding: 0; }
+.checklist li { padding: 2mm 0; font-size: 10.5pt; }
+.checklist li::before { content: "☐ "; font-size: 12pt; }
+
+.page-break { page-break-before: always; }
+
+.footer { margin-top: 12mm; padding-top: 4mm; border-top: 1pt solid #ccc; font-size: 8pt; color: #999; text-align: center; }
+
+@media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+
+<div class="flag-ribbon"></div>
+
+<img src="pnpi_logo.png" alt="Logo PNPI" style="width: 80px; height: auto; margin: 0 auto 4mm; display: block;">
+
+<h1>PROCÉDURE DE DÉPÔT AU MINISTÈRE</h1>
+<div class="subtitle">Guide stratégique pour la présentation de la PNPI au Ministre de l'Industrie</div>
+<div class="author">MBA NDONG Jean Baptiste — Mars 2026</div>
+
+<!-- ============================================ -->
+<h2>STRATÉGIE GÉNÉRALE</h2>
+
+<div class="info-box">
+    <strong>Principe clé :</strong> Ne donnez pas tout d'un coup. Procédez en 3 temps pour maximiser l'impact et l'attention du Ministre. Chaque étape prépare la suivante.
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Étape</th>
+            <th>Quand</th>
+            <th>Quoi déposer</th>
+            <th>Où</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>1. Dépôt initial</strong></td>
+            <td>Jour 1</td>
+            <td>Lettre + Note conceptuelle</td>
+            <td>Secrétariat Cabinet Ministre</td>
+        </tr>
+        <tr>
+            <td><strong>2. Relance</strong></td>
+            <td>J+7 / J+14</td>
+            <td>Appel téléphonique / visite</td>
+            <td>Secrétariat</td>
+        </tr>
+        <tr>
+            <td><strong>3. Audience</strong></td>
+            <td>Jour convenu</td>
+            <td>3 docs + démo live laptop</td>
+            <td>Bureau du Ministre</td>
+        </tr>
+        <tr>
+            <td><strong>4. Suivi</strong></td>
+            <td>Après audience</td>
+            <td>Guide utilisateur + remerciements</td>
+            <td>Email</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================ -->
+<h2>ÉTAPE 1 — LE DÉPÔT INITIAL <span class="step-when">JOUR 1</span></h2>
+
+<div class="step-card step-card-green">
+    <p><span class="step-number step-green">1</span> <span class="step-title">Déposez uniquement 2 documents</span></p>
+
+    <ul class="docs-list">
+        <li><strong>Document 01</strong> — Lettre de demande d'audience (1 page)</li>
+        <li><strong>Document 02</strong> — Note conceptuelle PNPI (pièce jointe, ~8 pages)</li>
+    </ul>
+
+    <p style="font-size: 10pt; color: #666; margin-top: 3mm;"><em>C'est tout. Pas plus. Le Ministre ou son directeur de cabinet doit d'abord lire la note conceptuelle avant de vous recevoir. Si vous donnez tout d'un coup, personne ne lira rien.</em></p>
+</div>
+
+<h3>Comment procéder</h3>
+<ol>
+    <li>Rendez-vous au <strong>Ministère de l'Industrie et de la Transformation Locale</strong>, BP 3903, Libreville</li>
+    <li>Demandez le <strong>secrétariat du Cabinet du Ministre</strong></li>
+    <li>Présentez-vous : <em>« Bonjour, je souhaite déposer une demande d'audience accompagnée d'un dossier technique pour Monsieur le Ministre »</em></li>
+    <li>Remettez la lettre et la note dans une <strong>chemise cartonnée</strong> avec « PNPI — Plateforme Nationale de Pilotage Industriel » écrit sur la couverture</li>
+    <li>Demandez un <strong>accusé de réception</strong> (tampon + date sur votre copie de la lettre)</li>
+    <li><strong>Gardez une copie</strong> de tout pour vous</li>
+</ol>
+
+<div class="success-box">
+    <strong>Astuce :</strong> Imprimez la note conceptuelle en <strong>couleur</strong> pour qu'elle soit plus attractive. Utilisez une chemise verte (couleur du Gabon).
+</div>
+
+<!-- ============================================ -->
+<h2>ÉTAPE 2 — LA RELANCE <span class="step-when">J+7 À J+14</span></h2>
+
+<div class="step-card step-card-blue">
+    <p><span class="step-number step-blue">2</span> <span class="step-title">Relancez si pas de réponse</span></p>
+</div>
+
+<div class="timeline">
+    <div class="timeline-item">
+        <div class="timeline-date">J+7 — Premier rappel</div>
+        <div class="timeline-action">Appelez le secrétariat du Cabinet : <em>« Bonjour, je me permets de relancer concernant ma demande d'audience déposée le [DATE]. Le dossier porte sur la Plateforme PNPI. »</em></div>
+    </div>
+    <div class="timeline-item">
+        <div class="timeline-date">J+14 — Deuxième rappel</div>
+        <div class="timeline-action">Repassez <strong>physiquement</strong> au secrétariat. Demandez si le dossier a bien été transmis au Ministre ou au Directeur de Cabinet.</div>
+    </div>
+    <div class="timeline-item">
+        <div class="timeline-date">En parallèle — Contacts alternatifs</div>
+        <div class="timeline-action">Essayez de contacter le <strong>Directeur de Cabinet</strong> ou le <strong>Directeur Général de l'Industrie</strong>. Ce sont souvent eux qui filtrent les dossiers et recommandent les audiences.</div>
+    </div>
+</div>
+
+<div class="info-box">
+    <strong>Note :</strong> Ne soyez pas insistant mais restez <strong>régulier</strong>. Un appel par semaine est acceptable. Soyez toujours poli et professionnel.
+</div>
+
+<!-- ============================================ -->
+<div class="page-break"></div>
+<div class="flag-ribbon"></div>
+
+<h2>ÉTAPE 3 — LE JOUR DE L'AUDIENCE <span class="step-when">JOUR J</span></h2>
+
+<div class="step-card step-card-gold">
+    <p><span class="step-number step-gold">3</span> <span class="step-title">Apportez les documents restants + démo live</span></p>
+
+    <ul class="docs-list">
+        <li><strong>Document 03</strong> — Synthèse technique et fonctionnelle</li>
+        <li><strong>Document 04</strong> — Business case (ROI, économies)</li>
+        <li><strong>Document 05</strong> — Plan de déploiement et budget</li>
+        <li><strong>Votre laptop</strong> — Avec la plateforme PNPI qui tourne en local</li>
+    </ul>
+
+    <p style="font-size: 10pt; color: #666; margin-top: 3mm;"><em>Ne donnez PAS le guide utilisateur (document 06) à ce stade. Gardez-le pour l'étape suivante.</em></p>
+</div>
+
+<h3>Préparation la veille</h3>
+<ul class="checklist">
+    <li>Vérifier que la plateforme tourne (backend + frontend en local)</li>
+    <li>Charger la batterie du laptop à 100%</li>
+    <li>Préparer les 3 documents imprimés en couleur</li>
+    <li>Tester le scénario de démo une dernière fois</li>
+    <li>S'habiller de manière professionnelle (costume si possible)</li>
+    <li>Avoir une clé USB de secours avec les fichiers</li>
+</ul>
+
+<h3>Le jour J — Timing</h3>
+<ul>
+    <li><strong>Arrivez 30 minutes avant</strong> l'heure du rendez-vous</li>
+    <li>La démo doit durer <strong>maximum 10 minutes</strong> — le reste c'est la discussion</li>
+</ul>
+
+<h3>Scénario de démo (10 minutes)</h3>
+
+<ol class="demo-steps">
+    <li><strong>Connexion opérateur</strong> → Soumettre un ATI avec modèle pré-rempli (2 min)</li>
+    <li><strong>Connexion instructeur</strong> → Voir le Kanban, la checklist, décider (2 min)</li>
+    <li><strong>Connexion ministre</strong> → Dashboard temps réel, KPIs, prédictions IA (3 min)</li>
+    <li><strong>Scanner un QR code</strong> → Page de vérification publique instantanée (1 min)</li>
+    <li><strong>Montrer l'app mobile</strong> Flutter si possible sur votre téléphone (2 min)</li>
+</ol>
+
+<h3>Les phrases clés à retenir</h3>
+<div class="success-box">
+    <ul style="list-style: none; padding: 0; margin: 0;">
+        <li style="margin-bottom: 2mm;">✦ <em>« Cette plateforme réduirait les délais de traitement des ATI de 75% »</em></li>
+        <li style="margin-bottom: 2mm;">✦ <em>« Le Gabon serait le premier pays de la CEMAC à disposer d'un tel outil »</em></li>
+        <li style="margin-bottom: 2mm;">✦ <em>« La plateforme est 100% opérationnelle et prête à déployer »</em></li>
+        <li style="margin-bottom: 2mm;">✦ <em>« Le retour sur investissement est de 215% dès la première année »</em></li>
+        <li>✦ <em>« Chaque décision est traçable, chaque certificat vérifiable par QR code »</em></li>
+    </ul>
+</div>
+
+<!-- ============================================ -->
+<h2>ÉTAPE 4 — APRÈS L'AUDIENCE <span class="step-when">J+1 À J+3</span></h2>
+
+<div class="step-card step-card-purple">
+    <p>Envoyez par email dans les 48h :</p>
+    <ul class="docs-list">
+        <li><strong>Document 06</strong> — Guide utilisateur rapide</li>
+        <li>Un <strong>email de remerciement</strong> résumant les points discutés</li>
+        <li>Si demandé : un lien vers la démo en ligne</li>
+        <li>Si positif : une <strong>proposition de convention</strong> ou de phase pilote</li>
+    </ul>
+</div>
+
+<h3>Modèle d'email de remerciement</h3>
+<div style="background: #f8f9fa; padding: 5mm; border-radius: 4pt; font-size: 10pt; border: 1pt solid #ddd; margin: 3mm 0;">
+    <p style="margin-bottom: 2mm;"><strong>Objet :</strong> Suite à notre entretien — Plateforme PNPI</p>
+    <p style="margin-bottom: 2mm;">Monsieur le Ministre,</p>
+    <p style="margin-bottom: 2mm;">Je vous remercie de m'avoir accordé cet entretien le [DATE]. Comme convenu, vous trouverez en pièce jointe le guide utilisateur de la plateforme PNPI.</p>
+    <p style="margin-bottom: 2mm;">Je reste à votre disposition pour [organiser une phase pilote / une démonstration élargie / toute information complémentaire].</p>
+    <p style="margin-bottom: 2mm;">Respectueusement,<br><strong>MBA NDONG Jean Baptiste</strong><br>+241 77 30 71 93 | corymba0@gmail.com</p>
+</div>
+
+<!-- ============================================ -->
+<div class="page-break"></div>
+<div class="flag-ribbon"></div>
+
+<h2>CE QU'IL NE FAUT PAS FAIRE</h2>
+
+<div class="warning-box">
+    <ul class="dont-list">
+        <li><strong>✕</strong> Ne donnez pas les 6 documents d'un coup le premier jour</li>
+        <li><strong>✕</strong> Ne parlez pas de technique (Python, React, Flutter...) au Ministre — parlez <strong>résultats et impact</strong></li>
+        <li><strong>✕</strong> Ne demandez pas d'argent à la première rencontre — montrez la <strong>valeur</strong> d'abord</li>
+        <li><strong>✕</strong> Ne critiquez pas le système actuel — dites <strong>« améliorer »</strong> pas « remplacer »</li>
+        <li><strong>✕</strong> Ne vous présentez pas comme un « développeur » — présentez-vous comme un <strong>« concepteur de solutions numériques pour la gouvernance industrielle »</strong></li>
+        <li><strong>✕</strong> Ne montrez pas de code ou de terminal pendant la démo</li>
+        <li><strong>✕</strong> Ne dépassez pas 10 minutes de démo — laissez le Ministre poser des questions</li>
+    </ul>
+</div>
+
+<!-- ============================================ -->
+<h2>CHECKLIST DE PRÉPARATION</h2>
+
+<h3>Documents à imprimer</h3>
+<ul class="checklist">
+    <li>Lettre de demande d'audience (2 exemplaires — 1 à déposer, 1 pour accusé de réception)</li>
+    <li>Note conceptuelle PNPI (2 exemplaires)</li>
+    <li>Synthèse technique (1 exemplaire — pour le jour J)</li>
+    <li>Business case (1 exemplaire — pour le jour J)</li>
+    <li>Plan de déploiement et budget (1 exemplaire — pour le jour J)</li>
+    <li>Chemise cartonnée verte avec « PNPI » sur la couverture</li>
+</ul>
+
+<h3>Matériel pour la démo</h3>
+<ul class="checklist">
+    <li>Laptop chargé à 100% + chargeur</li>
+    <li>Plateforme PNPI qui tourne en local (backend + frontend testés la veille)</li>
+    <li>6 comptes de démo prêts (admin, ministre, instructeur, operateur, inspecteur, directeur)</li>
+    <li>Clé USB avec les fichiers de secours</li>
+    <li>Carte de visite (si disponible)</li>
+</ul>
+
+<h3>Plan B (si pas de WiFi / problème technique)</h3>
+<ul class="checklist">
+    <li>Captures d'écran imprimées des pages clés (dashboard, kanban, certificat QR)</li>
+    <li>Tout tourne en localhost — pas besoin d'internet</li>
+    <li>Vidéo de démo pré-enregistrée sur le laptop (si la plateforme ne démarre pas)</li>
+</ul>
+
+<!-- ============================================ -->
+<h2>CONTACTS UTILES</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Qui</th>
+            <th>Rôle</th>
+            <th>Comment contacter</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Secrétariat du Cabinet</strong></td>
+            <td>Réception des demandes d'audience</td>
+            <td>Se présenter physiquement au Ministère</td>
+        </tr>
+        <tr>
+            <td><strong>Directeur de Cabinet</strong></td>
+            <td>Filtre les dossiers, recommande les audiences</td>
+            <td>Via le secrétariat ou réseau</td>
+        </tr>
+        <tr>
+            <td><strong>Directeur Général de l'Industrie</strong></td>
+            <td>Responsable opérationnel du secteur industriel</td>
+            <td>Peut être un premier contact plus accessible</td>
+        </tr>
+        <tr>
+            <td><strong>Conseillers techniques</strong></td>
+            <td>Analysent les dossiers techniques</td>
+            <td>Souvent présents lors de l'audience</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="info-box">
+    <strong>Stratégie alternative :</strong> Si l'accès au Ministre est difficile, commencez par le <strong>Directeur Général de l'Industrie</strong>. Il est plus accessible et peut devenir votre champion interne pour défendre le projet auprès du Ministre.
+</div>
+
+<!-- ============================================ -->
+<h2>RÉSUMÉ VISUEL</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th style="width: 15%;">Quand</th>
+            <th style="width: 25%;">Action</th>
+            <th style="width: 35%;">Documents</th>
+            <th style="width: 25%;">Objectif</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Jour 1</strong></td>
+            <td>Dépôt au secrétariat</td>
+            <td>Lettre + Note conceptuelle</td>
+            <td>Obtenir une audience</td>
+        </tr>
+        <tr>
+            <td><strong>J+7</strong></td>
+            <td>Appel de relance</td>
+            <td>—</td>
+            <td>Confirmer la réception</td>
+        </tr>
+        <tr>
+            <td><strong>J+14</strong></td>
+            <td>Visite physique de relance</td>
+            <td>—</td>
+            <td>Obtenir une date</td>
+        </tr>
+        <tr>
+            <td><strong>Jour J</strong></td>
+            <td>Audience + Démo live</td>
+            <td>Synthèse + Business case + Plan déploiement + Laptop</td>
+            <td>Convaincre</td>
+        </tr>
+        <tr>
+            <td><strong>J+1 à J+3</strong></td>
+            <td>Email de suivi</td>
+            <td>Guide utilisateur + Remerciements</td>
+            <td>Maintenir le contact</td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- ============================================ -->
+<div class="success-box" style="margin-top: 10mm; text-align: center;">
+    <p style="font-size: 13pt; font-weight: bold; color: #006233; margin-bottom: 2mm;">Bonne chance Jean Baptiste !</p>
+    <p style="font-size: 10pt; color: #333;">La PNPI est un projet solide. Vous avez une plateforme 100% fonctionnelle avec 200+ fonctionnalités, 110+ pages, et un dossier complet. Présentez-la avec confiance.</p>
+</div>
+
+<div class="footer">
+    PNPI — Procédure de dépôt au Ministère — MBA NDONG Jean Baptiste — Mars 2026<br>
+    +241 77 30 71 93 | corymba0@gmail.com | Mindoube 1, Libreville
+</div>
+
+</body>
+</html>

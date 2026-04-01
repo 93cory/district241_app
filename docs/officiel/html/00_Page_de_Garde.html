@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>PNPI — Page de Garde</title>
+<style>
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Georgia', 'Times New Roman', serif; width: 210mm; min-height: 297mm; margin: 0 auto; background: #fff; position: relative; overflow: hidden; }
+
+/* === GABON FLAG STRIPE TOP === */
+.flag-top { height: 8mm; background: linear-gradient(90deg, #009E60 33.33%, #FCD116 33.33% 66.66%, #003DA5 66.66%); }
+
+/* === DECORATIVE BORDER === */
+.border-frame {
+  position: absolute; top: 12mm; left: 12mm; right: 12mm; bottom: 12mm;
+  border: 2pt solid #003366;
+  border-radius: 4pt;
+}
+.border-frame-inner {
+  position: absolute; top: 14mm; left: 14mm; right: 14mm; bottom: 14mm;
+  border: 0.5pt solid #006233;
+  border-radius: 3pt;
+}
+
+/* === CONTENT === */
+.content { position: relative; z-index: 1; padding: 22mm 25mm; height: 289mm; display: flex; flex-direction: column; align-items: center; }
+
+/* === REPUBLIC HEADER === */
+.republic-block { text-align: center; margin-top: 8mm; }
+.republic-name { font-size: 14pt; font-weight: bold; color: #003366; letter-spacing: 2pt; text-transform: uppercase; }
+.republic-motto { font-size: 10pt; color: #666; font-style: italic; margin-top: 2mm; }
+.ministry-line { font-size: 10pt; color: #003366; font-weight: bold; margin-top: 4mm; letter-spacing: 0.5pt; }
+.ministry-sub { font-size: 9pt; color: #006233; margin-top: 1mm; }
+
+/* === SEPARATOR === */
+.ornament { margin: 8mm auto; width: 60mm; height: 0; border-top: 1.5pt solid #006233; position: relative; }
+.ornament::after { content: "◆"; position: absolute; top: -5pt; left: 50%; transform: translateX(-50%); background: #fff; color: #006233; font-size: 8pt; padding: 0 3mm; }
+
+/* === LOGO === */
+.logo-block { margin: 6mm 0; }
+.logo-block img { width: 55mm; height: auto; }
+
+/* === TITLE BLOCK === */
+.title-block { text-align: center; margin: 6mm 0; }
+.doc-type { font-size: 11pt; color: #006233; font-weight: bold; letter-spacing: 3pt; text-transform: uppercase; background: #f0f7f0; padding: 2mm 8mm; border-radius: 3pt; border: 1pt solid #006233; display: inline-block; }
+.doc-title { font-size: 28pt; font-weight: bold; color: #003366; margin-top: 8mm; line-height: 1.2; }
+.doc-subtitle { font-size: 14pt; color: #006233; font-weight: bold; margin-top: 4mm; font-style: italic; }
+.doc-acronym { font-size: 42pt; font-weight: bold; color: #003366; margin-top: 4mm; letter-spacing: 8pt; }
+
+/* === VERSION BADGE === */
+.version-badge { display: inline-block; margin-top: 5mm; padding: 2mm 6mm; background: #003366; color: #fff; font-size: 9pt; font-weight: bold; border-radius: 3pt; letter-spacing: 1pt; }
+
+/* === BOTTOM INFO === */
+.bottom-block { margin-top: auto; text-align: center; width: 100%; }
+.date-line { font-size: 14pt; color: #003366; font-weight: bold; margin-bottom: 4mm; }
+.author-block { padding: 5mm 8mm; background: #f8f9fa; border: 1pt solid #ddd; border-radius: 4pt; display: inline-block; }
+.author-name { font-size: 12pt; font-weight: bold; color: #003366; }
+.author-title { font-size: 9pt; color: #666; margin-top: 1mm; }
+.author-contact { font-size: 8pt; color: #006233; margin-top: 1mm; }
+
+/* === CONFIDENTIAL MARK === */
+.confidential { font-size: 8pt; color: #999; text-align: center; margin-top: 6mm; letter-spacing: 1pt; text-transform: uppercase; }
+
+/* === FLAG STRIPE BOTTOM === */
+.flag-bottom { position: absolute; bottom: 0; left: 0; right: 0; height: 5mm; background: linear-gradient(90deg, #009E60 33.33%, #FCD116 33.33% 66.66%, #003DA5 66.66%); }
+
+/* === CORNER ORNAMENTS === */
+.corner { position: absolute; width: 15mm; height: 15mm; }
+.corner-tl { top: 16mm; left: 16mm; border-top: 2pt solid #006233; border-left: 2pt solid #006233; }
+.corner-tr { top: 16mm; right: 16mm; border-top: 2pt solid #006233; border-right: 2pt solid #006233; }
+.corner-bl { bottom: 16mm; left: 16mm; border-bottom: 2pt solid #006233; border-left: 2pt solid #006233; }
+.corner-br { bottom: 16mm; right: 16mm; border-bottom: 2pt solid #006233; border-right: 2pt solid #006233; }
+
+@media print { body { margin: 0; } }
+</style>
+</head>
+<body>
+
+<!-- Flag stripe top -->
+<div class="flag-top"></div>
+
+<!-- Decorative borders -->
+<div class="border-frame"></div>
+<div class="border-frame-inner"></div>
+
+<!-- Corner ornaments -->
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<!-- Main content -->
+<div class="content">
+
+  <!-- Republic of Gabon header -->
+  <div class="republic-block">
+    <div class="republic-name">République Gabonaise</div>
+    <div class="republic-motto">Union — Travail — Justice</div>
+    <div class="ministry-line">Ministère de l'Industrie et de la Transformation Locale</div>
+    <div class="ministry-sub">Direction Générale de l'Industrie</div>
+  </div>
+
+  <!-- Ornamental separator -->
+  <div class="ornament"></div>
+
+  <!-- Logo -->
+  <div class="logo-block">
+    <img src="pnpi_logo.png" alt="Logo PNPI — Plateforme Nationale de Pilotage Industriel">
+  </div>
+
+  <!-- Document type badge -->
+  <div class="title-block">
+    <div class="doc-type">Note Conceptuelle</div>
+
+    <!-- Main title -->
+    <div class="doc-title">Plateforme Nationale<br>de Pilotage Industriel</div>
+
+    <!-- Acronym -->
+    <div class="doc-acronym">PNPI</div>
+
+    <!-- Subtitle -->
+    <div class="doc-subtitle">Outil numérique souverain de gouvernance<br>et de traçabilité industrielle</div>
+
+    <!-- Version -->
+    <div class="version-badge">VERSION 2.0 — DOCUMENT OFFICIEL</div>
+  </div>
+
+  <!-- Bottom section -->
+  <div class="bottom-block">
+    <!-- Date -->
+    <div class="date-line">Mars 2026 — Libreville, Gabon</div>
+
+    <!-- Author -->
+    <div class="author-block">
+      <div class="author-name">MBA NDONG Jean Baptiste</div>
+      <div class="author-title">Concepteur et Développeur de la PNPI</div>
+      <div class="author-contact">corymba0@gmail.com | +241 77 30 71 93 | Mindoubé 1, Libreville</div>
+    </div>
+
+    <!-- Confidential mark -->
+    <div class="confidential">Document confidentiel — Diffusion restreinte</div>
+  </div>
+
+</div>
+
+<!-- Flag stripe bottom -->
+<div class="flag-bottom"></div>
+
+</body>
+</html>

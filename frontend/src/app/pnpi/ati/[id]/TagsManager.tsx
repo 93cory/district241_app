@@ -19,7 +19,7 @@ export function TagsManager({ atiId }: { atiId: string }) {
 
   const load = () => {
     fetch(`/api/pnpi/ati/${atiId}/tags`)
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : { tags: [] })
       .then((d) => setTags(d.tags || []))
       .catch(() => {});
   };
