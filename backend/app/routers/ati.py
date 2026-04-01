@@ -592,6 +592,63 @@ async def resubmit_ati(
     return {"message": "ATI resoumis avec succes.", "id": ati.id, "statut": "soumis"}
 
 
+@router.get("/ati/{ati_id}/sla-status", summary="Detail du suivi SLA pour un ATI")
+async def ati_sla_status(
+    ati_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    """Retourne le detail SLA: jours ecoules, jours restants, pourcentage, alerte."""
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+
+    now = now_utc()
+    terminal = {"approuve", "rejete", "expire"}
+
+    if ati.statut in terminal and ati.date_decision:
+        elapsed = max((ati.date_decision.date() - ati.date_soumission.date()).days, 0)
+        within_sla = elapsed <= ati.sla_jours
+        return {
+            "ati_id": ati.id,
+            "numero_ati": ati.numero_ati,
+            "statut": ati.statut,
+            "sla_jours": ati.sla_jours,
+            "jours_ecoules": elapsed,
+            "jours_restants": 0,
+            "pct_utilise": round(elapsed / ati.sla_jours * 100, 1) if ati.sla_jours > 0 else 0,
+            "within_sla": within_sla,
+            "alerte": "none",
+            "decided": True,
+        }
+
+    elapsed = max((now.date() - ati.date_soumission.date()).days, 0)
+    remaining = max(ati.sla_jours - elapsed, 0)
+    pct = round(elapsed / ati.sla_jours * 100, 1) if ati.sla_jours > 0 else 0
+
+    if elapsed > ati.sla_jours:
+        alerte = "overdue"
+    elif remaining <= 3:
+        alerte = "critical"
+    elif remaining <= 7:
+        alerte = "warning"
+    else:
+        alerte = "ok"
+
+    return {
+        "ati_id": ati.id,
+        "numero_ati": ati.numero_ati,
+        "statut": ati.statut,
+        "sla_jours": ati.sla_jours,
+        "jours_ecoules": elapsed,
+        "jours_restants": remaining,
+        "pct_utilise": pct,
+        "within_sla": elapsed <= ati.sla_jours,
+        "alerte": alerte,
+        "decided": False,
+    }
+
+
 @router.get("/ati/{ati_id}/historique", response_model=List[ATITransitionRead],
             summary="Historique des transitions ATI")
 async def ati_historique(

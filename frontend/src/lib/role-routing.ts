@@ -2,7 +2,6 @@ export const hasRole = (roles: string[], role: string): boolean => roles.include
 
 export const getDefaultRouteForRoles = (roles: string[]): string => {
   if (hasRole(roles, "admin")) return "/admin";
-  // PNPI roles
   if (hasRole(roles, "ministre")) return "/pnpi";
   if (hasRole(roles, "directeur")) return "/pnpi";
   if (hasRole(roles, "instructeur")) return "/pnpi";
@@ -16,236 +15,149 @@ export interface NavLink {
   label: string;
 }
 
+// ---------------------------------------------------------------------------
+// Navigation config — define once, filter by role
+// ---------------------------------------------------------------------------
+
+interface NavEntry {
+  href: string;
+  label: string;
+  roles: string[];  // which roles can see this link
+}
+
+const ALL_DECISION = ["admin", "ministre", "directeur"];
+const ALL_PNPI = ["admin", "ministre", "directeur", "instructeur"];
+const ALL_FIELD = ["admin", "ministre", "directeur", "instructeur", "inspecteur"];
+
+const NAV_ENTRIES: NavEntry[] = [
+  // Core PNPI
+  { href: "/pnpi", label: "Dashboard PNPI", roles: ALL_PNPI },
+  { href: "/pnpi/executive", label: "Synthese", roles: ALL_DECISION },
+  { href: "/pnpi/live", label: "Temps reel", roles: ALL_DECISION },
+  { href: "/pnpi/ati", label: "Agrements ATI", roles: ALL_FIELD },
+  { href: "/pnpi/operateurs", label: "Operateurs", roles: [...ALL_FIELD, "operateur"] },
+  { href: "/pnpi/inspections", label: "Inspections", roles: ["admin", "ministre", "directeur", "inspecteur"] },
+  { href: "/pnpi/stats", label: "Statistiques", roles: ALL_FIELD },
+  { href: "/pnpi/search", label: "Recherche", roles: ALL_FIELD },
+  { href: "/pnpi/calendar", label: "Calendrier", roles: [...ALL_PNPI, "inspecteur"] },
+  { href: "/pnpi/reports", label: "Rapports", roles: ALL_DECISION },
+  { href: "/pnpi/map", label: "Carte", roles: ["admin", "ministre", "directeur", "inspecteur"] },
+
+  // Dashboard & Analytics
+  { href: "/pnpi/comparison", label: "Comparaison", roles: ALL_DECISION.concat("ministre") },
+  { href: "/pnpi/impact", label: "Impact", roles: ALL_DECISION },
+  { href: "/pnpi/heatmap", label: "Heatmap", roles: ["admin", "ministre", "directeur", "inspecteur"] },
+  { href: "/pnpi/kanban", label: "Kanban", roles: [...ALL_PNPI, "inspecteur"] },
+  { href: "/pnpi/data-quality", label: "Qualite", roles: ALL_DECISION },
+  { href: "/pnpi/performance", label: "Performance", roles: ALL_DECISION },
+  { href: "/pnpi/predictions", label: "Predictions", roles: ALL_DECISION },
+  { href: "/pnpi/advanced-stats", label: "Stats+", roles: ALL_DECISION },
+  { href: "/pnpi/annual-report", label: "Bilan annuel", roles: ALL_DECISION },
+  { href: "/pnpi/benchmark", label: "Benchmark", roles: ALL_DECISION },
+  { href: "/pnpi/pivot", label: "Tableau croise", roles: ALL_DECISION },
+  { href: "/pnpi/smart-alerts", label: "Alertes IA", roles: ALL_DECISION },
+  { href: "/pnpi/multi-year", label: "Multi-annees", roles: ALL_DECISION },
+  { href: "/pnpi/economic-impact", label: "Impact eco.", roles: ALL_DECISION },
+  { href: "/pnpi/realtime-stats", label: "Stats live", roles: ALL_DECISION },
+  { href: "/pnpi/before-after", label: "Avant/Apres", roles: ALL_DECISION },
+
+  // Operations
+  { href: "/pnpi/mes-dossiers", label: "Mes Dossiers", roles: ["directeur", "instructeur"] },
+  { href: "/pnpi/delegations", label: "Delegations", roles: ["admin", "directeur", "instructeur", "inspecteur"] },
+  { href: "/pnpi/objectives", label: "Objectifs", roles: ["admin", "directeur", "instructeur", "inspecteur"] },
+  { href: "/pnpi/renewals", label: "Renouvellements", roles: ["admin", "directeur", "instructeur", "operateur"] },
+  { href: "/pnpi/triage", label: "Triage", roles: ["admin", "directeur", "instructeur"] },
+  { href: "/pnpi/workflow-timing", label: "Timing", roles: ["admin", "directeur"] },
+  { href: "/pnpi/certifications", label: "Certifications", roles: ["admin", "directeur", "instructeur", "operateur"] },
+  { href: "/pnpi/email-alerts", label: "Alertes email", roles: ALL_PNPI },
+
+  // Strategic
+  { href: "/pnpi/conventions", label: "Conventions", roles: ALL_DECISION },
+  { href: "/pnpi/odd", label: "ODD", roles: ALL_DECISION },
+  { href: "/pnpi/cemac", label: "CEMAC", roles: ALL_DECISION },
+  { href: "/pnpi/social-impact", label: "Impact social", roles: ALL_DECISION },
+  { href: "/pnpi/roi-simulator", label: "Simulateur ROI", roles: [...ALL_DECISION, "operateur"] },
+  { href: "/pnpi/carbon", label: "Carbone", roles: ALL_DECISION },
+  { href: "/pnpi/roadmap", label: "Roadmap", roles: [...ALL_DECISION, "admin"] },
+  { href: "/pnpi/budget", label: "Budget", roles: ALL_DECISION },
+  { href: "/pnpi/governor", label: "Province", roles: ALL_DECISION },
+  { href: "/pnpi/builder", label: "Mon dashboard", roles: ALL_DECISION },
+  { href: "/pnpi/mobile", label: "Mobile", roles: ALL_PNPI },
+
+  // Pilotage & Briefing
+  { href: "/pilotage", label: "Pilotage", roles: ["admin", "ministre", "directeur"] },
+  { href: "/briefing", label: "Briefing PNPI", roles: ["admin"] },
+  { href: "/pnpi/briefing", label: "Briefing PNPI", roles: ["admin"] },
+  { href: "/pnpi/presentation", label: "Presentation", roles: ALL_DECISION },
+  { href: "/pnpi/activity", label: "Activite", roles: ["admin", "directeur"] },
+  { href: "/kiosk", label: "Kiosque", roles: ["admin", "ministre"] },
+
+  // Admin
+  { href: "/admin", label: "Administration", roles: ["admin"] },
+  { href: "/pnpi/dashboard-config", label: "Config Dashboard", roles: ALL_DECISION },
+  { href: "/admin/audit-log", label: "Audit", roles: ["admin"] },
+  { href: "/admin/workflows", label: "Workflows", roles: ["admin"] },
+  { href: "/admin/orgchart", label: "Organigramme", roles: ["admin"] },
+  { href: "/admin/raci", label: "RACI", roles: ["admin", "directeur"] },
+  { href: "/admin/integrations", label: "Integrations", roles: ["admin"] },
+  { href: "/admin/announcements", label: "Annonces", roles: ["admin"] },
+  { href: "/admin/api-usage", label: "API Usage", roles: ["admin"] },
+  { href: "/admin/scheduled-reports", label: "Rapports auto", roles: ["admin"] },
+  { href: "/admin/security", label: "Securite", roles: ["admin"] },
+  { href: "/admin/newsletter", label: "Newsletter", roles: ["admin"] },
+  { href: "/api-docs", label: "API Docs", roles: ["admin"] },
+  { href: "/embed", label: "Widgets", roles: ["admin"] },
+  { href: "/changelog", label: "Changelog", roles: ["admin"] },
+
+  // Operateur specific
+  { href: "/pnpi/guichet", label: "Mon espace", roles: ["operateur"] },
+  { href: "/pnpi/mentoring", label: "Parrainage", roles: ["instructeur", "operateur"] },
+
+  // Inspecteur specific
+  { href: "/inspecteur", label: "Mon espace", roles: ["inspecteur"] },
+];
+
+// Links visible to all authenticated users
+const COMMON_LINKS: NavEntry[] = [
+  { href: "/pnpi/success-stories", label: "Reussites", roles: [] },
+  { href: "/pnpi/reglementation", label: "Reglementation", roles: [] },
+  { href: "/pnpi/formation", label: "Formation", roles: [] },
+  { href: "/pnpi/notes", label: "Notes", roles: [] },
+  { href: "/pnpi/favorites", label: "Favoris", roles: [] },
+  { href: "/pnpi/annuaire", label: "Annuaire", roles: [] },
+  { href: "/pnpi/marketplace", label: "Marketplace", roles: [] },
+  { href: "/pnpi/messages", label: "Messages", roles: [] },
+  { href: "/profil", label: "Mon profil", roles: [] },
+  { href: "/pnpi/polls", label: "Sondages", roles: [] },
+  { href: "/pnpi/feedback", label: "Feedback", roles: [] },
+  { href: "/aide", label: "Aide", roles: [] },
+];
+
 export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
+  if (!roles.length) return [{ href: "/connexion", label: "Connexion" }];
+
+  const seen = new Set<string>();
   const links: NavLink[] = [];
 
   const add = (href: string, label: string) => {
-    if (!links.some((entry) => entry.href === href)) {
+    if (!seen.has(href)) {
+      seen.add(href);
       links.push({ href, label });
     }
   };
 
-  if (hasRole(roles, "admin")) {
-    add("/pnpi", "Dashboard PNPI");
-    add("/pnpi/executive", "Synthese");
-    add("/pnpi/live", "Temps reel");
-    add("/pnpi/stats", "Statistiques PNPI");
-    add("/pnpi/briefing", "Briefing PNPI");
-    add("/admin", "Administration");
-    add("/pilotage", "Pilotage PNPI");
-    add("/briefing", "Briefing PNPI");
-    add("/pnpi/dashboard-config", "Config Dashboard");
-    add("/pnpi/calendar", "Calendrier");
-    add("/pnpi/reports", "Rapports");
-    add("/pnpi/search", "Recherche");
-    add("/pnpi/presentation", "Presentation");
-    add("/pnpi/activity", "Activite");
-    add("/admin/audit-log", "Audit");
-    add("/admin/workflows", "Workflows");
-    add("/pnpi/heatmap", "Heatmap");
-    add("/pnpi/kanban", "Kanban");
-    add("/pnpi/data-quality", "Qualite");
-    add("/pnpi/performance", "Performance");
-    add("/pnpi/predictions", "Predictions");
-    add("/pnpi/delegations", "Delegations");
-    add("/pnpi/advanced-stats", "Stats+");
-    add("/admin/orgchart", "Organigramme");
-    add("/admin/raci", "RACI");
-    add("/changelog", "Changelog");
-    add("/pnpi/annual-report", "Bilan annuel");
-    add("/pnpi/objectives", "Objectifs");
-    add("/pnpi/benchmark", "Benchmark");
-    add("/pnpi/pivot", "Tableau croise");
-    add("/pnpi/smart-alerts", "Alertes IA");
-    add("/pnpi/multi-year", "Multi-annees");
-    add("/pnpi/renewals", "Renouvellements");
-    add("/pnpi/economic-impact", "Impact eco.");
-    add("/admin/integrations", "Integrations");
-    add("/admin/announcements", "Annonces");
-    add("/admin/api-usage", "API Usage");
-    add("/embed", "Widgets");
-    add("/admin/scheduled-reports", "Rapports auto");
-    add("/api-docs", "API Docs");
-    add("/kiosk", "Kiosque");
-    add("/pnpi/workflow-timing", "Timing");
-    add("/pnpi/builder", "Mon dashboard");
-    add("/pnpi/budget", "Budget");
-    add("/pnpi/governor", "Province");
-    add("/pnpi/map", "Carte");
-    add("/pnpi/conventions", "Conventions");
-    add("/pnpi/odd", "ODD");
-    add("/pnpi/cemac", "CEMAC");
-    add("/pnpi/social-impact", "Impact social");
-    add("/pnpi/certifications", "Certifications");
-    add("/pnpi/roi-simulator", "Simulateur ROI");
-    add("/pnpi/carbon", "Carbone");
-    add("/admin/security", "Securite");
-    add("/admin/newsletter", "Newsletter");
-    add("/pnpi/roadmap", "Roadmap");
-    add("/pnpi/triage", "Triage");
-    add("/pnpi/realtime-stats", "Stats live");
-    add("/pnpi/before-after", "Avant/Apres");
-    add("/pnpi/email-alerts", "Alertes email");
-    add("/pnpi/mobile", "Mobile");
+  // Role-specific links
+  for (const entry of NAV_ENTRIES) {
+    if (entry.roles.some((r) => roles.includes(r))) {
+      add(entry.href, entry.label);
+    }
   }
 
-  if (hasRole(roles, "ministre")) {
-    add("/pnpi", "Dashboard Ministériel");
-    add("/pnpi/executive", "Synthese");
-    add("/pnpi/live", "Temps reel");
-    add("/pnpi/ati", "Agréments ATI");
-    add("/pnpi/operateurs", "Opérateurs");
-    add("/pnpi/inspections", "Inspections");
-    add("/pnpi/stats", "Statistiques");
-    add("/pnpi/comparison", "Comparaison");
-    add("/pnpi/impact", "Impact");
-    add("/pilotage", "Pilotage");
-    add("/pnpi/search", "Recherche");
-    add("/pnpi/presentation", "Presentation");
-    add("/pnpi/dashboard-config", "Config Dashboard");
-    add("/pnpi/calendar", "Calendrier");
-    add("/pnpi/reports", "Rapports");
-    add("/pnpi/heatmap", "Heatmap");
-    add("/pnpi/kanban", "Kanban");
-    add("/pnpi/data-quality", "Qualite");
-    add("/pnpi/performance", "Performance");
-    add("/pnpi/predictions", "Predictions");
-    add("/pnpi/advanced-stats", "Stats+");
-    add("/pnpi/annual-report", "Bilan annuel");
-    add("/pnpi/benchmark", "Benchmark");
-    add("/pnpi/pivot", "Tableau croise");
-    add("/pnpi/smart-alerts", "Alertes IA");
-    add("/pnpi/multi-year", "Multi-annees");
-    add("/pnpi/economic-impact", "Impact eco.");
-    add("/kiosk", "Kiosque");
-    add("/pnpi/builder", "Mon dashboard");
-    add("/pnpi/budget", "Budget");
-    add("/pnpi/governor", "Province");
-    add("/pnpi/map", "Carte");
-    add("/pnpi/conventions", "Conventions");
-    add("/pnpi/odd", "ODD");
-    add("/pnpi/cemac", "CEMAC");
-    add("/pnpi/social-impact", "Impact social");
-    add("/pnpi/certifications", "Certifications");
-    add("/pnpi/roi-simulator", "Simulateur ROI");
-    add("/pnpi/carbon", "Carbone");
-    add("/pnpi/roadmap", "Roadmap");
-    add("/pnpi/realtime-stats", "Stats live");
-    add("/pnpi/before-after", "Avant/Apres");
-    add("/pnpi/email-alerts", "Alertes email");
-    add("/pnpi/mobile", "Mobile");
-  }
-
-  if (hasRole(roles, "directeur")) {
-    add("/pnpi", "Dashboard PNPI");
-    add("/pnpi/executive", "Synthese");
-    add("/pnpi/live", "Temps reel");
-    add("/pnpi/mes-dossiers", "Mes Dossiers");
-    add("/pnpi/ati", "Agréments ATI");
-    add("/pnpi/operateurs", "Opérateurs");
-    add("/pnpi/inspections", "Inspections");
-    add("/pnpi/stats", "Statistiques");
-    add("/pnpi/comparison", "Comparaison");
-    add("/pnpi/impact", "Impact");
-    add("/pnpi/search", "Recherche");
-    add("/pnpi/presentation", "Presentation");
-    add("/pnpi/activity", "Activite");
-    add("/pnpi/dashboard-config", "Config Dashboard");
-    add("/pnpi/calendar", "Calendrier");
-    add("/pnpi/reports", "Rapports");
-    add("/pnpi/heatmap", "Heatmap");
-    add("/pnpi/kanban", "Kanban");
-    add("/pnpi/data-quality", "Qualite");
-    add("/pnpi/performance", "Performance");
-    add("/pnpi/predictions", "Predictions");
-    add("/pnpi/delegations", "Delegations");
-    add("/pnpi/advanced-stats", "Stats+");
-    add("/admin/raci", "RACI");
-    add("/pnpi/annual-report", "Bilan annuel");
-    add("/pnpi/objectives", "Objectifs");
-    add("/pnpi/benchmark", "Benchmark");
-    add("/pnpi/pivot", "Tableau croise");
-    add("/pnpi/smart-alerts", "Alertes IA");
-    add("/pnpi/multi-year", "Multi-annees");
-    add("/pnpi/renewals", "Renouvellements");
-    add("/pnpi/economic-impact", "Impact eco.");
-    add("/pnpi/workflow-timing", "Timing");
-    add("/pnpi/builder", "Mon dashboard");
-    add("/pnpi/budget", "Budget");
-    add("/pnpi/governor", "Province");
-    add("/pnpi/map", "Carte");
-    add("/pnpi/conventions", "Conventions");
-    add("/pnpi/odd", "ODD");
-    add("/pnpi/cemac", "CEMAC");
-    add("/pnpi/social-impact", "Impact social");
-    add("/pnpi/certifications", "Certifications");
-    add("/pnpi/roi-simulator", "Simulateur ROI");
-    add("/pnpi/carbon", "Carbone");
-    add("/pnpi/roadmap", "Roadmap");
-    add("/pnpi/triage", "Triage");
-    add("/pnpi/realtime-stats", "Stats live");
-    add("/pnpi/before-after", "Avant/Apres");
-    add("/pnpi/email-alerts", "Alertes email");
-    add("/pnpi/mobile", "Mobile");
-  }
-
-  if (hasRole(roles, "instructeur")) {
-    add("/pnpi", "Dashboard PNPI");
-    add("/pnpi/mes-dossiers", "Mes Dossiers");
-    add("/pnpi/ati", "File ATI");
-    add("/pnpi/operateurs", "Opérateurs");
-    add("/pnpi/stats", "Statistiques");
-    add("/pnpi/search", "Recherche");
-    add("/pnpi/calendar", "Calendrier");
-    add("/pnpi/kanban", "Kanban");
-    add("/pnpi/delegations", "Delegations");
-    add("/pnpi/objectives", "Objectifs");
-    add("/pnpi/renewals", "Renouvellements");
-    add("/pnpi/certifications", "Certifications");
-    add("/pnpi/mentoring", "Parrainage");
-    add("/pnpi/triage", "Triage");
-    add("/pnpi/email-alerts", "Alertes email");
-    add("/pnpi/mobile", "Mobile");
-  }
-
-  if (hasRole(roles, "operateur")) {
-    add("/pnpi/guichet", "Mon espace");
-    add("/pnpi/ati", "Mes ATI");
-    add("/pnpi/operateurs", "Opérateurs");
-    add("/pnpi/renewals", "Renouvellements");
-    add("/pnpi/roi-simulator", "Simulateur ROI");
-    add("/pnpi/mentoring", "Parrainage");
-  }
-
-  if (hasRole(roles, "inspecteur")) {
-    add("/inspecteur", "Mon espace");
-    add("/pnpi/inspections", "Inspections");
-    add("/pnpi/ati", "Dossiers ATI");
-    add("/pnpi/operateurs", "Opérateurs");
-    add("/pnpi/heatmap", "Heatmap");
-    add("/pnpi/calendar", "Calendrier");
-    add("/pnpi/delegations", "Delegations");
-    add("/pnpi/objectives", "Objectifs");
-    add("/pnpi/map", "Carte");
-  }
-
+  // Common links for all authenticated users
   if (links.length > 0) {
-    add("/pnpi/success-stories", "Reussites");
-    add("/pnpi/reglementation", "Reglementation");
-    add("/pnpi/formation", "Formation");
-    add("/pnpi/notes", "Notes");
-    add("/pnpi/favorites", "Favoris");
-    add("/pnpi/annuaire", "Annuaire");
-    add("/pnpi/marketplace", "Marketplace");
-    add("/pnpi/messages", "Messages");
-    add("/profil", "Mon profil");
-    add("/pnpi/polls", "Sondages");
-    add("/pnpi/feedback", "Feedback");
-    add("/aide", "Aide");
-  }
-
-  if (!links.length) {
-    add("/connexion", "Connexion");
+    for (const entry of COMMON_LINKS) {
+      add(entry.href, entry.label);
+    }
   }
 
   return links;

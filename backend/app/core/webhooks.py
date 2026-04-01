@@ -1,15 +1,44 @@
 """PNPI — Webhooks pour integration avec systemes externes (douanes, emploi, fiscalite)."""
 from __future__ import annotations
 
+import ipaddress
 import json
 import logging
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 import httpx
 
 from ..config import settings
 
 logger = logging.getLogger("pnpi.webhooks")
+
+
+def _is_safe_url(url: str) -> bool:
+    """Validate webhook URL to prevent SSRF attacks against internal services."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+        hostname = parsed.hostname or ""
+        # Block private/internal hostnames
+        if hostname in ("localhost", "127.0.0.1", "0.0.0.0", "::1", ""):
+            return False
+        if hostname.endswith(".local") or hostname.endswith(".internal"):
+            return False
+        # Block private IP ranges
+        try:
+            ip = ipaddress.ip_address(hostname)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                return False
+        except ValueError:
+            pass  # hostname is a domain name, not an IP — OK
+        # Block metadata endpoints (cloud)
+        if hostname in ("169.254.169.254", "metadata.google.internal"):
+            return False
+        return True
+    except Exception:
+        return False
 
 # Webhook endpoints configured via environment
 WEBHOOK_ENDPOINTS = {
@@ -24,6 +53,9 @@ async def dispatch_webhook(event_type: str, payload: Dict[str, Any]) -> bool:
     url = WEBHOOK_ENDPOINTS.get(event_type, "").strip()
     if not url:
         logger.debug(f"[WEBHOOK] Pas d'URL configuree pour {event_type}")
+        return False
+    if not _is_safe_url(url):
+        logger.error(f"[WEBHOOK] URL bloquee (SSRF protection): {url}")
         return False
 
     body = {
