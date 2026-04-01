@@ -279,6 +279,73 @@ async def get_operateur(
     return _to_operateur_read(op)
 
 
+@router.get("/operateurs/{operateur_id}/risk-profile", summary="Profil de risque d'un operateur")
+async def operateur_risk_profile(
+    operateur_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    """Calcule un profil de risque base sur les inspections, ATI et historique."""
+    op = db.get(OperateurIndustrielORM, operateur_id)
+    if not op:
+        raise HTTPException(status_code=404, detail="Operateur introuvable.")
+
+    # ATIs
+    atis = db.execute(
+        select(AgrementTechniqueIndustrielORM)
+        .where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
+    ).scalars().all()
+
+    terminal = {"approuve", "rejete", "expire"}
+    rejected = sum(1 for a in atis if a.statut == "rejete")
+    expired = sum(1 for a in atis if a.statut == "expire")
+    overdue = sum(1 for a in atis if a.statut not in terminal and _ati_is_overdue(a))
+
+    # Inspections
+    inspections = db.execute(
+        select(InspectionConformiteORM)
+        .where(InspectionConformiteORM.operateur_id == operateur_id)
+        .order_by(InspectionConformiteORM.date_inspection.desc())
+    ).scalars().all()
+
+    non_conforme = sum(1 for i in inspections if i.statut_conformite == "non_conforme")
+    partiel = sum(1 for i in inspections if i.statut_conformite == "partiel")
+    total_inspections = len(inspections)
+
+    # Risk score (0=low, 100=high risk)
+    risk = 0
+    if rejected > 0:
+        risk += min(rejected * 15, 30)
+    if expired > 0:
+        risk += min(expired * 10, 20)
+    if overdue > 0:
+        risk += min(overdue * 10, 20)
+    if total_inspections > 0:
+        non_conf_rate = (non_conforme + partiel * 0.5) / total_inspections
+        risk += int(non_conf_rate * 30)
+    if total_inspections == 0 and len(atis) > 0:
+        risk += 10  # Never inspected
+
+    risk = min(risk, 100)
+    level = "faible" if risk < 25 else "modere" if risk < 50 else "eleve" if risk < 75 else "critique"
+
+    return {
+        "operateur_id": operateur_id,
+        "raison_sociale": op.raison_sociale,
+        "risk_score": risk,
+        "risk_level": level,
+        "facteurs": {
+            "atis_rejetes": rejected,
+            "atis_expires": expired,
+            "atis_en_retard": overdue,
+            "inspections_non_conformes": non_conforme,
+            "inspections_partielles": partiel,
+            "total_inspections": total_inspections,
+            "total_atis": len(atis),
+        },
+    }
+
+
 @router.get("/operateurs/{operateur_id}/ati", response_model=List[ATIBrief], summary="ATI d'un operateur")
 async def list_operateur_atis(
     operateur_id: str,

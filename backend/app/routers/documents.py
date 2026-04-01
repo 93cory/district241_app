@@ -73,6 +73,47 @@ async def list_ati_documents(
     return [_to_doc_read(d) for d in docs]
 
 
+@router.get("/ati/{ati_id}/documents/summary", summary="Resume des documents d'un ATI")
+async def ati_documents_summary(
+    ati_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+):
+    """Resume: nombre de docs par type, taille totale, dernier upload."""
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+
+    docs = db.execute(
+        select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)
+    ).scalars().all()
+
+    by_type: dict[str, int] = {}
+    total_size = 0
+    last_upload = None
+
+    for d in docs:
+        by_type[d.type_document] = by_type.get(d.type_document, 0) + 1
+        total_size += d.taille_octets
+        if last_upload is None or d.uploaded_at > last_upload:
+            last_upload = d.uploaded_at
+
+    # Required document types for a complete dossier
+    required_types = {"statuts", "bilan", "plan_site", "certification"}
+    present_types = set(by_type.keys())
+    missing = sorted(required_types - present_types)
+
+    return {
+        "ati_id": ati_id,
+        "total_documents": len(docs),
+        "par_type": by_type,
+        "taille_totale_mo": round(total_size / (1024 * 1024), 2),
+        "dernier_upload": last_upload.isoformat() if last_upload else None,
+        "types_manquants": missing,
+        "dossier_complet": len(missing) == 0,
+    }
+
+
 @router.post("/ati/{ati_id}/documents", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
 async def upload_ati_document(
     ati_id: str,
