@@ -62,6 +62,7 @@ from .core.auth import (
 from .core.error_handlers import register_error_handlers
 from .core.logging_config import setup_logging
 from .core.correlation_middleware import CorrelationMiddleware
+from .core.rate_limiter import rate_limiter
 from .core.metrics import MetricsMiddleware, metrics
 from .core.audit import (
     _emit_audit_event,
@@ -156,7 +157,7 @@ def get_client_ip(request: Request) -> str:
     return "unknown"
 
 
-def enforce_rate_limit(
+async def enforce_rate_limit(
     *,
     key: str,
     limit: int,
@@ -166,16 +167,7 @@ def enforce_rate_limit(
         return
     if "PYTEST_CURRENT_TEST" in os.environ:
         return
-    now = now_utc()
-    window_start = now - timedelta(seconds=window_seconds)
-    bucket = _rate_limit_store[key]
-    bucket[:] = [item for item in bucket if item >= window_start]
-    if len(bucket) >= limit:
-        raise HTTPException(
-            status_code=429,
-            detail=f"Trop de requetes. Reessayez dans {window_seconds} secondes.",
-        )
-    bucket.append(now)
+    await rate_limiter.check(key, limit, window_seconds)
 
 
 def _compute_error_rate() -> float:
@@ -1614,9 +1606,9 @@ async def request_context_middleware(request: Request, call_next):
     client_ip = get_client_ip(request)
     try:
         if path.startswith("/auth/") and path != "/auth/me":
-            enforce_rate_limit(key=f"path:{path}:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+            await enforce_rate_limit(key=f"path:{path}:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
         elif path.startswith("/admin/") or path.startswith("/pilotage/") or path.startswith("/pnpi/"):
-            enforce_rate_limit(
+            await enforce_rate_limit(
                 key=f"path:{path}:{client_ip}",
                 limit=SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
             )

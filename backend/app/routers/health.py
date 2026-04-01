@@ -61,6 +61,33 @@ async def system_status(db: Session = Depends(get_db)):
         checks.append({"name": "Donnees", "status": "degraded", "detail": "Erreur de lecture"})
         overall = "degraded"
 
+    # Redis
+    try:
+        from ..core.cache import cache
+        await cache.set("health:ping", "pong", ttl=10)
+        val = await cache.get("health:ping")
+        if val == "pong":
+            checks.append({"name": "Cache Redis", "status": "operational"})
+        else:
+            checks.append({"name": "Cache Redis", "status": "degraded", "detail": "Lecture echouee"})
+            overall = "degraded"
+    except Exception:
+        checks.append({"name": "Cache Redis", "status": "down"})
+        overall = "degraded"
+
+    # Disk space
+    try:
+        import shutil
+        usage = shutil.disk_usage("/")
+        free_gb = round(usage.free / (1024**3), 1)
+        used_pct = round(usage.used / usage.total * 100, 1)
+        disk_status = "operational" if used_pct < 90 else "degraded"
+        if disk_status == "degraded":
+            overall = "degraded"
+        checks.append({"name": "Espace disque", "status": disk_status, "detail": f"{free_gb} Go libres ({used_pct}% utilise)"})
+    except Exception:
+        checks.append({"name": "Espace disque", "status": "unknown"})
+
     from ..core.metrics import metrics as _metrics_singleton
     uptime_hours = round((time.time() - _metrics_singleton._start_time) / 3600, 1)
 
@@ -68,7 +95,7 @@ async def system_status(db: Session = Depends(get_db)):
         "status": overall,
         "uptime_hours": uptime_hours,
         "checks": checks,
-        "version": "1.26.0",
+        "version": "1.27.0",
         "timestamp": now_utc().isoformat(),
     }
 

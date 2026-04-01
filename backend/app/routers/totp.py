@@ -189,7 +189,7 @@ async def totp_verify(
 ) -> TOTPVerifyResponse:
     from ..main import enforce_rate_limit, AUTH_RATE_LIMIT_MAX_REQUESTS
 
-    enforce_rate_limit(key=f"auth:2fa_verify:{payload.username}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+    await enforce_rate_limit(key=f"auth:2fa_verify:{payload.username}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
 
     row = _get_user_row(db, payload.username)
 
@@ -277,7 +277,7 @@ async def verify_backup_code(
 ):
     from ..main import enforce_rate_limit, AUTH_RATE_LIMIT_MAX_REQUESTS
 
-    enforce_rate_limit(key=f"auth:2fa_backup:{username}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+    await enforce_rate_limit(key=f"auth:2fa_backup:{username}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
 
     row = db.get(UserAccountORM, username)
     if not row or not row.totp_enabled or not row.backup_codes_hash:

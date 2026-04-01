@@ -57,7 +57,7 @@ async def login(
     from ..main import enforce_rate_limit, log_action, AUTH_RATE_LIMIT_MAX_REQUESTS
 
     client_ip = get_client_ip(request)
-    enforce_rate_limit(key=f"auth:token:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+    await enforce_rate_limit(key=f"auth:token:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
     user, error_detail = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         failed_record = LoginHistoryORM(
@@ -116,7 +116,7 @@ async def login_with_2fa(
     from ..main import enforce_rate_limit, log_action, AUTH_RATE_LIMIT_MAX_REQUESTS
 
     client_ip = get_client_ip(request)
-    enforce_rate_limit(key=f"auth:token2fa:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+    await enforce_rate_limit(key=f"auth:token2fa:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
 
     row = db.get(UserAccountORM, username)
     if not row or not row.totp_enabled or not row.totp_secret:
@@ -173,7 +173,7 @@ async def refresh_token(
     from ..main import enforce_rate_limit, AUTH_RATE_LIMIT_MAX_REQUESTS
 
     client_ip = get_client_ip(request)
-    enforce_rate_limit(key=f"auth:refresh:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+    await enforce_rate_limit(key=f"auth:refresh:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
     raw_token = payload.refresh_token.strip()
     if not raw_token:
         raise HTTPException(status_code=400, detail="refresh_token manquant.")
