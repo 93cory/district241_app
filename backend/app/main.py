@@ -1594,8 +1594,10 @@ app.add_middleware(
 
 from starlette.middleware.gzip import GZipMiddleware
 from .core.csrf import CSRFMiddleware
+from .core.timeout_middleware import TimeoutMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(CSRFMiddleware)
+app.add_middleware(TimeoutMiddleware)
 app.add_middleware(MetricsMiddleware)
 app.add_middleware(CorrelationMiddleware)
 
@@ -1689,6 +1691,11 @@ from .routers.graphql_api import router as graphql_router
 from .routers.conventions import router as conventions_router
 from .routers.search import router as search_router
 
+# --- API v1 (versioned: /api/v1/...) ---
+from .api_v1 import v1_router
+app.include_router(v1_router)
+
+# --- Legacy routes (unversioned, kept for backward compatibility) ---
 app.include_router(auth_router)
 app.include_router(units_router)
 app.include_router(pilotage_router)
