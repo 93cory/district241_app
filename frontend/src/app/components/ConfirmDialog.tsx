@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useCallback } from "react";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -19,6 +19,22 @@ export function ConfirmDialog({
   danger = false,
   onConfirm, onCancel,
 }: ConfirmDialogProps) {
+  // Close on Escape key
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") onCancel();
+  }, [onCancel]);
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [open, handleKeyDown]);
+
   if (!open) return null;
 
   return (
@@ -26,6 +42,8 @@ export function ConfirmDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-title"
+      aria-describedby="confirm-message"
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
       style={{
         position: "fixed", inset: 0, zIndex: 10000,
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -39,7 +57,7 @@ export function ConfirmDialog({
         animation: "reveal-up 250ms ease-out",
       }}>
         <h3 id="confirm-title" style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 700 }}>{title}</h3>
-        <p style={{ margin: "0 0 24px", color: "#526175", fontSize: 14, lineHeight: 1.5 }}>{message}</p>
+        <p id="confirm-message" style={{ margin: "0 0 24px", color: "#526175", fontSize: 14, lineHeight: 1.5 }}>{message}</p>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
           <button
             onClick={onCancel}
@@ -52,6 +70,7 @@ export function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
+            autoFocus
             style={{
               padding: "10px 20px", border: "none", borderRadius: 12,
               background: danger ? "#b42318" : "#006233",

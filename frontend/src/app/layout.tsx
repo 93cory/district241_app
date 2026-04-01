@@ -19,6 +19,7 @@ import { ChatAssistant } from "./components/ChatAssistant";
 import { CookieConsent } from "./components/CookieConsent";
 import { CommandPalette } from "./components/CommandPalette";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { Footer } from "./components/Footer";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
@@ -83,6 +84,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <ChatAssistant />
           <CookieConsent />
           <CommandPalette />
+          <OfflineBanner />
         </div>
       </body>
     </html>

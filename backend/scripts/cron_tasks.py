@@ -111,6 +111,50 @@ def task_cleanup():
             logger.info(f"Revoked {len(expired)} expired refresh tokens.")
         else:
             logger.info("No expired tokens to revoke.")
+
+        # Delete revoked tokens older than 30 days
+        cutoff_30d = now - timedelta(days=30)
+        old_revoked = db.execute(
+            select(RefreshTokenORM).where(
+                RefreshTokenORM.revoked_at.isnot(None),
+                RefreshTokenORM.revoked_at < cutoff_30d,
+            )
+        ).scalars().all()
+        for t in old_revoked:
+            db.delete(t)
+        if old_revoked:
+            db.commit()
+            logger.info(f"Deleted {len(old_revoked)} old revoked tokens.")
+
+        # Delete read notifications older than 90 days
+        from app.models.core import NotificationORM
+        cutoff_90d = now - timedelta(days=90)
+        old_notifs = db.execute(
+            select(NotificationORM).where(
+                NotificationORM.is_read.is_(True),
+                NotificationORM.created_at < cutoff_90d,
+            )
+        ).scalars().all()
+        for n in old_notifs:
+            db.delete(n)
+        if old_notifs:
+            db.commit()
+            logger.info(f"Deleted {len(old_notifs)} old read notifications.")
+
+        # Delete login history older than 180 days
+        from app.models.core import LoginHistoryORM
+        cutoff_180d = now - timedelta(days=180)
+        old_logins = db.execute(
+            select(LoginHistoryORM).where(
+                LoginHistoryORM.created_at < cutoff_180d,
+            )
+        ).scalars().all()
+        for l in old_logins:
+            db.delete(l)
+        if old_logins:
+            db.commit()
+            logger.info(f"Deleted {len(old_logins)} old login history entries.")
+
     finally:
         db.close()
     logger.info("Cleanup complete.")

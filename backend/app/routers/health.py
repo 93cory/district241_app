@@ -33,6 +33,43 @@ async def health() -> Dict[str, str]:
     return {"status": "ok", "service": "PNPI/PNPI Backend"}
 
 
+@router.get("/health/live")
+async def liveness() -> Dict[str, str]:
+    """Liveness probe — always returns 200 if the process is running."""
+    return {"status": "alive"}
+
+
+@router.get("/health/ready")
+async def readiness(db: Session = Depends(get_db)) -> Dict[str, object]:
+    """Readiness probe — checks that DB and cache are reachable."""
+    checks = {}
+    ready = True
+
+    # Database
+    try:
+        db.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "down"
+        ready = False
+
+    # Redis/Cache
+    try:
+        from ..core.cache import cache
+        await cache.set("ready:ping", "1", ttl=5)
+        checks["cache"] = "ok"
+    except Exception:
+        checks["cache"] = "down"
+        ready = False
+
+    status_code = 200 if ready else 503
+    from starlette.responses import JSONResponse
+    return JSONResponse(
+        status_code=status_code,
+        content={"ready": ready, "checks": checks},
+    )
+
+
 @router.get("/health/flags")
 async def feature_flags_status(
     _: User = Depends(require_roles(Role.admin)),
