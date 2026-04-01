@@ -54,7 +54,37 @@ def get_pool_status() -> dict:
     }
 
 
-engine = _engine_for(settings.database_url)
+import logging
+import time
+
+_db_logger = logging.getLogger("pnpi.database")
+
+
+def _create_engine_with_retry(url: str, max_retries: int = 5, delay: float = 2.0):
+    """Create engine and verify connection with retries (useful at startup in Docker)."""
+    eng = _engine_for(url)
+
+    if url.startswith("sqlite"):
+        return eng
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            with eng.connect() as conn:
+                conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+            _db_logger.info("Database connected (attempt %d)", attempt)
+            return eng
+        except Exception as e:
+            if attempt == max_retries:
+                _db_logger.error("Database connection failed after %d attempts: %s", max_retries, e)
+                return eng  # Return engine anyway, let the app handle errors
+            _db_logger.warning("Database not ready (attempt %d/%d): %s — retrying in %ss", attempt, max_retries, str(e)[:100], delay)
+            time.sleep(delay)
+            delay = min(delay * 1.5, 10)
+
+    return eng
+
+
+engine = _create_engine_with_retry(settings.database_url)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 

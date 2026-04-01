@@ -5,6 +5,7 @@ import asyncio
 from contextlib import asynccontextmanager
 import csv
 import hashlib
+import time
 import io
 import logging
 import os
@@ -1758,6 +1759,58 @@ async def api_analytics_endpoint(
     """API usage analytics: top endpoints, slowest, error rates, hourly traffic."""
     from .core.api_analytics import analytics as _analytics
     return _analytics.get_summary()
+
+
+@app.get("/admin/system-stats", tags=["Admin"], summary="Statistiques globales du systeme")
+async def system_stats(
+    _: User = Depends(require_roles(Role.admin, Role.ministre)),
+    db: Session = Depends(get_db),
+):
+    """Vue d'ensemble: comptes entites, taille DB, pool, uptime."""
+    from .models.pnpi import AgrementTechniqueIndustrielORM, OperateurIndustrielORM, InspectionConformiteORM
+    from .models.core import UserAccountORM, AuditEventORM, NotificationORM
+    from .database import get_pool_status
+    from .core.metrics import metrics as _m
+    import shutil
+
+    counts = {}
+    for name, model in [
+        ("operateurs", OperateurIndustrielORM),
+        ("atis", AgrementTechniqueIndustrielORM),
+        ("inspections", InspectionConformiteORM),
+        ("utilisateurs", UserAccountORM),
+        ("audit_events", AuditEventORM),
+        ("notifications", NotificationORM),
+    ]:
+        try:
+            counts[name] = db.execute(select(func.count()).select_from(model)).scalar_one()
+        except Exception:
+            counts[name] = -1
+
+    # DB size (PostgreSQL)
+    db_size = "unknown"
+    try:
+        row = db.execute(text("SELECT pg_size_pretty(pg_database_size(current_database()))")).scalar()
+        db_size = row
+    except Exception:
+        pass
+
+    # Disk
+    disk = {}
+    try:
+        usage = shutil.disk_usage("/")
+        disk = {"total_gb": round(usage.total / 1e9, 1), "free_gb": round(usage.free / 1e9, 1), "used_pct": round(usage.used / usage.total * 100, 1)}
+    except Exception:
+        pass
+
+    return {
+        "entity_counts": counts,
+        "database_size": db_size,
+        "connection_pool": get_pool_status(),
+        "disk": disk,
+        "uptime_hours": round((time.time() - _m._start_time) / 3600, 1),
+        "version": "1.27.0",
+    }
 
 
 # ── Fichiers statiques (logo, assets) ────────────────────────────────────────

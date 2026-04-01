@@ -625,6 +625,69 @@ async def ati_historique(
     ]
 
 
+@router.get("/ati/{ati_id}/changelog", summary="Journal complet des modifications ATI",
+            description="Combine transitions de statut, modifications de champs et commentaires en un flux chronologique.")
+async def ati_changelog(
+    ati_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+
+    events = []
+
+    # 1. Transitions
+    transitions = db.execute(
+        select(ATITransitionORM).where(ATITransitionORM.ati_id == ati_id)
+        .order_by(ATITransitionORM.changed_at.asc())
+    ).scalars().all()
+    for t in transitions:
+        events.append({
+            "type": "transition",
+            "timestamp": t.changed_at.isoformat(),
+            "actor": t.changed_by,
+            "summary": f"{t.previous_statut or '—'} → {t.new_statut or '—'}",
+            "detail": t.note or "",
+        })
+
+    # 2. Field history
+    try:
+        field_changes = get_field_history(db, ati_id)
+        for fc in field_changes:
+            events.append({
+                "type": "field_change",
+                "timestamp": fc.get("changed_at", ""),
+                "actor": fc.get("changed_by", ""),
+                "summary": f"Champ '{fc.get('field', '')}': {fc.get('old_value', '—')} → {fc.get('new_value', '—')}",
+                "detail": "",
+            })
+    except Exception:
+        pass  # Field tracker may not have data
+
+    # 3. Comments
+    try:
+        from ..models.pnpi import ATICommentORM
+        comments = db.execute(
+            select(ATICommentORM).where(ATICommentORM.ati_id == ati_id)
+            .order_by(ATICommentORM.created_at.asc())
+        ).scalars().all()
+        for c in comments:
+            events.append({
+                "type": "comment",
+                "timestamp": c.created_at.isoformat(),
+                "actor": c.author_username,
+                "summary": f"Commentaire{'(interne)' if c.is_internal else ''}",
+                "detail": c.body[:200],
+            })
+    except Exception:
+        pass
+
+    events.sort(key=lambda e: e["timestamp"])
+    return {"ati_id": ati_id, "numero_ati": ati.numero_ati, "total_events": len(events), "events": events}
+
+
 @router.get("/ati/{ati_id}/qrcode", summary="QR Code ATI",
             description="Genere un QR code PNG pour l'agrement technique.")
 async def download_ati_qrcode(
