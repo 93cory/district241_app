@@ -1592,6 +1592,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from starlette.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(MetricsMiddleware)
 app.add_middleware(CorrelationMiddleware)
 
@@ -1683,6 +1685,7 @@ from .routers.scheduled_reports import router as scheduled_reports_router
 from .routers.polls import router as polls_router
 from .routers.graphql_api import router as graphql_router
 from .routers.conventions import router as conventions_router
+from .routers.search import router as search_router
 
 app.include_router(auth_router)
 app.include_router(units_router)
@@ -1718,6 +1721,7 @@ app.include_router(scheduled_reports_router)
 app.include_router(polls_router)
 app.include_router(graphql_router)
 app.include_router(conventions_router)
+app.include_router(search_router)
 
 @app.get("/metrics/usage", include_in_schema=False)
 async def api_usage_stats(

@@ -650,6 +650,20 @@ html[data-theme="light"] {
   100% { background-position: -200% 0; }
 }
 
+/* --- Skeleton Loader --- */
+.skeleton-line {
+  background: linear-gradient(90deg, var(--border-color, #e0e0e0) 25%, var(--card-bg, #f5f5f5) 50%, var(--border-color, #e0e0e0) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+.skeleton-card {
+  padding: 1.25rem;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  background: var(--card-bg, #fff);
+}
+
 /* --- Focus Visible (WCAG 2.1 AA) --- */
 :focus-visible {
   outline: 3px solid #0c7eb4;

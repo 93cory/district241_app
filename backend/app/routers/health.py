@@ -19,6 +19,8 @@ from ..models.core import NotificationORM, UnitORM
 from ..models.pilotage import ProjectDossierORM
 
 
+from ..core.feature_flags import flags
+
 router = APIRouter(tags=["Health & Ops"])
 
 
@@ -29,6 +31,14 @@ def _compute_dossier_age_days(row) -> int:
 @router.get("/health")
 async def health() -> Dict[str, str]:
     return {"status": "ok", "service": "PNPI/PNPI Backend"}
+
+
+@router.get("/health/flags")
+async def feature_flags_status(
+    _: User = Depends(require_roles(Role.admin)),
+) -> Dict[str, object]:
+    """List all feature flags and their current status (admin only)."""
+    return {"flags": flags.all_flags()}
 
 
 @router.get("/health/status")
