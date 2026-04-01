@@ -20,6 +20,7 @@ import { CookieConsent } from "./components/CookieConsent";
 import { CommandPalette } from "./components/CommandPalette";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { Breadcrumbs } from "./components/Breadcrumbs";
 import { Footer } from "./components/Footer";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
@@ -72,6 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </header>
           <AnnouncementBanner />
           <main id="main-content">
+            <Breadcrumbs />
             <ErrorBoundary>
               <ToastProvider>{children}</ToastProvider>
             </ErrorBoundary>

@@ -12,16 +12,16 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 class OperateurCreate(BaseModel):
-    nif_gabon: str
-    raison_sociale: str
-    secteur: str
-    province: str
-    ville: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    contact_email: Optional[str] = None
-    contact_telephone: Optional[str] = None
-    effectif_declare: Optional[int] = None
+    nif_gabon: str = Field(..., examples=["GA-NIF-2024-00123"])
+    raison_sociale: str = Field(..., examples=["Societe Gabonaise de Transformation du Bois"])
+    secteur: str = Field(..., examples=["bois"])
+    province: str = Field(..., examples=["estuaire"])
+    ville: str = Field(..., examples=["Libreville"])
+    latitude: Optional[float] = Field(None, examples=[0.3924])
+    longitude: Optional[float] = Field(None, examples=[9.4536])
+    contact_email: Optional[str] = Field(None, examples=["contact@sgtb-gabon.ga"])
+    contact_telephone: Optional[str] = Field(None, examples=["+241 01 23 45 67"])
+    effectif_declare: Optional[int] = Field(None, examples=[150])
     is_active: bool = True
 
 
@@ -64,13 +64,13 @@ class OperateurBrief(BaseModel):
 # ---------------------------------------------------------------------------
 
 class ATICreate(BaseModel):
-    operateur_id: str
-    type_activite: str
-    secteur: str
-    priorite: str = "normale"
-    sla_jours: int = 30
-    observations: Optional[str] = None
-    instructeur_username: Optional[str] = None
+    operateur_id: str = Field(..., examples=["op-abc123"])
+    type_activite: str = Field(..., examples=["Scierie et transformation premiere du bois"])
+    secteur: str = Field(..., examples=["bois"])
+    priorite: str = Field("normale", examples=["normale", "haute", "urgente"])
+    sla_jours: int = Field(30, examples=[30, 21, 45])
+    observations: Optional[str] = Field(None, examples=["Premiere demande d'agrement"])
+    instructeur_username: Optional[str] = Field(None, examples=["instructeur1"])
 
 
 class ATIRead(BaseModel):

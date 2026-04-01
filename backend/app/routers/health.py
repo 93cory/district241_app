@@ -108,6 +108,14 @@ async def system_status(db: Session = Depends(get_db)):
         checks.append({"name": "Donnees", "status": "degraded", "detail": "Erreur de lecture"})
         overall = "degraded"
 
+    # Connection pool
+    try:
+        from ..database import get_pool_status
+        pool = get_pool_status()
+        checks.append({"name": "Connection Pool", "status": "operational", "detail": f"{pool['checked_out']}/{pool['pool_size']} actives"})
+    except Exception:
+        checks.append({"name": "Connection Pool", "status": "unknown"})
+
     # Redis
     try:
         from ..core.cache import cache

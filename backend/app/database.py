@@ -22,6 +22,9 @@ def as_utc(value: Optional[datetime]) -> Optional[datetime]:
     return value.astimezone(timezone.utc)
 
 
+import os
+
+
 def _engine_for(url: str):
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     is_sqlite = url.startswith("sqlite")
@@ -29,14 +32,26 @@ def _engine_for(url: str):
     pool_kwargs = {}
     if not is_sqlite:
         pool_kwargs = {
-            "pool_size": 10,
-            "max_overflow": 20,
-            "pool_timeout": 30,
-            "pool_recycle": 1800,  # Recycle connections every 30 min
-            "pool_pre_ping": True,  # Verify connection is alive before using
+            "pool_size": int(os.getenv("PNPI_DB_POOL_SIZE", "10")),
+            "max_overflow": int(os.getenv("PNPI_DB_MAX_OVERFLOW", "20")),
+            "pool_timeout": int(os.getenv("PNPI_DB_POOL_TIMEOUT", "30")),
+            "pool_recycle": int(os.getenv("PNPI_DB_POOL_RECYCLE", "1800")),
+            "pool_pre_ping": True,
         }
 
     return create_engine(url, future=True, connect_args=connect_args, **pool_kwargs)
+
+
+def get_pool_status() -> dict:
+    """Return current connection pool statistics."""
+    pool = engine.pool
+    return {
+        "pool_size": pool.size(),
+        "checked_in": pool.checkedin(),
+        "checked_out": pool.checkedout(),
+        "overflow": pool.overflow(),
+        "invalid": pool._invalidate_time if hasattr(pool, "_invalidate_time") else 0,
+    }
 
 
 engine = _engine_for(settings.database_url)
