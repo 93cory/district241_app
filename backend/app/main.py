@@ -1593,7 +1593,9 @@ app.add_middleware(
 )
 
 from starlette.middleware.gzip import GZipMiddleware
+from .core.csrf import CSRFMiddleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
+app.add_middleware(CSRFMiddleware)
 app.add_middleware(MetricsMiddleware)
 app.add_middleware(CorrelationMiddleware)
 

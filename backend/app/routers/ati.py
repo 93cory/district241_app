@@ -1094,6 +1094,69 @@ async def bulk_reject(
     return results
 
 
+class _BulkStatusPayload(_BaseModel):
+    ati_ids: List[str]
+    new_statut: str
+    note: str = ""
+
+
+@router.post("/ati/bulk-transition", summary="Transition de statut en masse",
+             description="Permet de faire passer plusieurs ATI a un nouveau statut (ex: soumis -> en_instruction).")
+async def bulk_transition(
+    payload: _BulkStatusPayload,
+    current_user: User = Depends(require_roles(Role.directeur, Role.admin, Role.ministre, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    valid_transitions = {
+        "soumis": ["en_instruction"],
+        "en_instruction": ["en_validation"],
+        "en_validation": ["approuve", "rejete"],
+    }
+    results: dict = {"transitioned": [], "errors": []}
+    now = now_utc()
+
+    for ati_id in payload.ati_ids[:100]:  # Cap at 100
+        ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+        if not ati:
+            results["errors"].append({"id": ati_id, "error": "ATI introuvable"})
+            continue
+        allowed = valid_transitions.get(ati.statut, [])
+        if payload.new_statut not in allowed:
+            results["errors"].append({
+                "id": ati_id,
+                "error": f"Transition {ati.statut} -> {payload.new_statut} non autorisee",
+            })
+            continue
+
+        old_statut = ati.statut
+        ati.statut = payload.new_statut
+        ati.updated_at = now
+        if payload.new_statut in ("approuve", "rejete"):
+            ati.etape = "decision"
+            ati.date_decision = now
+            if payload.new_statut == "approuve":
+                ati.date_expiration = now + timedelta(days=3 * 365)
+
+        transition = ATITransitionORM(
+            id=f"TR-{uuid.uuid4().hex[:10].upper()}",
+            ati_id=ati.id,
+            changed_by=current_user.username,
+            previous_statut=old_statut,
+            new_statut=payload.new_statut,
+            note=payload.note or f"Transition groupee -> {payload.new_statut}",
+            changed_at=now,
+        )
+        db.add(transition)
+        results["transitioned"].append(ati.id)
+
+    if results["transitioned"]:
+        write_audit_event(db, actor=current_user.username, action="ati.bulk_transition",
+                         target=f"{len(results['transitioned'])} ATIs -> {payload.new_statut}",
+                         details=f"IDs: {', '.join(results['transitioned'][:10])}")
+        db.commit()
+    return results
+
+
 # ─── Public verification (no auth — used by QR code scanning) ─────────────
 
 
