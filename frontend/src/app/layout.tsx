@@ -18,6 +18,7 @@ import { AccessibilityPanel } from "./components/AccessibilityPanel";
 import { ChatAssistant } from "./components/ChatAssistant";
 import { CookieConsent } from "./components/CookieConsent";
 import { CommandPalette } from "./components/CommandPalette";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Footer } from "./components/Footer";
 import { fetchBackendProfile } from "../lib/backend";
 import { getNavLinksForRoles } from "../lib/role-routing";
@@ -70,7 +71,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </header>
           <AnnouncementBanner />
           <main id="main-content">
-            <ToastProvider>{children}</ToastProvider>
+            <ErrorBoundary>
+              <ToastProvider>{children}</ToastProvider>
+            </ErrorBoundary>
             <SessionTimeout />
           </main>
           <Footer />

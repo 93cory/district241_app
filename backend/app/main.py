@@ -59,6 +59,7 @@ from .core.auth import (
     validate_password_policy,
     verify_password,
 )
+from .core.error_handlers import register_error_handlers
 from .core.logging_config import setup_logging
 from .core.correlation_middleware import CorrelationMiddleware
 from .core.metrics import MetricsMiddleware, metrics
@@ -1602,6 +1603,8 @@ app.add_middleware(
 app.add_middleware(MetricsMiddleware)
 app.add_middleware(CorrelationMiddleware)
 
+register_error_handlers(app)
+
 
 @app.middleware("http")
 async def request_context_middleware(request: Request, call_next):
@@ -1626,6 +1629,23 @@ async def request_context_middleware(request: Request, call_next):
     _request_metrics[f"{request.method} {path} status:{status_code}"] += 1
     _request_duration_ms[f"{request.method} {path}"] += duration_ms
     response.headers["x-request-id"] = request_id
+    # Security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(self)"
+    if PNPI_ENV == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: blob:; "
+            "font-src 'self'; "
+            "connect-src 'self' ws: wss:; "
+            "frame-ancestors 'none'"
+        )
     logger.info(
         f'{{"request_id":"{request_id}","method":"{request.method}","path":"{path}",'
         f'"status":{status_code},"duration_ms":{round(duration_ms, 2)},"client_ip":"{client_ip}"}}'

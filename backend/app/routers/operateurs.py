@@ -12,6 +12,7 @@ from sqlalchemy import select
 
 from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
+from ..core.pagination import PaginatedResponse, PaginationParams
 from ..core.scoring import compute_operator_score, compute_all_scores
 from ..database import get_db, now_utc
 from ..models.pnpi import (
@@ -189,6 +190,36 @@ async def list_operateurs(
     query = query.order_by(OperateurIndustrielORM.raison_sociale).offset(skip).limit(limit)
     ops = db.execute(query).scalars().all()
     return [_to_operateur_brief(op) for op in ops]
+
+
+@router.get("/operateurs/paginated", response_model=PaginatedResponse,
+            summary="Lister les operateurs avec pagination")
+async def list_operateurs_paginated(
+    secteur: Optional[str] = Query(default=None),
+    province: Optional[str] = Query(default=None),
+    is_active: Optional[bool] = Query(default=None),
+    pagination: PaginationParams = Depends(),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> PaginatedResponse:
+    from sqlalchemy import func as sa_func
+    base_query = select(OperateurIndustrielORM)
+    if secteur is not None:
+        base_query = base_query.where(OperateurIndustrielORM.secteur == secteur)
+    if province is not None:
+        base_query = base_query.where(OperateurIndustrielORM.province == province)
+    if is_active is not None:
+        base_query = base_query.where(OperateurIndustrielORM.is_active.is_(is_active))
+
+    total = db.execute(select(sa_func.count()).select_from(base_query.subquery())).scalar_one()
+    data_query = base_query.order_by(OperateurIndustrielORM.raison_sociale).offset(pagination.skip).limit(pagination.limit)
+    ops = db.execute(data_query).scalars().all()
+
+    return PaginatedResponse.create(
+        items=[_to_operateur_brief(op) for op in ops],
+        total=total,
+        params=pagination,
+    )
 
 
 @router.post("/operateurs", response_model=OperateurRead, status_code=status.HTTP_201_CREATED,

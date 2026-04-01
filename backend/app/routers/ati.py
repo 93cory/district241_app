@@ -16,6 +16,7 @@ logger = logging.getLogger("pnpi")
 
 from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
+from ..core.pagination import PaginatedResponse, PaginationParams
 from ..core.field_tracker import get_field_history
 from ..core.risk_assessment import assess_risk
 from ..core.decision_engine import recommend_decision
@@ -157,6 +158,43 @@ async def list_atis(
     query = query.order_by(AgrementTechniqueIndustrielORM.date_soumission.desc()).offset(skip).limit(limit)
     atis = db.execute(query).scalars().all()
     return [_to_ati_read(a) for a in atis]
+
+
+@router.get("/ati/paginated", response_model=PaginatedResponse,
+            summary="Lister les ATI avec pagination",
+            description="Version paginee retournant total, page courante et nombre de pages.")
+async def list_atis_paginated(
+    statut: Optional[str] = Query(default=None),
+    secteur: Optional[str] = Query(default=None),
+    province: Optional[str] = Query(default=None),
+    assigned_to_me: bool = Query(default=False),
+    pagination: PaginationParams = Depends(),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> PaginatedResponse:
+    base_query = select(AgrementTechniqueIndustrielORM)
+    if assigned_to_me:
+        base_query = base_query.where(AgrementTechniqueIndustrielORM.instructeur_username == current_user.username)
+    if statut:
+        base_query = base_query.where(AgrementTechniqueIndustrielORM.statut == statut)
+    if secteur:
+        base_query = base_query.where(AgrementTechniqueIndustrielORM.secteur == secteur)
+    if province:
+        base_query = base_query.join(OperateurIndustrielORM).where(OperateurIndustrielORM.province == province)
+
+    count_query = select(func.count()).select_from(base_query.subquery())
+    total = db.execute(count_query).scalar_one()
+
+    data_query = base_query.order_by(
+        AgrementTechniqueIndustrielORM.date_soumission.desc()
+    ).offset(pagination.skip).limit(pagination.limit)
+    atis = db.execute(data_query).scalars().all()
+
+    return PaginatedResponse.create(
+        items=[_to_ati_read(a) for a in atis],
+        total=total,
+        params=pagination,
+    )
 
 
 @router.post("/ati", response_model=ATIRead, status_code=status.HTTP_201_CREATED,
