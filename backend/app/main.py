@@ -1628,6 +1628,9 @@ async def request_context_middleware(request: Request, call_next):
     status_code = response.status_code
     _request_metrics[f"{request.method} {path} status:{status_code}"] += 1
     _request_duration_ms[f"{request.method} {path}"] += duration_ms
+    # API analytics
+    from .core.api_analytics import analytics as _analytics
+    _analytics.record(request.method, path, status_code, duration_ms)
     response.headers["x-request-id"] = request_id
     # Security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -1692,6 +1695,7 @@ from .routers.polls import router as polls_router
 from .routers.graphql_api import router as graphql_router
 from .routers.conventions import router as conventions_router
 from .routers.search import router as search_router
+from .routers.api_keys import router as api_keys_router
 
 # --- API v1 (versioned: /api/v1/...) ---
 from .api_v1 import v1_router
@@ -1733,6 +1737,7 @@ app.include_router(polls_router)
 app.include_router(graphql_router)
 app.include_router(conventions_router)
 app.include_router(search_router)
+app.include_router(api_keys_router)
 
 @app.get("/metrics/usage", include_in_schema=False)
 async def api_usage_stats(
@@ -1744,6 +1749,16 @@ async def api_usage_stats(
 async def prometheus_metrics():
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse(metrics.to_prometheus(), media_type="text/plain; version=0.0.4; charset=utf-8")
+
+
+@app.get("/admin/api-analytics", include_in_schema=True, tags=["Admin"])
+async def api_analytics_endpoint(
+    _: User = Depends(require_roles(Role.admin)),
+):
+    """API usage analytics: top endpoints, slowest, error rates, hourly traffic."""
+    from .core.api_analytics import analytics as _analytics
+    return _analytics.get_summary()
+
 
 # ── Fichiers statiques (logo, assets) ────────────────────────────────────────
 _static_dir = os.path.join(os.path.dirname(__file__), "..", "static")
