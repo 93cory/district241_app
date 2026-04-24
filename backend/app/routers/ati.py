@@ -40,6 +40,26 @@ class _BulkAssignPayload(_BaseModel):
     instructeur_username: str
 
 
+_PRIVILEGED_ROLES = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+
+
+def _user_role_values(current_user: User) -> set[str]:
+    return {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+
+
+def check_ati_access(ati: AgrementTechniqueIndustrielORM, current_user: User) -> None:
+    """Operateur: accede uniquement aux ATI qu'il a crees. Roles privilegies: pass-through.
+
+    A appeler sur chaque endpoint /ati/{id}/* accessible a l'operateur pour
+    bloquer l'IDOR (enumeration/lecture/modification des dossiers concurrents).
+    """
+    roles = _user_role_values(current_user)
+    if roles & _PRIVILEGED_ROLES:
+        return
+    if "operateur" in roles and ati.created_by != current_user.username:
+        raise HTTPException(status_code=403, detail="Acces restreint a vos propres dossiers.")
+
+
 router = APIRouter(prefix="/pnpi", tags=["ATI"])
 
 _TERMINAL_STATUTS = {"approuve", "rejete", "expire"}
@@ -147,9 +167,8 @@ async def list_atis(
 ) -> List[ATIRead]:
     query = select(AgrementTechniqueIndustrielORM)
     # Les operateurs ne voient que leurs propres dossiers.
-    role_values = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    is_privileged = bool(role_values & {"admin", "ministre", "directeur", "instructeur", "inspecteur"})
-    if not is_privileged and "operateur" in role_values:
+    roles = _user_role_values(current_user)
+    if not (roles & _PRIVILEGED_ROLES) and "operateur" in roles:
         query = query.where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
     if assigned_to_me:
         query = query.where(AgrementTechniqueIndustrielORM.instructeur_username == current_user.username)
@@ -452,11 +471,7 @@ async def get_ati(
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
-    # Les operateurs ne peuvent voir que leurs propres dossiers.
-    role_values = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    is_privileged = bool(role_values & {"admin", "ministre", "directeur", "instructeur", "inspecteur"})
-    if not is_privileged and "operateur" in role_values and ati.created_by != current_user.username:
-        raise HTTPException(status_code=403, detail="Acces restreint a vos propres dossiers.")
+    check_ati_access(ati, current_user)
     return _to_ati_read(ati)
 
 
@@ -569,6 +584,7 @@ async def resubmit_ati(
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
     if ati.statut != "rejete":
         raise HTTPException(status_code=400, detail="Seul un ATI rejete peut etre resoumis.")
 
@@ -669,10 +685,7 @@ async def ati_historique(
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
-    role_values = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    is_privileged = bool(role_values & {"admin", "ministre", "directeur", "instructeur", "inspecteur"})
-    if not is_privileged and "operateur" in role_values and ati.created_by != current_user.username:
-        raise HTTPException(status_code=403, detail="Acces restreint a vos propres dossiers.")
+    check_ati_access(ati, current_user)
 
     transitions = db.execute(
         select(ATITransitionORM)
@@ -1833,9 +1846,13 @@ async def get_ati_comments(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
     query = select(ATICommentORM).where(ATICommentORM.ati_id == ati_id)
     # Operators only see non-internal comments
-    user_roles = set(current_user.roles)
+    user_roles = _user_role_values(current_user)
     if user_roles == {"operateur"}:
         query = query.where(ATICommentORM.is_internal.is_(False))
 
@@ -1861,13 +1878,17 @@ async def add_ati_comment(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
     body = (data.get("body") or "").strip()
     if not body:
         raise HTTPException(400, "Le commentaire ne peut pas etre vide.")
 
     is_internal = bool(data.get("is_internal", False))
     # Only staff can post internal comments
-    if is_internal and set(current_user.roles) == {"operateur"}:
+    if is_internal and _user_role_values(current_user) == {"operateur"}:
         is_internal = False
 
     comment = ATICommentORM(
@@ -1959,6 +1980,10 @@ async def get_ati_tags(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
     tags = db.execute(
         select(ATITagORM).where(ATITagORM.ati_id == ati_id)
         .order_by(ATITagORM.created_at.asc())
@@ -2010,6 +2035,10 @@ async def get_ati_risk(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
     return assess_risk(db, ati_id)
 
 
@@ -2019,6 +2048,10 @@ async def get_ati_field_history(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
     history = get_field_history(db, "ati", ati_id)
     return {"history": history}
 
@@ -2034,6 +2067,7 @@ async def renew_ati(
     original = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not original:
         raise HTTPException(404, "ATI introuvable.")
+    check_ati_access(original, current_user)
     if original.statut not in ("approuve", "expire"):
         raise HTTPException(400, "Seuls les ATI approuves ou expires peuvent etre renouveles.")
 
@@ -2089,6 +2123,7 @@ async def generate_product_qr(
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati or ati.statut != "approuve":
         raise HTTPException(400, "ATI approuve requis pour generer un QR produit.")
+    check_ati_access(ati, current_user)
 
     op = ati.operateur
     verify_url = f"https://pnpi-gabon.ga/verify/product?ati={ati.numero_ati}&product={product_name}&batch={batch_number}"

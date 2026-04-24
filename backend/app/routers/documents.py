@@ -16,6 +16,7 @@ from ..core.auth import Role, User, require_roles
 from ..core.audit import write_audit_event
 from ..database import get_db, now_utc
 from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM
+from .ati import check_ati_access
 
 router = APIRouter(prefix="/pnpi", tags=["Documents"])
 
@@ -65,10 +66,7 @@ async def list_ati_documents(
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
-    role_values = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    is_privileged = bool(role_values & {"admin", "ministre", "directeur", "instructeur", "inspecteur"})
-    if not is_privileged and "operateur" in role_values and ati.created_by != current_user.username:
-        raise HTTPException(status_code=403, detail="Acces restreint a vos propres dossiers.")
+    check_ati_access(ati, current_user)
     docs = db.execute(
         select(DocumentDossierORM)
         .where(DocumentDossierORM.ati_id == ati_id)
@@ -129,6 +127,7 @@ async def upload_ati_document(
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
     if type_document not in TYPE_DOCUMENT_VALUES:
         raise HTTPException(status_code=422, detail=f"type_document doit etre parmi: {TYPE_DOCUMENT_VALUES}")
 
@@ -164,12 +163,15 @@ async def upload_ati_document(
 @router.get("/documents/{doc_id}/download")
 async def download_document(
     doc_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> FileResponse:
     doc = db.get(DocumentDossierORM, doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document introuvable.")
+    ati = db.get(AgrementTechniqueIndustrielORM, doc.ati_id)
+    if ati:
+        check_ati_access(ati, current_user)
     file_path = Path(doc.chemin_stockage)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Fichier physique introuvable sur le serveur.")

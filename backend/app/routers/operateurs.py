@@ -177,10 +177,13 @@ async def list_operateurs(
     is_active: Optional[bool] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> List[OperateurBrief]:
     query = select(OperateurIndustrielORM)
+    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+    operateur_only = not (roles & privileged) and "operateur" in roles
     if secteur is not None:
         query = query.where(OperateurIndustrielORM.secteur == secteur)
     if province is not None:
@@ -191,7 +194,13 @@ async def list_operateurs(
     query = query.where(OperateurIndustrielORM.deleted_at.is_(None))
     query = query.order_by(OperateurIndustrielORM.raison_sociale).offset(skip).limit(limit)
     ops = db.execute(query).scalars().all()
-    return [_to_operateur_brief(op) for op in ops]
+    briefs = [_to_operateur_brief(op) for op in ops]
+    # Operateur ne doit pas voir NIF / effectif des concurrents (annuaire public minimal).
+    if operateur_only:
+        for b in briefs:
+            b.nif_gabon = ""
+            b.effectif_declare = None
+    return briefs
 
 
 @router.get("/operateurs/paginated", response_model=PaginatedResponse,
@@ -270,12 +279,25 @@ async def create_operateur(
 @router.get("/operateurs/{operateur_id}", response_model=OperateurRead, summary="Detail d'un operateur")
 async def get_operateur(
     operateur_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> OperateurRead:
     op = db.get(OperateurIndustrielORM, operateur_id)
     if not op:
         raise HTTPException(status_code=404, detail="Operateur introuvable.")
+    # Operateur: detail complet uniquement pour les entreprises avec lesquelles il a interagi
+    # (ATI deja soumis pour cet operateur). Sinon 403.
+    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+    if not (roles & privileged) and "operateur" in roles:
+        has_link = db.execute(
+            select(AgrementTechniqueIndustrielORM.id)
+            .where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
+            .where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
+            .limit(1)
+        ).scalar() is not None
+        if not has_link:
+            raise HTTPException(status_code=403, detail="Acces restreint aux operateurs avec lesquels vous avez interagi.")
     return _to_operateur_read(op)
 
 
@@ -349,18 +371,23 @@ async def operateur_risk_profile(
 @router.get("/operateurs/{operateur_id}/ati", response_model=List[ATIBrief], summary="ATI d'un operateur")
 async def list_operateur_atis(
     operateur_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> List[ATIBrief]:
     op = db.get(OperateurIndustrielORM, operateur_id)
     if not op:
         raise HTTPException(status_code=404, detail="Operateur introuvable.")
 
-    atis = db.execute(
+    query = (
         select(AgrementTechniqueIndustrielORM)
         .where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
-        .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
-    ).scalars().all()
+    )
+    # Operateur ne voit que ses propres ATI, meme pour un operateur qu'il a cree.
+    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+    if not (roles & privileged) and "operateur" in roles:
+        query = query.where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
+    atis = db.execute(query.order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())).scalars().all()
     return [_to_ati_brief(a) for a in atis]
 
 
