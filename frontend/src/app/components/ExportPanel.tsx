@@ -25,8 +25,7 @@ export const ExportPanel = ({ indicators, batches, units }: Props) => {
     <div className="chart-card" style={{ background: "#0f2f64", color: "white" }}>
       <h3 style={{ marginTop: 0, fontWeight: 700 }}>Exports strategiques</h3>
       <p>
-        Exportez les indicateurs et lots pour alimenter les rapports ministeriels
-        (CSV/JSON/PDF).
+        Exportez les indicateurs et lots pour alimenter les rapports ministeriels (CSV/JSON/PDF).
       </p>
       <p style={{ margin: "0.75rem 0", color: "#b9c1dd" }}>
         {unitCount} unites industrielles surveillees • {localTotal.toFixed(0)} T local

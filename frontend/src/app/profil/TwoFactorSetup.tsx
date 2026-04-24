@@ -209,19 +209,14 @@ export const TwoFactorSetup = () => {
 
       {/* --- Idle state: show enable button --- */}
       {state === "idle" && (
-        <button
-          onClick={startSetup}
-          style={buttonPrimary}
-        >
+        <button onClick={startSetup} style={buttonPrimary}>
           Activer la 2FA
         </button>
       )}
 
       {/* --- Loading --- */}
       {state === "loading" && (
-        <p style={{ color: "#6b7280", fontSize: "0.9rem" }}>
-          Configuration en cours...
-        </p>
+        <p style={{ color: "#6b7280", fontSize: "0.9rem" }}>Configuration en cours...</p>
       )}
 
       {/* --- QR code displayed, waiting for confirmation --- */}
@@ -234,8 +229,8 @@ export const TwoFactorSetup = () => {
               marginBottom: "1rem",
             }}
           >
-            Scannez le QR code ci-dessous avec votre application
-            d&apos;authentification (Google Authenticator, Authy, etc.).
+            Scannez le QR code ci-dessous avec votre application d&apos;authentification (Google
+            Authenticator, Authy, etc.).
           </p>
 
           {/* QR Code SVG */}
@@ -315,16 +310,9 @@ export const TwoFactorSetup = () => {
               disabled={busy || code.length !== 6}
               style={{
                 ...buttonPrimary,
-                background:
-                  busy || code.length !== 6
-                    ? "#9ca3af"
-                    : buttonPrimary.background,
-                cursor:
-                  busy || code.length !== 6 ? "not-allowed" : "pointer",
-                boxShadow:
-                  busy || code.length !== 6
-                    ? "none"
-                    : buttonPrimary.boxShadow,
+                background: busy || code.length !== 6 ? "#9ca3af" : buttonPrimary.background,
+                cursor: busy || code.length !== 6 ? "not-allowed" : "pointer",
+                boxShadow: busy || code.length !== 6 ? "none" : buttonPrimary.boxShadow,
               }}
             >
               {busy ? "Activation en cours..." : "Confirmer et activer"}
@@ -356,11 +344,8 @@ export const TwoFactorSetup = () => {
             >
               2FA activee
             </p>
-            <p
-              style={{ margin: "0.3rem 0 0", color: "#166534", fontSize: "0.8rem" }}
-            >
-              Votre compte est protege par l&apos;authentification a deux
-              facteurs.
+            <p style={{ margin: "0.3rem 0 0", color: "#166534", fontSize: "0.8rem" }}>
+              Votre compte est protege par l&apos;authentification a deux facteurs.
             </p>
           </div>
 
@@ -393,10 +378,7 @@ export const TwoFactorSetup = () => {
             style={{
               ...buttonDanger,
               opacity: busy || disableCode.length !== 6 ? 0.5 : 1,
-              cursor:
-                busy || disableCode.length !== 6
-                  ? "not-allowed"
-                  : "pointer",
+              cursor: busy || disableCode.length !== 6 ? "not-allowed" : "pointer",
             }}
           >
             {busy ? "Desactivation..." : "Desactiver 2FA"}
@@ -406,10 +388,7 @@ export const TwoFactorSetup = () => {
 
       {/* --- Error state with retry --- */}
       {state === "error" && (
-        <button
-          onClick={startSetup}
-          style={buttonPrimary}
-        >
+        <button onClick={startSetup} style={buttonPrimary}>
           Reessayer
         </button>
       )}

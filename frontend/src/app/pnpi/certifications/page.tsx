@@ -17,7 +17,10 @@ export default async function CertificationsPage() {
   let operators: any[] = [];
   try {
     const res = await backendRequest("/pnpi/operateurs?limit=200");
-    if (res.ok) { const d = await res.json(); operators = d.operateurs || d || []; }
+    if (res.ok) {
+      const d = await res.json();
+      operators = d.operateurs || d || [];
+    }
   } catch {}
 
   // Simulate certification data based on sectors
@@ -46,32 +49,58 @@ export default async function CertificationsPage() {
         Suivi des normes et certifications qualite des operateurs industriels gabonais.
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-        {CERTIFICATIONS.map(cert => {
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+          gap: 12,
+        }}
+      >
+        {CERTIFICATIONS.map((cert) => {
           const count = certCounts[cert.code] || 0;
-          const pct = operators.length ? Math.round(count / operators.length * 100) : 0;
+          const pct = operators.length ? Math.round((count / operators.length) * 100) : 0;
           return (
             <div key={cert.code} className="chart-card" style={{ padding: "18px 20px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                 <span style={{ fontSize: 24 }}>{cert.icon}</span>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: cert.color }}>{cert.code}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: cert.color }}>
+                    {cert.code}
+                  </div>
                   <div style={{ fontSize: 11, color: "var(--text-soft)" }}>{cert.name}</div>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                 <div style={{ flex: 1, height: 8, borderRadius: 4, background: "var(--line)" }}>
-                  <div style={{ height: "100%", borderRadius: 4, background: cert.color, width: `${pct}%` }} />
+                  <div
+                    style={{
+                      height: "100%",
+                      borderRadius: 4,
+                      background: cert.color,
+                      width: `${pct}%`,
+                    }}
+                  />
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 800, color: cert.color }}>{pct}%</span>
               </div>
-              <div style={{ fontSize: 11, color: "var(--text-soft)" }}>{count} operateur(s) certifie(s)</div>
+              <div style={{ fontSize: 11, color: "var(--text-soft)" }}>
+                {count} operateur(s) certifie(s)
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div style={{ marginTop: 20, padding: "14px 18px", borderRadius: 12, background: "var(--bg-base)", fontSize: 12, color: "var(--text-soft)" }}>
+      <div
+        style={{
+          marginTop: 20,
+          padding: "14px 18px",
+          borderRadius: 12,
+          background: "var(--bg-base)",
+          fontSize: 12,
+          color: "var(--text-soft)",
+        }}
+      >
         Les certifications sont estimees par secteur d&apos;activite. Pour une donnee precise,
         contactez chaque operateur ou consultez les documents joints a leur dossier ATI.
       </div>

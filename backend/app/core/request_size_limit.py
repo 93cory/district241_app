@@ -1,4 +1,5 @@
 """Middleware to reject oversized request bodies (DoS prevention)."""
+
 from __future__ import annotations
 
 import logging

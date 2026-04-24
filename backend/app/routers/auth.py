@@ -1,35 +1,33 @@
 """PNPI / PNPI · Endpoints d'authentification."""
+
 from __future__ import annotations
 
 import uuid
-from typing import Dict
 
+import pyotp
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.orm import Session
 from sqlalchemy import select
-import pyotp
+from sqlalchemy.orm import Session
 
+from ..core.audit import write_audit_event
 from ..core.auth import (
-    User,
-    Token,
     RefreshTokenRequest,
+    Token,
+    User,
     authenticate_user,
     create_access_token,
-    issue_refresh_token,
     get_current_user,
-    token_digest,
-    fake_users_db,
-    user_from_row,
-    verify_password,
     get_password_hash,
+    issue_refresh_token,
+    token_digest,
+    user_from_row,
     validate_password_policy,
+    verify_password,
 )
-from ..core.audit import write_audit_event
-from ..core.digest import generate_daily_digest
 from ..core.badges import compute_badges
-from ..database import get_db, now_utc, as_utc
-from ..config import settings
+from ..core.digest import generate_daily_digest
+from ..database import as_utc, get_db, now_utc
 from ..models.core import LoginHistoryORM, RefreshTokenORM, UserAccountORM
 from ..models.pnpi import InstructorRatingORM
 
@@ -54,7 +52,7 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    from ..main import enforce_rate_limit, log_action, AUTH_RATE_LIMIT_MAX_REQUESTS
+    from ..main import AUTH_RATE_LIMIT_MAX_REQUESTS, enforce_rate_limit, log_action
 
     client_ip = get_client_ip(request)
     await enforce_rate_limit(key=f"auth:token:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
@@ -81,9 +79,7 @@ async def login(
     if row and row.totp_enabled:
         return {"requires_2fa": True, "username": user.username, "message": "Code 2FA requis."}
 
-    access_token = create_access_token(
-        {"sub": user.username, "roles": [role.value for role in user.roles]}
-    )
+    access_token = create_access_token({"sub": user.username, "roles": [role.value for role in user.roles]})
     refresh_token = issue_refresh_token(db, username=user.username, client_ip=client_ip)
     login_record = LoginHistoryORM(
         id=str(uuid.uuid4()),
@@ -113,7 +109,7 @@ async def login_with_2fa(
     totp_code: str = Form(...),
     db: Session = Depends(get_db),
 ) -> Token:
-    from ..main import enforce_rate_limit, log_action, AUTH_RATE_LIMIT_MAX_REQUESTS
+    from ..main import AUTH_RATE_LIMIT_MAX_REQUESTS, enforce_rate_limit, log_action
 
     client_ip = get_client_ip(request)
     await enforce_rate_limit(key=f"auth:token2fa:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
@@ -133,9 +129,7 @@ async def login_with_2fa(
         )
 
     user = user_from_row(row)
-    access_token = create_access_token(
-        {"sub": user.username, "roles": [role.value for role in user.roles]}
-    )
+    access_token = create_access_token({"sub": user.username, "roles": [role.value for role in user.roles]})
     refresh_token = issue_refresh_token(db, username=user.username, client_ip=client_ip)
     write_audit_event(
         db,
@@ -170,7 +164,7 @@ async def refresh_token(
     payload: RefreshTokenRequest,
     db: Session = Depends(get_db),
 ) -> Token:
-    from ..main import enforce_rate_limit, AUTH_RATE_LIMIT_MAX_REQUESTS
+    from ..main import AUTH_RATE_LIMIT_MAX_REQUESTS, enforce_rate_limit
 
     client_ip = get_client_ip(request)
     await enforce_rate_limit(key=f"auth:refresh:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
@@ -179,9 +173,7 @@ async def refresh_token(
         raise HTTPException(status_code=400, detail="refresh_token manquant.")
 
     token_hash = token_digest(raw_token)
-    row = db.execute(
-        select(RefreshTokenORM).where(RefreshTokenORM.token_hash == token_hash)
-    ).scalar_one_or_none()
+    row = db.execute(select(RefreshTokenORM).where(RefreshTokenORM.token_hash == token_hash)).scalar_one_or_none()
     if not row:
         raise HTTPException(status_code=401, detail="Refresh token invalide.")
     if row.revoked_at is not None:
@@ -198,14 +190,13 @@ async def refresh_token(
         db.commit()
         raise HTTPException(status_code=403, detail="Compte desactive.")
     from ..core.auth import get_fake_users_db
+
     user = user_from_row(user_row) if user_row else get_fake_users_db().get(row.username)
     if not user:
         db.commit()
         raise HTTPException(status_code=401, detail="Utilisateur introuvable.")
 
-    access_token = create_access_token(
-        {"sub": user.username, "roles": [role.value for role in user.roles]}
-    )
+    access_token = create_access_token({"sub": user.username, "roles": [role.value for role in user.roles]})
     new_refresh_token = issue_refresh_token(db, username=user.username, client_ip=client_ip)
     write_audit_event(
         db,
@@ -223,13 +214,11 @@ async def logout(
     payload: RefreshTokenRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     raw_token = payload.refresh_token.strip()
     if raw_token:
         token_hash = token_digest(raw_token)
-        row = db.execute(
-            select(RefreshTokenORM).where(RefreshTokenORM.token_hash == token_hash)
-        ).scalar_one_or_none()
+        row = db.execute(select(RefreshTokenORM).where(RefreshTokenORM.token_hash == token_hash)).scalar_one_or_none()
         if row and row.username == current_user.username and row.revoked_at is None:
             row.revoked_at = now_utc()
     write_audit_event(
@@ -282,12 +271,16 @@ async def get_login_history(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    records = db.execute(
-        select(LoginHistoryORM)
-        .where(LoginHistoryORM.username == current_user.username)
-        .order_by(LoginHistoryORM.created_at.desc())
-        .limit(limit)
-    ).scalars().all()
+    records = (
+        db.execute(
+            select(LoginHistoryORM)
+            .where(LoginHistoryORM.username == current_user.username)
+            .order_by(LoginHistoryORM.created_at.desc())
+            .limit(limit)
+        )
+        .scalars()
+        .all()
+    )
 
     return {
         "history": [
@@ -311,6 +304,7 @@ async def get_preferences(
     db: Session = Depends(get_db),
 ):
     from ..models.core import NotificationPreferenceORM
+
     prefs = db.get(NotificationPreferenceORM, current_user.username)
     if not prefs:
         return {
@@ -338,12 +332,20 @@ async def update_preferences(
     db: Session = Depends(get_db),
 ):
     from ..models.core import NotificationPreferenceORM
+
     prefs = db.get(NotificationPreferenceORM, current_user.username)
     if not prefs:
         prefs = NotificationPreferenceORM(username=current_user.username)
         db.add(prefs)
 
-    allowed = {"email_ati_approved", "email_ati_rejected", "email_sla_alert", "email_inspection", "email_weekly_briefing", "push_enabled"}
+    allowed = {
+        "email_ati_approved",
+        "email_ati_rejected",
+        "email_sla_alert",
+        "email_inspection",
+        "email_weekly_briefing",
+        "push_enabled",
+    }
     for key, value in prefs_data.items():
         if key in allowed and isinstance(value, bool):
             setattr(prefs, key, value)
@@ -378,6 +380,7 @@ async def rate_instructor(
 ):
     """Rate an instructor after ATI decision (operator only)."""
     import uuid as _uuid
+
     rating_val = data.get("rating", 0)
     if not (1 <= rating_val <= 5):
         raise HTTPException(400, "Note entre 1 et 5.")
@@ -401,10 +404,15 @@ async def get_instructor_ratings(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    ratings = db.execute(
-        select(InstructorRatingORM).where(InstructorRatingORM.instructor_username == username)
-        .order_by(InstructorRatingORM.created_at.desc())
-    ).scalars().all()
+    ratings = (
+        db.execute(
+            select(InstructorRatingORM)
+            .where(InstructorRatingORM.instructor_username == username)
+            .order_by(InstructorRatingORM.created_at.desc())
+        )
+        .scalars()
+        .all()
+    )
 
     if not ratings:
         return {"username": username, "average": 0, "count": 0, "ratings": []}
@@ -414,9 +422,14 @@ async def get_instructor_ratings(
         "username": username,
         "average": avg,
         "count": len(ratings),
-        "ratings": [{
-            "rating": r.rating, "comment": r.comment,
-            "operator": r.operator_username, "ati_id": r.ati_id,
-            "created_at": r.created_at.isoformat(),
-        } for r in ratings[:20]],
+        "ratings": [
+            {
+                "rating": r.rating,
+                "comment": r.comment,
+                "operator": r.operator_username,
+                "ati_id": r.ati_id,
+                "created_at": r.created_at.isoformat(),
+            }
+            for r in ratings[:20]
+        ],
     }

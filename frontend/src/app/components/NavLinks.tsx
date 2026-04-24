@@ -15,8 +15,7 @@ export function NavLinks({ links }: { links: NavLink[] }) {
     <>
       {links.map((link) => {
         const isActive =
-          pathname === link.href ||
-          (link.href !== "/" && pathname.startsWith(link.href));
+          pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
 
         return (
           <Link

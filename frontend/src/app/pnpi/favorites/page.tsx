@@ -14,8 +14,11 @@ export default async function FavoritesPage() {
   } catch {}
 
   const STATUS_COLORS: Record<string, string> = {
-    approuve: "#006233", rejete: "#b42318", soumis: "#526175",
-    en_instruction: "#0c7eb4", valide: "#d97706",
+    approuve: "#006233",
+    rejete: "#b42318",
+    soumis: "#526175",
+    en_instruction: "#0c7eb4",
+    valide: "#d97706",
   };
 
   return (
@@ -42,11 +45,15 @@ export default async function FavoritesPage() {
                 key={fav.id}
                 href={`/pnpi/ati/${fav.ati_id}`}
                 style={{
-                  display: "flex", alignItems: "center", gap: 14,
-                  padding: "14px 18px", borderRadius: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderRadius: 14,
                   background: "var(--bg-layer, #fff)",
                   border: "1.5px solid var(--line, #dce4ef)",
-                  textDecoration: "none", color: "inherit",
+                  textDecoration: "none",
+                  color: "inherit",
                   transition: "border-color 150ms ease",
                 }}
               >
@@ -59,10 +66,16 @@ export default async function FavoritesPage() {
                     {fav.operateur || "·"}
                   </div>
                 </div>
-                <span style={{
-                  padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                  background: `${color}12`, color,
-                }}>
+                <span
+                  style={{
+                    padding: "3px 10px",
+                    borderRadius: 8,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    background: `${color}12`,
+                    color,
+                  }}
+                >
                   {fav.statut?.replace(/_/g, " ") || "·"}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)" }}>

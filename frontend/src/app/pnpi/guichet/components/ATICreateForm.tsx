@@ -46,13 +46,21 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
     const typeInput = form.querySelector<HTMLInputElement>("[name=type_activite]");
     if (secteurSelect && tpl.secteur) {
       const mapping: Record<string, string> = {
-        bois: "bois", mines: "mines", agroalimentaire: "agroalimentaire",
-        peche: "services", chimie: "services", btp: "btp", energie: "services",
+        bois: "bois",
+        mines: "mines",
+        agroalimentaire: "agroalimentaire",
+        peche: "services",
+        chimie: "services",
+        btp: "btp",
+        energie: "services",
       };
       secteurSelect.value = mapping[tpl.secteur] || tpl.secteur;
     }
     if (typeInput && tpl.type_activite) {
-      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype,
+        "value",
+      )?.set;
       if (nativeInputValueSetter) {
         nativeInputValueSetter.call(typeInput, tpl.type_activite);
         typeInput.dispatchEvent(new Event("input", { bubbles: true }));
@@ -155,18 +163,29 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
 
         <div className="pnpi-form-grid">
           <div className="pnpi-form-field">
-            <label htmlFor="ati-secteur" className="pnpi-form-label pnpi-form-label-req">Secteur</label>
+            <label htmlFor="ati-secteur" className="pnpi-form-label pnpi-form-label-req">
+              Secteur
+            </label>
             <select id="ati-secteur" name="secteur" required className="pnpi-form-select">
               <option value="">Selectionner</option>
               {SECTEURS.map((s) => (
-                <option key={s} value={s}>{SECTEUR_LABELS[s]}</option>
+                <option key={s} value={s}>
+                  {SECTEUR_LABELS[s]}
+                </option>
               ))}
             </select>
           </div>
 
           <div className="pnpi-form-field">
-            <label htmlFor="ati-priorite" className="pnpi-form-label">Priorite</label>
-            <select id="ati-priorite" name="priorite" className="pnpi-form-select" defaultValue="normale">
+            <label htmlFor="ati-priorite" className="pnpi-form-label">
+              Priorite
+            </label>
+            <select
+              id="ati-priorite"
+              name="priorite"
+              className="pnpi-form-select"
+              defaultValue="normale"
+            >
               <option value="normale">Normale</option>
               <option value="elevee">Elevee</option>
               <option value="urgente">Urgente</option>
@@ -175,7 +194,9 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
         </div>
 
         <div className="pnpi-form-field">
-          <label htmlFor="ati-observations" className="pnpi-form-label">Observations / Justification</label>
+          <label htmlFor="ati-observations" className="pnpi-form-label">
+            Observations / Justification
+          </label>
           <textarea
             id="ati-observations"
             name="observations"

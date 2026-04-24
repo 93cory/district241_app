@@ -24,9 +24,22 @@ export function ProgressBar({
   return (
     <div>
       {(label || showPercent) && (
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.25rem", fontSize: "0.78rem" }}>
-          {label && <span style={{ fontWeight: 500, color: "var(--text-primary, #1f2937)" }}>{label}</span>}
-          {showPercent && <span style={{ color: "var(--text-secondary, #6b7280)", fontWeight: 600 }}>{rounded}%</span>}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "0.25rem",
+            fontSize: "0.78rem",
+          }}
+        >
+          {label && (
+            <span style={{ fontWeight: 500, color: "var(--text-primary, #1f2937)" }}>{label}</span>
+          )}
+          {showPercent && (
+            <span style={{ color: "var(--text-secondary, #6b7280)", fontWeight: 600 }}>
+              {rounded}%
+            </span>
+          )}
         </div>
       )}
       <div

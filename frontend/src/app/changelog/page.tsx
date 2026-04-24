@@ -102,35 +102,61 @@ export default function ChangelogPage() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         {releases.map((release) => (
-          <div key={release.version} style={{
-            borderRadius: 16, border: "1.5px solid var(--line, #dce4ef)",
-            background: "var(--bg-layer, #fff)", overflow: "hidden",
-          }}>
-            <div style={{
-              padding: "14px 20px",
-              background: release.tag === "latest" ? "linear-gradient(135deg, #006233, #0c7eb4)" : "var(--bg-base, #f4f8fb)",
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-            }}>
+          <div
+            key={release.version}
+            style={{
+              borderRadius: 16,
+              border: "1.5px solid var(--line, #dce4ef)",
+              background: "var(--bg-layer, #fff)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "14px 20px",
+                background:
+                  release.tag === "latest"
+                    ? "linear-gradient(135deg, #006233, #0c7eb4)"
+                    : "var(--bg-base, #f4f8fb)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{
-                  fontSize: 18, fontWeight: 800,
-                  color: release.tag === "latest" ? "#fff" : "var(--text-main, #0c2a4a)",
-                }}>
+                <span
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: release.tag === "latest" ? "#fff" : "var(--text-main, #0c2a4a)",
+                  }}
+                >
                   v{release.version}
                 </span>
                 {release.tag === "latest" && (
-                  <span style={{
-                    padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-                    background: "rgba(255, 255, 255, 0.72)", color: "#fff",
-                  }}>
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      background: "rgba(255, 255, 255, 0.72)",
+                      color: "#fff",
+                    }}
+                  >
                     LATEST
                   </span>
                 )}
               </div>
-              <span style={{
-                fontSize: 12,
-                color: release.tag === "latest" ? "rgba(255,255,255,0.8)" : "var(--text-soft, #526175)",
-              }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  color:
+                    release.tag === "latest"
+                      ? "rgba(255,255,255,0.8)"
+                      : "var(--text-soft, #526175)",
+                }}
+              >
                 {release.date}
               </span>
             </div>
@@ -138,11 +164,22 @@ export default function ChangelogPage() {
               {release.changes.map((change, i) => {
                 const style = TYPE_STYLES[change.type] || TYPE_STYLES.feat;
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
-                    <span style={{
-                      padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700,
-                      background: style.bg, color: style.color, whiteSpace: "nowrap", marginTop: 2,
-                    }}>
+                  <div
+                    key={i}
+                    style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6 }}
+                  >
+                    <span
+                      style={{
+                        padding: "1px 6px",
+                        borderRadius: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: style.bg,
+                        color: style.color,
+                        whiteSpace: "nowrap",
+                        marginTop: 2,
+                      }}
+                    >
                       {style.label}
                     </span>
                     <span style={{ fontSize: 13, lineHeight: 1.5 }}>{change.text}</span>

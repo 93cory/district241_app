@@ -1,16 +1,16 @@
 """PNPI · Messagerie interne entre utilisateurs."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select, or_, func
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from ..database import get_db
 from ..core.auth import User, get_current_user
+from ..database import get_db
 from ..models.pnpi import MessageORM
 
 router = APIRouter(prefix="/messages", tags=["Messages"])
@@ -35,16 +35,22 @@ async def get_inbox(
         select(MessageORM)
         .where(MessageORM.recipient_username == current_user.username)
         .order_by(MessageORM.created_at.desc())
-        .offset(skip).limit(limit)
+        .offset(skip)
+        .limit(limit)
     )
     messages = db.execute(query).scalars().all()
 
-    unread = db.execute(
-        select(func.count()).select_from(MessageORM).where(
-            MessageORM.recipient_username == current_user.username,
-            MessageORM.is_read.is_(False),
-        )
-    ).scalar() or 0
+    unread = (
+        db.execute(
+            select(func.count())
+            .select_from(MessageORM)
+            .where(
+                MessageORM.recipient_username == current_user.username,
+                MessageORM.is_read.is_(False),
+            )
+        ).scalar()
+        or 0
+    )
 
     return {
         "unread_count": unread,
@@ -75,7 +81,8 @@ async def get_sent(
         select(MessageORM)
         .where(MessageORM.sender_username == current_user.username)
         .order_by(MessageORM.created_at.desc())
-        .offset(skip).limit(limit)
+        .offset(skip)
+        .limit(limit)
     )
     messages = db.execute(query).scalars().all()
     return {
@@ -148,9 +155,8 @@ async def send_message(
 
     # Verify recipient exists
     from ..models.core import UserAccountORM
-    recipient = db.execute(
-        select(UserAccountORM).where(UserAccountORM.username == data.recipient)
-    ).scalar_one_or_none()
+
+    recipient = db.execute(select(UserAccountORM).where(UserAccountORM.username == data.recipient)).scalar_one_or_none()
     if not recipient:
         raise HTTPException(404, "Destinataire introuvable.")
 

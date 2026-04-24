@@ -10,10 +10,13 @@ export async function POST(request: Request) {
       });
     }
 
-    const response = await backendRequest(`/field-reports/${encodeURIComponent(payload.report_id)}`, {
-      method: "DELETE",
-      cache: "no-store",
-    });
+    const response = await backendRequest(
+      `/field-reports/${encodeURIComponent(payload.report_id)}`,
+      {
+        method: "DELETE",
+        cache: "no-store",
+      },
+    );
 
     return new Response(null, { status: response.status });
   } catch (error) {

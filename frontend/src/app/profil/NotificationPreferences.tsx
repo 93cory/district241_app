@@ -19,11 +19,14 @@ export function NotificationPreferences() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me/preferences").then(r => r.json()).then(setPrefs).finally(() => setLoading(false));
+    fetch("/api/auth/me/preferences")
+      .then((r) => r.json())
+      .then(setPrefs)
+      .finally(() => setLoading(false));
   }, []);
 
   const toggle = (key: string) => {
-    setPrefs(p => ({ ...p, [key]: !p[key] }));
+    setPrefs((p) => ({ ...p, [key]: !p[key] }));
   };
 
   const save = async () => {
@@ -36,18 +39,33 @@ export function NotificationPreferences() {
       });
       if (res.ok) showToast("Preferences enregistrees", "success");
       else showToast("Erreur", "error");
-    } catch { showToast("Erreur de connexion", "error"); }
-    finally { setSaving(false); }
+    } catch {
+      showToast("Erreur de connexion", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (loading) return <p style={{ color: "var(--text-soft, #526175)", fontSize: 13 }}>Chargement...</p>;
+  if (loading)
+    return <p style={{ color: "var(--text-soft, #526175)", fontSize: 13 }}>Chargement...</p>;
 
   return (
     <div>
-      <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 700 }}>Preferences de notification</h3>
+      <h3 style={{ margin: "0 0 14px", fontSize: 16, fontWeight: 700 }}>
+        Preferences de notification
+      </h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
         {Object.entries(PREF_LABELS).map(([key, label]) => (
-          <label key={key} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14, cursor: "pointer" }}>
+          <label
+            key={key}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          >
             <input
               type="checkbox"
               checked={prefs[key] ?? true}
@@ -62,9 +80,14 @@ export function NotificationPreferences() {
         onClick={save}
         disabled={saving}
         style={{
-          padding: "8px 20px", borderRadius: 10, border: "none",
-          background: "#006233", color: "#fff", fontWeight: 600,
-          cursor: "pointer", opacity: saving ? 0.6 : 1,
+          padding: "8px 20px",
+          borderRadius: 10,
+          border: "none",
+          background: "#006233",
+          color: "#fff",
+          fontWeight: 600,
+          cursor: "pointer",
+          opacity: saving ? 0.6 : 1,
         }}
       >
         {saving ? "Enregistrement..." : "Enregistrer"}

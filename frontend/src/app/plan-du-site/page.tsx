@@ -140,16 +140,40 @@ export default function PlanDuSitePage() {
   return (
     <div style={{ padding: "40px 32px", maxWidth: 1000, margin: "0 auto" }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>Plan du site</h1>
-      <p style={{ color: "#526175", fontSize: 13, marginBottom: 24 }}>PNPI · Toutes les pages de la plateforme</p>
+      <p style={{ color: "#526175", fontSize: 13, marginBottom: 24 }}>
+        PNPI · Toutes les pages de la plateforme
+      </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-        {sections.map(s => (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+          gap: 20,
+        }}
+      >
+        {sections.map((s) => (
           <div key={s.title}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: "#006233", borderBottom: "2px solid #006233", paddingBottom: 4 }}>{s.title}</h2>
+            <h2
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                marginBottom: 8,
+                color: "#006233",
+                borderBottom: "2px solid #006233",
+                paddingBottom: 4,
+              }}
+            >
+              {s.title}
+            </h2>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {s.links.map(l => (
+              {s.links.map((l) => (
                 <li key={l.href} style={{ marginBottom: 4 }}>
-                  <a href={l.href} style={{ fontSize: 13, color: "#0c2a4a", textDecoration: "none" }}>{l.label}</a>
+                  <a
+                    href={l.href}
+                    style={{ fontSize: 13, color: "#0c2a4a", textDecoration: "none" }}
+                  >
+                    {l.label}
+                  </a>
                 </li>
               ))}
             </ul>
@@ -158,7 +182,8 @@ export default function PlanDuSitePage() {
       </div>
 
       <div style={{ textAlign: "center", marginTop: 32, fontSize: 11, color: "#6b7280" }}>
-        {sections.reduce((s, sec) => s + sec.links.length, 0)} pages repertoriees · PNPI {new Date().getFullYear()}
+        {sections.reduce((s, sec) => s + sec.links.length, 0)} pages repertoriees · PNPI{" "}
+        {new Date().getFullYear()}
       </div>
     </div>
   );

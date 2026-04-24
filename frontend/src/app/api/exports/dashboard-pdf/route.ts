@@ -10,14 +10,13 @@ export async function GET() {
     if (!response.ok) {
       return new Response(
         JSON.stringify({ error: `Export PDF indisponible (${response.status})` }),
-        { status: response.status, headers: { "Content-Type": "application/json" } }
+        { status: response.status, headers: { "Content-Type": "application/json" } },
       );
     }
 
     const body = await response.arrayBuffer();
     const contentDisposition =
-      response.headers.get("content-disposition") ??
-      "attachment; filename=pnpi-dashboard.pdf";
+      response.headers.get("content-disposition") ?? "attachment; filename=pnpi-dashboard.pdf";
 
     return new Response(body, {
       status: 200,
@@ -34,4 +33,3 @@ export async function GET() {
     });
   }
 }
-

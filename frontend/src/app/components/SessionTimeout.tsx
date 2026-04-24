@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const IDLE_WARNING_MS = 25 * 60 * 1000; // 25 min
-const IDLE_LOGOUT_MS = 30 * 60 * 1000;  // 30 min
+const IDLE_LOGOUT_MS = 30 * 60 * 1000; // 30 min
 
 export function SessionTimeout() {
   const router = useRouter();
@@ -86,17 +86,27 @@ export function SessionTimeout() {
       aria-modal="true"
       aria-label="Expiration de session"
       style={{
-        position: "fixed", inset: 0, zIndex: 10001,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)",
+        position: "fixed",
+        inset: 0,
+        zIndex: 10001,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.5)",
+        backdropFilter: "blur(4px)",
       }}
     >
-      <div style={{
-        background: "#fff", borderRadius: 20, padding: "32px",
-        maxWidth: 420, width: "90%",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
-        textAlign: "center",
-      }}>
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 20,
+          padding: "32px",
+          maxWidth: 420,
+          width: "90%",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          textAlign: "center",
+        }}
+      >
         <div style={{ fontSize: 48, marginBottom: 12 }}>&#9201;</div>
         <h3 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: "#0c2a4a" }}>
           Session bientot expiree
@@ -106,14 +116,20 @@ export function SessionTimeout() {
           <strong style={{ color: "#b42318", fontSize: 18 }}>
             {minutes}:{seconds.toString().padStart(2, "0")}
           </strong>
-          <br />Souhaitez-vous rester connecte ?
+          <br />
+          Souhaitez-vous rester connecte ?
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
           <button
             onClick={logout}
             style={{
-              padding: "10px 20px", border: "1px solid #dce4ef", borderRadius: 12,
-              background: "#fff", color: "#526175", fontWeight: 600, cursor: "pointer",
+              padding: "10px 20px",
+              border: "1px solid #dce4ef",
+              borderRadius: 12,
+              background: "#fff",
+              color: "#526175",
+              fontWeight: 600,
+              cursor: "pointer",
             }}
           >
             Deconnexion
@@ -121,8 +137,13 @@ export function SessionTimeout() {
           <button
             onClick={stayConnected}
             style={{
-              padding: "10px 20px", border: "none", borderRadius: 12,
-              background: "#006233", color: "#fff", fontWeight: 600, cursor: "pointer",
+              padding: "10px 20px",
+              border: "none",
+              borderRadius: 12,
+              background: "#006233",
+              color: "#fff",
+              fontWeight: 600,
+              cursor: "pointer",
             }}
           >
             Rester connecte

@@ -55,14 +55,22 @@ export default function SearchPage() {
           onKeyDown={(e) => e.key === "Enter" && search()}
           placeholder="Rechercher ATI, operateur, inspection..."
           style={{
-            flex: 1, padding: "10px 16px", borderRadius: 12,
-            border: "1.5px solid var(--line, #dce4ef)", fontSize: 14,
+            flex: 1,
+            padding: "10px 16px",
+            borderRadius: 12,
+            border: "1.5px solid var(--line, #dce4ef)",
+            fontSize: 14,
           }}
         />
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          style={{ padding: "10px 12px", borderRadius: 12, border: "1.5px solid var(--line, #dce4ef)", fontSize: 13 }}
+          style={{
+            padding: "10px 12px",
+            borderRadius: 12,
+            border: "1.5px solid var(--line, #dce4ef)",
+            fontSize: 13,
+          }}
         >
           <option value="all">Tout</option>
           <option value="ati">ATI</option>
@@ -73,9 +81,14 @@ export default function SearchPage() {
           onClick={search}
           disabled={loading}
           style={{
-            padding: "10px 20px", borderRadius: 12, border: "none",
-            background: "#006233", color: "#fff", fontWeight: 700,
-            cursor: "pointer", opacity: loading ? 0.6 : 1,
+            padding: "10px 20px",
+            borderRadius: 12,
+            border: "none",
+            background: "#006233",
+            color: "#fff",
+            fontWeight: 700,
+            cursor: "pointer",
+            opacity: loading ? 0.6 : 1,
           }}
         >
           {loading ? "..." : "Chercher"}
@@ -96,17 +109,27 @@ export default function SearchPage() {
               key={`${r.type}-${r.id}`}
               href={r.link}
               style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "12px 16px", borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "12px 16px",
+                borderRadius: 12,
                 background: "var(--bg-layer, #fff)",
                 border: "1.5px solid var(--line, #dce4ef)",
-                textDecoration: "none", color: "inherit",
+                textDecoration: "none",
+                color: "inherit",
               }}
             >
-              <span style={{
-                padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-                background: style.bg, color: style.color,
-              }}>
+              <span
+                style={{
+                  padding: "3px 8px",
+                  borderRadius: 6,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  background: style.bg,
+                  color: style.color,
+                }}
+              >
                 {style.label}
               </span>
               <div style={{ flex: 1 }}>

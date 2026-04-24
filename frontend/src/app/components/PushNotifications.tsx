@@ -97,13 +97,18 @@ export function PushNotifications() {
   if (typeof window === "undefined" || !("Notification" in window)) return null;
 
   return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "10px 16px", borderRadius: 12,
-      background: subscribed ? "rgba(0, 98, 51, 0.06)" : "var(--bg-base, #f4f8fb)",
-      border: `1.5px solid ${subscribed ? "#006233" : "var(--line, #dce4ef)"}`,
-      fontSize: 13,
-    }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "10px 16px",
+        borderRadius: 12,
+        background: subscribed ? "rgba(0, 98, 51, 0.06)" : "var(--bg-base, #f4f8fb)",
+        border: `1.5px solid ${subscribed ? "#006233" : "var(--line, #dce4ef)"}`,
+        fontSize: 13,
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontSize: 18 }}>{subscribed ? "\uD83D\uDD14" : "\uD83D\uDD15"}</span>
         <div>
@@ -116,10 +121,13 @@ export function PushNotifications() {
       <button
         onClick={subscribed ? unsubscribe : subscribe}
         style={{
-          padding: "6px 14px", borderRadius: 8,
+          padding: "6px 14px",
+          borderRadius: 8,
           background: subscribed ? "var(--bg-layer, #fff)" : "#006233",
           color: subscribed ? "var(--text-soft, #526175)" : "#fff",
-          fontWeight: 600, fontSize: 12, cursor: "pointer",
+          fontWeight: 600,
+          fontSize: 12,
+          cursor: "pointer",
           border: subscribed ? "1px solid var(--line, #dce4ef)" : "none",
         }}
       >

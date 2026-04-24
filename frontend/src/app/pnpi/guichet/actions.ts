@@ -2,7 +2,13 @@
 import { revalidatePath } from "next/cache";
 import { backendRequest } from "../../../lib/backend";
 
-export async function createATI(payload: { operateur_id: string; type_activite: string; secteur: string; priorite: string; observations?: string }) {
+export async function createATI(payload: {
+  operateur_id: string;
+  type_activite: string;
+  secteur: string;
+  priorite: string;
+  observations?: string;
+}) {
   const res = await backendRequest("/pnpi/ati", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

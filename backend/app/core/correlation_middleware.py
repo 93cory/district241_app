@@ -1,4 +1,5 @@
 """Middleware that assigns a correlation ID to each request for log tracing."""
+
 from __future__ import annotations
 
 import logging

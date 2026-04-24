@@ -144,7 +144,9 @@ export const AdminModeration = ({ declarations, notifications, fieldReports }: P
               <div>
                 <strong>{notification.title}</strong>
                 <p style={{ margin: "0.25rem 0", color: "#3a4351" }}>{notification.message}</p>
-                <p style={{ margin: 0, color: "#6c7a8c" }}>Cible: {notification.target_role ?? "Tous"}</p>
+                <p style={{ margin: 0, color: "#6c7a8c" }}>
+                  Cible: {notification.target_role ?? "Tous"}
+                </p>
               </div>
               <button
                 className="action-btn"
@@ -179,7 +181,8 @@ export const AdminModeration = ({ declarations, notifications, fieldReports }: P
                 <strong>{report.title}</strong>
                 <p style={{ margin: "0.25rem 0", color: "#3a4351" }}>{report.comment}</p>
                 <p style={{ margin: 0, color: "#6c7a8c" }}>
-                  {report.location ?? "Non renseigne"} - {report.severity} - {report.status} - {report.created_by}
+                  {report.location ?? "Non renseigne"} - {report.severity} - {report.status} -{" "}
+                  {report.created_by}
                 </p>
               </div>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>

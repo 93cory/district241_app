@@ -4,9 +4,10 @@ Permet de filtrer automatiquement les donnees par province pour les
 utilisateurs assignes a une province specifique. Les admins et ministres
 voient toutes les provinces.
 """
+
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .auth import User
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 GLOBAL_ROLES = {"admin", "ministre", "directeur"}
 
 
-def get_user_province(user: "User") -> Optional[str]:
+def get_user_province(user: User) -> str | None:
     """Extract province from the current user's profile.
 
     Returns None for users with global access (admin, ministre, directeur).
@@ -35,7 +36,7 @@ def get_user_province(user: "User") -> Optional[str]:
 class TenantFilter:
     """Helper to apply province-based filtering to SQLAlchemy queries."""
 
-    def __init__(self, province: Optional[str]):
+    def __init__(self, province: str | None):
         self.province = province
 
     @property
@@ -61,7 +62,4 @@ class TenantFilter:
         if province_getter:
             return [item for item in items if province_getter(item) == self.province]
 
-        return [
-            item for item in items
-            if getattr(item, "province", None) == self.province
-        ]
+        return [item for item in items if getattr(item, "province", None) == self.province]

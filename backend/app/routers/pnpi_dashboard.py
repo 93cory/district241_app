@@ -1,19 +1,20 @@
 """PNPI · Endpoints du tableau de bord de pilotage industriel gabonais."""
+
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import datetime, timedelta
-from statistics import median
-from typing import Dict, List, Optional
-
 import io
+from collections import defaultdict
+from datetime import UTC, datetime, timedelta
+from statistics import median
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response as FastAPIResponse
-from sqlalchemy.orm import Session
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
+from ..core.anomaly_detection import detect_anomalies
 from ..core.auth import Role, User, require_roles
+from ..core.cache import cache
 from ..core.tenant import TenantFilter, get_user_province
 from ..database import get_db, now_utc
 from ..models.pnpi import (
@@ -30,9 +31,6 @@ from ..schemas.pnpi import (
     ProvinceStats,
     SecteurStats,
 )
-from ..core.anomaly_detection import detect_anomalies
-from ..core.cache import cache
-
 
 router = APIRouter(prefix="/pnpi", tags=["PNPI Dashboard"])
 
@@ -49,7 +47,9 @@ def _ati_is_overdue(ati: AgrementTechniqueIndustrielORM) -> bool:
 
 @router.get("/dashboard/kpis", response_model=PNPIDashboardKpis)
 async def pnpi_dashboard_kpis(
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)
+    ),
     db: Session = Depends(get_db),
 ) -> PNPIDashboardKpis:
     now = now_utc()
@@ -68,9 +68,9 @@ async def pnpi_dashboard_kpis(
     ati_query = select(AgrementTechniqueIndustrielORM)
     if not tenant.is_global:
         # Filter ATIs via their operateur's province · join through operateur
-        ati_query = ati_query.join(OperateurIndustrielORM, AgrementTechniqueIndustrielORM.operateur_id == OperateurIndustrielORM.id).where(
-            OperateurIndustrielORM.province == tenant.province
-        )
+        ati_query = ati_query.join(
+            OperateurIndustrielORM, AgrementTechniqueIndustrielORM.operateur_id == OperateurIndustrielORM.id
+        ).where(OperateurIndustrielORM.province == tenant.province)
     all_atis = db.execute(ati_query).scalars().all()
 
     atis_total = len(all_atis)
@@ -79,8 +79,7 @@ async def pnpi_dashboard_kpis(
     # ATIs approuves ce mois
     first_of_month = now.date().replace(day=1)
     atis_approuves_ce_mois = sum(
-        1 for a in all_atis
-        if a.statut == "approuve" and a.date_decision and a.date_decision.date() >= first_of_month
+        1 for a in all_atis if a.statut == "approuve" and a.date_decision and a.date_decision.date() >= first_of_month
     )
 
     # ATIs en retard
@@ -88,17 +87,11 @@ async def pnpi_dashboard_kpis(
 
     # Delai moyen (median) pour les ATIs decides
     decided = [a for a in all_atis if a.statut in {"approuve", "rejete"} and a.date_decision]
-    durations = [
-        max((a.date_decision.date() - a.date_soumission.date()).days, 0)
-        for a in decided
-    ]
+    durations = [max((a.date_decision.date() - a.date_soumission.date()).days, 0) for a in decided]
     delai_moyen_jours = float(median(durations)) if durations else 0.0
 
     # Taux SLA
-    compliant = sum(
-        1 for a in decided
-        if (a.date_decision.date() - a.date_soumission.date()).days <= a.sla_jours
-    )
+    compliant = sum(1 for a in decided if (a.date_decision.date() - a.date_soumission.date()).days <= a.sla_jours)
     taux_sla_pct = round((compliant / len(durations) * 100) if durations else 0.0, 2)
 
     # Operateurs actifs (filtered by province)
@@ -109,11 +102,11 @@ async def pnpi_dashboard_kpis(
     # Taux conformite: % conforme parmi les dernieres inspections par operateur
     insp_query = select(InspectionConformiteORM).order_by(InspectionConformiteORM.date_inspection.desc())
     if not tenant.is_global:
-        insp_query = insp_query.join(OperateurIndustrielORM, InspectionConformiteORM.operateur_id == OperateurIndustrielORM.id).where(
-            OperateurIndustrielORM.province == tenant.province
-        )
+        insp_query = insp_query.join(
+            OperateurIndustrielORM, InspectionConformiteORM.operateur_id == OperateurIndustrielORM.id
+        ).where(OperateurIndustrielORM.province == tenant.province)
     all_inspections = db.execute(insp_query).scalars().all()
-    last_inspection_per_op: Dict[str, str] = {}
+    last_inspection_per_op: dict[str, str] = {}
     for insp in all_inspections:
         if insp.operateur_id not in last_inspection_per_op:
             last_inspection_per_op[insp.operateur_id] = insp.statut_conformite
@@ -137,22 +130,26 @@ async def pnpi_dashboard_kpis(
     return result
 
 
-@router.get("/dashboard/carte", response_model=List[OperateurGeoPoint])
+@router.get("/dashboard/carte", response_model=list[OperateurGeoPoint])
 async def pnpi_dashboard_carte(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
-) -> List[OperateurGeoPoint]:
-    operateurs = db.execute(
-        select(OperateurIndustrielORM).where(
-            OperateurIndustrielORM.is_active.is_(True),
-            OperateurIndustrielORM.latitude.isnot(None),
-            OperateurIndustrielORM.longitude.isnot(None),
+) -> list[OperateurGeoPoint]:
+    operateurs = (
+        db.execute(
+            select(OperateurIndustrielORM).where(
+                OperateurIndustrielORM.is_active.is_(True),
+                OperateurIndustrielORM.latitude.isnot(None),
+                OperateurIndustrielORM.longitude.isnot(None),
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     # Build a map of operateur_id -> (nb_atis_actifs, statut_dernier_ati)
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    ati_by_op: Dict[str, List[AgrementTechniqueIndustrielORM]] = defaultdict(list)
+    ati_by_op: dict[str, list[AgrementTechniqueIndustrielORM]] = defaultdict(list)
     for ati in all_atis:
         ati_by_op[ati.operateur_id].append(ati)
 
@@ -178,19 +175,19 @@ async def pnpi_dashboard_carte(
     return result
 
 
-@router.get("/dashboard/secteurs", response_model=List[SecteurStats])
+@router.get("/dashboard/secteurs", response_model=list[SecteurStats])
 async def pnpi_dashboard_secteurs(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
-) -> List[SecteurStats]:
+) -> list[SecteurStats]:
     operateurs = db.execute(select(OperateurIndustrielORM)).scalars().all()
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
 
-    secteur_ops: Dict[str, List[OperateurIndustrielORM]] = defaultdict(list)
+    secteur_ops: dict[str, list[OperateurIndustrielORM]] = defaultdict(list)
     for op in operateurs:
         secteur_ops[op.secteur].append(op)
 
-    secteur_atis: Dict[str, List[AgrementTechniqueIndustrielORM]] = defaultdict(list)
+    secteur_atis: dict[str, list[AgrementTechniqueIndustrielORM]] = defaultdict(list)
     for ati in all_atis:
         secteur_atis[ati.secteur].append(ati)
 
@@ -215,21 +212,21 @@ async def pnpi_dashboard_secteurs(
     return result
 
 
-@router.get("/dashboard/provinces", response_model=List[ProvinceStats])
+@router.get("/dashboard/provinces", response_model=list[ProvinceStats])
 async def pnpi_dashboard_provinces(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
-) -> List[ProvinceStats]:
+) -> list[ProvinceStats]:
     operateurs = db.execute(select(OperateurIndustrielORM)).scalars().all()
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
 
-    province_ops: Dict[str, int] = defaultdict(int)
-    op_province: Dict[str, str] = {}
+    province_ops: dict[str, int] = defaultdict(int)
+    op_province: dict[str, str] = {}
     for op in operateurs:
         province_ops[op.province] += 1
         op_province[op.id] = op.province
 
-    province_atis_actifs: Dict[str, int] = defaultdict(int)
+    province_atis_actifs: dict[str, int] = defaultdict(int)
     for ati in all_atis:
         if ati.statut not in _TERMINAL_STATUTS:
             province = op_province.get(ati.operateur_id, "inconnu")
@@ -252,7 +249,7 @@ async def pnpi_dashboard_pipeline(
     db: Session = Depends(get_db),
 ) -> ATIPipelineStats:
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    counts: Dict[str, int] = defaultdict(int)
+    counts: dict[str, int] = defaultdict(int)
     for ati in all_atis:
         counts[ati.statut] += 1
     return ATIPipelineStats(
@@ -265,23 +262,27 @@ async def pnpi_dashboard_pipeline(
     )
 
 
-@router.get("/dashboard/tendances", response_model=List[MensuelStats])
+@router.get("/dashboard/tendances", response_model=list[MensuelStats])
 async def pnpi_dashboard_tendances(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
-) -> List[MensuelStats]:
+) -> list[MensuelStats]:
     now = now_utc()
     twelve_months_ago = now.replace(day=1) - timedelta(days=365)
 
-    all_atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.date_soumission >= twelve_months_ago
+    all_atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(
+                AgrementTechniqueIndustrielORM.date_soumission >= twelve_months_ago
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
-    by_month_soumis: Dict[str, int] = defaultdict(int)
-    by_month_approuves: Dict[str, int] = defaultdict(int)
-    by_month_rejetes: Dict[str, int] = defaultdict(int)
+    by_month_soumis: dict[str, int] = defaultdict(int)
+    by_month_approuves: dict[str, int] = defaultdict(int)
+    by_month_rejetes: dict[str, int] = defaultdict(int)
 
     for ati in all_atis:
         mois_key = ati.date_soumission.strftime("%Y-%m")
@@ -324,80 +325,100 @@ async def data_quality_score(
         # 1. Operator completeness (email, phone, province filled)
         if ops:
             complete_ops = sum(
-                1 for o in ops
-                if getattr(o, 'email', None) and getattr(o, 'telephone', None) and getattr(o, 'province', None)
+                1
+                for o in ops
+                if getattr(o, "email", None) and getattr(o, "telephone", None) and getattr(o, "province", None)
             )
             score = round(complete_ops / max(len(ops), 1) * 100)
-            checks.append({
-                "name": "Completude operateurs",
-                "description": f"{complete_ops}/{len(ops)} operateurs avec email, telephone et province",
-                "score": score,
-                "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
-            })
+            checks.append(
+                {
+                    "name": "Completude operateurs",
+                    "description": f"{complete_ops}/{len(ops)} operateurs avec email, telephone et province",
+                    "score": score,
+                    "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
+                }
+            )
 
         # 2. ATI with linked operator
         if atis:
-            linked = sum(1 for a in atis if getattr(a, 'operateur_id', None))
+            linked = sum(1 for a in atis if getattr(a, "operateur_id", None))
             score = round(linked / max(len(atis), 1) * 100)
-            checks.append({
-                "name": "ATIs lies a un operateur",
-                "description": f"{linked}/{len(atis)} ATIs correctement lies",
-                "score": score,
-                "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
-            })
+            checks.append(
+                {
+                    "name": "ATIs lies a un operateur",
+                    "description": f"{linked}/{len(atis)} ATIs correctement lies",
+                    "score": score,
+                    "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+                }
+            )
 
         # 3. ATI with observations filled
         if atis:
-            with_obs = sum(1 for a in atis if getattr(a, 'observations', None) and len(a.observations) > 10)
+            with_obs = sum(1 for a in atis if getattr(a, "observations", None) and len(a.observations) > 10)
             score = round(with_obs / max(len(atis), 1) * 100)
-            checks.append({
-                "name": "ATIs avec observations",
-                "description": f"{with_obs}/{len(atis)} ATIs ont des observations detaillees",
-                "score": score,
-                "status": "ok" if score >= 70 else "warning" if score >= 40 else "critical",
-            })
+            checks.append(
+                {
+                    "name": "ATIs avec observations",
+                    "description": f"{with_obs}/{len(atis)} ATIs ont des observations detaillees",
+                    "score": score,
+                    "status": "ok" if score >= 70 else "warning" if score >= 40 else "critical",
+                }
+            )
 
         # 4. Decided ATIs have decision date
         decided = [a for a in atis if a.statut in ("approuve", "rejete")]
         if decided:
             with_date = sum(1 for a in decided if a.date_decision)
             score = round(with_date / max(len(decided), 1) * 100)
-            checks.append({
-                "name": "Dates de decision renseignees",
-                "description": f"{with_date}/{len(decided)} decisions avec date",
-                "score": score,
-                "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
-            })
+            checks.append(
+                {
+                    "name": "Dates de decision renseignees",
+                    "description": f"{with_date}/{len(decided)} decisions avec date",
+                    "score": score,
+                    "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+                }
+            )
 
         # 5. Inspections with observations
         if inspections:
-            with_obs = sum(1 for i in inspections if getattr(i, 'observations', None) and len(i.observations) > 10)
+            with_obs = sum(1 for i in inspections if getattr(i, "observations", None) and len(i.observations) > 10)
             score = round(with_obs / max(len(inspections), 1) * 100)
-            checks.append({
-                "name": "Inspections documentees",
-                "description": f"{with_obs}/{len(inspections)} inspections avec observations",
-                "score": score,
-                "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
-            })
+            checks.append(
+                {
+                    "name": "Inspections documentees",
+                    "description": f"{with_obs}/{len(inspections)} inspections avec observations",
+                    "score": score,
+                    "status": "ok" if score >= 80 else "warning" if score >= 50 else "critical",
+                }
+            )
 
         # 6. Orphan inspections (no operateur)
         if inspections:
-            orphans = sum(1 for i in inspections if not getattr(i, 'operateur_id', None))
+            orphans = sum(1 for i in inspections if not getattr(i, "operateur_id", None))
             score = round((1 - orphans / max(len(inspections), 1)) * 100)
-            checks.append({
-                "name": "Inspections liees",
-                "description": f"{len(inspections) - orphans}/{len(inspections)} inspections avec operateur",
-                "score": score,
-                "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
-            })
+            checks.append(
+                {
+                    "name": "Inspections liees",
+                    "description": f"{len(inspections) - orphans}/{len(inspections)} inspections avec operateur",
+                    "score": score,
+                    "status": "ok" if score >= 95 else "warning" if score >= 80 else "critical",
+                }
+            )
 
         # Global score
-        if checks:
-            global_score = round(sum(c["score"] for c in checks) / max(len(checks), 1))
-        else:
-            global_score = 0
+        global_score = round(sum(c["score"] for c in checks) / max(len(checks), 1)) if checks else 0
 
-        grade = "A" if global_score >= 90 else "B" if global_score >= 75 else "C" if global_score >= 60 else "D" if global_score >= 40 else "E"
+        grade = (
+            "A"
+            if global_score >= 90
+            else "B"
+            if global_score >= 75
+            else "C"
+            if global_score >= 60
+            else "D"
+            if global_score >= 40
+            else "E"
+        )
 
         return {
             "global_score": global_score,
@@ -468,16 +489,20 @@ async def sla_analytics(
     }
 
 
-@router.get("/dashboard/recents", response_model=List[ATIResume])
+@router.get("/dashboard/recents", response_model=list[ATIResume])
 async def pnpi_dashboard_recents(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
-) -> List[ATIResume]:
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM)
-        .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
-        .limit(15)
-    ).scalars().all()
+) -> list[ATIResume]:
+    atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM)
+            .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
+            .limit(15)
+        )
+        .scalars()
+        .all()
+    )
 
     result = []
     for ati in atis:
@@ -522,6 +547,7 @@ async def national_transformation_index(
     approved = sum(1 for a in decided if a.statut == "approuve")
     sectors = len(set(o.secteur for o in all_ops if o.is_active))
     from ..database import as_utc as _as_utc_loc
+
     recent_insp = [i for i in all_inspections if i.date_inspection and _as_utc_loc(i.date_inspection) >= month_ago]
     conformes = sum(1 for i in recent_insp if i.statut_conformite == "conforme") if recent_insp else 0
     actifs = sum(1 for o in all_ops if o.is_active)
@@ -531,11 +557,31 @@ async def national_transformation_index(
         "index": index,
         "max": 100,
         "breakdown": {
-            "approbation": {"score": round(approved / len(decided) * 30, 1) if decided else 0, "max": 30, "detail": f"{approved}/{len(decided)} approuves"},
-            "couverture_sectorielle": {"score": round(min(sectors / 7 * 20, 20), 1), "max": 20, "detail": f"{sectors}/7 secteurs couverts"},
-            "conformite": {"score": round(conformes / len(recent_insp) * 25, 1) if recent_insp else 0, "max": 25, "detail": f"{conformes}/{len(recent_insp)} conformes (30j)"},
-            "densite_operateurs": {"score": round(min(actifs / 100 * 15, 15), 1), "max": 15, "detail": f"{actifs} operateurs actifs"},
-            "dynamisme": {"score": round(min(recent_subs / 20 * 10, 10), 1), "max": 10, "detail": f"{recent_subs} soumissions (30j)"},
+            "approbation": {
+                "score": round(approved / len(decided) * 30, 1) if decided else 0,
+                "max": 30,
+                "detail": f"{approved}/{len(decided)} approuves",
+            },
+            "couverture_sectorielle": {
+                "score": round(min(sectors / 7 * 20, 20), 1),
+                "max": 20,
+                "detail": f"{sectors}/7 secteurs couverts",
+            },
+            "conformite": {
+                "score": round(conformes / len(recent_insp) * 25, 1) if recent_insp else 0,
+                "max": 25,
+                "detail": f"{conformes}/{len(recent_insp)} conformes (30j)",
+            },
+            "densite_operateurs": {
+                "score": round(min(actifs / 100 * 15, 15), 1),
+                "max": 15,
+                "detail": f"{actifs} operateurs actifs",
+            },
+            "dynamisme": {
+                "score": round(min(recent_subs / 20 * 10, 10), 1),
+                "max": 10,
+                "detail": f"{recent_subs} soumissions (30j)",
+            },
         },
         "generated_at": now.isoformat(),
     }
@@ -543,75 +589,103 @@ async def national_transformation_index(
 
 from pydantic import BaseModel as PydanticBaseModel
 
+
 class SearchResult(PydanticBaseModel):
     type: str  # "ati" | "operateur"
     id: str
     title: str
     subtitle: str
-    statut: Optional[str] = None
+    statut: str | None = None
     href: str
 
-@router.get("/dashboard/search", response_model=List[SearchResult])
+
+@router.get("/dashboard/search", response_model=list[SearchResult])
 async def pnpi_search(
     q: str = Query(..., min_length=2, max_length=100),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)
+    ),
     db: Session = Depends(get_db),
-) -> List[SearchResult]:
+) -> list[SearchResult]:
     """Recherche globale dans les ATIs et opérateurs."""
     term = f"%{q.strip()}%"
-    results: List[SearchResult] = []
+    results: list[SearchResult] = []
 
     # Search operateurs
-    ops = db.execute(
-        select(OperateurIndustrielORM).where(
-            (OperateurIndustrielORM.raison_sociale.ilike(term)) |
-            (OperateurIndustrielORM.nif_gabon.ilike(term)) |
-            (OperateurIndustrielORM.ville.ilike(term))
-        ).limit(8)
-    ).scalars().all()
+    ops = (
+        db.execute(
+            select(OperateurIndustrielORM)
+            .where(
+                (OperateurIndustrielORM.raison_sociale.ilike(term))
+                | (OperateurIndustrielORM.nif_gabon.ilike(term))
+                | (OperateurIndustrielORM.ville.ilike(term))
+            )
+            .limit(8)
+        )
+        .scalars()
+        .all()
+    )
     for op in ops:
-        results.append(SearchResult(
-            type="operateur",
-            id=op.id,
-            title=op.raison_sociale,
-            subtitle=f"{op.secteur.capitalize()} · {op.province.replace('_', ' ')} · NIF: {op.nif_gabon}",
-            href=f"/pnpi/operateurs/{op.id}",
-        ))
+        results.append(
+            SearchResult(
+                type="operateur",
+                id=op.id,
+                title=op.raison_sociale,
+                subtitle=f"{op.secteur.capitalize()} · {op.province.replace('_', ' ')} · NIF: {op.nif_gabon}",
+                href=f"/pnpi/operateurs/{op.id}",
+            )
+        )
 
     # Search ATIs
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            (AgrementTechniqueIndustrielORM.numero_ati.ilike(term)) |
-            (AgrementTechniqueIndustrielORM.type_activite.ilike(term))
-        ).limit(8)
-    ).scalars().all()
+    atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM)
+            .where(
+                (AgrementTechniqueIndustrielORM.numero_ati.ilike(term))
+                | (AgrementTechniqueIndustrielORM.type_activite.ilike(term))
+            )
+            .limit(8)
+        )
+        .scalars()
+        .all()
+    )
     for a in atis:
-        results.append(SearchResult(
-            type="ati",
-            id=a.id,
-            title=a.numero_ati,
-            subtitle=f"{a.type_activite[:60]}{'...' if len(a.type_activite) > 60 else ''} · {a.secteur}",
-            statut=a.statut,
-            href=f"/pnpi/ati/{a.id}",
-        ))
+        results.append(
+            SearchResult(
+                type="ati",
+                id=a.id,
+                title=a.numero_ati,
+                subtitle=f"{a.type_activite[:60]}{'...' if len(a.type_activite) > 60 else ''} · {a.secteur}",
+                statut=a.statut,
+                href=f"/pnpi/ati/{a.id}",
+            )
+        )
 
     # Search inspections
-    insps = db.execute(
-        select(InspectionConformiteORM).where(
-            (InspectionConformiteORM.id.ilike(term)) |
-            (InspectionConformiteORM.inspecteur_username.ilike(term)) |
-            (InspectionConformiteORM.observations.ilike(term))
-        ).limit(5)
-    ).scalars().all()
+    insps = (
+        db.execute(
+            select(InspectionConformiteORM)
+            .where(
+                (InspectionConformiteORM.id.ilike(term))
+                | (InspectionConformiteORM.inspecteur_username.ilike(term))
+                | (InspectionConformiteORM.observations.ilike(term))
+            )
+            .limit(5)
+        )
+        .scalars()
+        .all()
+    )
     for insp in insps:
-        results.append(SearchResult(
-            type="inspection",
-            id=insp.id,
-            title=insp.id,
-            subtitle=f"{insp.statut_conformite} · {insp.inspecteur_username} · {insp.date_inspection.strftime('%d/%m/%Y') if insp.date_inspection else ''}",
-            statut=insp.statut_conformite,
-            href=f"/pnpi/inspections/{insp.id}",
-        ))
+        results.append(
+            SearchResult(
+                type="inspection",
+                id=insp.id,
+                title=insp.id,
+                subtitle=f"{insp.statut_conformite} · {insp.inspecteur_username} · {insp.date_inspection.strftime('%d/%m/%Y') if insp.date_inspection else ''}",
+                statut=insp.statut_conformite,
+                href=f"/pnpi/inspections/{insp.id}",
+            )
+        )
 
     return results[:15]
 
@@ -665,15 +739,19 @@ async def pnpi_forecast(
 
     # Historical data (last 12 months)
     twelve_months_ago = now - timedelta(days=365)
-    all_atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.date_soumission >= twelve_months_ago
+    all_atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(
+                AgrementTechniqueIndustrielORM.date_soumission >= twelve_months_ago
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     # Monthly submission counts
-    monthly_subs: Dict[str, int] = defaultdict(int)
-    monthly_approvals: Dict[str, int] = defaultdict(int)
+    monthly_subs: dict[str, int] = defaultdict(int)
+    monthly_approvals: dict[str, int] = defaultdict(int)
     for ati in all_atis:
         key = ati.date_soumission.strftime("%Y-%m")
         monthly_subs[key] += 1
@@ -708,12 +786,14 @@ async def pnpi_forecast(
         predicted_subs = max(0, round(last_value + avg_growth * i))
         predicted_apps = max(0, round(last_value_app + avg_growth_app * i))
 
-        forecast.append({
-            "mois": month_key,
-            "prevision_soumissions": predicted_subs,
-            "prevision_approbations": predicted_apps,
-            "confidence": max(0.5, 1.0 - 0.08 * i),  # Decreasing confidence
-        })
+        forecast.append(
+            {
+                "mois": month_key,
+                "prevision_soumissions": predicted_subs,
+                "prevision_approbations": predicted_apps,
+                "confidence": max(0.5, 1.0 - 0.08 * i),  # Decreasing confidence
+            }
+        )
 
     # Historical for context
     historical = [
@@ -739,12 +819,12 @@ async def export_recap_pdf(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
     db: Session = Depends(get_db),
 ) -> FastAPIResponse:
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import cm
     from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
     from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     now = now_utc()
     bleu = colors.HexColor("#003F8F")
@@ -755,8 +835,7 @@ async def export_recap_pdf(
     atis_en_cours = sum(1 for a in all_atis if a.statut not in _TERMINAL_STATUTS)
     first_of_month = now.date().replace(day=1)
     atis_approuves_mois = sum(
-        1 for a in all_atis
-        if a.statut == "approuve" and a.date_decision and a.date_decision.date() >= first_of_month
+        1 for a in all_atis if a.statut == "approuve" and a.date_decision and a.date_decision.date() >= first_of_month
     )
     atis_en_retard = sum(1 for a in all_atis if _ati_is_overdue(a))
     ops_actifs = db.execute(
@@ -764,26 +843,53 @@ async def export_recap_pdf(
     ).scalar_one()
 
     # Pipeline counts
-    pipeline: Dict[str, int] = defaultdict(int)
+    pipeline: dict[str, int] = defaultdict(int)
     for a in all_atis:
         pipeline[a.statut] += 1
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm, topMargin=2*cm, bottomMargin=2*cm)
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm, topMargin=2 * cm, bottomMargin=2 * cm
+    )
     styles = getSampleStyleSheet()
 
     story = []
-    story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray)))
-    story.append(Paragraph("Ministere de l'Industrie · PNPI", ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu)))
-    story.append(Spacer(1, 0.3*cm))
+    story.append(
+        Paragraph(
+            "REPUBLIQUE GABONAISE",
+            ParagraphStyle("rg", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray),
+        )
+    )
+    story.append(
+        Paragraph(
+            "Ministere de l'Industrie · PNPI",
+            ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu),
+        )
+    )
+    story.append(Spacer(1, 0.3 * cm))
     story.append(HRFlowable(width="100%", thickness=2, color=bleu))
-    story.append(Spacer(1, 0.3*cm))
-    story.append(Paragraph("Recap Mensuel PNPI", ParagraphStyle("title", parent=styles["Title"], textColor=bleu, fontSize=16, spaceAfter=4)))
-    story.append(Paragraph(f"Genere le {now.strftime('%d/%m/%Y a %H:%M')} UTC", ParagraphStyle("date", parent=styles["Normal"], textColor=colors.gray, fontSize=9, spaceAfter=12)))
-    story.append(Spacer(1, 0.4*cm))
+    story.append(Spacer(1, 0.3 * cm))
+    story.append(
+        Paragraph(
+            "Recap Mensuel PNPI",
+            ParagraphStyle("title", parent=styles["Title"], textColor=bleu, fontSize=16, spaceAfter=4),
+        )
+    )
+    story.append(
+        Paragraph(
+            f"Genere le {now.strftime('%d/%m/%Y a %H:%M')} UTC",
+            ParagraphStyle("date", parent=styles["Normal"], textColor=colors.gray, fontSize=9, spaceAfter=12),
+        )
+    )
+    story.append(Spacer(1, 0.4 * cm))
 
     # KPI table
-    story.append(Paragraph("Indicateurs Cles", ParagraphStyle("sec", parent=styles["Heading2"], textColor=bleu, fontSize=12, spaceAfter=6)))
+    story.append(
+        Paragraph(
+            "Indicateurs Cles",
+            ParagraphStyle("sec", parent=styles["Heading2"], textColor=bleu, fontSize=12, spaceAfter=6),
+        )
+    )
     kpi_data = [
         ["Indicateur", "Valeur"],
         ["Total ATI", str(atis_total)],
@@ -792,23 +898,31 @@ async def export_recap_pdf(
         ["ATI en retard SLA", str(atis_en_retard)],
         ["Operateurs actifs", str(ops_actifs)],
     ]
-    t = Table(kpi_data, colWidths=[9*cm, 5*cm])
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), bleu),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f3f4f6")),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
-        ("PADDING", (0, 0), (-1, -1), 6),
-        ("ALIGN", (1, 1), (1, -1), "CENTER"),
-    ]))
+    t = Table(kpi_data, colWidths=[9 * cm, 5 * cm])
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), bleu),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f3f4f6")),
+                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+                ("PADDING", (0, 0), (-1, -1), 6),
+                ("ALIGN", (1, 1), (1, -1), "CENTER"),
+            ]
+        )
+    )
     story.append(t)
-    story.append(Spacer(1, 0.6*cm))
+    story.append(Spacer(1, 0.6 * cm))
 
     # Pipeline table
-    story.append(Paragraph("Pipeline ATI", ParagraphStyle("sec2", parent=styles["Heading2"], textColor=vert, fontSize=12, spaceAfter=6)))
+    story.append(
+        Paragraph(
+            "Pipeline ATI", ParagraphStyle("sec2", parent=styles["Heading2"], textColor=vert, fontSize=12, spaceAfter=6)
+        )
+    )
     pipeline_data = [
         ["Statut", "Nombre"],
         ["Soumis", str(pipeline.get("soumis", 0))],
@@ -818,26 +932,32 @@ async def export_recap_pdf(
         ["Rejete", str(pipeline.get("rejete", 0))],
         ["Expire", str(pipeline.get("expire", 0))],
     ]
-    t2 = Table(pipeline_data, colWidths=[9*cm, 5*cm])
-    t2.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), vert),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f3f4f6")),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
-        ("PADDING", (0, 0), (-1, -1), 6),
-        ("ALIGN", (1, 1), (1, -1), "CENTER"),
-    ]))
+    t2 = Table(pipeline_data, colWidths=[9 * cm, 5 * cm])
+    t2.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), vert),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f3f4f6")),
+                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+                ("PADDING", (0, 0), (-1, -1), 6),
+                ("ALIGN", (1, 1), (1, -1), "CENTER"),
+            ]
+        )
+    )
     story.append(t2)
-    story.append(Spacer(1, 1*cm))
+    story.append(Spacer(1, 1 * cm))
 
     story.append(HRFlowable(width="100%", thickness=1, color=bleu))
-    story.append(Paragraph(
-        f"Document genere par la PNPI · {now.strftime('%d/%m/%Y %H:%M')} UTC",
-        ParagraphStyle("footer", parent=styles["Normal"], alignment=TA_CENTER, fontSize=7, textColor=colors.gray)
-    ))
+    story.append(
+        Paragraph(
+            f"Document genere par la PNPI · {now.strftime('%d/%m/%Y %H:%M')} UTC",
+            ParagraphStyle("footer", parent=styles["Normal"], alignment=TA_CENTER, fontSize=7, textColor=colors.gray),
+        )
+    )
 
     doc.build(story)
     buf.seek(0)
@@ -858,12 +978,11 @@ async def period_comparison(
     db: Session = Depends(get_db),
 ):
     """Compare two periods (e.g., Q1 vs Q2)."""
-    from datetime import timezone as tz
 
-    p1_start = datetime.fromisoformat(period1_start).replace(tzinfo=tz.utc)
-    p1_end = datetime.fromisoformat(period1_end).replace(tzinfo=tz.utc)
-    p2_start = datetime.fromisoformat(period2_start).replace(tzinfo=tz.utc)
-    p2_end = datetime.fromisoformat(period2_end).replace(tzinfo=tz.utc)
+    p1_start = datetime.fromisoformat(period1_start).replace(tzinfo=UTC)
+    p1_end = datetime.fromisoformat(period1_end).replace(tzinfo=UTC)
+    p2_start = datetime.fromisoformat(period2_start).replace(tzinfo=UTC)
+    p2_end = datetime.fromisoformat(period2_end).replace(tzinfo=UTC)
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
     all_inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
@@ -887,7 +1006,9 @@ async def period_comparison(
             "soumissions": len(atis),
             "approuves": approved,
             "rejetes": rejected,
-            "taux_approbation": round(approved / len([a for a in atis if a.statut in {"approuve", "rejete"}]) * 100, 1) if any(a.statut in {"approuve", "rejete"} for a in atis) else 0,
+            "taux_approbation": round(approved / len([a for a in atis if a.statut in {"approuve", "rejete"}]) * 100, 1)
+            if any(a.statut in {"approuve", "rejete"} for a in atis)
+            else 0,
             "inspections": len(inspections),
             "conformes": conformes,
             "taux_conformite": round(conformes / len(inspections) * 100, 1) if inspections else 0,
@@ -916,17 +1037,16 @@ async def period_comparison(
 @router.get("/dashboard/search/advanced")
 async def advanced_search(
     q: str = Query("", min_length=1),
-    type: Optional[str] = Query(None, description="ati|operateur|inspection|all"),
-    statut: Optional[str] = Query(None),
-    secteur: Optional[str] = Query(None),
-    date_start: Optional[str] = Query(None),
-    date_end: Optional[str] = Query(None),
+    type: str | None = Query(None, description="ati|operateur|inspection|all"),
+    statut: str | None = Query(None),
+    secteur: str | None = Query(None),
+    date_start: str | None = Query(None),
+    date_end: str | None = Query(None),
     limit: int = Query(20, ge=1, le=50),
     current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ):
     """Advanced full-text search across ATIs, operators, and inspections."""
-    from datetime import datetime as dt, timezone
 
     results = []
     search_term = q.lower().strip()
@@ -937,75 +1057,100 @@ async def advanced_search(
         atis = db.execute(query).scalars().all()
         for ati in atis:
             op = ati.operateur
-            searchable = " ".join(filter(None, [
-                ati.numero_ati,
-                ati.type_activite,
-                ati.secteur,
-                ati.observations if hasattr(ati, 'observations') else "",
-                op.raison_sociale if op else "",
-                op.nif_gabon if op else "",
-            ])).lower()
+            searchable = " ".join(
+                filter(
+                    None,
+                    [
+                        ati.numero_ati,
+                        ati.type_activite,
+                        ati.secteur,
+                        ati.observations if hasattr(ati, "observations") else "",
+                        op.raison_sociale if op else "",
+                        op.nif_gabon if op else "",
+                    ],
+                )
+            ).lower()
 
             if search_term in searchable:
                 if statut and ati.statut != statut:
                     continue
                 if secteur and ati.secteur != secteur:
                     continue
-                results.append({
-                    "type": "ati",
-                    "id": ati.id,
-                    "title": f"ATI {ati.numero_ati}",
-                    "subtitle": f"{op.raison_sociale if op else 'Inconnu'} · {ati.secteur}",
-                    "statut": ati.statut,
-                    "date": ati.date_soumission.isoformat(),
-                    "link": f"/pnpi/ati/{ati.id}",
-                    "relevance": searchable.count(search_term),
-                })
+                results.append(
+                    {
+                        "type": "ati",
+                        "id": ati.id,
+                        "title": f"ATI {ati.numero_ati}",
+                        "subtitle": f"{op.raison_sociale if op else 'Inconnu'} · {ati.secteur}",
+                        "statut": ati.statut,
+                        "date": ati.date_soumission.isoformat(),
+                        "link": f"/pnpi/ati/{ati.id}",
+                        "relevance": searchable.count(search_term),
+                    }
+                )
 
     if "operateur" in search_types:
         ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
         for op in ops:
-            searchable = " ".join(filter(None, [
-                op.raison_sociale, op.nif_gabon, op.secteur,
-                op.province, op.ville, op.email,
-            ])).lower()
+            searchable = " ".join(
+                filter(
+                    None,
+                    [
+                        op.raison_sociale,
+                        op.nif_gabon,
+                        op.secteur,
+                        op.province,
+                        op.ville,
+                        op.email,
+                    ],
+                )
+            ).lower()
 
             if search_term in searchable:
                 if secteur and op.secteur != secteur:
                     continue
-                results.append({
-                    "type": "operateur",
-                    "id": op.id,
-                    "title": op.raison_sociale,
-                    "subtitle": f"{op.secteur} · {op.province or ''}".replace("_", " ").title(),
-                    "statut": "actif" if op.is_active else "inactif",
-                    "date": None,
-                    "link": f"/pnpi/operateurs/{op.id}",
-                    "relevance": searchable.count(search_term),
-                })
+                results.append(
+                    {
+                        "type": "operateur",
+                        "id": op.id,
+                        "title": op.raison_sociale,
+                        "subtitle": f"{op.secteur} · {op.province or ''}".replace("_", " ").title(),
+                        "statut": "actif" if op.is_active else "inactif",
+                        "date": None,
+                        "link": f"/pnpi/operateurs/{op.id}",
+                        "relevance": searchable.count(search_term),
+                    }
+                )
 
     if "inspection" in search_types:
         inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
         for insp in inspections:
             op = insp.operateur
-            searchable = " ".join(filter(None, [
-                insp.observations or "",
-                insp.inspecteur_username,
-                op.raison_sociale if op else "",
-                insp.statut_conformite,
-            ])).lower()
+            searchable = " ".join(
+                filter(
+                    None,
+                    [
+                        insp.observations or "",
+                        insp.inspecteur_username,
+                        op.raison_sociale if op else "",
+                        insp.statut_conformite,
+                    ],
+                )
+            ).lower()
 
             if search_term in searchable:
-                results.append({
-                    "type": "inspection",
-                    "id": insp.id,
-                    "title": f"Inspection · {insp.statut_conformite}",
-                    "subtitle": f"{op.raison_sociale if op else 'Inconnu'} · {insp.inspecteur_username}",
-                    "statut": insp.statut_conformite,
-                    "date": insp.date_inspection.isoformat(),
-                    "link": f"/pnpi/inspections/{insp.id}",
-                    "relevance": searchable.count(search_term),
-                })
+                results.append(
+                    {
+                        "type": "inspection",
+                        "id": insp.id,
+                        "title": f"Inspection · {insp.statut_conformite}",
+                        "subtitle": f"{op.raison_sociale if op else 'Inconnu'} · {insp.inspecteur_username}",
+                        "statut": insp.statut_conformite,
+                        "date": insp.date_inspection.isoformat(),
+                        "link": f"/pnpi/inspections/{insp.id}",
+                        "relevance": searchable.count(search_term),
+                    }
+                )
 
     # Sort by relevance
     results.sort(key=lambda r: r["relevance"], reverse=True)
@@ -1026,15 +1171,21 @@ async def instructor_performance(
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
 
-    instructors: dict = defaultdict(lambda: {
-        "assigned": 0, "decided": 0, "approved": 0, "rejected": 0,
-        "total_days": 0, "overdue": 0,
-    })
+    instructors: dict = defaultdict(
+        lambda: {
+            "assigned": 0,
+            "decided": 0,
+            "approved": 0,
+            "rejected": 0,
+            "total_days": 0,
+            "overdue": 0,
+        }
+    )
 
     now = now_utc()
 
     for ati in all_atis:
-        instr = ati.instructeur_username if hasattr(ati, 'instructeur_username') and ati.instructeur_username else None
+        instr = ati.instructeur_username if hasattr(ati, "instructeur_username") and ati.instructeur_username else None
         if not instr:
             continue
 
@@ -1060,16 +1211,18 @@ async def instructor_performance(
     for username, metrics in sorted(instructors.items()):
         avg_days = round(metrics["total_days"] / metrics["decided"], 1) if metrics["decided"] else 0
         approval_rate = round(metrics["approved"] / metrics["decided"] * 100, 1) if metrics["decided"] else 0
-        results.append({
-            "username": username,
-            "assigned": metrics["assigned"],
-            "decided": metrics["decided"],
-            "approved": metrics["approved"],
-            "rejected": metrics["rejected"],
-            "overdue": metrics["overdue"],
-            "avg_days": avg_days,
-            "approval_rate": approval_rate,
-        })
+        results.append(
+            {
+                "username": username,
+                "assigned": metrics["assigned"],
+                "decided": metrics["decided"],
+                "approved": metrics["approved"],
+                "rejected": metrics["rejected"],
+                "overdue": metrics["overdue"],
+                "avg_days": avg_days,
+                "approval_rate": approval_rate,
+            }
+        )
 
     results.sort(key=lambda r: r["decided"], reverse=True)
     return {"instructors": results}
@@ -1100,7 +1253,7 @@ async def predictions(
         if len(sorted_months) >= 3:
             recent = [v for _, v in sorted_months[-6:]]
             avg_recent = sum(recent) / max(len(recent), 1)
-            older = [v for _, v in sorted_months[:max(1, len(sorted_months)-6)]]
+            older = [v for _, v in sorted_months[: max(1, len(sorted_months) - 6)]]
             avg_older = sum(older) / max(len(older), 1) if older else avg_recent
             trend = (avg_recent - avg_older) / max(avg_older, 1)
 
@@ -1108,12 +1261,14 @@ async def predictions(
             for i in range(1, 4):
                 month_dt = now + timedelta(days=30 * i)
                 predicted = max(0, round(avg_recent * (1 + trend * 0.1 * i)))
-                forecasts.append({
-                    "month": month_dt.strftime("%Y-%m"),
-                    "label": month_dt.strftime("%b %Y"),
-                    "predicted_submissions": predicted,
-                    "confidence": max(50, round(90 - i * 10)),
-                })
+                forecasts.append(
+                    {
+                        "month": month_dt.strftime("%Y-%m"),
+                        "label": month_dt.strftime("%b %Y"),
+                        "predicted_submissions": predicted,
+                        "confidence": max(50, round(90 - i * 10)),
+                    }
+                )
         else:
             forecasts = []
 
@@ -1133,15 +1288,13 @@ async def predictions(
         decided_with_date = [a for a in decided if a.date_decision] if decided else []
         if decided_with_date:
             avg_processing = sum(
-                (a.date_decision.date() - a.date_soumission.date()).days
-                for a in decided_with_date
+                (a.date_decision.date() - a.date_soumission.date()).days for a in decided_with_date
             ) / max(len(decided_with_date), 1)
         else:
             avg_processing = 30
 
         instructor_set = set(
-            getattr(a, 'instructeur_username', None) for a in all_atis
-            if getattr(a, 'instructeur_username', None)
+            getattr(a, "instructeur_username", None) for a in all_atis if getattr(a, "instructeur_username", None)
         )
         est_clearance_days = round(len(in_progress) * avg_processing / max(len(instructor_set), 1))
 
@@ -1161,7 +1314,9 @@ async def predictions(
                 growth = 100
             else:
                 growth = 0
-            growing_sectors.append({"secteur": sect, "recent": counts["recent"], "older": counts["older"], "growth_pct": growth})
+            growing_sectors.append(
+                {"secteur": sect, "recent": counts["recent"], "older": counts["older"], "growth_pct": growth}
+            )
 
         growing_sectors.sort(key=lambda s: s["growth_pct"], reverse=True)
 
@@ -1199,10 +1354,10 @@ async def advanced_statistics(
     from collections import defaultdict
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    now = now_utc()
+    now_utc()
 
     # 1. Funnel analysis
-    total = len(all_atis)
+    len(all_atis)
     soumis = sum(1 for a in all_atis if a.statut != "brouillon")
     en_instruction = sum(1 for a in all_atis if a.statut in ("en_instruction", "valide", "approuve", "rejete"))
     valide = sum(1 for a in all_atis if a.statut in ("valide", "approuve"))
@@ -1257,11 +1412,16 @@ async def advanced_statistics(
     for ati in all_atis:
         if ati.date_decision:
             days = (ati.date_decision.date() - ati.date_soumission.date()).days
-            if days <= 15: time_buckets["0-15j"] += 1
-            elif days <= 30: time_buckets["15-30j"] += 1
-            elif days <= 45: time_buckets["30-45j"] += 1
-            elif days <= 60: time_buckets["45-60j"] += 1
-            else: time_buckets["60j+"] += 1
+            if days <= 15:
+                time_buckets["0-15j"] += 1
+            elif days <= 30:
+                time_buckets["15-30j"] += 1
+            elif days <= 45:
+                time_buckets["30-45j"] += 1
+            elif days <= 60:
+                time_buckets["45-60j"] += 1
+            else:
+                time_buckets["60j+"] += 1
 
     return {
         "funnel": funnel,
@@ -1278,10 +1438,10 @@ async def annual_report(
     db: Session = Depends(get_db),
 ):
     """Generate annual activity summary."""
-    from datetime import datetime as dt, timezone
+    from datetime import datetime as dt
 
-    start = dt(year, 1, 1, tzinfo=timezone.utc)
-    end = dt(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+    start = dt(year, 1, 1, tzinfo=UTC)
+    end = dt(year, 12, 31, 23, 59, 59, tzinfo=UTC)
     from ..database import as_utc as _as_utc
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
@@ -1324,7 +1484,11 @@ async def annual_report(
 
     # SLA performance
     decided = [a for a in year_atis if a.statut in ("approuve", "rejete") and a.date_decision]
-    avg_days = round(sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided) / len(decided), 1) if decided else 0
+    avg_days = (
+        round(sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided) / len(decided), 1)
+        if decided
+        else 0
+    )
     sla_respect = sum(1 for a in decided if (a.date_decision.date() - a.date_soumission.date()).days <= a.sla_jours)
 
     approved = sum(1 for a in year_atis if a.statut == "approuve")
@@ -1347,7 +1511,10 @@ async def annual_report(
         },
         "monthly": months_data,
         "sectors": [{"secteur": k, "count": v} for k, v in sorted(sector_counts.items(), key=lambda x: -x[1])],
-        "provinces": [{"province": k.replace("_", " ").title(), "count": v} for k, v in sorted(province_counts.items(), key=lambda x: -x[1])],
+        "provinces": [
+            {"province": k.replace("_", " ").title(), "count": v}
+            for k, v in sorted(province_counts.items(), key=lambda x: -x[1])
+        ],
     }
 
 
@@ -1359,14 +1526,25 @@ async def province_benchmark(
     """Compare performance metrics across all provinces."""
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
     all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
-    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    all_ops = (
+        db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    )
     now = now_utc()
 
-    provinces: dict = defaultdict(lambda: {
-        "operateurs": 0, "atis": 0, "approuves": 0, "rejetes": 0,
-        "en_cours": 0, "inspections": 0, "conformes": 0,
-        "total_days": 0, "decided": 0, "overdue": 0,
-    })
+    provinces: dict = defaultdict(
+        lambda: {
+            "operateurs": 0,
+            "atis": 0,
+            "approuves": 0,
+            "rejetes": 0,
+            "en_cours": 0,
+            "inspections": 0,
+            "conformes": 0,
+            "total_days": 0,
+            "decided": 0,
+            "overdue": 0,
+        }
+    )
 
     for op in all_ops:
         prov = op.province or "inconnu"
@@ -1407,42 +1585,46 @@ async def province_benchmark(
 
         # Score composite (0-100)
         score = round(
-            approval_rate * 0.3 +
-            conformity_rate * 0.3 +
-            max(0, (1 - m["overdue"] / max(m["en_cours"], 1)) * 100) * 0.2 +
-            min(m["operateurs"] / 5, 1) * 100 * 0.1 +
-            min(m["atis"] / 10, 1) * 100 * 0.1
-        , 1)
+            approval_rate * 0.3
+            + conformity_rate * 0.3
+            + max(0, (1 - m["overdue"] / max(m["en_cours"], 1)) * 100) * 0.2
+            + min(m["operateurs"] / 5, 1) * 100 * 0.1
+            + min(m["atis"] / 10, 1) * 100 * 0.1,
+            1,
+        )
 
-        result.append({
-            "province": prov,
-            "label": prov.replace("_", " ").title(),
-            "operateurs": m["operateurs"],
-            "atis": m["atis"],
-            "approuves": m["approuves"],
-            "rejetes": m["rejetes"],
-            "en_cours": m["en_cours"],
-            "overdue": m["overdue"],
-            "inspections": m["inspections"],
-            "conformes": m["conformes"],
-            "avg_days": avg_days,
-            "approval_rate": approval_rate,
-            "conformity_rate": conformity_rate,
-            "score": score,
-        })
+        result.append(
+            {
+                "province": prov,
+                "label": prov.replace("_", " ").title(),
+                "operateurs": m["operateurs"],
+                "atis": m["atis"],
+                "approuves": m["approuves"],
+                "rejetes": m["rejetes"],
+                "en_cours": m["en_cours"],
+                "overdue": m["overdue"],
+                "inspections": m["inspections"],
+                "conformes": m["conformes"],
+                "avg_days": avg_days,
+                "approval_rate": approval_rate,
+                "conformity_rate": conformity_rate,
+                "score": score,
+            }
+        )
 
     result.sort(key=lambda r: r["score"], reverse=True)
     return {"provinces": result}
 
 
 @router.get("/dashboard/period-comparison", summary="Comparaison de deux periodes")
-async def period_comparison(
+async def period_comparison_default(
     current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
     db: Session = Depends(get_db),
 ):
     """Compare les 30 derniers jours vs les 30 jours precedents."""
     now = now_utc()
     from datetime import timedelta
+
     period_end = now
     period_start = now - timedelta(days=30)
     prev_end = period_start
@@ -1457,8 +1639,14 @@ async def period_comparison(
     current_submissions = count_period(all_atis, "date_soumission", period_start, period_end)
     prev_submissions = count_period(all_atis, "date_soumission", prev_start, prev_end)
 
-    current_decisions = sum(1 for a in all_atis if a.date_decision and period_start <= a.date_decision.replace(tzinfo=now.tzinfo) < period_end)
-    prev_decisions = sum(1 for a in all_atis if a.date_decision and prev_start <= a.date_decision.replace(tzinfo=now.tzinfo) < prev_end)
+    current_decisions = sum(
+        1
+        for a in all_atis
+        if a.date_decision and period_start <= a.date_decision.replace(tzinfo=now.tzinfo) < period_end
+    )
+    prev_decisions = sum(
+        1 for a in all_atis if a.date_decision and prev_start <= a.date_decision.replace(tzinfo=now.tzinfo) < prev_end
+    )
 
     current_inspections = count_period(all_insp, "created_at", period_start, period_end)
     prev_inspections = count_period(all_insp, "created_at", prev_start, prev_end)
@@ -1503,16 +1691,17 @@ async def activity_feed(
     """Recent activity feed across all entities."""
     from ..models.core import AuditEventORM
 
-    events = db.execute(
-        select(AuditEventORM)
-        .order_by(AuditEventORM.timestamp.desc())
-        .limit(limit)
-    ).scalars().all()
+    events = db.execute(select(AuditEventORM).order_by(AuditEventORM.timestamp.desc()).limit(limit)).scalars().all()
 
     ACTION_ICONS = {
-        "ati.": "📋", "inspection.": "🔍", "auth.": "🔐",
-        "admin.": "⚙️", "export.": "📤", "operateurs.": "🏭",
-        "ati.sign": "✍️", "ati.certificate": "📜",
+        "ati.": "📋",
+        "inspection.": "🔍",
+        "auth.": "🔐",
+        "admin.": "⚙️",
+        "export.": "📤",
+        "operateurs.": "🏭",
+        "ati.sign": "✍️",
+        "ati.certificate": "📜",
     }
 
     def get_icon(action: str) -> str:
@@ -1545,15 +1734,26 @@ async def instructeur_workload(
     """Statistiques de charge par instructeur: dossiers en cours, decides, delai moyen."""
     from collections import defaultdict as dd
 
-    all_atis = db.execute(
-        select(AgrementTechniqueIndustrielORM)
-        .where(AgrementTechniqueIndustrielORM.instructeur_username.isnot(None))
-    ).scalars().all()
+    all_atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(
+                AgrementTechniqueIndustrielORM.instructeur_username.isnot(None)
+            )
+        )
+        .scalars()
+        .all()
+    )
 
-    stats: Dict[str, dict] = dd(lambda: {
-        "en_cours": 0, "decides": 0, "approuves": 0, "rejetes": 0,
-        "en_retard": 0, "delais_jours": [],
-    })
+    stats: dict[str, dict] = dd(
+        lambda: {
+            "en_cours": 0,
+            "decides": 0,
+            "approuves": 0,
+            "rejetes": 0,
+            "en_retard": 0,
+            "delais_jours": [],
+        }
+    )
 
     terminal = {"approuve", "rejete", "expire"}
 
@@ -1590,21 +1790,37 @@ async def economic_impact(
 ):
     """Economic impact indicators derived from ATI and operator data."""
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    all_ops = (
+        db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    )
     now = now_utc()
 
     approved = [a for a in all_atis if a.statut == "approuve"]
 
     # Estimated jobs per sector (rough multipliers)
     JOBS_MULTIPLIER = {
-        "bois": 45, "mines": 80, "agroalimentaire": 35, "peche": 25,
-        "chimie": 30, "btp": 55, "energie": 20, "textile": 40, "autre": 15,
+        "bois": 45,
+        "mines": 80,
+        "agroalimentaire": 35,
+        "peche": 25,
+        "chimie": 30,
+        "btp": 55,
+        "energie": 20,
+        "textile": 40,
+        "autre": 15,
     }
 
     # Estimated investment per ATI (millions FCFA)
     INVESTMENT_MULTIPLIER = {
-        "mines": 5000, "energie": 3000, "btp": 2000, "chimie": 1500,
-        "bois": 800, "agroalimentaire": 600, "peche": 400, "textile": 300, "autre": 200,
+        "mines": 5000,
+        "energie": 3000,
+        "btp": 2000,
+        "chimie": 1500,
+        "bois": 800,
+        "agroalimentaire": 600,
+        "peche": 400,
+        "textile": 300,
+        "autre": 200,
     }
 
     total_jobs = 0
@@ -1647,10 +1863,7 @@ async def economic_impact(
             "emplois_annee_precedente": last_year_jobs,
             "croissance_emploi_pct": round((this_year_jobs - last_year_jobs) / max(last_year_jobs, 1) * 100, 1),
         },
-        "by_sector": [
-            {"secteur": k, **v}
-            for k, v in sorted(sector_impact.items(), key=lambda x: -x[1]["investment"])
-        ],
+        "by_sector": [{"secteur": k, **v} for k, v in sorted(sector_impact.items(), key=lambda x: -x[1]["investment"])],
         "by_province": [
             {"province": k.replace("_", " ").title(), **v}
             for k, v in sorted(province_impact.items(), key=lambda x: -x[1]["jobs"])
@@ -1688,18 +1901,24 @@ async def multi_year_comparison(
         avg_days = 0
         decided_with_date = [a for a in y_decided if a.date_decision]
         if decided_with_date:
-            avg_days = round(sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided_with_date) / len(decided_with_date), 1)
+            avg_days = round(
+                sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided_with_date)
+                / len(decided_with_date),
+                1,
+            )
 
-        years.append({
-            "year": y,
-            "soumissions": len(y_atis),
-            "approuves": y_approved,
-            "rejetes": len(y_decided) - y_approved,
-            "taux_approbation": round(y_approved / max(len(y_decided), 1) * 100, 1),
-            "inspections": len(y_insp),
-            "taux_conformite": round(y_conformes / max(len(y_insp), 1) * 100, 1),
-            "delai_moyen": avg_days,
-        })
+        years.append(
+            {
+                "year": y,
+                "soumissions": len(y_atis),
+                "approuves": y_approved,
+                "rejetes": len(y_decided) - y_approved,
+                "taux_approbation": round(y_approved / max(len(y_decided), 1) * 100, 1),
+                "inspections": len(y_insp),
+                "taux_conformite": round(y_conformes / max(len(y_insp), 1) * 100, 1),
+                "delai_moyen": avg_days,
+            }
+        )
 
     return {"years": years}
 
@@ -1711,15 +1930,19 @@ async def workflow_timing(
 ):
     """Average time spent at each workflow stage."""
     from collections import defaultdict
+
     from ..models.core import AuditEventORM
-    import json
 
     # Get all ATI transition events
-    transitions = db.execute(
-        select(AuditEventORM).where(
-            AuditEventORM.action.in_(["ati.transition", "ati.create", "ati.field_change"])
-        ).order_by(AuditEventORM.timestamp.asc())
-    ).scalars().all()
+    transitions = (
+        db.execute(
+            select(AuditEventORM)
+            .where(AuditEventORM.action.in_(["ati.transition", "ati.create", "ati.field_change"]))
+            .order_by(AuditEventORM.timestamp.asc())
+        )
+        .scalars()
+        .all()
+    )
 
     # Group by ATI target
     ati_events: dict = defaultdict(list)
@@ -1728,7 +1951,6 @@ async def workflow_timing(
 
     # Compute stage durations
     stage_durations: dict = defaultdict(list)
-    STAGES = ["soumis", "en_instruction", "valide", "approuve", "rejete"]
 
     # Fallback: use ATI data directly
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
@@ -1749,13 +1971,15 @@ async def workflow_timing(
             avg = round(sum(durations) / len(durations), 1)
             p50 = sorted(durations)[len(durations) // 2]
             p90 = sorted(durations)[int(len(durations) * 0.9)]
-            result.append({
-                "stage": stage,
-                "avg_days": avg,
-                "median_days": p50,
-                "p90_days": p90,
-                "sample_size": len(durations),
-            })
+            result.append(
+                {
+                    "stage": stage,
+                    "avg_days": avg,
+                    "median_days": p50,
+                    "p90_days": p90,
+                    "sample_size": len(durations),
+                }
+            )
 
     return {"stages": result}
 
@@ -1771,12 +1995,12 @@ async def budget_tracking(
 
     # Cost model (FCFA)
     COST_PER_INSTRUCTION_DAY = 15000  # ~23 EUR/day
-    COST_PER_INSPECTION = 250000      # ~380 EUR
-    COST_CERTIFICATE = 50000          # ~76 EUR
+    COST_PER_INSPECTION = 250000  # ~380 EUR
+    COST_CERTIFICATE = 50000  # ~76 EUR
 
     total_cost = 0
-    sector_costs: Dict[str, float] = defaultdict(float)
-    monthly_costs: Dict[str, float] = defaultdict(float)
+    sector_costs: dict[str, float] = defaultdict(float)
+    monthly_costs: dict[str, float] = defaultdict(float)
 
     for ati in all_atis:
         # Instruction cost
@@ -1803,10 +2027,17 @@ async def budget_tracking(
         "total_cost_fcfa": round(total_cost),
         "total_cost_eur": round(total_cost / 655.957),
         "breakdown": {
-            "instruction": round(sum(
-                ((a.date_decision.date() - a.date_soumission.date()).days if a.date_decision else (now.date() - a.date_soumission.date()).days) * COST_PER_INSTRUCTION_DAY
-                for a in all_atis
-            )),
+            "instruction": round(
+                sum(
+                    (
+                        (a.date_decision.date() - a.date_soumission.date()).days
+                        if a.date_decision
+                        else (now.date() - a.date_soumission.date()).days
+                    )
+                    * COST_PER_INSTRUCTION_DAY
+                    for a in all_atis
+                )
+            ),
             "certificats": round(sum(COST_CERTIFICATE for a in all_atis if a.statut == "approuve")),
             "inspections": round(inspection_total),
         },
@@ -1814,10 +2045,7 @@ async def budget_tracking(
             {"secteur": k, "cost_fcfa": round(v), "cost_eur": round(v / 655.957)}
             for k, v in sorted(sector_costs.items(), key=lambda x: -x[1])
         ],
-        "monthly": [
-            {"month": k, "cost_fcfa": round(v)}
-            for k, v in sorted(monthly_costs.items())[-12:]
-        ],
+        "monthly": [{"month": k, "cost_fcfa": round(v)} for k, v in sorted(monthly_costs.items())[-12:]],
         "avg_cost_per_ati": round(total_cost / max(len(all_atis), 1)),
         "cost_model": {
             "instruction_par_jour": COST_PER_INSTRUCTION_DAY,
@@ -1835,18 +2063,48 @@ async def social_impact(
     """Social impact metrics from industrial activity."""
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    all_ops = (
+        db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    )
     approved = [a for a in all_atis if a.statut == "approuve"]
 
-    JOBS = {"bois": 45, "mines": 80, "agroalimentaire": 35, "peche": 25, "chimie": 30, "btp": 55, "energie": 20, "autre": 15}
-    WOMEN_PCT = {"agroalimentaire": 45, "textile": 60, "peche": 30, "bois": 15, "mines": 10, "chimie": 20, "btp": 8, "energie": 12, "autre": 25}
-    YOUTH_PCT = {"btp": 55, "agroalimentaire": 40, "bois": 50, "mines": 35, "peche": 45, "chimie": 30, "energie": 25, "autre": 35}
+    JOBS = {
+        "bois": 45,
+        "mines": 80,
+        "agroalimentaire": 35,
+        "peche": 25,
+        "chimie": 30,
+        "btp": 55,
+        "energie": 20,
+        "autre": 15,
+    }
+    WOMEN_PCT = {
+        "agroalimentaire": 45,
+        "textile": 60,
+        "peche": 30,
+        "bois": 15,
+        "mines": 10,
+        "chimie": 20,
+        "btp": 8,
+        "energie": 12,
+        "autre": 25,
+    }
+    YOUTH_PCT = {
+        "btp": 55,
+        "agroalimentaire": 40,
+        "bois": 50,
+        "mines": 35,
+        "peche": 45,
+        "chimie": 30,
+        "energie": 25,
+        "autre": 35,
+    }
 
     total_jobs = sum(JOBS.get(a.secteur, 15) for a in approved)
     women_jobs = sum(JOBS.get(a.secteur, 15) * WOMEN_PCT.get(a.secteur, 20) / 100 for a in approved)
     youth_jobs = sum(JOBS.get(a.secteur, 15) * YOUTH_PCT.get(a.secteur, 35) / 100 for a in approved)
 
-    province_jobs: Dict[str, int] = defaultdict(int)
+    province_jobs: dict[str, int] = defaultdict(int)
     for a in approved:
         prov = a.operateur.province if a.operateur else "inconnu"
         province_jobs[prov] += JOBS.get(a.secteur, 15)

@@ -44,11 +44,22 @@ export function SLAClock({ dateSoumission, slaJours, statut }: Props) {
   const color = isTerminal ? "#006233" : isOverdue ? "#b42318" : isWarning ? "#d97706" : "#0c7eb4";
 
   return (
-    <div style={{
-      padding: "14px 18px", borderRadius: 14,
-      background: `${color}08`, border: `2px solid ${color}20`,
-    }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+    <div
+      style={{
+        padding: "14px 18px",
+        borderRadius: 14,
+        background: `${color}08`,
+        border: `2px solid ${color}20`,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 8,
+        }}
+      >
         <span style={{ fontSize: 13, fontWeight: 700, color }}>
           {isTerminal ? "SLA · Termine" : isOverdue ? "SLA · DEPASSE" : "SLA · Compte a rebours"}
         </span>
@@ -58,26 +69,38 @@ export function SLAClock({ dateSoumission, slaJours, statut }: Props) {
       </div>
 
       {/* Progress bar */}
-      <div style={{ height: 8, borderRadius: 4, background: "var(--line, #e5e7eb)", marginBottom: 8, overflow: "hidden" }}>
-        <div style={{
-          height: "100%", borderRadius: 4,
-          width: `${Math.min(pct, 100)}%`,
-          background: color,
-          transition: "width 1s linear",
-        }} />
+      <div
+        style={{
+          height: 8,
+          borderRadius: 4,
+          background: "var(--line, #e5e7eb)",
+          marginBottom: 8,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            borderRadius: 4,
+            width: `${Math.min(pct, 100)}%`,
+            background: color,
+            transition: "width 1s linear",
+          }}
+        />
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <div>
           {!isTerminal && (
-            <span style={{ fontSize: 24, fontWeight: 800, color, fontVariantNumeric: "tabular-nums" }}>
-              {isOverdue ? "+" : ""}{formatRemaining(remaining)}
+            <span
+              style={{ fontSize: 24, fontWeight: 800, color, fontVariantNumeric: "tabular-nums" }}
+            >
+              {isOverdue ? "+" : ""}
+              {formatRemaining(remaining)}
             </span>
           )}
           {isTerminal && (
-            <span style={{ fontSize: 16, fontWeight: 700, color }}>
-              Dossier cloture
-            </span>
+            <span style={{ fontSize: 16, fontWeight: 700, color }}>Dossier cloture</span>
           )}
         </div>
         <span style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)" }}>

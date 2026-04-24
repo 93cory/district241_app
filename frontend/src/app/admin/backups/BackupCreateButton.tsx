@@ -29,11 +29,17 @@ export function BackupCreateButton() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.3rem" }}>
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.3rem" }}
+    >
       <button type="button" onClick={run} disabled={busy} className="btn-primary">
         {busy ? "Sauvegarde en cours..." : "Creer une sauvegarde"}
       </button>
-      {msg && <span className="pnpi-page-sub" style={{ margin: 0, fontSize: "0.78rem" }}>{msg}</span>}
+      {msg && (
+        <span className="pnpi-page-sub" style={{ margin: 0, fontSize: "0.78rem" }}>
+          {msg}
+        </span>
+      )}
     </div>
   );
 }

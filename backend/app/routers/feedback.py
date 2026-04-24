@@ -1,13 +1,15 @@
 """PNPI · Feedback et satisfaction operateur."""
+
 from __future__ import annotations
 
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..database import get_db
-from ..core.auth import User, get_current_user, require_roles, Role
 from ..models.pnpi import OperatorFeedbackORM
 
 router = APIRouter(prefix="/feedback", tags=["Feedback"])
@@ -70,8 +72,11 @@ async def feedback_summary(
         "categories": categories,
         "recent": [
             {
-                "id": fb.id, "rating": fb.rating, "comment": fb.comment,
-                "category": fb.category, "username": fb.username,
+                "id": fb.id,
+                "rating": fb.rating,
+                "comment": fb.comment,
+                "category": fb.category,
+                "username": fb.username,
                 "created_at": fb.created_at.isoformat(),
             }
             for fb in all_fb[:20]

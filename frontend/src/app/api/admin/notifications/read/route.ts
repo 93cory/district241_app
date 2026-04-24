@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ is_read: payload.is_read ?? true }),
         cache: "no-store",
-      }
+      },
     );
 
     const body = await response.text();
@@ -37,4 +37,3 @@ export async function POST(request: Request) {
     });
   }
 }
-

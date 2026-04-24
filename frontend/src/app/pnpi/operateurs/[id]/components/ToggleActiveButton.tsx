@@ -2,7 +2,13 @@
 import { useTransition, useState } from "react";
 import { toggleOperateurActive } from "../../actions";
 
-export function ToggleActiveButton({ operateurId, isActive }: { operateurId: string; isActive: boolean }) {
+export function ToggleActiveButton({
+  operateurId,
+  isActive,
+}: {
+  operateurId: string;
+  isActive: boolean;
+}) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 

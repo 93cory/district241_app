@@ -31,7 +31,7 @@ export const PilotageHistoryPanel = ({ dossiers, initialTransitionsByDossier }: 
   const options = useMemo(() => dossiers.map((dossier) => dossier.id), [dossiers]);
   const [selectedId, setSelectedId] = useState(options[0] ?? "");
   const [history, setHistory] = useState<ProjectDossierTransition[]>(
-    () => initialTransitionsByDossier?.[options[0] ?? ""] ?? []
+    () => initialTransitionsByDossier?.[options[0] ?? ""] ?? [],
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export const PilotageHistoryPanel = ({ dossiers, initialTransitionsByDossier }: 
       setError(null);
       const response = await fetch(
         `/api/pilotage/dossiers/history?dossier_id=${encodeURIComponent(selectedId)}`,
-        { cache: "no-store" }
+        { cache: "no-store" },
       );
       if (!response.ok) {
         setError(`Chargement historique echoue (${response.status}).`);
@@ -114,7 +114,8 @@ export const PilotageHistoryPanel = ({ dossiers, initialTransitionsByDossier }: 
                     {statusLabel(entry.previous_status)} {"->"} {statusLabel(entry.new_status)}
                   </td>
                   <td>
-                    {entry.previous_stage ?? "Non renseigne"} {"->"} {entry.new_stage ?? "Non renseigne"}
+                    {entry.previous_stage ?? "Non renseigne"} {"->"}{" "}
+                    {entry.new_stage ?? "Non renseigne"}
                   </td>
                   <td>{entry.note}</td>
                 </tr>

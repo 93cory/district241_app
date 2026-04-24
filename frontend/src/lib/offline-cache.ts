@@ -21,7 +21,11 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-export async function cacheResponse(url: string, data: any, ttlMs: number = 5 * 60 * 1000): Promise<void> {
+export async function cacheResponse(
+  url: string,
+  data: any,
+  ttlMs: number = 5 * 60 * 1000,
+): Promise<void> {
   try {
     const db = await openDB();
     const tx = db.transaction(STORE_NAME, "readwrite");
@@ -46,8 +50,14 @@ export async function getCachedResponse<T = any>(url: string): Promise<T | null>
     return new Promise((resolve) => {
       req.onsuccess = () => {
         const record = req.result;
-        if (!record) { resolve(null); return; }
-        if (Date.now() > record.expiresAt) { resolve(null); return; }
+        if (!record) {
+          resolve(null);
+          return;
+        }
+        if (Date.now() > record.expiresAt) {
+          resolve(null);
+          return;
+        }
         resolve(JSON.parse(record.data) as T);
       };
       req.onerror = () => resolve(null);

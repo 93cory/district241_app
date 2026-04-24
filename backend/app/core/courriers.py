@@ -9,12 +9,10 @@ Utilise par les instructeurs pour generer rapidement les courriers standards :
 
 Chaque template supporte l'interpolation de variables {operateur_nom}, {numero_ati}, etc.
 """
+
 from __future__ import annotations
 
-from typing import Dict, List
-
-
-COURRIER_TEMPLATES: List[Dict[str, str]] = [
+COURRIER_TEMPLATES: list[dict[str, str]] = [
     {
         "id": "piece_manquante_statuts",
         "category": "Demande de piece",
@@ -177,7 +175,7 @@ PNPI · Ministere de l'Industrie""",
 ]
 
 
-def render(template_id: str, variables: Dict[str, str]) -> Dict[str, str]:
+def render(template_id: str, variables: dict[str, str]) -> dict[str, str]:
     """Rend le sujet et le corps d'un courrier en interpolant les variables."""
     tpl = next((t for t in COURRIER_TEMPLATES if t["id"] == template_id), None)
     if not tpl:

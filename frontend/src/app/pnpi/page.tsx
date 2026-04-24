@@ -2,21 +2,14 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import {
-  fetchPNPIKpis,
-  fetchPNPICarte,
-  fetchPNPIRecents,
-  type ATIResume,
-} from "../../lib/api";
+import { fetchPNPIKpis, fetchPNPICarte, fetchPNPIRecents, type ATIResume } from "../../lib/api";
 import { fetchBackendProfile } from "../../lib/backend";
 import { getDefaultRouteForRoles } from "../../lib/role-routing";
 import { BriefingAudio } from "../components/BriefingAudio";
 
 const CarteOperateurs = dynamic(() => import("./components/CarteOperateurs"), {
   ssr: false,
-  loading: () => (
-    <div className="pnpi-brief-map-loading">Chargement de la carte nationale...</div>
-  ),
+  loading: () => <div className="pnpi-brief-map-loading">Chargement de la carte nationale...</div>,
 });
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur"]);
@@ -90,9 +83,7 @@ export default async function PNPIDashboardPage() {
       .sort((a: ATIResume, b: ATIResume) => b.age_jours - a.age_jours)
       .slice(0, 3);
 
-    const slaTone =
-      kpis.taux_sla_pct >= 85 ? "good" :
-      kpis.taux_sla_pct >= 70 ? "warn" : "alert";
+    const slaTone = kpis.taux_sla_pct >= 85 ? "good" : kpis.taux_sla_pct >= 70 ? "warn" : "alert";
 
     // Texte lu a voix haute par le BriefingAudio
     const audioBrief = [
@@ -125,8 +116,8 @@ export default async function PNPIDashboardPage() {
               {greeting}, <span className="pnpi-brief-role">{roleTitle}</span>
             </h1>
             <p className="pnpi-brief-subtitle">
-              Vue d&apos;ensemble de la situation industrielle nationale ·
-              Plateforme Nationale de Pilotage Industriel
+              Vue d&apos;ensemble de la situation industrielle nationale · Plateforme Nationale de
+              Pilotage Industriel
             </p>
             <div className="pnpi-brief-audio">
               <BriefingAudio text={audioBrief} label="Ecouter le briefing (2 min)" />
@@ -135,9 +126,13 @@ export default async function PNPIDashboardPage() {
           <div className="pnpi-brief-hero-aside">
             <div className={`pnpi-brief-sla pnpi-brief-sla--${slaTone}`}>
               <div className="pnpi-brief-sla-label">Conformite SLA nationale</div>
-              <div className="pnpi-brief-sla-value">{kpis.taux_sla_pct.toFixed(0)}<span>%</span></div>
+              <div className="pnpi-brief-sla-value">
+                {kpis.taux_sla_pct.toFixed(0)}
+                <span>%</span>
+              </div>
               <div className="pnpi-brief-sla-detail">
-                {kpis.atis_en_retard} dossier{kpis.atis_en_retard > 1 ? "s" : ""} en retard sur {kpis.atis_total}
+                {kpis.atis_en_retard} dossier{kpis.atis_en_retard > 1 ? "s" : ""} en retard sur{" "}
+                {kpis.atis_total}
               </div>
               <div className="pnpi-brief-sla-bar">
                 <div
@@ -161,14 +156,17 @@ export default async function PNPIDashboardPage() {
 
           <article className="pnpi-kpi pnpi-kpi--success">
             <div className="pnpi-kpi-label">Approuves ce mois</div>
-            <div className="pnpi-kpi-value">{kpis.atis_approuves_ce_mois.toLocaleString("fr-FR")}</div>
+            <div className="pnpi-kpi-value">
+              {kpis.atis_approuves_ce_mois.toLocaleString("fr-FR")}
+            </div>
             <div className="pnpi-kpi-detail">Agrements delivres</div>
           </article>
 
           <article className="pnpi-kpi pnpi-kpi--neutral">
             <div className="pnpi-kpi-label">Delai moyen</div>
             <div className="pnpi-kpi-value">
-              {kpis.delai_moyen_jours.toFixed(1)}<span className="pnpi-kpi-unit"> j</span>
+              {kpis.delai_moyen_jours.toFixed(1)}
+              <span className="pnpi-kpi-unit"> j</span>
             </div>
             <div className="pnpi-kpi-detail">Objectif : 30 jours</div>
           </article>
@@ -194,12 +192,18 @@ export default async function PNPIDashboardPage() {
             <ul className="pnpi-brief-alerts-list">
               {overdue.map((ati) => (
                 <li key={ati.id} className="pnpi-brief-alert">
-                  <div className="pnpi-brief-alert-rank" aria-hidden="true">!</div>
+                  <div className="pnpi-brief-alert-rank" aria-hidden="true">
+                    !
+                  </div>
                   <div className="pnpi-brief-alert-body">
                     <div className="pnpi-brief-alert-head">
                       <span className="pnpi-brief-alert-num">{ati.numero_ati}</span>
-                      <span className="pnpi-brief-alert-sector">{SECTEUR_LABELS[ati.secteur] ?? ati.secteur}</span>
-                      <span className="pnpi-brief-alert-province">{ati.province.replace(/_/g, " ")}</span>
+                      <span className="pnpi-brief-alert-sector">
+                        {SECTEUR_LABELS[ati.secteur] ?? ati.secteur}
+                      </span>
+                      <span className="pnpi-brief-alert-province">
+                        {ati.province.replace(/_/g, " ")}
+                      </span>
                     </div>
                     <div className="pnpi-brief-alert-name">{ati.raison_sociale}</div>
                   </div>
@@ -227,8 +231,8 @@ export default async function PNPIDashboardPage() {
           <div className="pnpi-brief-section-head">
             <h2 className="pnpi-brief-section-title">Couverture nationale</h2>
             <p className="pnpi-brief-section-desc">
-              {carte.length} operateurs industriels geocodes sur les 9 provinces du Gabon.
-              Cliquez sur un point pour voir le detail.
+              {carte.length} operateurs industriels geocodes sur les 9 provinces du Gabon. Cliquez
+              sur un point pour voir le detail.
             </p>
           </div>
           <div className="pnpi-brief-map">
@@ -242,21 +246,41 @@ export default async function PNPIDashboardPage() {
         <section className="pnpi-brief-quick-grid" aria-label="Acces rapides">
           <Link href="/pnpi/ati" className="pnpi-brief-quick">
             <div className="pnpi-brief-quick-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M9 12l2 2 4-4" />
                 <circle cx="12" cy="12" r="9" />
               </svg>
             </div>
             <div className="pnpi-brief-quick-body">
               <div className="pnpi-brief-quick-title">Gestion des ATI</div>
-              <div className="pnpi-brief-quick-desc">Instruire, valider, delivrer les agrements techniques.</div>
+              <div className="pnpi-brief-quick-desc">
+                Instruire, valider, delivrer les agrements techniques.
+              </div>
             </div>
-            <span className="pnpi-brief-quick-arrow" aria-hidden="true">&rarr;</span>
+            <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+              &rarr;
+            </span>
           </Link>
 
           <Link href="/pnpi/inspections" className="pnpi-brief-quick">
             <div className="pnpi-brief-quick-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" />
                 <path d="M9 4v16" />
                 <path d="M15 6v16" />
@@ -264,14 +288,26 @@ export default async function PNPIDashboardPage() {
             </div>
             <div className="pnpi-brief-quick-body">
               <div className="pnpi-brief-quick-title">Inspections terrain</div>
-              <div className="pnpi-brief-quick-desc">Rapports de conformite et couverture provinciale.</div>
+              <div className="pnpi-brief-quick-desc">
+                Rapports de conformite et couverture provinciale.
+              </div>
             </div>
-            <span className="pnpi-brief-quick-arrow" aria-hidden="true">&rarr;</span>
+            <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+              &rarr;
+            </span>
           </Link>
 
           <Link href="/pnpi/reports" className="pnpi-brief-quick">
             <div className="pnpi-brief-quick-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="8" y1="13" x2="16" y2="13" />
@@ -280,9 +316,13 @@ export default async function PNPIDashboardPage() {
             </div>
             <div className="pnpi-brief-quick-body">
               <div className="pnpi-brief-quick-title">Rapports strategiques</div>
-              <div className="pnpi-brief-quick-desc">Bilans, impact, predictions et aide a la decision.</div>
+              <div className="pnpi-brief-quick-desc">
+                Bilans, impact, predictions et aide a la decision.
+              </div>
             </div>
-            <span className="pnpi-brief-quick-arrow" aria-hidden="true">&rarr;</span>
+            <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+              &rarr;
+            </span>
           </Link>
         </section>
       </div>
@@ -294,7 +334,9 @@ export default async function PNPIDashboardPage() {
         <div className="chart-card">
           <h2 style={{ color: "#b42318", marginTop: 0 }}>Dashboard PNPI indisponible</h2>
           <p style={{ color: "#b42318" }}>{msg}</p>
-          <p style={{ color: "#6b7280" }}>Verifiez que le backend est actif et que les tables PNPI ont ete creees.</p>
+          <p style={{ color: "#6b7280" }}>
+            Verifiez que le backend est actif et que les tables PNPI ont ete creees.
+          </p>
         </div>
       </section>
     );

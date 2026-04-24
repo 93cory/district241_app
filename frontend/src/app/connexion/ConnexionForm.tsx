@@ -25,7 +25,12 @@ export const ConnexionForm = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      const payload = (await response.json()) as { error?: string; redirect_to?: string; requires_2fa?: boolean; username?: string };
+      const payload = (await response.json()) as {
+        error?: string;
+        redirect_to?: string;
+        requires_2fa?: boolean;
+        username?: string;
+      };
 
       if (!response.ok) {
         setError(payload.error ?? `Connexion echouee (${response.status}).`);
@@ -134,7 +139,14 @@ export const ConnexionForm = () => {
               {/* Courbe croissante (droit bas) */}
               <g transform="translate(72, 78)">
                 <circle cx="6" cy="6" r="10" fill="url(#pnpiAmber)" />
-                <path d="M1.5 10 L4 7.5 L6 8.5 L9 4.5 L10 5.5 L10.5 3.5" stroke="#FFFFFF" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M1.5 10 L4 7.5 L6 8.5 L9 4.5 L10 5.5 L10.5 3.5"
+                  stroke="#FFFFFF"
+                  strokeWidth="1.4"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
                 <path d="M9 4 L11 3 L11 5 Z" fill="#FFFFFF" />
               </g>
             </svg>
@@ -227,12 +239,30 @@ export const ConnexionForm = () => {
                   title={showPassword ? "Masquer" : "Afficher"}
                 >
                   {showPassword ? (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                       <line x1="1" y1="1" x2="23" y2="23" />
                     </svg>
                   ) : (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
@@ -243,7 +273,16 @@ export const ConnexionForm = () => {
 
             {error && (
               <div className="pnpi-error" role="alert">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -271,9 +310,13 @@ export const ConnexionForm = () => {
           <div className="pnpi-profiles-hint">
             <div className="pnpi-profiles-title">Profils habilites</div>
             <div className="pnpi-profiles-list">
-              {["ministre", "directeur", "instructeur", "inspecteur", "operateur", "admin"].map((r) => (
-                <span key={r} className="pnpi-profile-badge">{r}</span>
-              ))}
+              {["ministre", "directeur", "instructeur", "inspecteur", "operateur", "admin"].map(
+                (r) => (
+                  <span key={r} className="pnpi-profile-badge">
+                    {r}
+                  </span>
+                ),
+              )}
             </div>
           </div>
         </div>

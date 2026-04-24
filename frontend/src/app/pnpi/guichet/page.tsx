@@ -6,8 +6,22 @@ import { ATIWizard } from "./components/ATIWizard";
 import { MonEspace } from "./MonEspace";
 
 const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "operateur"]);
-const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
-const STATUT_COLORS: Record<string, string> = { soumis: "#f59e0b", en_instruction: "#3b82f6", en_validation: "#8b5cf6", approuve: "#10b981", rejete: "#ef4444", expire: "#9ca3af" };
+const STATUT_LABELS: Record<string, string> = {
+  soumis: "Soumis",
+  en_instruction: "En instruction",
+  en_validation: "En validation",
+  approuve: "Approuve",
+  rejete: "Rejete",
+  expire: "Expire",
+};
+const STATUT_COLORS: Record<string, string> = {
+  soumis: "#f59e0b",
+  en_instruction: "#3b82f6",
+  en_validation: "#8b5cf6",
+  approuve: "#10b981",
+  rejete: "#ef4444",
+  expire: "#9ca3af",
+};
 
 export default async function GuichetPage() {
   let username = "";
@@ -17,7 +31,9 @@ export default async function GuichetPage() {
     if (!((profile.roles ?? []) as string[]).some((r) => ALLOWED.has(r))) redirect("/connexion");
     username = profile.username;
     userRoles = (profile.roles ?? []) as string[];
-  } catch { redirect("/connexion"); }
+  } catch {
+    redirect("/connexion");
+  }
 
   try {
     // Les operateurs peuvent desormais lister les operateurs industriels
@@ -32,47 +48,126 @@ export default async function GuichetPage() {
 
     return (
       <section className="section">
-        <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-          <Link href="/profil" style={{ color: "#003F8F", textDecoration: "none", fontWeight: 600 }}>Mon profil</Link>
+        <div
+          style={{
+            marginBottom: "0.75rem",
+            fontSize: "0.875rem",
+            display: "flex",
+            gap: "1rem",
+            alignItems: "center",
+          }}
+        >
+          <Link
+            href="/profil"
+            style={{ color: "#003F8F", textDecoration: "none", fontWeight: 600 }}
+          >
+            Mon profil
+          </Link>
         </div>
         {/* KPIs */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.75rem", marginBottom: "1.25rem" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+            gap: "0.75rem",
+            marginBottom: "1.25rem",
+          }}
+        >
           <div className="chart-card" style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#003F8F" }}>{myATIs.length}</div>
+            <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#003F8F" }}>
+              {myATIs.length}
+            </div>
             <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>Mes demandes</div>
           </div>
-          {(["soumis", "en_instruction", "en_validation", "approuve", "rejete"] as const).map(s => {
-            const count = myATIs.filter(a => a.statut === s).length;
-            return (
-              <div key={s} className="chart-card" style={{ padding: "0.75rem 1rem", textAlign: "center" }}>
-                <div style={{ fontSize: "1.5rem", fontWeight: 800, color: STATUT_COLORS[s] }}>{count}</div>
-                <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>{STATUT_LABELS[s]}</div>
-              </div>
-            );
-          })}
+          {(["soumis", "en_instruction", "en_validation", "approuve", "rejete"] as const).map(
+            (s) => {
+              const count = myATIs.filter((a) => a.statut === s).length;
+              return (
+                <div
+                  key={s}
+                  className="chart-card"
+                  style={{ padding: "0.75rem 1rem", textAlign: "center" }}
+                >
+                  <div style={{ fontSize: "1.5rem", fontWeight: 800, color: STATUT_COLORS[s] }}>
+                    {count}
+                  </div>
+                  <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>{STATUT_LABELS[s]}</div>
+                </div>
+              );
+            },
+          )}
         </div>
 
         {/* Pipeline tracker */}
         <div className="chart-card" style={{ padding: "1rem 1.25rem", marginBottom: "1.25rem" }}>
-          <h3 style={{ margin: "0 0 0.75rem", color: "#003F8F", fontSize: "0.9rem" }}>Parcours de votre demande ATI</h3>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", padding: "0 1rem" }}>
+          <h3 style={{ margin: "0 0 0.75rem", color: "#003F8F", fontSize: "0.9rem" }}>
+            Parcours de votre demande ATI
+          </h3>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              position: "relative",
+              padding: "0 1rem",
+            }}
+          >
             {/* Background line */}
-            <div style={{ position: "absolute", top: "50%", left: "1rem", right: "1rem", height: "3px", background: "#e5e7eb", transform: "translateY(-50%)", zIndex: 0 }} />
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "1rem",
+                right: "1rem",
+                height: "3px",
+                background: "#e5e7eb",
+                transform: "translateY(-50%)",
+                zIndex: 0,
+              }}
+            />
             {[
               { label: "Soumission", icon: "1", color: "#f59e0b" },
               { label: "Instruction", icon: "2", color: "#3b82f6" },
               { label: "Validation", icon: "3", color: "#8b5cf6" },
               { label: "Decision", icon: "4", color: "#10b981" },
             ].map((step) => (
-              <div key={step.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", zIndex: 1 }}>
-                <div style={{
-                  width: "32px", height: "32px", borderRadius: "50%",
-                  background: step.color, color: "#fff",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontWeight: 800, fontSize: "0.8rem",
-                  border: "3px solid #fff", boxShadow: `0 0 0 2px ${step.color}`,
-                }}>{step.icon}</div>
-                <span style={{ fontSize: "0.7rem", color: "#374151", fontWeight: 600, marginTop: "0.4rem" }}>{step.label}</span>
+              <div
+                key={step.label}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  zIndex: 1,
+                }}
+              >
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: step.color,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: 800,
+                    fontSize: "0.8rem",
+                    border: "3px solid #fff",
+                    boxShadow: `0 0 0 2px ${step.color}`,
+                  }}
+                >
+                  {step.icon}
+                </div>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "#374151",
+                    fontWeight: 600,
+                    marginTop: "0.4rem",
+                  }}
+                >
+                  {step.label}
+                </span>
               </div>
             ))}
           </div>
@@ -92,15 +187,34 @@ export default async function GuichetPage() {
           {/* My ATIs */}
           <div style={{ flex: "1 1 340px" }}>
             <div className="chart-card" style={{ padding: "1.25rem" }}>
-              <h3 style={{ margin: "0 0 0.75rem", color: "#003F8F", fontSize: "0.95rem" }}>Mes demandes recentes ({myATIs.length})</h3>
+              <h3 style={{ margin: "0 0 0.75rem", color: "#003F8F", fontSize: "0.95rem" }}>
+                Mes demandes recentes ({myATIs.length})
+              </h3>
               {/* Status summary badges */}
               {myATIs.length > 0 && (
-                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-                  {(["soumis", "en_instruction", "approuve", "rejete"] as const).map(s => {
-                    const count = myATIs.filter(a => a.statut === s).length;
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    flexWrap: "wrap",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  {(["soumis", "en_instruction", "approuve", "rejete"] as const).map((s) => {
+                    const count = myATIs.filter((a) => a.statut === s).length;
                     if (count === 0) return null;
                     return (
-                      <span key={s} style={{ padding: "0.2rem 0.6rem", borderRadius: "999px", background: `${STATUT_COLORS[s]}18`, color: STATUT_COLORS[s], fontWeight: 700, fontSize: "0.75rem" }}>
+                      <span
+                        key={s}
+                        style={{
+                          padding: "0.2rem 0.6rem",
+                          borderRadius: "999px",
+                          background: `${STATUT_COLORS[s]}18`,
+                          color: STATUT_COLORS[s],
+                          fontWeight: 700,
+                          fontSize: "0.75rem",
+                        }}
+                      >
                         {count} {STATUT_LABELS[s]}
                       </span>
                     );
@@ -108,30 +222,89 @@ export default async function GuichetPage() {
                 </div>
               )}
               {myATIs.length === 0 ? (
-                <p style={{ color: "#6b7280", margin: 0 }}>Aucune demande soumise. Utilisez le formulaire ci-contre.</p>
+                <p style={{ color: "#6b7280", margin: 0 }}>
+                  Aucune demande soumise. Utilisez le formulaire ci-contre.
+                </p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                   {myATIs.map((ati) => (
-                    <Link key={ati.id} href={`/pnpi/ati/${ati.id}`} style={{ textDecoration: "none", display: "block" }}>
-                      <div style={{ padding: "0.75rem", background: "#f9fafb", borderRadius: "8px", border: "1px solid #f3f4f6", cursor: "pointer" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-                          <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#003F8F", fontSize: "0.8rem" }}>{ati.numero_ati}</span>
-                          <span style={{ padding: "0.15rem 0.5rem", borderRadius: "999px", background: `${STATUT_COLORS[ati.statut] ?? "#6b7280"}18`, color: STATUT_COLORS[ati.statut] ?? "#6b7280", fontWeight: 600, fontSize: "0.7rem" }}>
+                    <Link
+                      key={ati.id}
+                      href={`/pnpi/ati/${ati.id}`}
+                      style={{ textDecoration: "none", display: "block" }}
+                    >
+                      <div
+                        style={{
+                          padding: "0.75rem",
+                          background: "#f9fafb",
+                          borderRadius: "8px",
+                          border: "1px solid #f3f4f6",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "0.25rem",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontFamily: "monospace",
+                              fontWeight: 700,
+                              color: "#003F8F",
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            {ati.numero_ati}
+                          </span>
+                          <span
+                            style={{
+                              padding: "0.15rem 0.5rem",
+                              borderRadius: "999px",
+                              background: `${STATUT_COLORS[ati.statut] ?? "#6b7280"}18`,
+                              color: STATUT_COLORS[ati.statut] ?? "#6b7280",
+                              fontWeight: 600,
+                              fontSize: "0.7rem",
+                            }}
+                          >
                             {STATUT_LABELS[ati.statut] ?? ati.statut}
                           </span>
                         </div>
-                        <div style={{ fontSize: "0.8rem", color: "#374151" }}>{ati.type_activite.slice(0, 60)}{ati.type_activite.length > 60 ? "..." : ""}</div>
+                        <div style={{ fontSize: "0.8rem", color: "#374151" }}>
+                          {ati.type_activite.slice(0, 60)}
+                          {ati.type_activite.length > 60 ? "..." : ""}
+                        </div>
                         <div style={{ fontSize: "0.72rem", color: "#6b7280", marginTop: "0.2rem" }}>
-                          {new Date(ati.date_soumission).toLocaleDateString("fr-FR")} &middot; {ati.age_jours} j
-                          {ati.is_overdue && <span style={{ color: "#d97706", fontWeight: 600 }}> · EN RETARD</span>}
+                          {new Date(ati.date_soumission).toLocaleDateString("fr-FR")} &middot;{" "}
+                          {ati.age_jours} j
+                          {ati.is_overdue && (
+                            <span style={{ color: "#d97706", fontWeight: 600 }}> · EN RETARD</span>
+                          )}
                         </div>
                       </div>
                     </Link>
                   ))}
                 </div>
               )}
-              <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid #f3f4f6" }}>
-                <Link href="/pnpi/ati" style={{ color: "#003F8F", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
+              <div
+                style={{
+                  marginTop: "0.75rem",
+                  paddingTop: "0.75rem",
+                  borderTop: "1px solid #f3f4f6",
+                }}
+              >
+                <Link
+                  href="/pnpi/ati"
+                  style={{
+                    color: "#003F8F",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
                   Voir tous mes dossiers →
                 </Link>
               </div>
@@ -141,13 +314,22 @@ export default async function GuichetPage() {
 
         {/* Mon Espace · enriched operator dashboard */}
         <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
-          <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Mon espace · Vue enrichie</h3>
+          <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>
+            Mon espace · Vue enrichie
+          </h3>
           <MonEspace />
         </div>
       </section>
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erreur inconnue";
-    return <section className="section"><div className="chart-card"><h2 style={{ color: "#b42318", marginTop: 0 }}>Erreur</h2><p style={{ color: "#b42318" }}>{msg}</p></div></section>;
+    return (
+      <section className="section">
+        <div className="chart-card">
+          <h2 style={{ color: "#b42318", marginTop: 0 }}>Erreur</h2>
+          <p style={{ color: "#b42318" }}>{msg}</p>
+        </div>
+      </section>
+    );
   }
 }

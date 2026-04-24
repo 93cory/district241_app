@@ -8,14 +8,7 @@ interface Props {
   dossiers: ProjectDossier[];
 }
 
-type SortKey =
-  | "updated_at"
-  | "id"
-  | "company_name"
-  | "status"
-  | "stage"
-  | "priority"
-  | "age_days";
+type SortKey = "updated_at" | "id" | "company_name" | "status" | "stage" | "priority" | "age_days";
 
 const statusLabel = (status: string) => {
   switch (status) {
@@ -84,8 +77,7 @@ export const PilotageDossiersTable = ({ dossiers }: Props) => {
         return true;
       }
       const haystack =
-        `${entry.id} ${entry.company_name} ${entry.project_title} ${entry.sector} ${entry.location} ${entry.assigned_to ?? ""}`
-          .toLowerCase();
+        `${entry.id} ${entry.company_name} ${entry.project_title} ${entry.sector} ${entry.location} ${entry.assigned_to ?? ""}`.toLowerCase();
       return haystack.includes(normalizedSearch);
     });
 
@@ -121,10 +113,18 @@ export const PilotageDossiersTable = ({ dossiers }: Props) => {
 
   return (
     <div className="table-card reveal" style={{ marginTop: "1rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "0.75rem",
+        }}
+      >
         <h3 style={{ marginTop: 0, marginBottom: "0.4rem" }}>File des dossiers industriels</h3>
         <span style={{ fontSize: "0.85rem", color: "#6c7482" }}>
-          Tri: {sortKey} ({sortDirection === "asc" ? "croissant" : "decroissant"}) | Page {safePage}/{maxPage}
+          Tri: {sortKey} ({sortDirection === "asc" ? "croissant" : "decroissant"}) | Page {safePage}
+          /{maxPage}
         </span>
       </div>
 
@@ -136,7 +136,12 @@ export const PilotageDossiersTable = ({ dossiers }: Props) => {
             setSearch(event.target.value);
           }}
           placeholder="Recherche texte"
-          style={{ border: "1px solid #d0ddec", borderRadius: 10, padding: "0.45rem 0.6rem", minWidth: 220 }}
+          style={{
+            border: "1px solid #d0ddec",
+            borderRadius: 10,
+            padding: "0.45rem 0.6rem",
+            minWidth: 220,
+          }}
         />
         <select
           value={statusFilter}
@@ -153,7 +158,14 @@ export const PilotageDossiersTable = ({ dossiers }: Props) => {
           <option value="approved">Statut: approuve</option>
           <option value="rejected">Statut: rejete</option>
         </select>
-        <label style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "0.9rem" }}>
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.35rem",
+            fontSize: "0.9rem",
+          }}
+        >
           <input
             type="checkbox"
             checked={onlyOverdue}
@@ -192,16 +204,21 @@ export const PilotageDossiersTable = ({ dossiers }: Props) => {
                 <td>{statusLabel(dossier.status)}</td>
                 <td>{stageLabel(dossier.stage)}</td>
                 <td>{priorityLabel(dossier.priority)}</td>
-                <td style={{ color: dossier.is_overdue ? "#b42318" : "inherit" }}>{dossier.age_days} j</td>
+                <td style={{ color: dossier.is_overdue ? "#b42318" : "inherit" }}>
+                  {dossier.age_days} j
+                </td>
                 <td>{dossier.sla_days} j</td>
                 <td>{new Date(dossier.updated_at).toLocaleDateString("fr-FR")}</td>
-                <td>{dossier.assigned_to ?? "Non renseigne"} ({dossier.assigned_role ?? "Non renseigne"})</td>
+                <td>
+                  {dossier.assigned_to ?? "Non renseigne"} (
+                  {dossier.assigned_role ?? "Non renseigne"})
+                </td>
                 <td>
                   {["approved", "rejected"].includes(dossier.status) ? (
                     <a
                       className="export-link"
                       href={`${backendBase}/pilotage/dossiers/${encodeURIComponent(
-                        dossier.id
+                        dossier.id,
                       )}/decision-document.pdf`}
                     >
                       PDF
@@ -220,7 +237,10 @@ export const PilotageDossiersTable = ({ dossiers }: Props) => {
         <button className="export-link" onClick={() => setPage((value) => Math.max(1, value - 1))}>
           Precedent
         </button>
-        <button className="export-link" onClick={() => setPage((value) => Math.min(maxPage, value + 1))}>
+        <button
+          className="export-link"
+          onClick={() => setPage((value) => Math.min(maxPage, value + 1))}
+        >
           Suivant
         </button>
       </div>

@@ -1,4 +1,5 @@
 """Global exception handlers for consistent API error responses."""
+
 from __future__ import annotations
 
 import logging
@@ -30,7 +31,7 @@ def register_error_handlers(app: FastAPI) -> None:
     async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
         errors = []
         for err in exc.errors():
-            loc = " -> ".join(str(l) for l in err.get("loc", []))
+            loc = " -> ".join(str(part) for part in err.get("loc", []))
             errors.append({"field": loc, "message": err.get("msg", ""), "type": err.get("type", "")})
 
         logger.warning("Validation error on %s %s: %s", request.method, request.url.path, errors)

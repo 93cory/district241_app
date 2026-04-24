@@ -31,9 +31,15 @@ export default async function AnnuairePage() {
     if (Array.isArray(rawRoles)) {
       roles = rawRoles.filter(Boolean);
     } else if (typeof rawRoles === "string") {
-      roles = rawRoles.split(",").map((r: string) => r.trim()).filter(Boolean);
+      roles = rawRoles
+        .split(",")
+        .map((r: string) => r.trim())
+        .filter(Boolean);
     } else if (typeof user.roles_csv === "string") {
-      roles = user.roles_csv.split(",").map((r: string) => r.trim()).filter(Boolean);
+      roles = user.roles_csv
+        .split(",")
+        .map((r: string) => r.trim())
+        .filter(Boolean);
     } else {
       roles = [];
     }
@@ -51,22 +57,33 @@ export default async function AnnuairePage() {
         {users.length} utilisateur(s) actif(s) sur la plateforme PNPI.
       </p>
 
-      {roleOrder.map(role => {
+      {roleOrder.map((role) => {
         const roleUsers = byRole[role];
         if (!roleUsers || roleUsers.length === 0) return null;
         const style = ROLE_STYLES[role] || { color: "#526175", label: role };
 
         return (
           <div key={role} style={{ marginBottom: 20 }}>
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              marginBottom: 8, paddingBottom: 6,
-              borderBottom: `2px solid ${style.color}`,
-            }}>
-              <span style={{
-                padding: "2px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                background: `${style.color}12`, color: style.color,
-              }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 8,
+                paddingBottom: 6,
+                borderBottom: `2px solid ${style.color}`,
+              }}
+            >
+              <span
+                style={{
+                  padding: "2px 10px",
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: `${style.color}12`,
+                  color: style.color,
+                }}
+              >
                 {style.label}
               </span>
               <span style={{ fontSize: 12, color: "var(--text-soft, #9ca3af)" }}>
@@ -74,24 +91,52 @@ export default async function AnnuairePage() {
               </span>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 8 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                gap: 8,
+              }}
+            >
               {roleUsers.map((user: any) => (
-                <div key={user.username} style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "10px 14px", borderRadius: 12,
-                  background: "var(--bg-layer, #fff)",
-                  border: "1px solid var(--line, #dce4ef)",
-                }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    background: `${style.color}15`, color: style.color,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 14, fontWeight: 800,
-                  }}>
+                <div
+                  key={user.username}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    background: "var(--bg-layer, #fff)",
+                    border: "1px solid var(--line, #dce4ef)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: `${style.color}15`,
+                      color: style.color,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 14,
+                      fontWeight: 800,
+                    }}
+                  >
                     {(user.full_name || user.username || "?")[0].toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {user.full_name || user.username}
                     </div>
                     <div style={{ fontSize: 11, color: "var(--text-soft, #526175)" }}>
@@ -99,11 +144,19 @@ export default async function AnnuairePage() {
                       {user.province && <span> · {user.province.replace("_", " ")}</span>}
                     </div>
                   </div>
-                  <a href={`/pnpi/messages/new?to=${user.username}`} style={{
-                    padding: "4px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600,
-                    background: "var(--bg-base, #f4f8fb)", color: "var(--text-soft, #526175)",
-                    textDecoration: "none", border: "1px solid var(--line, #dce4ef)",
-                  }}>
+                  <a
+                    href={`/pnpi/messages/new?to=${user.username}`}
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: 6,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      background: "var(--bg-base, #f4f8fb)",
+                      color: "var(--text-soft, #526175)",
+                      textDecoration: "none",
+                      border: "1px solid var(--line, #dce4ef)",
+                    }}
+                  >
                     Message
                   </a>
                 </div>

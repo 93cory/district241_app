@@ -1,19 +1,19 @@
 """PNPI · Gestion des documents joints aux dossiers ATI."""
+
 from __future__ import annotations
 
 import os
 import uuid
 from pathlib import Path
-from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from ..core.auth import Role, User, require_roles
 from ..core.audit import write_audit_event
+from ..core.auth import Role, User, require_roles
 from ..database import get_db, now_utc
 from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM
 from .ati import check_ati_access
@@ -25,7 +25,9 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_CONTENT_TYPES = {
-    "application/pdf", "image/jpeg", "image/png",
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
@@ -57,21 +59,27 @@ def _to_doc_read(doc: DocumentDossierORM) -> DocumentRead:
     )
 
 
-@router.get("/ati/{ati_id}/documents", response_model=List[DocumentRead])
+@router.get("/ati/{ati_id}/documents", response_model=list[DocumentRead])
 async def list_ati_documents(
     ati_id: str,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
     db: Session = Depends(get_db),
-) -> List[DocumentRead]:
+) -> list[DocumentRead]:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
     check_ati_access(ati, current_user)
-    docs = db.execute(
-        select(DocumentDossierORM)
-        .where(DocumentDossierORM.ati_id == ati_id)
-        .order_by(DocumentDossierORM.uploaded_at.desc())
-    ).scalars().all()
+    docs = (
+        db.execute(
+            select(DocumentDossierORM)
+            .where(DocumentDossierORM.ati_id == ati_id)
+            .order_by(DocumentDossierORM.uploaded_at.desc())
+        )
+        .scalars()
+        .all()
+    )
     return [_to_doc_read(d) for d in docs]
 
 
@@ -86,9 +94,7 @@ async def ati_documents_summary(
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
 
-    docs = db.execute(
-        select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)
-    ).scalars().all()
+    docs = db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)).scalars().all()
 
     by_type: dict[str, int] = {}
     total_size = 0
@@ -133,7 +139,9 @@ async def upload_ati_document(
 
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail=f"Fichier trop volumineux. Maximum: {MAX_FILE_SIZE // 1024 // 1024} MB")
+        raise HTTPException(
+            status_code=413, detail=f"Fichier trop volumineux. Maximum: {MAX_FILE_SIZE // 1024 // 1024} MB"
+        )
 
     doc_id = f"DOC-{uuid.uuid4().hex[:12].upper()}"
     ext = Path(file.filename or "file.bin").suffix.lower()
@@ -154,7 +162,13 @@ async def upload_ati_document(
         uploaded_by=current_user.username,
     )
     db.add(doc)
-    write_audit_event(db, actor=current_user.username, action="document.upload", target=doc_id, details=f"ati={ati_id}; file={file.filename}; type={type_document}")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="document.upload",
+        target=doc_id,
+        details=f"ati={ati_id}; file={file.filename}; type={type_document}",
+    )
     db.commit()
     db.refresh(doc)
     return _to_doc_read(doc)
@@ -163,7 +177,9 @@ async def upload_ati_document(
 @router.get("/documents/{doc_id}/download")
 async def download_document(
     doc_id: str,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
     db: Session = Depends(get_db),
 ) -> FileResponse:
     doc = db.get(DocumentDossierORM, doc_id)
@@ -191,6 +207,12 @@ async def delete_document(
     if file_path.exists():
         file_path.unlink()
     db.delete(doc)
-    write_audit_event(db, actor=current_user.username, action="document.delete", target=doc_id, details=f"ati={doc.ati_id}; file={doc.nom_fichier}")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="document.delete",
+        target=doc_id,
+        details=f"ati={doc.ati_id}; file={doc.nom_fichier}",
+    )
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

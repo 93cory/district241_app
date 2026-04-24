@@ -1,8 +1,9 @@
 """PNPI · Prometheus metrics for monitoring."""
+
 from __future__ import annotations
 
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -21,10 +22,10 @@ class Metrics:
         self._start_time = time.time()
 
     def record_request(self, method: str, path: str, status: int, duration: float):
-        key = f'{method}:{path}:{status}'
+        key = f"{method}:{path}:{status}"
         self.request_count[key] = self.request_count.get(key, 0) + 1
 
-        dur_key = f'{method}:{path}'
+        dur_key = f"{method}:{path}"
         if dur_key not in self.request_duration:
             self.request_duration[dur_key] = []
         self.request_duration[dur_key].append(duration)
@@ -33,7 +34,7 @@ class Metrics:
             self.request_duration[dur_key] = self.request_duration[dur_key][-500:]
 
         if status >= 400:
-            err_key = f'{method}:{path}:{status}'
+            err_key = f"{method}:{path}:{status}"
             self.error_count[err_key] = self.error_count.get(err_key, 0) + 1
 
     def get_usage_stats(self) -> dict:
@@ -65,10 +66,7 @@ class Metrics:
             "total_errors": total_errors,
             "error_rate": round(total_errors / max(total_requests, 1) * 100, 2),
             "uptime_hours": round((time.time() - self._start_time) / 3600, 1),
-            "endpoints": [
-                {"endpoint": ep, **stats}
-                for ep, stats in sorted_endpoints[:30]
-            ],
+            "endpoints": [{"endpoint": ep, **stats} for ep, stats in sorted_endpoints[:30]],
         }
 
     def to_prometheus(self) -> str:
@@ -97,12 +95,20 @@ class Metrics:
         for key, durations in sorted(self.request_duration.items()):
             method, path = key.split(":", 1)
             if durations:
-                avg = sum(durations) / len(durations)
+                sum(durations) / len(durations)
                 p95 = sorted(durations)[int(len(durations) * 0.95)] if len(durations) > 1 else durations[0]
-                lines.append(f'pnpi_http_request_duration_seconds{{method="{method}",path="{path}",quantile="0.5"}} {sorted(durations)[len(durations)//2]:.4f}')
-                lines.append(f'pnpi_http_request_duration_seconds{{method="{method}",path="{path}",quantile="0.95"}} {p95:.4f}')
-                lines.append(f'pnpi_http_request_duration_seconds_sum{{method="{method}",path="{path}"}} {sum(durations):.4f}')
-                lines.append(f'pnpi_http_request_duration_seconds_count{{method="{method}",path="{path}"}} {len(durations)}')
+                lines.append(
+                    f'pnpi_http_request_duration_seconds{{method="{method}",path="{path}",quantile="0.5"}} {sorted(durations)[len(durations) // 2]:.4f}'
+                )
+                lines.append(
+                    f'pnpi_http_request_duration_seconds{{method="{method}",path="{path}",quantile="0.95"}} {p95:.4f}'
+                )
+                lines.append(
+                    f'pnpi_http_request_duration_seconds_sum{{method="{method}",path="{path}"}} {sum(durations):.4f}'
+                )
+                lines.append(
+                    f'pnpi_http_request_duration_seconds_count{{method="{method}",path="{path}"}} {len(durations)}'
+                )
         lines.append("")
 
         lines.append("# HELP pnpi_http_errors_total Total HTTP errors")
@@ -137,7 +143,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         metrics.record_request(request.method, path, response.status_code, duration)
 
         # Add timing header
-        response.headers["X-Response-Time"] = f"{duration*1000:.1f}ms"
+        response.headers["X-Response-Time"] = f"{duration * 1000:.1f}ms"
 
         return response
 

@@ -4,6 +4,7 @@ Analyse l'historique des decisions similaires pour recommander
 approuver ou rejeter un ATI. Pas de ML lourd · approche statistique
 basee sur des features simples.
 """
+
 from __future__ import annotations
 
 from sqlalchemy import select
@@ -12,9 +13,8 @@ from sqlalchemy.orm import Session
 from ..database import now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
-    InspectionConformiteORM,
-    OperateurIndustrielORM,
     ATIChecklistItemORM,
+    InspectionConformiteORM,
 )
 
 
@@ -31,12 +31,16 @@ def recommend_decision(db: Session, ati_id: str) -> dict:
     features = _extract_features(db, ati, op, now)
 
     # Find similar decided ATIs
-    all_decided = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.statut.in_(["approuve", "rejete"]),
-            AgrementTechniqueIndustrielORM.id != ati_id,
+    all_decided = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(
+                AgrementTechniqueIndustrielORM.statut.in_(["approuve", "rejete"]),
+                AgrementTechniqueIndustrielORM.id != ati_id,
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     if len(all_decided) < 5:
         return {
@@ -68,12 +72,14 @@ def recommend_decision(db: Session, ati_id: str) -> dict:
         total_weight += weight
 
         if similarity >= 0.5:
-            similar_cases.append({
-                "numero_ati": past.numero_ati,
-                "statut": past.statut,
-                "secteur": past.secteur,
-                "similarity": round(similarity * 100),
-            })
+            similar_cases.append(
+                {
+                    "numero_ati": past.numero_ati,
+                    "statut": past.statut,
+                    "secteur": past.secteur,
+                    "similarity": round(similarity * 100),
+                }
+            )
 
     if total_weight == 0:
         return {
@@ -131,12 +137,16 @@ def _extract_features(db, ati, op, now) -> dict:
 
     if op:
         # Operator history
-        past = db.execute(
-            select(AgrementTechniqueIndustrielORM).where(
-                AgrementTechniqueIndustrielORM.operateur_id == op.id,
-                AgrementTechniqueIndustrielORM.statut.in_(["approuve", "rejete"]),
+        past = (
+            db.execute(
+                select(AgrementTechniqueIndustrielORM).where(
+                    AgrementTechniqueIndustrielORM.operateur_id == op.id,
+                    AgrementTechniqueIndustrielORM.statut.in_(["approuve", "rejete"]),
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         total = len(past)
         rejected = sum(1 for a in past if a.statut == "rejete")
         features["operator_past_atis"] = total
@@ -144,11 +154,15 @@ def _extract_features(db, ati, op, now) -> dict:
         features["province"] = op.province or ""
 
         # Latest inspection
-        insp = db.execute(
-            select(InspectionConformiteORM).where(
-                InspectionConformiteORM.operateur_id == op.id
-            ).order_by(InspectionConformiteORM.date_inspection.desc())
-        ).scalars().first()
+        insp = (
+            db.execute(
+                select(InspectionConformiteORM)
+                .where(InspectionConformiteORM.operateur_id == op.id)
+                .order_by(InspectionConformiteORM.date_inspection.desc())
+            )
+            .scalars()
+            .first()
+        )
         features["last_inspection"] = insp.statut_conformite if insp else "none"
         features["has_inspection"] = insp is not None
     else:
@@ -159,9 +173,7 @@ def _extract_features(db, ati, op, now) -> dict:
         features["has_inspection"] = False
 
     # Checklist
-    items = db.execute(
-        select(ATIChecklistItemORM).where(ATIChecklistItemORM.ati_id == ati.id)
-    ).scalars().all()
+    items = db.execute(select(ATIChecklistItemORM).where(ATIChecklistItemORM.ati_id == ati.id)).scalars().all()
     if items:
         features["checklist_pct"] = round(sum(1 for i in items if i.is_checked) / len(items) * 100, 1)
     else:

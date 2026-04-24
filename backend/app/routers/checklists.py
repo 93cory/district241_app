@@ -1,16 +1,16 @@
 """PNPI · Checklists de conformite pour ATI."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..database import get_db, now_utc
-from ..core.auth import User, get_current_user, require_roles, Role
-from ..models.pnpi import ATIChecklistItemORM, AgrementTechniqueIndustrielORM
+from ..models.pnpi import AgrementTechniqueIndustrielORM, ATIChecklistItemORM
 
 router = APIRouter(prefix="/checklists", tags=["Checklists"])
 
@@ -71,10 +71,15 @@ async def get_checklist(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    items = db.execute(
-        select(ATIChecklistItemORM).where(ATIChecklistItemORM.ati_id == ati_id)
-        .order_by(ATIChecklistItemORM.category, ATIChecklistItemORM.order_index)
-    ).scalars().all()
+    items = (
+        db.execute(
+            select(ATIChecklistItemORM)
+            .where(ATIChecklistItemORM.ati_id == ati_id)
+            .order_by(ATIChecklistItemORM.category, ATIChecklistItemORM.order_index)
+        )
+        .scalars()
+        .all()
+    )
 
     total = len(items)
     checked = sum(1 for i in items if i.is_checked)
@@ -83,12 +88,18 @@ async def get_checklist(
         "total": total,
         "checked": checked,
         "completion_pct": round(checked / total * 100) if total else 0,
-        "items": [{
-            "id": i.id, "label": i.label, "category": i.category,
-            "is_checked": i.is_checked, "checked_by": i.checked_by,
-            "checked_at": i.checked_at.isoformat() if i.checked_at else None,
-            "notes": i.notes,
-        } for i in items],
+        "items": [
+            {
+                "id": i.id,
+                "label": i.label,
+                "category": i.category,
+                "is_checked": i.is_checked,
+                "checked_by": i.checked_by,
+                "checked_at": i.checked_at.isoformat() if i.checked_at else None,
+                "notes": i.notes,
+            }
+            for i in items
+        ],
     }
 
 
@@ -104,9 +115,7 @@ async def generate_checklist(
         raise HTTPException(404, "ATI introuvable.")
 
     # Check if checklist already exists
-    existing = db.execute(
-        select(ATIChecklistItemORM).where(ATIChecklistItemORM.ati_id == ati_id)
-    ).scalars().first()
+    existing = db.execute(select(ATIChecklistItemORM).where(ATIChecklistItemORM.ati_id == ati_id)).scalars().first()
     if existing:
         raise HTTPException(400, "Une checklist existe deja pour cet ATI.")
 

@@ -1,11 +1,11 @@
 """Distributed rate limiter using Redis sliding window, with in-memory fallback."""
+
 from __future__ import annotations
 
 import logging
 import os
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 
@@ -36,6 +36,7 @@ class _RedisRateLimiter:
 
     def __init__(self, url: str) -> None:
         import redis.asyncio as aioredis
+
         self._redis = aioredis.from_url(url, decode_responses=True)
 
     async def check(self, key: str, limit: int, window_seconds: int) -> None:

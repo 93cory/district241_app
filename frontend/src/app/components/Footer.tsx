@@ -69,8 +69,8 @@ export function Footer() {
             </div>
           </div>
           <p className="pnpi-footer-mission">
-            L&apos;outil souverain de pilotage industriel de la Republique Gabonaise.
-            Agrements techniques, inspections de conformite, cartographie et indicateurs ministeriels.
+            L&apos;outil souverain de pilotage industriel de la Republique Gabonaise. Agrements
+            techniques, inspections de conformite, cartographie et indicateurs ministeriels.
           </p>
           <div className="pnpi-footer-ministry">
             <span className="pnpi-footer-ministry-label">Maitre d&apos;ouvrage</span>
@@ -98,7 +98,8 @@ export function Footer() {
 
       <div className="pnpi-footer-baseline">
         <div>
-          © {year} Republique Gabonaise · Ministere de l&apos;Industrie et de la Transformation Locale
+          © {year} Republique Gabonaise · Ministere de l&apos;Industrie et de la Transformation
+          Locale
         </div>
         <div className="pnpi-footer-version">
           PNPI v1.43 · Souverainete numerique au service du developpement industriel

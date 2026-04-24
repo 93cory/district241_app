@@ -25,7 +25,9 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
 
   const fetchPhotos = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/pnpi/inspections/${inspectionId}/photos`, { credentials: "include" });
+      const res = await fetch(`${API}/pnpi/inspections/${inspectionId}/photos`, {
+        credentials: "include",
+      });
       if (res.ok) {
         const data = await res.json();
         setPhotos(data);
@@ -98,7 +100,14 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
 
   return (
     <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1rem",
+        }}
+      >
         <h3 style={{ margin: 0, color: "#003F8F", fontSize: "0.95rem" }}>
           Photos de l&apos;inspection ({photos.length})
         </h3>
@@ -155,7 +164,9 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
       )}
 
       {loading ? (
-        <p style={{ color: "#6b7280", fontSize: "0.875rem", fontStyle: "italic" }}>Chargement des photos...</p>
+        <p style={{ color: "#6b7280", fontSize: "0.875rem", fontStyle: "italic" }}>
+          Chargement des photos...
+        </p>
       ) : photos.length === 0 ? (
         <div
           style={{
@@ -246,7 +257,9 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
                     gap: "0.5rem",
                   }}
                 >
-                  <p style={{ margin: 0, color: "white", fontSize: "0.78rem", fontWeight: 600 }}>Supprimer ?</p>
+                  <p style={{ margin: 0, color: "white", fontSize: "0.78rem", fontWeight: 600 }}>
+                    Supprimer ?
+                  </p>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button
                       onClick={() => handleDelete(photo.id)}

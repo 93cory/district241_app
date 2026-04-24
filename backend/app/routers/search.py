@@ -1,11 +1,10 @@
 """PNPI · Endpoint de recherche full-text sur ATI et operateurs."""
+
 from __future__ import annotations
 
-from typing import List, Optional
-
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func, select, cast, String
 
 from ..core.auth import Role, User, require_roles
 from ..database import get_db
@@ -20,11 +19,11 @@ router = APIRouter(prefix="/search", tags=["Recherche"])
 @router.get("/global")
 async def search_global(
     q: str = Query(..., min_length=2, max_length=200, description="Terme de recherche"),
-    type: Optional[str] = Query(default=None, description="Filtrer par type: ati, operateur"),
+    type: str | None = Query(default=None, description="Filtrer par type: ati, operateur"),
     limit: int = Query(default=20, ge=1, le=100),
-    current_user: User = Depends(require_roles(
-        Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur
-    )),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)
+    ),
     db: Session = Depends(get_db),
 ):
     """Recherche full-text sur les ATI et operateurs.
@@ -51,13 +50,15 @@ async def search_global(
         )
         atis = db.execute(ati_query).scalars().all()
         for a in atis:
-            results.append({
-                "type": "ati",
-                "id": a.id,
-                "title": f"{a.numero_ati} · {a.type_activite}",
-                "subtitle": f"{a.secteur} | {a.statut}",
-                "url": f"/pnpi/ati/{a.id}",
-            })
+            results.append(
+                {
+                    "type": "ati",
+                    "id": a.id,
+                    "title": f"{a.numero_ati} · {a.type_activite}",
+                    "subtitle": f"{a.secteur} | {a.statut}",
+                    "url": f"/pnpi/ati/{a.id}",
+                }
+            )
 
     if type is None or type == "operateur":
         op_query = (
@@ -76,12 +77,14 @@ async def search_global(
         )
         ops = db.execute(op_query).scalars().all()
         for op in ops:
-            results.append({
-                "type": "operateur",
-                "id": op.id,
-                "title": op.raison_sociale,
-                "subtitle": f"{op.secteur} | {op.province} | NIF: {op.nif_gabon}",
-                "url": f"/pnpi/operateurs/{op.id}",
-            })
+            results.append(
+                {
+                    "type": "operateur",
+                    "id": op.id,
+                    "title": op.raison_sociale,
+                    "subtitle": f"{op.secteur} | {op.province} | NIF: {op.nif_gabon}",
+                    "url": f"/pnpi/operateurs/{op.id}",
+                }
+            )
 
     return {"query": q, "count": len(results), "results": results[:limit]}

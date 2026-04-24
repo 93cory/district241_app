@@ -17,26 +17,38 @@ export default async function StatusPage() {
   const overallStyle = data ? STATUS_STYLES[data.status] || STATUS_STYLES.down : STATUS_STYLES.down;
 
   return (
-    <div style={{
-      minHeight: "100vh", background: "var(--bg-base, #f4f8fb)",
-      display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "40px 24px",
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--bg-base, #f4f8fb)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "40px 24px",
+      }}
+    >
       <div style={{ maxWidth: 600, width: "100%" }}>
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 4px" }}>Statut du systeme PNPI</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 4px" }}>
+            Statut du systeme PNPI
+          </h1>
           <p style={{ color: "var(--text-soft, #526175)", fontSize: 13, margin: 0 }}>
             Plateforme Nationale de la Politique Industrielle
           </p>
         </div>
 
         {/* Overall status */}
-        <div style={{
-          padding: "20px 24px", borderRadius: 16, marginBottom: 20,
-          background: overallStyle.bg, border: `2px solid ${overallStyle.color}`,
-          textAlign: "center",
-        }}>
+        <div
+          style={{
+            padding: "20px 24px",
+            borderRadius: 16,
+            marginBottom: 20,
+            background: overallStyle.bg,
+            border: `2px solid ${overallStyle.color}`,
+            textAlign: "center",
+          }}
+        >
           <div style={{ fontSize: 28 }}>{overallStyle.icon}</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: overallStyle.color }}>
             {data ? overallStyle.label : "Verification en cours..."}
@@ -54,17 +66,27 @@ export default async function StatusPage() {
             {data.checks.map((check: any, i: number) => {
               const style = STATUS_STYLES[check.status] || STATUS_STYLES.down;
               return (
-                <div key={i} style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "12px 16px", borderRadius: 12,
-                  background: "var(--bg-layer, #fff)",
-                  border: "1px solid var(--line, #dce4ef)",
-                }}>
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 16px",
+                    borderRadius: 12,
+                    background: "var(--bg-layer, #fff)",
+                    border: "1px solid var(--line, #dce4ef)",
+                  }}
+                >
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{
-                      width: 10, height: 10, borderRadius: "50%",
-                      background: style.color,
-                    }} />
+                    <span
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: style.color,
+                      }}
+                    />
                     <span style={{ fontSize: 14, fontWeight: 600 }}>{check.name}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -78,10 +100,16 @@ export default async function StatusPage() {
                         {check.detail}
                       </span>
                     )}
-                    <span style={{
-                      padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-                      background: style.bg, color: style.color,
-                    }}>
+                    <span
+                      style={{
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        background: style.bg,
+                        color: style.color,
+                      }}
+                    >
                       {style.label}
                     </span>
                   </div>
@@ -92,11 +120,20 @@ export default async function StatusPage() {
         )}
 
         {/* Footer */}
-        <div style={{
-          textAlign: "center", marginTop: 32, fontSize: 11,
-          color: "var(--text-soft, #9ca3af)",
-        }}>
-          {data && <>Derniere verification : {new Date(data.timestamp).toLocaleString("fr-FR")}<br /></>}
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: 32,
+            fontSize: 11,
+            color: "var(--text-soft, #9ca3af)",
+          }}
+        >
+          {data && (
+            <>
+              Derniere verification : {new Date(data.timestamp).toLocaleString("fr-FR")}
+              <br />
+            </>
+          )}
           Ministere de l&apos;Industrie et de la Transformation Locale · PNPI
         </div>
       </div>

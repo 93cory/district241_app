@@ -31,8 +31,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "PNPI | Plateforme Nationale de Pilotage Industriel",
-  description:
-    "Ministere de l'Industrie du Gabon · Plateforme Nationale de Pilotage Industriel.",
+  description: "Ministere de l'Industrie du Gabon · Plateforme Nationale de Pilotage Industriel.",
   icons: { icon: "/pnpi_logo.png" },
 };
 
@@ -62,13 +61,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body suppressHydrationWarning>
         <div className="page-shell">
-          <a href="#main-content" className="skip-link">Aller au contenu principal</a>
+          <a href="#main-content" className="skip-link">
+            Aller au contenu principal
+          </a>
           <ImpersonateBanner profile={profile ?? undefined} />
           <header role="banner">
             <RepubliqueBand />
             <nav className="top-nav" aria-label="Navigation principale">
               <Link href={homeHref} className="nav-brand" aria-label="Accueil PNPI">
-                <Image src="/pnpi_logo.png" alt="PNPI" width={32} height={32} style={{ borderRadius: 6 }} />
+                <Image
+                  src="/pnpi_logo.png"
+                  alt="PNPI"
+                  width={32}
+                  height={32}
+                  style={{ borderRadius: 6 }}
+                />
                 <span>PNPI</span>
               </Link>
               <MobileNav>
@@ -79,7 +86,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     quickAccess={mega.quickAccess}
                   />
                 ) : (
-                  <Link href="/connexion" className="mega-nav-quick-link">Connexion</Link>
+                  <Link href="/connexion" className="mega-nav-quick-link">
+                    Connexion
+                  </Link>
                 )}
                 <div className="top-nav-actions">
                   <SessionStatusBadge />

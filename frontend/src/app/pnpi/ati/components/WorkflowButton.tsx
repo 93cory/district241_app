@@ -16,9 +16,7 @@ const STATUT_TRANSITIONS: Record<string, { next: string; roles: string[] }[]> = 
     { next: "approuve", roles: ["directeur", "admin", "ministre"] },
     { next: "rejete", roles: ["directeur", "admin", "ministre"] },
   ],
-  approuve: [
-    { next: "expire", roles: ["admin", "directeur"] },
-  ],
+  approuve: [{ next: "expire", roles: ["admin", "directeur"] }],
   rejete: [],
   expire: [],
 };
@@ -46,7 +44,12 @@ interface WorkflowButtonsProps {
   userRoles?: string[];
 }
 
-export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userRoles = [] }: WorkflowButtonsProps) {
+export function WorkflowButtons({
+  atiId,
+  currentStatut,
+  currentEtape = "",
+  userRoles = [],
+}: WorkflowButtonsProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);
@@ -55,9 +58,7 @@ export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userR
   const router = useRouter();
 
   const transitions = STATUT_TRANSITIONS[currentStatut] ?? [];
-  const available = transitions.filter(t =>
-    t.roles.some(r => userRoles.includes(r))
-  );
+  const available = transitions.filter((t) => t.roles.some((r) => userRoles.includes(r)));
 
   if (!available.length) return null;
 
@@ -101,8 +102,12 @@ export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userR
   };
 
   const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "0.4rem 0.6rem", border: "1px solid #d1d5db",
-    borderRadius: "6px", fontSize: "0.8rem", boxSizing: "border-box",
+    width: "100%",
+    padding: "0.4rem 0.6rem",
+    border: "1px solid #d1d5db",
+    borderRadius: "6px",
+    fontSize: "0.8rem",
+    boxSizing: "border-box",
     marginTop: "0.375rem",
   };
 
@@ -134,11 +139,23 @@ export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userR
 
       {/* Confirmation dialog */}
       {confirmTarget && (
-        <div style={{
-          marginTop: "0.75rem", padding: "0.875rem", background: "#f9fafb",
-          borderRadius: "8px", border: `1px solid ${confirmTarget === "rejete" ? "#fca5a5" : "#d1d5db"}`,
-        }}>
-          <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#1f2937", marginBottom: "0.375rem" }}>
+        <div
+          style={{
+            marginTop: "0.75rem",
+            padding: "0.875rem",
+            background: "#f9fafb",
+            borderRadius: "8px",
+            border: `1px solid ${confirmTarget === "rejete" ? "#fca5a5" : "#d1d5db"}`,
+          }}
+        >
+          <div
+            style={{
+              fontSize: "0.82rem",
+              fontWeight: 600,
+              color: "#1f2937",
+              marginBottom: "0.375rem",
+            }}
+          >
             Confirmer : {BTN_LABELS[confirmTarget] ?? confirmTarget}
           </div>
 
@@ -149,7 +166,7 @@ export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userR
               </label>
               <textarea
                 value={motifRejet}
-                onChange={e => setMotifRejet(e.target.value)}
+                onChange={(e) => setMotifRejet(e.target.value)}
                 placeholder="Indiquez le motif de rejet..."
                 rows={2}
                 style={{ ...inputStyle, resize: "vertical" }}
@@ -162,7 +179,7 @@ export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userR
             <input
               type="text"
               value={note}
-              onChange={e => setNote(e.target.value)}
+              onChange={(e) => setNote(e.target.value)}
               placeholder="Ajouter une note..."
               style={inputStyle}
             />
@@ -175,8 +192,11 @@ export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userR
               style={{
                 padding: "0.35rem 0.75rem",
                 background: isPending ? "#9ca3af" : (BTN_COLORS[confirmTarget] ?? "#003F8F"),
-                color: "#fff", border: "none", borderRadius: "6px",
-                fontSize: "0.78rem", fontWeight: 600,
+                color: "#fff",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "0.78rem",
+                fontWeight: 600,
                 cursor: isPending ? "not-allowed" : "pointer",
               }}
             >
@@ -187,9 +207,12 @@ export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userR
               disabled={isPending}
               style={{
                 padding: "0.35rem 0.75rem",
-                background: "#fff", color: "#374151",
-                border: "1px solid #d1d5db", borderRadius: "6px",
-                fontSize: "0.78rem", fontWeight: 600,
+                background: "#fff",
+                color: "#374151",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                fontSize: "0.78rem",
+                fontWeight: 600,
                 cursor: isPending ? "not-allowed" : "pointer",
               }}
             >
@@ -197,12 +220,20 @@ export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userR
             </button>
           </div>
 
-          {error && <div style={{ marginTop: "0.375rem", color: "#ef4444", fontSize: "0.72rem" }}>{error}</div>}
+          {error && (
+            <div style={{ marginTop: "0.375rem", color: "#ef4444", fontSize: "0.72rem" }}>
+              {error}
+            </div>
+          )}
         </div>
       )}
 
       {!confirmTarget && error && (
-        <span style={{ color: "#ef4444", fontSize: "0.72rem", marginTop: "0.25rem", display: "block" }}>{error}</span>
+        <span
+          style={{ color: "#ef4444", fontSize: "0.72rem", marginTop: "0.25rem", display: "block" }}
+        >
+          {error}
+        </span>
       )}
     </div>
   );

@@ -38,16 +38,26 @@ export function PWAInstall() {
   if (!showBanner) return null;
 
   return (
-    <div style={{
-      position: "fixed", bottom: 16, left: 16, right: 16,
-      zIndex: 9998, maxWidth: 420, margin: "0 auto",
-      display: "flex", alignItems: "center", gap: 12,
-      padding: "12px 16px", borderRadius: 14,
-      background: "var(--bg-layer, #fff)",
-      border: "1.5px solid var(--accent, #006233)",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-      animation: "reveal-up 300ms ease-out",
-    }}>
+    <div
+      style={{
+        position: "fixed",
+        bottom: 16,
+        left: 16,
+        right: 16,
+        zIndex: 9998,
+        maxWidth: 420,
+        margin: "0 auto",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 16px",
+        borderRadius: 14,
+        background: "var(--bg-layer, #fff)",
+        border: "1.5px solid var(--accent, #006233)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+        animation: "reveal-up 300ms ease-out",
+      }}
+    >
       <div style={{ fontSize: 28 }}>📲</div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>Installer PNPI</div>
@@ -58,9 +68,15 @@ export function PWAInstall() {
       <button
         onClick={install}
         style={{
-          padding: "8px 16px", borderRadius: 10, border: "none",
-          background: "#006233", color: "#fff", fontWeight: 700,
-          fontSize: 13, cursor: "pointer", whiteSpace: "nowrap",
+          padding: "8px 16px",
+          borderRadius: 10,
+          border: "none",
+          background: "#006233",
+          color: "#fff",
+          fontWeight: 700,
+          fontSize: 13,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
         }}
       >
         Installer
@@ -68,8 +84,12 @@ export function PWAInstall() {
       <button
         onClick={() => setShowBanner(false)}
         style={{
-          background: "none", border: "none", color: "var(--text-soft, #526175)",
-          cursor: "pointer", fontSize: 18, padding: 4,
+          background: "none",
+          border: "none",
+          color: "var(--text-soft, #526175)",
+          cursor: "pointer",
+          fontSize: 18,
+          padding: 4,
         }}
         aria-label="Fermer"
       >

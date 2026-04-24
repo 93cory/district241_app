@@ -2,7 +2,15 @@
 import { revalidatePath } from "next/cache";
 import { backendRequest } from "../../../lib/backend";
 
-export async function updateATIStatut(atiId: string, payload: { new_statut: string; note?: string; motif_rejet?: string; numero_reference_decision?: string }) {
+export async function updateATIStatut(
+  atiId: string,
+  payload: {
+    new_statut: string;
+    note?: string;
+    motif_rejet?: string;
+    numero_reference_decision?: string;
+  },
+) {
   const res = await backendRequest(`/pnpi/ati/${encodeURIComponent(atiId)}/statut`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

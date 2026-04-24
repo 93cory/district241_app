@@ -1,20 +1,18 @@
 """PNPI / PNPI · Endpoints pour unites industrielles, declarations, lots et logs."""
+
 from __future__ import annotations
 
 import uuid
-from typing import List
-
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from ..core.audit import write_audit_event
 from ..core.auth import Role, User, require_roles
 from ..database import get_db, now_utc
-from ..models.core import DeclarationORM, FieldReportORM, TraceBatchORM, UnitORM, AuditEventORM
-from ..core.audit import write_audit_event
-
+from ..models.core import AuditEventORM, DeclarationORM, FieldReportORM, TraceBatchORM, UnitORM
 
 router = APIRouter(tags=["Unites & Tracabilite"])
 
@@ -22,6 +20,7 @@ router = APIRouter(tags=["Unites & Tracabilite"])
 # ---------------------------------------------------------------------------
 # Serialisation helpers (inline to avoid circular import with main.py helpers)
 # ---------------------------------------------------------------------------
+
 
 def _to_declaration_read(row: DeclarationORM) -> dict:
     return {
@@ -87,6 +86,7 @@ def _to_field_report_read(row: FieldReportORM) -> dict:
 # Units endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.get("/units")
 async def list_units(
     _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
@@ -115,6 +115,7 @@ async def create_unit(
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
+
     unit_id = f"UI{uuid.uuid4().hex[:4].upper()}"
     row = UnitORM(
         id=unit_id,
@@ -140,6 +141,7 @@ async def add_declaration(
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
+
     unit = db.get(UnitORM, unit_id.upper())
     if not unit:
         raise HTTPException(status_code=404, detail="Unite introuvable.")
@@ -147,6 +149,7 @@ async def add_declaration(
     month_value = payload["month"]
     if isinstance(month_value, str):
         from datetime import date as _date
+
         month_value = _date.fromisoformat(month_value)
     row = DeclarationORM(
         id=declaration_id,
@@ -182,6 +185,7 @@ async def validate_declaration(
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
+
     row = db.get(DeclarationORM, declaration_id)
     if not row:
         raise HTTPException(status_code=404, detail="Declaration introuvable.")
@@ -200,6 +204,7 @@ async def validate_declaration(
 # Batch endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.get("/batches")
 async def list_batches(
     _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
@@ -216,6 +221,7 @@ async def create_batch(
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
+
     batch_id = f"B{now_utc().strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
     row = TraceBatchORM(
         batch_id=batch_id,
@@ -254,9 +260,11 @@ async def get_batch(
 # Logs endpoint
 # ---------------------------------------------------------------------------
 
+
 @router.get("/logs")
 async def read_logs(_: User = Depends(require_roles(Role.admin, Role.ministre))):
     from ..main import log_entries
+
     return log_entries
 
 
@@ -264,17 +272,13 @@ async def read_logs(_: User = Depends(require_roles(Role.admin, Role.ministre)))
 # Field reports endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.get("/field-reports")
 async def list_field_reports(
     _: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
-    rows = (
-        db.execute(select(FieldReportORM).order_by(FieldReportORM.created_at.desc()))
-        .scalars()
-        .unique()
-        .all()
-    )
+    rows = db.execute(select(FieldReportORM).order_by(FieldReportORM.created_at.desc())).scalars().unique().all()
     return [_to_field_report_read(row) for row in rows]
 
 
@@ -288,6 +292,7 @@ async def create_field_report(
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
+
     normalized_unit_id = payload.get("unit_id", "").upper() if payload.get("unit_id") else None
     if normalized_unit_id:
         unit = db.get(UnitORM, normalized_unit_id)
@@ -363,6 +368,7 @@ async def update_field_report_status(
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
+
     normalized = payload.get("status", "").strip().lower()
     allowed = {"open", "in_progress", "closed"}
     if normalized not in allowed:
@@ -396,8 +402,10 @@ async def delete_field_report(
     current_user: User = Depends(require_roles(Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
-    from ..main import log_action
     from fastapi.responses import Response
+
+    from ..main import log_action
+
     row = db.get(FieldReportORM, report_id)
     if not row:
         raise HTTPException(status_code=404, detail="Rapport terrain introuvable.")
@@ -421,6 +429,7 @@ async def delete_field_report(
 # ---------------------------------------------------------------------------
 # Audit events
 # ---------------------------------------------------------------------------
+
 
 @router.get("/audit/events")
 async def list_audit_events(

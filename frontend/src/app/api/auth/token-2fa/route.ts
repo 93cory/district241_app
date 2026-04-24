@@ -11,10 +11,7 @@ export async function POST(request: Request) {
     const totpCode = String(formData.get("totp_code") ?? "").trim();
 
     if (!username || !totpCode) {
-      return NextResponse.json(
-        { error: "Utilisateur et code 2FA requis." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Utilisateur et code 2FA requis." }, { status: 400 });
     }
 
     const body = new URLSearchParams({ username, totp_code: totpCode });
@@ -28,8 +25,11 @@ export async function POST(request: Request) {
     if (!tokenResponse.ok) {
       const errBody = (await tokenResponse.json()) as { detail?: string };
       return NextResponse.json(
-        { error: errBody.detail ?? `Verification 2FA echouee (${tokenResponse.status}).`, detail: errBody.detail },
-        { status: tokenResponse.status }
+        {
+          error: errBody.detail ?? `Verification 2FA echouee (${tokenResponse.status}).`,
+          detail: errBody.detail,
+        },
+        { status: tokenResponse.status },
       );
     }
 
@@ -48,11 +48,15 @@ export async function POST(request: Request) {
     if (!meResponse.ok) {
       return NextResponse.json(
         { error: `Lecture profil echouee (${meResponse.status}).` },
-        { status: meResponse.status }
+        { status: meResponse.status },
       );
     }
 
-    const meBody = (await meResponse.json()) as { roles?: string[]; username: string; full_name: string };
+    const meBody = (await meResponse.json()) as {
+      roles?: string[];
+      username: string;
+      full_name: string;
+    };
     const roles = meBody.roles ?? [];
     const redirectTo = getDefaultRouteForRoles(roles);
 

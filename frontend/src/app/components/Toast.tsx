@@ -52,21 +52,32 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div style={{
-        position: "fixed", top: 16, right: 16, zIndex: 9999,
-        display: "flex", flexDirection: "column", gap: 8, maxWidth: 420,
-      }}>
+      <div
+        style={{
+          position: "fixed",
+          top: 16,
+          right: 16,
+          zIndex: 9999,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          maxWidth: 420,
+        }}
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
             style={{
-              display: "flex", alignItems: "center", gap: 10,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
               padding: "12px 16px",
               background: COLORS[toast.type],
               color: "#fff",
               borderRadius: 12,
               boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
-              fontSize: 14, fontWeight: 600,
+              fontSize: 14,
+              fontWeight: 600,
               animation: "reveal-up 300ms ease-out",
             }}
           >
@@ -74,7 +85,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <span style={{ flex: 1 }}>{toast.message}</span>
             <button
               onClick={() => dismiss(toast.id)}
-              style={{ background: "none", border: "none", color: "rgba(255,255,255,0.7)", cursor: "pointer", fontSize: 18 }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "rgba(255,255,255,0.7)",
+                cursor: "pointer",
+                fontSize: 18,
+              }}
               aria-label="Fermer la notification"
             >
               x

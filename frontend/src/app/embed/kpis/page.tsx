@@ -17,14 +17,27 @@ export default async function EmbedKpisPage() {
 
   return (
     <html lang="fr">
-      <body style={{ margin: 0, fontFamily: "Manrope, system-ui, sans-serif", background: "transparent" }}>
+      <body
+        style={{
+          margin: 0,
+          fontFamily: "Manrope, system-ui, sans-serif",
+          background: "transparent",
+        }}
+      >
         <div style={{ display: "flex", gap: 10, padding: 8 }}>
-          {cards.map(c => (
-            <div key={c.label} style={{
-              flex: 1, padding: "12px 14px", borderRadius: 12,
-              background: "#fff", border: `1.5px solid ${c.color}20`,
-              textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-            }}>
+          {cards.map((c) => (
+            <div
+              key={c.label}
+              style={{
+                flex: 1,
+                padding: "12px 14px",
+                borderRadius: 12,
+                background: "#fff",
+                border: `1.5px solid ${c.color}20`,
+                textAlign: "center",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              }}
+            >
               <div style={{ fontSize: 22, fontWeight: 800, color: c.color }}>{c.value}</div>
               <div style={{ fontSize: 10, fontWeight: 600, color: "#526175" }}>{c.label}</div>
             </div>

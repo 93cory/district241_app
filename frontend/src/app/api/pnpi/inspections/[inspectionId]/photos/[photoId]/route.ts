@@ -12,16 +12,16 @@ async function authHeaders() {
 
 export async function DELETE(
   _req: NextRequest,
-  ctx: { params: Promise<{ inspectionId: string; photoId: string }> }
+  ctx: { params: Promise<{ inspectionId: string; photoId: string }> },
 ) {
   const headers = await authHeaders();
   if (!headers) return NextResponse.json({ detail: "Non authentifie." }, { status: 401 });
   const { inspectionId, photoId } = await ctx.params;
 
-  const res = await fetch(
-    `${BACKEND}/pnpi/inspections/${inspectionId}/photos/${photoId}`,
-    { method: "DELETE", headers }
-  );
+  const res = await fetch(`${BACKEND}/pnpi/inspections/${inspectionId}/photos/${photoId}`, {
+    method: "DELETE",
+    headers,
+  });
 
   if (res.status === 204) return new NextResponse(null, { status: 204 });
   const data = await res.json().catch(() => ({}));

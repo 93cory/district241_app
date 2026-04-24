@@ -54,14 +54,18 @@ export const SessionStatusBadge = () => {
         label: "Verification session...",
         user: null,
       },
-    [payload]
+    [payload],
   );
 
   return (
     <span
       role="status"
       aria-live="polite"
-      title={resolved.user ? `${resolved.user.full_name} (${resolved.user.roles.join(", ")})` : resolved.label}
+      title={
+        resolved.user
+          ? `${resolved.user.full_name} (${resolved.user.roles.join(", ")})`
+          : resolved.label
+      }
       style={{
         border: `1px solid ${colorByStatus[resolved.status]}66`,
         color: colorByStatus[resolved.status],

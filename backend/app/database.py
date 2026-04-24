@@ -1,8 +1,9 @@
 """PNPI / PNPI · Configuration de la base de donnees SQLAlchemy."""
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Generator, Optional
+from collections.abc import Generator
+from datetime import UTC, datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -11,15 +12,15 @@ from .config import settings
 
 
 def now_utc() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-def as_utc(value: Optional[datetime]) -> Optional[datetime]:
+def as_utc(value: datetime | None) -> datetime | None:
     if value is None:
         return None
     if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc)
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
 
 
 import os
@@ -77,7 +78,9 @@ def _create_engine_with_retry(url: str, max_retries: int = 5, delay: float = 2.0
             if attempt == max_retries:
                 _db_logger.error("Database connection failed after %d attempts: %s", max_retries, e)
                 return eng  # Return engine anyway, let the app handle errors
-            _db_logger.warning("Database not ready (attempt %d/%d): %s · retrying in %ss", attempt, max_retries, str(e)[:100], delay)
+            _db_logger.warning(
+                "Database not ready (attempt %d/%d): %s · retrying in %ss", attempt, max_retries, str(e)[:100], delay
+            )
             time.sleep(delay)
             delay = min(delay * 1.5, 10)
 

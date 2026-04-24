@@ -1,8 +1,8 @@
 """PNPI / PNPI · Modeles ORM de base (unites, declarations, utilisateurs, notifications, audit)."""
+
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import List, Optional
 
 from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,7 +21,7 @@ class UnitORM(Base):
     location: Mapped[str] = mapped_column(String(120), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
 
-    declarations: Mapped[List["DeclarationORM"]] = relationship(
+    declarations: Mapped[list[DeclarationORM]] = relationship(
         back_populates="unit",
         cascade="all, delete-orphan",
         lazy="joined",
@@ -52,10 +52,10 @@ class TraceBatchORM(Base):
     factory: Mapped[str] = mapped_column(String(200), nullable=False)
     certification: Mapped[str] = mapped_column(String(120), nullable=False)
     quantity_tons: Mapped[float] = mapped_column(Float, nullable=False)
-    origin_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    origin_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    factory_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    factory_lng: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    origin_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    origin_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+    factory_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    factory_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     qr_code: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -70,24 +70,24 @@ class UserAccountORM(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     failed_login_attempts: Mapped[int] = mapped_column(nullable=False, default=0)
-    locked_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    password_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    totp_secret: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    password_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    totp_secret: Mapped[str | None] = mapped_column(String(64), nullable=True)
     totp_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    totp_confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    backup_codes_hash: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    province: Mapped[Optional[str]] = mapped_column(String(60), nullable=True, index=True)
+    totp_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    backup_codes_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    province: Mapped[str | None] = mapped_column(String(60), nullable=True, index=True)
 
 
 class NotificationORM(Base):
     __tablename__ = "notifications"
 
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
-    target_role: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
+    target_role: Mapped[str | None] = mapped_column(String(40), nullable=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     message: Mapped[str] = mapped_column(String(1000), nullable=False)
     severity: Mapped[str] = mapped_column(String(20), nullable=False, default="info")
-    notification_key: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    notification_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
@@ -96,19 +96,19 @@ class FieldReportORM(Base):
     __tablename__ = "field_reports"
 
     id: Mapped[str] = mapped_column(String(40), primary_key=True)
-    unit_id: Mapped[Optional[str]] = mapped_column(ForeignKey("units.id"), nullable=True, index=True)
+    unit_id: Mapped[str | None] = mapped_column(ForeignKey("units.id"), nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     comment: Mapped[str] = mapped_column(String(1500), nullable=False)
     severity: Mapped[str] = mapped_column(String(20), nullable=False, default="medium")
-    location: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    location: Mapped[str | None] = mapped_column(String(120), nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="open")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     created_by: Mapped[str] = mapped_column(String(80), nullable=False)
-    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    photo_path: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    photo_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
-    unit: Mapped[Optional[UnitORM]] = relationship(lazy="joined")
+    unit: Mapped[UnitORM | None] = relationship(lazy="joined")
 
 
 class AuditEventORM(Base):
@@ -118,7 +118,7 @@ class AuditEventORM(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     actor: Mapped[str] = mapped_column(String(80), nullable=False)
     action: Mapped[str] = mapped_column(String(120), nullable=False)
-    target: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    target: Mapped[str | None] = mapped_column(String(120), nullable=True)
     details: Mapped[str] = mapped_column(String(1500), nullable=False, default="")
 
 
@@ -155,5 +155,5 @@ class RefreshTokenORM(Base):
     token_hash: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    client_ip: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    client_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)

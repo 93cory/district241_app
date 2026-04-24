@@ -1,10 +1,11 @@
 """PNPI · Suivi des modifications champ par champ."""
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any, Optional
-import uuid
 import json
+import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -42,7 +43,7 @@ def track_field_changes(
             action=f"{entity_type}.field_change",
             target=entity_id,
             details=json.dumps({"changes": changes}, ensure_ascii=False),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
         db.add(event)
 
@@ -57,12 +58,18 @@ def get_field_history(
     """Get field-level change history for an entity."""
     from ..models.core import AuditEventORM
 
-    events = db.execute(
-        select(AuditEventORM).where(
-            AuditEventORM.target == entity_id,
-            AuditEventORM.action == f"{entity_type}.field_change",
-        ).order_by(AuditEventORM.timestamp.desc())
-    ).scalars().all()
+    events = (
+        db.execute(
+            select(AuditEventORM)
+            .where(
+                AuditEventORM.target == entity_id,
+                AuditEventORM.action == f"{entity_type}.field_change",
+            )
+            .order_by(AuditEventORM.timestamp.desc())
+        )
+        .scalars()
+        .all()
+    )
 
     history = []
     for event in events:
@@ -72,12 +79,14 @@ def get_field_history(
         except (json.JSONDecodeError, TypeError):
             changes = []
 
-        history.append({
-            "id": event.id,
-            "actor": event.actor,
-            "timestamp": event.timestamp.isoformat(),
-            "changes": changes,
-        })
+        history.append(
+            {
+                "id": event.id,
+                "actor": event.actor,
+                "timestamp": event.timestamp.isoformat(),
+                "changes": changes,
+            }
+        )
 
     return history
 

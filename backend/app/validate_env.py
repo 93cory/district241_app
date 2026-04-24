@@ -1,7 +1,7 @@
 """PNPI · Validation des variables d'environnement au demarrage."""
-import os
-import sys
+
 import logging
+import os
 
 logger = logging.getLogger("pnpi.env")
 

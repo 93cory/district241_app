@@ -1,14 +1,14 @@
 """PNPI / PNPI · Audit, notifications systeme et alertes SLA."""
+
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from ..database import now_utc
 from ..core.auth import Role
+from ..database import now_utc
 
 
 def write_audit_event(
@@ -16,7 +16,7 @@ def write_audit_event(
     *,
     actor: str,
     action: str,
-    target: Optional[str] = None,
+    target: str | None = None,
     details: str = "",
 ) -> None:
     from ..models.core import AuditEventORM
@@ -38,8 +38,8 @@ def create_system_notification(
     title: str,
     message: str,
     severity: str = "info",
-    target_role: Optional[Role] = None,
-    notification_key: Optional[str] = None,
+    target_role: Role | None = None,
+    notification_key: str | None = None,
 ):
     from ..models.core import NotificationORM
 
@@ -65,8 +65,8 @@ def create_system_notification(
 
 
 def _emit_sla_notifications(db: Session) -> None:
-    from ..models.pilotage import ProjectDossierORM
     from ..database import now_utc
+    from ..models.pilotage import ProjectDossierORM
 
     dossiers = db.execute(select(ProjectDossierORM)).scalars().unique().all()
     for dossier in dossiers:
@@ -90,8 +90,8 @@ def _emit_system_notification(
     title: str,
     message: str,
     severity: str = "info",
-    target_role: Optional[Role] = None,
-    notification_key: Optional[str] = None,
+    target_role: Role | None = None,
+    notification_key: str | None = None,
 ) -> None:
     create_system_notification(
         db,

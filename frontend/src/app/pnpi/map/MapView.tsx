@@ -3,17 +3,26 @@
 import { useEffect, useRef } from "react";
 
 const PROVINCE_COORDS: Record<string, [number, number]> = {
-  estuaire: [0.4, 9.45], haut_ogooue: [-1.6, 13.95],
-  moyen_ogooue: [-0.45, 10.75], ngounie: [-1.5, 11.4],
-  nyanga: [-2.85, 11.15], ogooue_ivindo: [0.8, 12.0],
-  ogooue_lolo: [-0.85, 12.65], ogooue_maritime: [-1.6, 9.7],
+  estuaire: [0.4, 9.45],
+  haut_ogooue: [-1.6, 13.95],
+  moyen_ogooue: [-0.45, 10.75],
+  ngounie: [-1.5, 11.4],
+  nyanga: [-2.85, 11.15],
+  ogooue_ivindo: [0.8, 12.0],
+  ogooue_lolo: [-0.85, 12.65],
+  ogooue_maritime: [-1.6, 9.7],
   woleu_ntem: [2.15, 11.75],
 };
 
 const SECTOR_COLORS: Record<string, string> = {
-  bois: "#006233", mines: "#b42318", agroalimentaire: "#d97706",
-  peche: "#0c7eb4", chimie: "#7c3aed", btp: "#059669",
-  energie: "#f97316", textile: "#ec4899",
+  bois: "#006233",
+  mines: "#b42318",
+  agroalimentaire: "#d97706",
+  peche: "#0c7eb4",
+  chimie: "#7c3aed",
+  btp: "#059669",
+  energie: "#f97316",
+  textile: "#ec4899",
 };
 
 interface Props {
@@ -44,7 +53,7 @@ export default function MapView({ operators }: Props) {
       const map = L.map(mapRef.current!, { zoomControl: true }).setView([0.0, 11.5], 6);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; OpenStreetMap | PNPI Gabon',
+        attribution: "&copy; OpenStreetMap | PNPI Gabon",
       }).addTo(map);
 
       // Add operator markers
@@ -65,9 +74,7 @@ export default function MapView({ operators }: Props) {
           iconAnchor: [6, 6],
         });
 
-        L.marker([lat, lng], { icon })
-          .addTo(map)
-          .bindPopup(`
+        L.marker([lat, lng], { icon }).addTo(map).bindPopup(`
             <div style="font-family:system-ui;min-width:180px">
               <div style="font-weight:700;font-size:13px;margin-bottom:4px">${op.raison_sociale || op.nom || "?"}</div>
               <div style="font-size:11px;color:#526175">

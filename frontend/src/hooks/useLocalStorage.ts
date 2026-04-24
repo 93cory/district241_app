@@ -8,7 +8,10 @@ import { useState, useCallback } from "react";
  * Usage:
  *   const [theme, setTheme] = useLocalStorage("pnpi-theme", "light");
  */
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((prev: T) => T)) => void] {
+export function useLocalStorage<T>(
+  key: string,
+  initialValue: T,
+): [T, (value: T | ((prev: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(() => {
     if (typeof window === "undefined") return initialValue;
     try {
@@ -25,7 +28,9 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         const nextValue = value instanceof Function ? value(prev) : value;
         try {
           window.localStorage.setItem(key, JSON.stringify(nextValue));
-        } catch { /* quota exceeded or private browsing */ }
+        } catch {
+          /* quota exceeded or private browsing */
+        }
         return nextValue;
       });
     },

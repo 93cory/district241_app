@@ -1,25 +1,22 @@
 """PNPI / PNPI · Endpoints de sante, metriques et alertes operationnelles."""
+
 from __future__ import annotations
 
 import os
 import time
-from typing import Dict
 
-import httpx
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 from sqlalchemy import func, select, text
+from sqlalchemy.orm import Session
 
-from ..core.analytics import get_usage_stats
-from ..core.auth import Role, User, require_roles
-from ..core.audit import write_audit_event
-from ..database import get_db, now_utc
 from ..config import settings
-from ..models.core import NotificationORM, UnitORM
-from ..models.pilotage import ProjectDossierORM
-
-
+from ..core.analytics import get_usage_stats
+from ..core.audit import write_audit_event
+from ..core.auth import Role, User, require_roles
 from ..core.feature_flags import flags
+from ..database import get_db, now_utc
+from ..models.core import NotificationORM
+from ..models.pilotage import ProjectDossierORM
 
 router = APIRouter(tags=["Health & Ops"])
 
@@ -29,7 +26,7 @@ def _compute_dossier_age_days(row) -> int:
 
 
 @router.get("/health")
-async def health() -> Dict[str, str]:
+async def health() -> dict[str, str]:
     return {"status": "ok", "service": "PNPI/PNPI Backend"}
 
 
@@ -40,17 +37,18 @@ async def health_score(
 ):
     """Score composite: DB, cache, disque, erreurs, retards, utilisateurs actifs."""
     from ..core.health_score import compute_health_score
+
     return await compute_health_score(db)
 
 
 @router.get("/health/live")
-async def liveness() -> Dict[str, str]:
+async def liveness() -> dict[str, str]:
     """Liveness probe · always returns 200 if the process is running."""
     return {"status": "alive"}
 
 
 @router.get("/health/ready")
-async def readiness(db: Session = Depends(get_db)) -> Dict[str, object]:
+async def readiness(db: Session = Depends(get_db)) -> dict[str, object]:
     """Readiness probe · checks that DB and cache are reachable."""
     checks = {}
     ready = True
@@ -66,6 +64,7 @@ async def readiness(db: Session = Depends(get_db)) -> Dict[str, object]:
     # Redis/Cache
     try:
         from ..core.cache import cache
+
         await cache.set("ready:ping", "1", ttl=5)
         checks["cache"] = "ok"
     except Exception:
@@ -74,6 +73,7 @@ async def readiness(db: Session = Depends(get_db)) -> Dict[str, object]:
 
     status_code = 200 if ready else 503
     from starlette.responses import JSONResponse
+
     return JSONResponse(
         status_code=status_code,
         content={"ready": ready, "checks": checks},
@@ -83,7 +83,7 @@ async def readiness(db: Session = Depends(get_db)) -> Dict[str, object]:
 @router.get("/health/flags")
 async def feature_flags_status(
     _: User = Depends(require_roles(Role.admin)),
-) -> Dict[str, object]:
+) -> dict[str, object]:
     """List all feature flags and their current status (admin only)."""
     return {"flags": flags.all_flags()}
 
@@ -110,6 +110,7 @@ async def system_status(db: Session = Depends(get_db)):
     # Check table counts as health proxy
     try:
         from ..models.pnpi import AgrementTechniqueIndustrielORM, OperateurIndustrielORM
+
         ati_count = db.execute(select(func.count()).select_from(AgrementTechniqueIndustrielORM)).scalar() or 0
         op_count = db.execute(select(func.count()).select_from(OperateurIndustrielORM)).scalar() or 0
         checks.append({"name": "Donnees ATI", "status": "operational", "detail": f"{ati_count} enregistrements"})
@@ -121,14 +122,22 @@ async def system_status(db: Session = Depends(get_db)):
     # Connection pool
     try:
         from ..database import get_pool_status
+
         pool = get_pool_status()
-        checks.append({"name": "Connection Pool", "status": "operational", "detail": f"{pool['checked_out']}/{pool['pool_size']} actives"})
+        checks.append(
+            {
+                "name": "Connection Pool",
+                "status": "operational",
+                "detail": f"{pool['checked_out']}/{pool['pool_size']} actives",
+            }
+        )
     except Exception:
         checks.append({"name": "Connection Pool", "status": "unknown"})
 
     # Redis
     try:
         from ..core.cache import cache
+
         await cache.set("health:ping", "pong", ttl=10)
         val = await cache.get("health:ping")
         if val == "pong":
@@ -143,17 +152,21 @@ async def system_status(db: Session = Depends(get_db)):
     # Disk space
     try:
         import shutil
+
         usage = shutil.disk_usage("/")
         free_gb = round(usage.free / (1024**3), 1)
         used_pct = round(usage.used / usage.total * 100, 1)
         disk_status = "operational" if used_pct < 90 else "degraded"
         if disk_status == "degraded":
             overall = "degraded"
-        checks.append({"name": "Espace disque", "status": disk_status, "detail": f"{free_gb} Go libres ({used_pct}% utilise)"})
+        checks.append(
+            {"name": "Espace disque", "status": disk_status, "detail": f"{free_gb} Go libres ({used_pct}% utilise)"}
+        )
     except Exception:
         checks.append({"name": "Espace disque", "status": "unknown"})
 
     from ..core.metrics import metrics as _metrics_singleton
+
     uptime_hours = round((time.time() - _metrics_singleton._start_time) / 3600, 1)
 
     return {
@@ -169,9 +182,9 @@ async def system_status(db: Session = Depends(get_db)):
 async def health_detailed(
     _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
-) -> Dict[str, object]:
+) -> dict[str, object]:
     now = now_utc()
-    components: Dict[str, object] = {}
+    components: dict[str, object] = {}
 
     # Database check with latency measurement
     try:
@@ -185,6 +198,7 @@ async def health_detailed(
     # Count active sessions (refresh tokens)
     try:
         from ..models.core import RefreshTokenORM
+
         active_sessions = db.execute(
             select(func.count(RefreshTokenORM.id)).where(
                 RefreshTokenORM.revoked_at.is_(None),
@@ -197,8 +211,9 @@ async def health_detailed(
 
     # Table counts
     try:
-        from ..models.pnpi import AgrementTechniqueIndustrielORM, OperateurIndustrielORM, InspectionConformiteORM
-        from ..models.core import UserAccountORM, AuditEventORM
+        from ..models.core import AuditEventORM, UserAccountORM
+        from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
+
         components["counts"] = {
             "users": db.execute(select(func.count(UserAccountORM.username))).scalar_one(),
             "operateurs": db.execute(select(func.count(OperateurIndustrielORM.id))).scalar_one(),
@@ -211,6 +226,7 @@ async def health_detailed(
 
     # Check disk space for uploads
     import shutil
+
     uploads_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
     try:
         usage = shutil.disk_usage(uploads_dir if os.path.exists(uploads_dir) else "/")
@@ -223,12 +239,13 @@ async def health_detailed(
         components["disk"] = "unavailable"
 
     # Overdue dossiers (preserved from original)
-    overdue_dossiers = db.execute(
-        select(ProjectDossierORM).where(ProjectDossierORM.status.notin_(["approved", "rejected"]))
-    ).scalars().unique().all()
-    overdue_count = sum(
-        1 for dossier in overdue_dossiers if _compute_dossier_age_days(dossier) > dossier.sla_days
+    overdue_dossiers = (
+        db.execute(select(ProjectDossierORM).where(ProjectDossierORM.status.notin_(["approved", "rejected"])))
+        .scalars()
+        .unique()
+        .all()
     )
+    overdue_count = sum(1 for dossier in overdue_dossiers if _compute_dossier_age_days(dossier) > dossier.sla_days)
     unread_critical = db.execute(
         select(func.count(NotificationORM.id)).where(
             NotificationORM.is_read.is_(False),
@@ -241,6 +258,7 @@ async def health_detailed(
     overall = "ok" if db_ok else "degraded"
 
     from ..main import _request_metrics
+
     return {
         "status": overall,
         "timestamp": now.isoformat(),
@@ -258,31 +276,32 @@ async def health_detailed(
 async def metrics(
     _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
-) -> Dict[str, object]:
-    from ..main import _request_metrics, _request_duration_ms, _compute_error_rate, _rate_limit_store
+) -> dict[str, object]:
+    from ..main import _compute_error_rate, _rate_limit_store, _request_duration_ms, _request_metrics
 
-    overdue_dossiers = db.execute(
-        select(ProjectDossierORM).where(ProjectDossierORM.status.notin_(["approved", "rejected"]))
-    ).scalars().unique().all()
-    overdue_count = sum(
-        1 for dossier in overdue_dossiers if _compute_dossier_age_days(dossier) > dossier.sla_days
+    overdue_dossiers = (
+        db.execute(select(ProjectDossierORM).where(ProjectDossierORM.status.notin_(["approved", "rejected"])))
+        .scalars()
+        .unique()
+        .all()
     )
+    overdue_count = sum(1 for dossier in overdue_dossiers if _compute_dossier_age_days(dossier) > dossier.sla_days)
     unread_critical = db.execute(
         select(func.count(NotificationORM.id)).where(
             NotificationORM.is_read.is_(False),
             NotificationORM.severity.in_(["high", "critical"]),
         )
     ).scalar_one()
-    average_duration_ms: Dict[str, float] = {}
+    average_duration_ms: dict[str, float] = {}
     for key, total in _request_duration_ms.items():
         calls = sum(count for metric_key, count in _request_metrics.items() if metric_key.startswith(key))
         average_duration_ms[key] = round(total / calls, 2) if calls > 0 else 0.0
 
     # Uptime and connection pool info
-    import time as _time
-    uptime_info: Dict[str, object] = {}
+    uptime_info: dict[str, object] = {}
     try:
         from ..database import engine as _db_engine
+
         pool = _db_engine.pool
         uptime_info["pool_size"] = pool.size() if callable(getattr(pool, "size", None)) else "n/a"
         uptime_info["pool_checkedin"] = pool.checkedin() if callable(getattr(pool, "checkedin", None)) else "n/a"
@@ -311,15 +330,16 @@ async def metrics(
 async def ops_alerts_check(
     current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
-) -> Dict[str, object]:
-    from ..main import _build_ops_alerts_payload, _send_ops_alert_webhook, _compute_error_rate
+) -> dict[str, object]:
+    from ..main import _build_ops_alerts_payload, _compute_error_rate, _send_ops_alert_webhook
 
-    overdue_dossiers = db.execute(
-        select(ProjectDossierORM).where(ProjectDossierORM.status.notin_(["approved", "rejected"]))
-    ).scalars().unique().all()
-    overdue_count = sum(
-        1 for dossier in overdue_dossiers if _compute_dossier_age_days(dossier) > dossier.sla_days
+    overdue_dossiers = (
+        db.execute(select(ProjectDossierORM).where(ProjectDossierORM.status.notin_(["approved", "rejected"])))
+        .scalars()
+        .unique()
+        .all()
     )
+    overdue_count = sum(1 for dossier in overdue_dossiers if _compute_dossier_age_days(dossier) > dossier.sla_days)
     unread_critical = db.execute(
         select(func.count(NotificationORM.id)).where(
             NotificationORM.is_read.is_(False),

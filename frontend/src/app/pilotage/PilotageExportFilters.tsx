@@ -126,7 +126,13 @@ export const PilotageExportFilters = ({ dossiers }: Props) => {
         </p>
       )}
       {feedback && (
-        <p style={{ margin: 0, color: feedback.startsWith("Echec") ? "#b42318" : "#1f7a3f", fontSize: "0.9rem" }}>
+        <p
+          style={{
+            margin: 0,
+            color: feedback.startsWith("Echec") ? "#b42318" : "#1f7a3f",
+            fontSize: "0.9rem",
+          }}
+        >
           {feedback}
         </p>
       )}

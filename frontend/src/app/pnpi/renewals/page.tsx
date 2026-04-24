@@ -7,7 +7,10 @@ export default async function RenewalsPage() {
   let expiring: any[] = [];
   try {
     const res = await backendRequest("/pnpi/ati/expiring-soon?days=90");
-    if (res.ok) { const d = await res.json(); expiring = d.atis || []; }
+    if (res.ok) {
+      const d = await res.json();
+      expiring = d.atis || [];
+    }
   } catch {}
 
   return (
@@ -32,17 +35,30 @@ export default async function RenewalsPage() {
             const warning = ati.days_remaining <= 60;
             const color = urgent ? "#b42318" : warning ? "#d97706" : "#0c7eb4";
             return (
-              <div key={ati.id} style={{
-                display: "flex", alignItems: "center", gap: 14,
-                padding: "14px 18px", borderRadius: 14,
-                background: "var(--bg-layer, #fff)",
-                border: `1.5px solid ${color}30`,
-              }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 12,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  background: `${color}12`, fontSize: 18,
-                }}>
+              <div
+                key={ati.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  padding: "14px 18px",
+                  borderRadius: 14,
+                  background: "var(--bg-layer, #fff)",
+                  border: `1.5px solid ${color}30`,
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: `${color}12`,
+                    fontSize: 18,
+                  }}
+                >
                   {urgent ? "🚨" : warning ? "⚠️" : "📅"}
                 </div>
                 <div style={{ flex: 1 }}>
@@ -57,10 +73,18 @@ export default async function RenewalsPage() {
                     Expire le {new Date(ati.date_expiration).toLocaleDateString("fr-FR")}
                   </div>
                 </div>
-                <Link href={`/pnpi/ati/${ati.id}`} style={{
-                  padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-                  background: color, color: "#fff", textDecoration: "none",
-                }}>
+                <Link
+                  href={`/pnpi/ati/${ati.id}`}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    background: color,
+                    color: "#fff",
+                    textDecoration: "none",
+                  }}
+                >
                   Renouveler
                 </Link>
               </div>

@@ -11,6 +11,7 @@ Usage:
     # Direct usage:
     clean = sanitize_html(user_input)
 """
+
 from __future__ import annotations
 
 import html
@@ -54,10 +55,7 @@ def sanitize_html(value: str) -> str:
 
 def is_safe_input(value: str) -> bool:
     """Check if input contains potentially dangerous patterns."""
-    for pattern in _DANGEROUS_PATTERNS:
-        if pattern.search(value):
-            return False
-    return True
+    return all(not pattern.search(value) for pattern in _DANGEROUS_PATTERNS)
 
 
 def _validate_sanitized(value: str) -> str:

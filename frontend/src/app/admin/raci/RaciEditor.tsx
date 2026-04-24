@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 
-interface Stage { stage: string; raci: Record<string, string>; }
-interface RaciData { roles: string[]; stages: Stage[]; }
+interface Stage {
+  stage: string;
+  raci: Record<string, string>;
+}
+interface RaciData {
+  roles: string[];
+  stages: Stage[];
+}
 
 const LEVELS = ["", "R", "A", "C", "I"];
 const LEVEL_COLORS: Record<string, string> = {
-  R: "#DC2626", A: "#1E3A8A", C: "#D97706", I: "#6B7280",
+  R: "#DC2626",
+  A: "#1E3A8A",
+  C: "#D97706",
+  I: "#6B7280",
 };
 
 export function RaciEditor({ initial, canEdit }: { initial: RaciData; canEdit: boolean }) {
@@ -31,7 +40,8 @@ export function RaciEditor({ initial, canEdit }: { initial: RaciData; canEdit: b
   };
 
   const save = async () => {
-    setBusy(true); setMsg(null);
+    setBusy(true);
+    setMsg(null);
     try {
       const res = await fetch("/api/admin/raci", {
         method: "PUT",
@@ -52,7 +62,10 @@ export function RaciEditor({ initial, canEdit }: { initial: RaciData; canEdit: b
     }
   };
 
-  const reset = () => { setData(initial); setDirty(false); };
+  const reset = () => {
+    setData(initial);
+    setDirty(false);
+  };
 
   return (
     <div className="raci-editor">
@@ -61,13 +74,19 @@ export function RaciEditor({ initial, canEdit }: { initial: RaciData; canEdit: b
           <thead>
             <tr>
               <th>Etape du processus</th>
-              {data.roles.map((r) => <th key={r} className="raci-role-head">{r}</th>)}
+              {data.roles.map((r) => (
+                <th key={r} className="raci-role-head">
+                  {r}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {data.stages.map((s, i) => (
               <tr key={s.stage}>
-                <td><strong>{s.stage}</strong></td>
+                <td>
+                  <strong>{s.stage}</strong>
+                </td>
                 {data.roles.map((role) => {
                   const v = s.raci[role] ?? "";
                   return (
@@ -83,7 +102,10 @@ export function RaciEditor({ initial, canEdit }: { initial: RaciData; canEdit: b
                           {v || "·"}
                         </button>
                       ) : (
-                        <span className={`raci-level raci-level-${v || "empty"}`} style={{ color: v ? LEVEL_COLORS[v] : "transparent" }}>
+                        <span
+                          className={`raci-level raci-level-${v || "empty"}`}
+                          style={{ color: v ? LEVEL_COLORS[v] : "transparent" }}
+                        >
                           {v || "·"}
                         </span>
                       )}
@@ -100,7 +122,12 @@ export function RaciEditor({ initial, canEdit }: { initial: RaciData; canEdit: b
         <div className="pnpi-form-actions pnpi-form-actions--between">
           <span className="pnpi-page-sub" style={{ margin: 0 }}>
             Cliquez sur une cellule pour cycler entre <strong>· → R → A → C → I → ·</strong>.
-            {msg && <> &middot; <strong>{msg}</strong></>}
+            {msg && (
+              <>
+                {" "}
+                &middot; <strong>{msg}</strong>
+              </>
+            )}
           </span>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {dirty && (
@@ -108,12 +135,7 @@ export function RaciEditor({ initial, canEdit }: { initial: RaciData; canEdit: b
                 Annuler
               </button>
             )}
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={save}
-              disabled={!dirty || busy}
-            >
+            <button type="button" className="btn-primary" onClick={save} disabled={!dirty || busy}>
               {busy ? "Sauvegarde..." : dirty ? "Sauvegarder la matrice" : "Sauvegarde"}
             </button>
           </div>

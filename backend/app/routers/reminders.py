@@ -1,16 +1,17 @@
 """PNPI · Systeme de rappels/relances automatiques."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..database import get_db, now_utc
-from ..core.auth import User, get_current_user, require_roles, Role
-from ..models.pnpi import ATIReminderORM, AgrementTechniqueIndustrielORM
+from ..models.pnpi import AgrementTechniqueIndustrielORM, ATIReminderORM
 
 router = APIRouter(prefix="/reminders", tags=["Reminders"])
 
@@ -21,15 +22,26 @@ async def get_reminders(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    reminders = db.execute(
-        select(ATIReminderORM).where(ATIReminderORM.ati_id == ati_id)
-        .order_by(ATIReminderORM.scheduled_at.asc())
-    ).scalars().all()
-    return {"reminders": [{
-        "id": r.id, "type": r.type, "recipient": r.recipient_username,
-        "message": r.message, "scheduled_at": r.scheduled_at.isoformat(),
-        "sent_at": r.sent_at.isoformat() if r.sent_at else None,
-    } for r in reminders]}
+    reminders = (
+        db.execute(
+            select(ATIReminderORM).where(ATIReminderORM.ati_id == ati_id).order_by(ATIReminderORM.scheduled_at.asc())
+        )
+        .scalars()
+        .all()
+    )
+    return {
+        "reminders": [
+            {
+                "id": r.id,
+                "type": r.type,
+                "recipient": r.recipient_username,
+                "message": r.message,
+                "scheduled_at": r.scheduled_at.isoformat(),
+                "sent_at": r.sent_at.isoformat() if r.sent_at else None,
+            }
+            for r in reminders
+        ]
+    }
 
 
 @router.post("/ati/{ati_id}")
@@ -49,7 +61,9 @@ async def create_reminder(
         type=data.get("type", "manual"),
         recipient_username=data.get("recipient", current_user.username),
         message=data.get("message", f"Rappel: dossier ATI {ati.numero_ati} en attente de traitement."),
-        scheduled_at=datetime.fromisoformat(data["scheduled_at"]).replace(tzinfo=timezone.utc) if "scheduled_at" in data else now_utc() + timedelta(days=1),
+        scheduled_at=datetime.fromisoformat(data["scheduled_at"]).replace(tzinfo=UTC)
+        if "scheduled_at" in data
+        else now_utc() + timedelta(days=1),
     )
     db.add(reminder)
     db.commit()
@@ -101,14 +115,16 @@ async def generate_auto_reminders(
                 ).scalar_one_or_none()
                 if not existing:
                     recipient = getattr(ati, "instructeur_username", None) or "admin"
-                    db.add(ATIReminderORM(
-                        id=str(uuid.uuid4()),
-                        ati_id=ati.id,
-                        type=rtype,
-                        recipient_username=recipient,
-                        message=msg,
-                        scheduled_at=now,
-                    ))
+                    db.add(
+                        ATIReminderORM(
+                            id=str(uuid.uuid4()),
+                            ati_id=ati.id,
+                            type=rtype,
+                            recipient_username=recipient,
+                            message=msg,
+                            scheduled_at=now,
+                        )
+                    )
                     created += 1
 
         # --- 2. Rappels renouvellement (ATI approuve, expiration proche) ---
@@ -141,18 +157,23 @@ async def generate_auto_reminders(
                 if not existing:
                     # Destinataires : instructeur + operateur (via created_by)
                     recipients = set()
-                    if ati.instructeur_username: recipients.add(ati.instructeur_username)
-                    if ati.created_by: recipients.add(ati.created_by)
-                    if not recipients: recipients.add("admin")
+                    if ati.instructeur_username:
+                        recipients.add(ati.instructeur_username)
+                    if ati.created_by:
+                        recipients.add(ati.created_by)
+                    if not recipients:
+                        recipients.add("admin")
                     for r in recipients:
-                        db.add(ATIReminderORM(
-                            id=str(uuid.uuid4()),
-                            ati_id=ati.id,
-                            type=rtype,
-                            recipient_username=r,
-                            message=msg,
-                            scheduled_at=now,
-                        ))
+                        db.add(
+                            ATIReminderORM(
+                                id=str(uuid.uuid4()),
+                                ati_id=ati.id,
+                                type=rtype,
+                                recipient_username=r,
+                                message=msg,
+                                scheduled_at=now,
+                            )
+                        )
                         created += 1
 
     db.commit()

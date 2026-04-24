@@ -8,14 +8,14 @@ Factors:
 - No overdue ATIs above threshold (15 pts)
 - Active users connected recently (15 pts)
 """
+
 from __future__ import annotations
 
 import logging
 import shutil
-import time
 
-from sqlalchemy.orm import Session
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger("pnpi.health_score")
 
@@ -28,6 +28,7 @@ async def compute_health_score(db: Session) -> dict:
     # 1. Database (25 pts)
     try:
         from sqlalchemy import text
+
         db.execute(text("SELECT 1"))
         score += 25
         details["database"] = {"score": 25, "status": "ok"}
@@ -37,6 +38,7 @@ async def compute_health_score(db: Session) -> dict:
     # 2. Cache (15 pts)
     try:
         from .cache import cache
+
         await cache.set("health_score:ping", "1", ttl=5)
         val = await cache.get("health_score:ping")
         if val:
@@ -66,6 +68,7 @@ async def compute_health_score(db: Session) -> dict:
     # 4. Error rate (20 pts)
     try:
         from .api_analytics import analytics
+
         summary = analytics.get_summary()
         err_rate = summary.get("error_rate_pct", 0)
         if err_rate < 2:
@@ -82,13 +85,15 @@ async def compute_health_score(db: Session) -> dict:
 
     # 5. Overdue ATIs (15 pts)
     try:
-        from ..models.pnpi import AgrementTechniqueIndustrielORM
         from ..database import now_utc
+        from ..models.pnpi import AgrementTechniqueIndustrielORM
+
         now = now_utc()
         terminal = {"approuve", "rejete", "expire"}
         all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
         overdue = sum(
-            1 for a in all_atis
+            1
+            for a in all_atis
             if a.statut not in terminal and (now.date() - a.date_soumission.date()).days > a.sla_jours
         )
         total_active = sum(1 for a in all_atis if a.statut not in terminal)
@@ -107,6 +112,7 @@ async def compute_health_score(db: Session) -> dict:
     # 6. Active users (15 pts)
     try:
         from ..models.core import RefreshTokenORM
+
         active = db.execute(
             select(func.count(RefreshTokenORM.id)).where(
                 RefreshTokenORM.revoked_at.is_(None),

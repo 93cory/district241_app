@@ -39,10 +39,18 @@ export default async function AdminPage() {
         <h2 style={{ marginTop: 0 }}>Administration PNPI</h2>
         <p>Gestion des comptes, roles institutionnels et notifications strategiques.</p>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-          <span><strong>{users.length}</strong> comptes actifs</span>
-          <span><strong>{notifications.length}</strong> notifications</span>
-          <span><strong>{fieldReports.length}</strong> rapports terrain</span>
-          <Link href="/" style={{ marginLeft: "auto" }}>Retour tableau de bord</Link>
+          <span>
+            <strong>{users.length}</strong> comptes actifs
+          </span>
+          <span>
+            <strong>{notifications.length}</strong> notifications
+          </span>
+          <span>
+            <strong>{fieldReports.length}</strong> rapports terrain
+          </span>
+          <Link href="/" style={{ marginLeft: "auto" }}>
+            Retour tableau de bord
+          </Link>
         </div>
       </div>
 

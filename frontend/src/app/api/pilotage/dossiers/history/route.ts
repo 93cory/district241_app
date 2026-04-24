@@ -13,7 +13,7 @@ export async function GET(request: Request) {
 
     const response = await backendRequest(
       `/pilotage/dossiers/${encodeURIComponent(dossierId)}/history`,
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
     const body = await response.text();
     return new Response(body, {

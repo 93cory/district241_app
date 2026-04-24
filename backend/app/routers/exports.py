@@ -1,37 +1,37 @@
 """PNPI / PNPI · Endpoints d'exports (CSV, PDF)."""
+
 from __future__ import annotations
 
-import csv
 import io
 import os
 import zipfile
-from datetime import date
-from typing import List, Optional
+from datetime import UTC, date
 
 import qrcode
-
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import Response, StreamingResponse
-from sqlalchemy.orm import Session
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+from pptx import Presentation as PptxPresentation
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN
+from pptx.util import Inches, Pt
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
-from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
+from ..core.auth import Role, User, require_roles
+from ..core.executive_report import generate_executive_report
 from ..core.signature import generate_signature
 from ..database import get_db, now_utc
 from ..models.core import FieldReportORM, TraceBatchORM, UnitORM, UserAccountORM
-from ..models.pilotage import ProjectDossierORM, ProjectDossierTransitionORM
-from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM, InspectionConformiteORM, OperateurIndustrielORM
-
-
-from ..core.executive_report import generate_executive_report
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-
-from pptx import Presentation as PptxPresentation
-from pptx.util import Inches, Pt, Emu
-from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
+from ..models.pilotage import ProjectDossierTransitionORM
+from ..models.pnpi import (
+    AgrementTechniqueIndustrielORM,
+    DocumentDossierORM,
+    InspectionConformiteORM,
+    OperateurIndustrielORM,
+)
 
 router = APIRouter(tags=["Exports"])
 
@@ -43,8 +43,13 @@ async def export_executive_report(
 ):
     pdf_bytes = generate_executive_report(db)
     now = now_utc()
-    write_audit_event(db, actor=current_user.username, action="export.executive_report",
-                     target="weekly", details="Rapport executif hebdomadaire genere")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.executive_report",
+        target="weekly",
+        details="Rapport executif hebdomadaire genere",
+    )
     db.commit()
     return Response(
         content=pdf_bytes,
@@ -81,13 +86,20 @@ async def export_indicators_csv(
     db: Session = Depends(get_db),
 ):
     from ..main import _compute_sector_indicators
+
     indicators = _compute_sector_indicators(db)
     header = ["Secteur", "Volume local (T)", "Volume importe (T)", "Emplois"]
     rows = [
         [indicator.sector, indicator.local_volume_tons, indicator.import_volume_tons, indicator.jobs]
         for indicator in indicators
     ]
-    write_audit_event(db, actor=current_user.username, action="export.csv", target="indicators", details="Export CSV indicateurs genere")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.csv",
+        target="indicators",
+        details="Export CSV indicateurs genere",
+    )
     db.commit()
     return StreamingResponse(
         _csv_generator(rows, header),
@@ -132,7 +144,9 @@ async def export_dashboard_pdf(
             f"- {indicator.sector}: local {indicator.local_volume_tons}T / import {indicator.import_volume_tons}T / emplois {indicator.jobs}"
         )
 
-    write_audit_event(db, actor=current_user.username, action="export.pdf", target="dashboard", details="Export PDF dashboard genere")
+    write_audit_event(
+        db, actor=current_user.username, action="export.pdf", target="dashboard", details="Export PDF dashboard genere"
+    )
     db.commit()
 
     return _build_pdf_response(lines, filename="pnpi-dashboard.pdf", font_size=10)
@@ -144,15 +158,10 @@ async def export_inspectors_briefing_pdf(
     db: Session = Depends(get_db),
 ) -> Response:
     field_reports = (
-        db.execute(select(FieldReportORM).order_by(FieldReportORM.created_at.desc()))
-        .scalars()
-        .unique()
-        .all()
+        db.execute(select(FieldReportORM).order_by(FieldReportORM.created_at.desc())).scalars().unique().all()
     )
     open_reports = [report for report in field_reports if report.status != "closed"]
-    high_reports = [
-        report for report in open_reports if report.severity.lower() in {"high", "critical"}
-    ]
+    high_reports = [report for report in open_reports if report.severity.lower() in {"high", "critical"}]
     units = db.execute(select(UnitORM)).scalars().unique().all()
 
     lines = [
@@ -169,11 +178,15 @@ async def export_inspectors_briefing_pdf(
     ]
     for report in high_reports[:8]:
         location = report.location or "Non renseigne"
-        lines.append(
-            f"- {report.id} [{report.status}] {report.severity} / {location} / {report.title}"
-        )
+        lines.append(f"- {report.id} [{report.status}] {report.severity} / {location} / {report.title}")
 
-    write_audit_event(db, actor=current_user.username, action="export.pdf", target="inspectors-briefing", details="Export PDF briefing inspecteurs genere")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.pdf",
+        target="inspectors-briefing",
+        details="Export PDF briefing inspecteurs genere",
+    )
     db.commit()
 
     return _build_pdf_response(lines, filename="pnpi-inspectors-briefing.pdf", font_size=10)
@@ -181,10 +194,10 @@ async def export_inspectors_briefing_pdf(
 
 @router.get("/exports/pilotage-transitions.csv")
 async def export_pilotage_transitions_csv(
-    dossier_id: Optional[str] = Query(default=None),
-    changed_by: Optional[str] = Query(default=None),
-    date_from: Optional[date] = Query(default=None),
-    date_to: Optional[date] = Query(default=None),
+    dossier_id: str | None = Query(default=None),
+    changed_by: str | None = Query(default=None),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
     current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
@@ -192,11 +205,7 @@ async def export_pilotage_transitions_csv(
         raise HTTPException(status_code=400, detail="date_from doit etre <= date_to.")
 
     rows = (
-        db.execute(
-            select(ProjectDossierTransitionORM).order_by(
-                ProjectDossierTransitionORM.changed_at.desc()
-            )
-        )
+        db.execute(select(ProjectDossierTransitionORM).order_by(ProjectDossierTransitionORM.changed_at.desc()))
         .scalars()
         .all()
     )
@@ -252,10 +261,10 @@ async def export_pilotage_transitions_csv(
 
 @router.get("/exports/pilotage-transitions.pdf")
 async def export_pilotage_transitions_pdf(
-    dossier_id: Optional[str] = Query(default=None),
-    changed_by: Optional[str] = Query(default=None),
-    date_from: Optional[date] = Query(default=None),
-    date_to: Optional[date] = Query(default=None),
+    dossier_id: str | None = Query(default=None),
+    changed_by: str | None = Query(default=None),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
     current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> Response:
@@ -263,11 +272,7 @@ async def export_pilotage_transitions_pdf(
         raise HTTPException(status_code=400, detail="date_from doit etre <= date_to.")
 
     rows = (
-        db.execute(
-            select(ProjectDossierTransitionORM).order_by(
-                ProjectDossierTransitionORM.changed_at.desc()
-            )
-        )
+        db.execute(select(ProjectDossierTransitionORM).order_by(ProjectDossierTransitionORM.changed_at.desc()))
         .scalars()
         .all()
     )
@@ -306,41 +311,80 @@ async def export_pilotage_transitions_pdf(
     )
     db.commit()
 
-    return _build_pdf_response(lines, filename="pilotage-transitions.pdf", font_size=9, td_offset=12, start_y=770, start_x=36)
+    return _build_pdf_response(
+        lines, filename="pilotage-transitions.pdf", font_size=9, td_offset=12, start_y=770, start_x=36
+    )
 
 
 # ---------------------------------------------------------------------------
 # PNPI CSV exports
 # ---------------------------------------------------------------------------
 
+
 @router.get("/pnpi/exports/ati.csv")
 async def export_ati_csv(
-    statut: Optional[str] = Query(default=None),
-    secteur: Optional[str] = Query(default=None),
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
+    statut: str | None = Query(default=None),
+    secteur: str | None = Query(default=None),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)
+    ),
     db: Session = Depends(get_db),
 ):
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM)
-        .where(*([] if not statut else [AgrementTechniqueIndustrielORM.statut == statut]))
-        .where(*([] if not secteur else [AgrementTechniqueIndustrielORM.secteur == secteur]))
-        .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
-    ).scalars().all()
+    atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM)
+            .where(*([] if not statut else [AgrementTechniqueIndustrielORM.statut == statut]))
+            .where(*([] if not secteur else [AgrementTechniqueIndustrielORM.secteur == secteur]))
+            .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
+        )
+        .scalars()
+        .all()
+    )
 
-    header = ["Numero ATI", "Operateur ID", "Type activite", "Secteur", "Statut", "Etape", "Priorite", "Instructeur", "Date soumission", "Date decision", "Age (j)", "SLA (j)", "En retard"]
+    header = [
+        "Numero ATI",
+        "Operateur ID",
+        "Type activite",
+        "Secteur",
+        "Statut",
+        "Etape",
+        "Priorite",
+        "Instructeur",
+        "Date soumission",
+        "Date decision",
+        "Age (j)",
+        "SLA (j)",
+        "En retard",
+    ]
     rows = []
     for a in atis:
         age = max((now_utc().date() - a.date_soumission.date()).days, 0)
         overdue = age > a.sla_jours and a.statut not in {"approuve", "rejete", "expire"}
-        rows.append([
-            a.numero_ati, a.operateur_id, a.type_activite, a.secteur, a.statut,
-            a.etape, a.priorite, a.instructeur_username or "",
-            a.date_soumission.date().isoformat(),
-            a.date_decision.date().isoformat() if a.date_decision else "",
-            age, a.sla_jours, "Oui" if overdue else "Non",
-        ])
+        rows.append(
+            [
+                a.numero_ati,
+                a.operateur_id,
+                a.type_activite,
+                a.secteur,
+                a.statut,
+                a.etape,
+                a.priorite,
+                a.instructeur_username or "",
+                a.date_soumission.date().isoformat(),
+                a.date_decision.date().isoformat() if a.date_decision else "",
+                age,
+                a.sla_jours,
+                "Oui" if overdue else "Non",
+            ]
+        )
 
-    write_audit_event(db, actor=current_user.username, action="export.csv", target="ati", details=f"Export CSV ATI genere ({len(rows)} lignes)")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.csv",
+        target="ati",
+        details=f"Export CSV ATI genere ({len(rows)} lignes)",
+    )
     db.commit()
 
     return StreamingResponse(
@@ -352,28 +396,60 @@ async def export_ati_csv(
 
 @router.get("/pnpi/exports/operateurs.csv")
 async def export_operateurs_csv(
-    secteur: Optional[str] = Query(default=None),
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)),
+    secteur: str | None = Query(default=None),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur)
+    ),
     db: Session = Depends(get_db),
 ):
-    ops = db.execute(
-        select(OperateurIndustrielORM)
-        .where(*([] if not secteur else [OperateurIndustrielORM.secteur == secteur]))
-        .order_by(OperateurIndustrielORM.raison_sociale)
-    ).scalars().all()
+    ops = (
+        db.execute(
+            select(OperateurIndustrielORM)
+            .where(*([] if not secteur else [OperateurIndustrielORM.secteur == secteur]))
+            .order_by(OperateurIndustrielORM.raison_sociale)
+        )
+        .scalars()
+        .all()
+    )
 
-    header = ["ID", "NIF Gabon", "Raison sociale", "Secteur", "Province", "Ville", "Effectif declare", "Statut", "Email", "Telephone", "Cree le"]
+    header = [
+        "ID",
+        "NIF Gabon",
+        "Raison sociale",
+        "Secteur",
+        "Province",
+        "Ville",
+        "Effectif declare",
+        "Statut",
+        "Email",
+        "Telephone",
+        "Cree le",
+    ]
     rows = []
     for op in ops:
-        rows.append([
-            op.id, op.nif_gabon, op.raison_sociale, op.secteur, op.province, op.ville,
-            op.effectif_declare or 0,
-            "Actif" if op.is_active else "Inactif",
-            op.contact_email or "", op.contact_telephone or "",
-            op.created_at.date().isoformat(),
-        ])
+        rows.append(
+            [
+                op.id,
+                op.nif_gabon,
+                op.raison_sociale,
+                op.secteur,
+                op.province,
+                op.ville,
+                op.effectif_declare or 0,
+                "Actif" if op.is_active else "Inactif",
+                op.contact_email or "",
+                op.contact_telephone or "",
+                op.created_at.date().isoformat(),
+            ]
+        )
 
-    write_audit_event(db, actor=current_user.username, action="export.csv", target="operateurs", details=f"Export CSV operateurs genere ({len(rows)} lignes)")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.csv",
+        target="operateurs",
+        details=f"Export CSV operateurs genere ({len(rows)} lignes)",
+    )
     db.commit()
 
     return StreamingResponse(
@@ -385,8 +461,10 @@ async def export_operateurs_csv(
 
 @router.get("/pnpi/exports/inspections.csv", summary="Export CSV des inspections de conformite")
 async def export_inspections_csv(
-    statut_conformite: Optional[str] = Query(default=None),
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    statut_conformite: str | None = Query(default=None),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)
+    ),
     db: Session = Depends(get_db),
 ):
     query = select(InspectionConformiteORM).order_by(InspectionConformiteORM.date_inspection.desc())
@@ -394,20 +472,42 @@ async def export_inspections_csv(
         query = query.where(InspectionConformiteORM.statut_conformite == statut_conformite)
     inspections = db.execute(query).scalars().all()
 
-    header = ["ID", "Operateur ID", "ATI ID", "Inspecteur", "Date", "Statut conformite", "Observations", "Mesures correctives", "Latitude", "Longitude"]
+    header = [
+        "ID",
+        "Operateur ID",
+        "ATI ID",
+        "Inspecteur",
+        "Date",
+        "Statut conformite",
+        "Observations",
+        "Mesures correctives",
+        "Latitude",
+        "Longitude",
+    ]
     rows = []
     for insp in inspections:
-        rows.append([
-            insp.id, insp.operateur_id, insp.ati_id or "",
-            insp.inspecteur_username,
-            insp.date_inspection.date().isoformat(),
-            insp.statut_conformite,
-            insp.observations[:200] if insp.observations else "",
-            (insp.mesures_correctives or "")[:200],
-            insp.latitude or "", insp.longitude or "",
-        ])
+        rows.append(
+            [
+                insp.id,
+                insp.operateur_id,
+                insp.ati_id or "",
+                insp.inspecteur_username,
+                insp.date_inspection.date().isoformat(),
+                insp.statut_conformite,
+                insp.observations[:200] if insp.observations else "",
+                (insp.mesures_correctives or "")[:200],
+                insp.latitude or "",
+                insp.longitude or "",
+            ]
+        )
 
-    write_audit_event(db, actor=current_user.username, action="export.csv", target="inspections", details=f"Export CSV inspections genere ({len(rows)} lignes)")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.csv",
+        target="inspections",
+        details=f"Export CSV inspections genere ({len(rows)} lignes)",
+    )
     db.commit()
 
     return StreamingResponse(
@@ -423,8 +523,8 @@ async def export_pnpi_briefing_pdf(
     db: Session = Depends(get_db),
 ) -> Response:
     """Genere un PDF de synthese ministerielle : KPIs, pipeline, repartition sectorielle."""
-    from statistics import median as _median
     from collections import defaultdict as _defaultdict
+    from statistics import median as _median
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
     all_ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
@@ -436,8 +536,12 @@ async def export_pnpi_briefing_pdf(
     # KPIs
     atis_total = len(all_atis)
     atis_en_cours = sum(1 for a in all_atis if a.statut not in _TERM)
-    atis_approuves_mois = sum(1 for a in all_atis if a.statut == "approuve" and a.date_decision and a.date_decision.date() >= first_of_month)
-    atis_en_retard = sum(1 for a in all_atis if a.statut not in _TERM and (now.date() - a.date_soumission.date()).days > a.sla_jours)
+    atis_approuves_mois = sum(
+        1 for a in all_atis if a.statut == "approuve" and a.date_decision and a.date_decision.date() >= first_of_month
+    )
+    atis_en_retard = sum(
+        1 for a in all_atis if a.statut not in _TERM and (now.date() - a.date_soumission.date()).days > a.sla_jours
+    )
     decided = [a for a in all_atis if a.statut in {"approuve", "rejete"} and a.date_decision]
     durations = [max((a.date_decision.date() - a.date_soumission.date()).days, 0) for a in decided]
     delai_moyen = float(_median(durations)) if durations else 0.0
@@ -528,12 +632,14 @@ async def export_pnpi_briefing_pdf(
     )
     db.commit()
 
-    return _build_pdf_response(lines, filename="pnpi-briefing-ministeriel.pdf", font_size=9, td_offset=12, start_y=770, start_x=36)
+    return _build_pdf_response(
+        lines, filename="pnpi-briefing-ministeriel.pdf", font_size=9, td_offset=12, start_y=770, start_x=36
+    )
 
 
 @router.post("/admin/briefing/email")
 async def email_briefing_to_roles(
-    target_roles: List[str] = Body(default=["ministre", "directeur"]),
+    target_roles: list[str] = Body(default=["ministre", "directeur"]),
     current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
@@ -541,10 +647,8 @@ async def email_briefing_to_roles(
     from ..core.email import send_email
 
     # Find users with target roles
-    all_users = db.execute(
-        select(UserAccountORM).where(UserAccountORM.is_active.is_(True))
-    ).scalars().all()
-    recipients: List[str] = []
+    all_users = db.execute(select(UserAccountORM).where(UserAccountORM.is_active.is_(True))).scalars().all()
+    recipients: list[str] = []
     for user in all_users:
         user_roles = set(user.roles_csv.split(","))
         if user_roles & set(target_roles):
@@ -560,7 +664,7 @@ async def email_briefing_to_roles(
         <h1 style="margin: 0; font-size: 20px;">PNPI \u2014 Briefing Quotidien</h1>
       </div>
       <div style="padding: 24px; background: #f6f8fb; border-radius: 0 0 12px 12px;">
-        <p>Le briefing du {now.strftime('%d/%m/%Y')} est disponible sur la plateforme.</p>
+        <p>Le briefing du {now.strftime("%d/%m/%Y")} est disponible sur la plateforme.</p>
         <a href="https://pnpi-gabon.ga/briefing" style="display: inline-block; padding: 12px 24px; background: #006233; color: white; border-radius: 8px; text-decoration: none; font-weight: bold;">
           Consulter le briefing
         </a>
@@ -574,9 +678,13 @@ async def email_briefing_to_roles(
             if send_email([email_addr], subject, html):
                 sent += 1
 
-    write_audit_event(db, actor=current_user.username, action="briefing.email",
-                     target=f"{len(target_roles)} roles",
-                     details=f"Briefing envoye a {sent} destinataire(s)")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="briefing.email",
+        target=f"{len(target_roles)} roles",
+        details=f"Briefing envoye a {sent} destinataire(s)",
+    )
     db.commit()
 
     return {"sent": sent, "recipients_found": len(recipients), "target_roles": target_roles}
@@ -585,7 +693,9 @@ async def email_briefing_to_roles(
 @router.get("/exports/ati/{ati_id}/documents.zip")
 async def export_ati_documents_zip(
     ati_id: str,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.operateur)),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.operateur)
+    ),
     db: Session = Depends(get_db),
 ):
     """Download all documents for an ATI as a ZIP archive."""
@@ -593,9 +703,7 @@ async def export_ati_documents_zip(
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
 
-    docs = db.execute(
-        select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)
-    ).scalars().all()
+    docs = db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)).scalars().all()
 
     if not docs:
         raise HTTPException(status_code=404, detail="Aucun document pour cet ATI.")
@@ -609,8 +717,13 @@ async def export_ati_documents_zip(
 
     buf.seek(0)
 
-    write_audit_event(db, actor=current_user.username, action="export.zip",
-                     target=ati_id, details=f"ZIP {len(docs)} documents ATI {ati.numero_ati}")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.zip",
+        target=ati_id,
+        details=f"ZIP {len(docs)} documents ATI {ati.numero_ati}",
+    )
     db.commit()
 
     return Response(
@@ -624,11 +737,12 @@ async def export_ati_documents_zip(
 # Excel (XLSX) exports
 # ---------------------------------------------------------------------------
 
+
 @router.get("/exports/atis.xlsx")
 async def export_atis_xlsx(
-    statut: Optional[str] = Query(None),
-    secteur: Optional[str] = Query(None),
-    province: Optional[str] = Query(None),
+    statut: str | None = Query(None),
+    secteur: str | None = Query(None),
+    province: str | None = Query(None),
     current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
     db: Session = Depends(get_db),
 ):
@@ -653,12 +767,25 @@ async def export_atis_xlsx(
     header_fill = PatternFill(start_color="006233", end_color="006233", fill_type="solid")
     header_align = Alignment(horizontal="center", vertical="center")
     thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
 
-    headers = ["N\u00b0 ATI", "Operateur", "NIF", "Secteur", "Province", "Type activite",
-               "Statut", "Date soumission", "Date decision", "SLA (jours)", "Age (jours)"]
+    headers = [
+        "N\u00b0 ATI",
+        "Operateur",
+        "NIF",
+        "Secteur",
+        "Province",
+        "Type activite",
+        "Statut",
+        "Date soumission",
+        "Date decision",
+        "SLA (jours)",
+        "Age (jours)",
+    ]
 
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
@@ -674,8 +801,9 @@ async def export_atis_xlsx(
         "soumis": PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid"),
     }
 
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc)
+    from datetime import datetime
+
+    now = datetime.now(UTC)
 
     for row_idx, ati in enumerate(atis, 2):
         op = ati.operateur
@@ -724,8 +852,9 @@ async def export_atis_xlsx(
     wb.save(buf)
     buf.seek(0)
 
-    write_audit_event(db, actor=current_user.username, action="export.xlsx",
-                     target="atis", details=f"Export Excel {len(atis)} ATIs")
+    write_audit_event(
+        db, actor=current_user.username, action="export.xlsx", target="atis", details=f"Export Excel {len(atis)} ATIs"
+    )
     db.commit()
 
     return Response(
@@ -737,8 +866,8 @@ async def export_atis_xlsx(
 
 @router.get("/exports/operateurs.xlsx")
 async def export_operateurs_xlsx(
-    secteur: Optional[str] = Query(None),
-    province: Optional[str] = Query(None),
+    secteur: str | None = Query(None),
+    province: str | None = Query(None),
     current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
     db: Session = Depends(get_db),
 ):
@@ -758,8 +887,10 @@ async def export_operateurs_xlsx(
     header_font = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
     header_fill = PatternFill(start_color="0C7EB4", end_color="0C7EB4", fill_type="solid")
     thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
 
     headers = ["Raison sociale", "NIF", "Secteur", "Province", "Ville", "Email", "Telephone"]
@@ -772,9 +903,13 @@ async def export_operateurs_xlsx(
 
     for row_idx, op in enumerate(ops, 2):
         values = [
-            op.raison_sociale, op.nif_gabon, op.secteur,
+            op.raison_sociale,
+            op.nif_gabon,
+            op.secteur,
             op.province.replace("_", " ").title() if op.province else "",
-            op.ville or "", op.email or "", op.telephone or "",
+            op.ville or "",
+            op.email or "",
+            op.telephone or "",
         ]
         for col, val in enumerate(values, 1):
             cell = ws.cell(row=row_idx, column=col, value=val)
@@ -790,8 +925,13 @@ async def export_operateurs_xlsx(
     wb.save(buf)
     buf.seek(0)
 
-    write_audit_event(db, actor=current_user.username, action="export.xlsx",
-                     target="operateurs", details=f"Export Excel {len(ops)} operateurs")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.xlsx",
+        target="operateurs",
+        details=f"Export Excel {len(ops)} operateurs",
+    )
     db.commit()
 
     return Response(
@@ -805,6 +945,7 @@ async def export_operateurs_xlsx(
 # PowerPoint (PPTX) export
 # ---------------------------------------------------------------------------
 
+
 @router.get("/exports/briefing.pptx")
 async def export_briefing_pptx(
     current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
@@ -814,7 +955,9 @@ async def export_briefing_pptx(
 
     # Fetch data
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    all_ops = (
+        db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    )
     all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
 
     now = now_utc()
@@ -897,32 +1040,50 @@ async def export_briefing_pptx(
     approved = sum(1 for a in all_atis if a.statut == "approuve")
     rejected = sum(1 for a in all_atis if a.statut == "rejete")
     in_progress = sum(1 for a in all_atis if a.statut not in ("approuve", "rejete", "expire"))
-    add_kpi_slide("Agrements Techniques Industriels", [
-        {"label": "Total ATIs", "value": len(all_atis)},
-        {"label": "Approuves", "value": approved},
-        {"label": "Rejetes", "value": rejected},
-        {"label": "En cours", "value": in_progress},
-    ])
+    add_kpi_slide(
+        "Agrements Techniques Industriels",
+        [
+            {"label": "Total ATIs", "value": len(all_atis)},
+            {"label": "Approuves", "value": approved},
+            {"label": "Rejetes", "value": rejected},
+            {"label": "En cours", "value": in_progress},
+        ],
+    )
 
     # Slide 3: Operators & Inspections
     conformes = sum(1 for i in all_insp if i.statut_conformite == "conforme")
-    add_kpi_slide("Operateurs & Inspections", [
-        {"label": "Operateurs actifs", "value": len(all_ops)},
-        {"label": "Inspections", "value": len(all_insp)},
-        {"label": "Conformes", "value": conformes},
-        {"label": "Taux conformite", "value": f"{round(conformes/len(all_insp)*100)}%" if all_insp else "0%"},
-    ])
+    add_kpi_slide(
+        "Operateurs & Inspections",
+        [
+            {"label": "Operateurs actifs", "value": len(all_ops)},
+            {"label": "Inspections", "value": len(all_insp)},
+            {"label": "Conformes", "value": conformes},
+            {"label": "Taux conformite", "value": f"{round(conformes / len(all_insp) * 100)}%" if all_insp else "0%"},
+        ],
+    )
 
     # Slide 4: SLA
     terminal = {"approuve", "rejete", "expire"}
-    overdue = sum(1 for a in all_atis if a.statut not in terminal and (now.date() - a.date_soumission.date()).days > a.sla_jours)
+    overdue = sum(
+        1 for a in all_atis if a.statut not in terminal and (now.date() - a.date_soumission.date()).days > a.sla_jours
+    )
     decided = [a for a in all_atis if a.statut in ("approuve", "rejete") and a.date_decision]
-    avg_days = round(sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided) / len(decided)) if decided else 0
-    add_kpi_slide("Performance SLA", [
-        {"label": "Depassements SLA", "value": overdue},
-        {"label": "Delai moyen (jours)", "value": avg_days},
-        {"label": "Taux respect SLA", "value": f"{round((1-overdue/len(all_atis))*100)}%" if all_atis else "100%"},
-    ])
+    avg_days = (
+        round(sum((a.date_decision.date() - a.date_soumission.date()).days for a in decided) / len(decided))
+        if decided
+        else 0
+    )
+    add_kpi_slide(
+        "Performance SLA",
+        [
+            {"label": "Depassements SLA", "value": overdue},
+            {"label": "Delai moyen (jours)", "value": avg_days},
+            {
+                "label": "Taux respect SLA",
+                "value": f"{round((1 - overdue / len(all_atis)) * 100)}%" if all_atis else "100%",
+            },
+        ],
+    )
 
     # Slide 5: Closing
     add_title_slide("Merci", "Questions ?\npnpi-gabon.ga")
@@ -931,8 +1092,13 @@ async def export_briefing_pptx(
     prs.save(buf)
     buf.seek(0)
 
-    write_audit_event(db, actor=current_user.username, action="export.pptx",
-                     target="briefing", details="Export PowerPoint briefing executif")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.pptx",
+        target="briefing",
+        details="Export PowerPoint briefing executif",
+    )
     db.commit()
 
     return Response(
@@ -945,6 +1111,7 @@ async def export_briefing_pptx(
 # ---------------------------------------------------------------------------
 # Signed certificate & signature verification
 # ---------------------------------------------------------------------------
+
 
 @router.get("/exports/ati/{ati_id}/signed-certificate.pdf")
 async def export_signed_certificate(
@@ -959,6 +1126,7 @@ async def export_signed_certificate(
 
     # Generate certificate PDF
     from ..core.certificate import generate_ati_certificate
+
     op = ati.operateur
     pdf_content = generate_ati_certificate(
         numero_ati=ati.numero_ati,
@@ -970,7 +1138,7 @@ async def export_signed_certificate(
         date_soumission=ati.date_soumission,
         date_decision=ati.date_decision,
         date_expiration=ati.date_expiration,
-        reference_decision=ati.numero_reference_decision if hasattr(ati, 'numero_reference_decision') else None,
+        reference_decision=ati.numero_reference_decision if hasattr(ati, "numero_reference_decision") else None,
         sla_jours=ati.sla_jours,
     )
 
@@ -985,7 +1153,9 @@ async def export_signed_certificate(
 
     # Store signature in audit log
     write_audit_event(
-        db, actor=current_user.username, action="ati.sign_certificate",
+        db,
+        actor=current_user.username,
+        action="ati.sign_certificate",
         target=ati.id,
         details=f"Certificat signe: {sig['signature'][:16]}... par {current_user.username}",
     )
@@ -1032,31 +1202,48 @@ async def export_batch_qr_pdf(
     db: Session = Depends(get_db),
 ):
     """Generate a PDF with QR codes for all approved ATIs (or filtered by status)."""
-    query = select(AgrementTechniqueIndustrielORM).where(
-        AgrementTechniqueIndustrielORM.statut == statut
-    ).order_by(AgrementTechniqueIndustrielORM.numero_ati)
+    query = (
+        select(AgrementTechniqueIndustrielORM)
+        .where(AgrementTechniqueIndustrielORM.statut == statut)
+        .order_by(AgrementTechniqueIndustrielORM.numero_ati)
+    )
 
     atis = db.execute(query).scalars().all()
 
     if not atis:
         raise HTTPException(404, f"Aucun ATI avec le statut '{statut}'.")
 
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import cm
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Image as RLImage
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=1.5*cm, rightMargin=1.5*cm, topMargin=2*cm, bottomMargin=1.5*cm)
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4, leftMargin=1.5 * cm, rightMargin=1.5 * cm, topMargin=2 * cm, bottomMargin=1.5 * cm
+    )
     styles = getSampleStyleSheet()
     center = ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER, fontSize=10)
 
     story = []
-    story.append(Paragraph("PNPI · QR Codes de Verification", ParagraphStyle("title", parent=center, fontSize=16, fontName="Helvetica-Bold", textColor=colors.HexColor("#006233"))))
-    story.append(Paragraph(f"Statut: {statut} · {len(atis)} ATI(s)", ParagraphStyle("sub", parent=center, fontSize=10, textColor=colors.gray)))
-    story.append(Spacer(1, 0.5*cm))
+    story.append(
+        Paragraph(
+            "PNPI · QR Codes de Verification",
+            ParagraphStyle(
+                "title", parent=center, fontSize=16, fontName="Helvetica-Bold", textColor=colors.HexColor("#006233")
+            ),
+        )
+    )
+    story.append(
+        Paragraph(
+            f"Statut: {statut} · {len(atis)} ATI(s)",
+            ParagraphStyle("sub", parent=center, fontSize=10, textColor=colors.gray),
+        )
+    )
+    story.append(Spacer(1, 0.5 * cm))
 
     # Build rows of 3 QR codes
     rows = []
@@ -1075,8 +1262,11 @@ async def export_batch_qr_pdf(
         op_name = ati.operateur.raison_sociale[:25] if ati.operateur else "·"
 
         cell_content = [
-            RLImage(qr_buf, width=3.5*cm, height=3.5*cm),
-            Paragraph(f"<b>{ati.numero_ati}</b>", ParagraphStyle("qr_num", parent=center, fontSize=8, fontName="Helvetica-Bold")),
+            RLImage(qr_buf, width=3.5 * cm, height=3.5 * cm),
+            Paragraph(
+                f"<b>{ati.numero_ati}</b>",
+                ParagraphStyle("qr_num", parent=center, fontSize=8, fontName="Helvetica-Bold"),
+            ),
             Paragraph(op_name, ParagraphStyle("qr_op", parent=center, fontSize=7, textColor=colors.gray)),
         ]
 
@@ -1093,25 +1283,36 @@ async def export_batch_qr_pdf(
 
     for row in rows:
         t = Table(
-            [[c[0] if c else "" for c in row],
-             [c[1] if c and len(c) > 1 else "" for c in row],
-             [c[2] if c and len(c) > 2 else "" for c in row]],
-            colWidths=[6*cm, 6*cm, 6*cm],
+            [
+                [c[0] if c else "" for c in row],
+                [c[1] if c and len(c) > 1 else "" for c in row],
+                [c[2] if c and len(c) > 2 else "" for c in row],
+            ],
+            colWidths=[6 * cm, 6 * cm, 6 * cm],
         )
-        t.setStyle(TableStyle([
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 8),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ]))
+        t.setStyle(
+            TableStyle(
+                [
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TOPPADDING", (0, 0), (-1, -1), 8),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ]
+            )
+        )
         story.append(t)
-        story.append(Spacer(1, 0.3*cm))
+        story.append(Spacer(1, 0.3 * cm))
 
     doc.build(story)
     buf.seek(0)
 
-    write_audit_event(db, actor=current_user.username, action="export.batch_qr",
-                     target=statut, details=f"Batch QR PDF {len(atis)} ATIs")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.batch_qr",
+        target=statut,
+        details=f"Batch QR PDF {len(atis)} ATIs",
+    )
     db.commit()
 
     return Response(
@@ -1125,6 +1326,7 @@ async def export_batch_qr_pdf(
 # PDF builder helper
 # ---------------------------------------------------------------------------
 
+
 def _build_pdf_response(
     lines: list,
     *,
@@ -1134,10 +1336,7 @@ def _build_pdf_response(
     start_y: int = 760,
     start_x: int = 40,
 ) -> Response:
-    escaped_lines = [
-        line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-        for line in lines
-    ]
+    escaped_lines = [line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)") for line in lines]
     text_commands = [f"BT /F1 {font_size} Tf {start_x} {start_y} Td"]
     for index, line in enumerate(escaped_lines):
         if index > 0:
@@ -1184,12 +1383,12 @@ async def generate_official_letter(
     db: Session = Depends(get_db),
 ):
     """Generate an official ministerial letter for an ATI."""
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import cm
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer
 
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
@@ -1197,7 +1396,9 @@ async def generate_official_letter(
     op = ati.operateur
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=3*cm, rightMargin=3*cm, topMargin=2.5*cm, bottomMargin=2.5*cm)
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4, leftMargin=3 * cm, rightMargin=3 * cm, topMargin=2.5 * cm, bottomMargin=2.5 * cm
+    )
     styles = getSampleStyleSheet()
 
     center = ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER, fontSize=10)
@@ -1206,76 +1407,139 @@ async def generate_official_letter(
     story = []
 
     # Header
-    story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=center, fontSize=11, textColor=colors.gray)))
-    story.append(Paragraph("Union \u2014 Travail \u2014 Justice", ParagraphStyle("motto", parent=center, fontSize=9, textColor=colors.gray, fontName="Helvetica-Oblique")))
-    story.append(Spacer(1, 0.3*cm))
-    story.append(Paragraph("MINISTERE DE L'INDUSTRIE ET DE LA TRANSFORMATION LOCALE", ParagraphStyle("min", parent=center, fontSize=9, textColor=colors.HexColor("#003F8F"), fontName="Helvetica-Bold")))
-    story.append(Paragraph("Direction Generale de l'Industrie", ParagraphStyle("dgi", parent=center, fontSize=8, textColor=colors.HexColor("#003F8F"))))
-    story.append(Spacer(1, 0.3*cm))
+    story.append(
+        Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=center, fontSize=11, textColor=colors.gray))
+    )
+    story.append(
+        Paragraph(
+            "Union \u2014 Travail \u2014 Justice",
+            ParagraphStyle("motto", parent=center, fontSize=9, textColor=colors.gray, fontName="Helvetica-Oblique"),
+        )
+    )
+    story.append(Spacer(1, 0.3 * cm))
+    story.append(
+        Paragraph(
+            "MINISTERE DE L'INDUSTRIE ET DE LA TRANSFORMATION LOCALE",
+            ParagraphStyle(
+                "min", parent=center, fontSize=9, textColor=colors.HexColor("#003F8F"), fontName="Helvetica-Bold"
+            ),
+        )
+    )
+    story.append(
+        Paragraph(
+            "Direction Generale de l'Industrie",
+            ParagraphStyle("dgi", parent=center, fontSize=8, textColor=colors.HexColor("#003F8F")),
+        )
+    )
+    story.append(Spacer(1, 0.3 * cm))
     story.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#006233")))
-    story.append(Spacer(1, 0.8*cm))
+    story.append(Spacer(1, 0.8 * cm))
 
     now = now_utc()
-    story.append(Paragraph(f"Libreville, le {now.strftime('%d/%m/%Y')}", ParagraphStyle("date", parent=styles["Normal"], fontSize=10, alignment=2)))
-    story.append(Spacer(1, 0.5*cm))
+    story.append(
+        Paragraph(
+            f"Libreville, le {now.strftime('%d/%m/%Y')}",
+            ParagraphStyle("date", parent=styles["Normal"], fontSize=10, alignment=2),
+        )
+    )
+    story.append(Spacer(1, 0.5 * cm))
 
     # Recipient
     op_name = op.raison_sociale if op else "Operateur"
-    story.append(Paragraph(f"<b>A l'attention de :</b> {op_name}", ParagraphStyle("to", parent=styles["Normal"], fontSize=11)))
-    story.append(Spacer(1, 0.3*cm))
-    story.append(Paragraph(f"<b>Objet :</b> Dossier ATI N\u00b0 {ati.numero_ati}", ParagraphStyle("obj", parent=styles["Normal"], fontSize=11)))
-    story.append(Spacer(1, 0.5*cm))
+    story.append(
+        Paragraph(f"<b>A l'attention de :</b> {op_name}", ParagraphStyle("to", parent=styles["Normal"], fontSize=11))
+    )
+    story.append(Spacer(1, 0.3 * cm))
+    story.append(
+        Paragraph(
+            f"<b>Objet :</b> Dossier ATI N\u00b0 {ati.numero_ati}",
+            ParagraphStyle("obj", parent=styles["Normal"], fontSize=11),
+        )
+    )
+    story.append(Spacer(1, 0.5 * cm))
 
     # Body
     if letter_type == "approval":
         story.append(Paragraph("Madame, Monsieur,", justify))
-        story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph(
-            f"J'ai l'honneur de vous informer que votre demande d'Agrement Technique Industriel "
-            f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}, "
-            f"portant sur l'activite de <i>{ati.type_activite[:100]}</i> dans le secteur <b>{ati.secteur}</b>, "
-            f"a ete examinee favorablement par nos services.", justify))
-        story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph(
-            "En consequence, votre agrement vous est accorde conformement aux dispositions "
-            "reglementaires en vigueur. Vous trouverez ci-joint votre certificat d'approbation.", justify))
+        story.append(Spacer(1, 0.3 * cm))
+        story.append(
+            Paragraph(
+                f"J'ai l'honneur de vous informer que votre demande d'Agrement Technique Industriel "
+                f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}, "
+                f"portant sur l'activite de <i>{ati.type_activite[:100]}</i> dans le secteur <b>{ati.secteur}</b>, "
+                f"a ete examinee favorablement par nos services.",
+                justify,
+            )
+        )
+        story.append(Spacer(1, 0.3 * cm))
+        story.append(
+            Paragraph(
+                "En consequence, votre agrement vous est accorde conformement aux dispositions "
+                "reglementaires en vigueur. Vous trouverez ci-joint votre certificat d'approbation.",
+                justify,
+            )
+        )
     elif letter_type == "rejection":
         story.append(Paragraph("Madame, Monsieur,", justify))
-        story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph(
-            f"J'ai le regret de vous informer que votre demande d'Agrement Technique Industriel "
-            f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}, "
-            f"n'a pas pu recevoir une suite favorable en l'etat actuel de votre dossier.", justify))
-        story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph(
-            "Nous vous invitons a prendre connaissance des observations formulees par nos services "
-            "et a resoumettre votre dossier apres avoir apporte les corrections necessaires.", justify))
+        story.append(Spacer(1, 0.3 * cm))
+        story.append(
+            Paragraph(
+                f"J'ai le regret de vous informer que votre demande d'Agrement Technique Industriel "
+                f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}, "
+                f"n'a pas pu recevoir une suite favorable en l'etat actuel de votre dossier.",
+                justify,
+            )
+        )
+        story.append(Spacer(1, 0.3 * cm))
+        story.append(
+            Paragraph(
+                "Nous vous invitons a prendre connaissance des observations formulees par nos services "
+                "et a resoumettre votre dossier apres avoir apporte les corrections necessaires.",
+                justify,
+            )
+        )
     else:
         story.append(Paragraph("Madame, Monsieur,", justify))
-        story.append(Spacer(1, 0.3*cm))
-        story.append(Paragraph(
-            f"J'accuse reception de votre demande d'Agrement Technique Industriel "
-            f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}. "
-            f"Votre dossier est en cours d'instruction par nos services.", justify))
+        story.append(Spacer(1, 0.3 * cm))
+        story.append(
+            Paragraph(
+                f"J'accuse reception de votre demande d'Agrement Technique Industriel "
+                f"N\u00b0 <b>{ati.numero_ati}</b>, deposee le {ati.date_soumission.strftime('%d/%m/%Y')}. "
+                f"Votre dossier est en cours d'instruction par nos services.",
+                justify,
+            )
+        )
 
-    story.append(Spacer(1, 0.3*cm))
+    story.append(Spacer(1, 0.3 * cm))
     story.append(Paragraph("Veuillez agreer, Madame, Monsieur, l'expression de ma consideration distinguee.", justify))
 
-    story.append(Spacer(1, 1.5*cm))
-    story.append(Paragraph("<b>Le Directeur General de l'Industrie</b>", ParagraphStyle("sig", parent=styles["Normal"], fontSize=10, alignment=2)))
+    story.append(Spacer(1, 1.5 * cm))
+    story.append(
+        Paragraph(
+            "<b>Le Directeur General de l'Industrie</b>",
+            ParagraphStyle("sig", parent=styles["Normal"], fontSize=10, alignment=2),
+        )
+    )
 
-    story.append(Spacer(1, 2*cm))
+    story.append(Spacer(1, 2 * cm))
     story.append(HRFlowable(width="100%", thickness=0.5, color=colors.gray))
-    story.append(Paragraph(
-        "Document genere par la Plateforme Nationale de la Politique Industrielle (PNPI)",
-        ParagraphStyle("footer", parent=center, fontSize=7, textColor=colors.gray),
-    ))
+    story.append(
+        Paragraph(
+            "Document genere par la Plateforme Nationale de la Politique Industrielle (PNPI)",
+            ParagraphStyle("footer", parent=center, fontSize=7, textColor=colors.gray),
+        )
+    )
 
     doc.build(story)
     buf.seek(0)
 
-    write_audit_event(db, actor=current_user.username, action="export.letter",
-                     target=ati_id, details=f"Lettre {letter_type} ATI {ati.numero_ati}")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.letter",
+        target=ati_id,
+        details=f"Lettre {letter_type} ATI {ati.numero_ati}",
+    )
     db.commit()
 
     return Response(
@@ -1292,15 +1556,17 @@ async def export_province_report(
     db: Session = Depends(get_db),
 ):
     """Generate a PDF report for a specific province."""
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.units import cm
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    all_ops = (
+        db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    )
     all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
 
     prov_ops = [o for o in all_ops if o.province == province]
@@ -1313,7 +1579,9 @@ async def export_province_report(
     now = now_utc()
 
     buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2.5*cm, rightMargin=2.5*cm, topMargin=2*cm, bottomMargin=2*cm)
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4, leftMargin=2.5 * cm, rightMargin=2.5 * cm, topMargin=2 * cm, bottomMargin=2 * cm
+    )
     styles = getSampleStyleSheet()
     center = ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER)
     body = ParagraphStyle("body", parent=styles["Normal"], fontSize=11, leading=16)
@@ -1325,14 +1593,31 @@ async def export_province_report(
 
     prov_label = province.replace("_", " ").title()
 
-    story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=center, fontSize=11, textColor=colors.gray)))
-    story.append(Paragraph("Ministere de l'Industrie et de la Transformation Locale", ParagraphStyle("min", parent=center, fontSize=9, textColor=BLEU, fontName="Helvetica-Bold")))
-    story.append(Spacer(1, 0.3*cm))
+    story.append(
+        Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=center, fontSize=11, textColor=colors.gray))
+    )
+    story.append(
+        Paragraph(
+            "Ministere de l'Industrie et de la Transformation Locale",
+            ParagraphStyle("min", parent=center, fontSize=9, textColor=BLEU, fontName="Helvetica-Bold"),
+        )
+    )
+    story.append(Spacer(1, 0.3 * cm))
     story.append(HRFlowable(width="100%", thickness=3, color=VERT))
-    story.append(Spacer(1, 0.5*cm))
-    story.append(Paragraph(f"RAPPORT PROVINCIAL · {prov_label.upper()}", ParagraphStyle("title", parent=center, fontSize=18, textColor=BLEU, fontName="Helvetica-Bold")))
-    story.append(Paragraph(f"Genere le {now.strftime('%d/%m/%Y')}", ParagraphStyle("date", parent=center, fontSize=10, textColor=colors.gray)))
-    story.append(Spacer(1, 0.6*cm))
+    story.append(Spacer(1, 0.5 * cm))
+    story.append(
+        Paragraph(
+            f"RAPPORT PROVINCIAL · {prov_label.upper()}",
+            ParagraphStyle("title", parent=center, fontSize=18, textColor=BLEU, fontName="Helvetica-Bold"),
+        )
+    )
+    story.append(
+        Paragraph(
+            f"Genere le {now.strftime('%d/%m/%Y')}",
+            ParagraphStyle("date", parent=center, fontSize=10, textColor=colors.gray),
+        )
+    )
+    story.append(Spacer(1, 0.6 * cm))
 
     # KPIs table
     kpis = [
@@ -1340,42 +1625,60 @@ async def export_province_report(
         ["Operateurs actifs", str(len(prov_ops))],
         ["ATIs soumis", str(len(prov_atis))],
         ["ATIs approuves", str(approved)],
-        ["Taux d'approbation", f"{round(approved / max(len([a for a in prov_atis if a.statut in ('approuve', 'rejete')]), 1) * 100)}%"],
+        [
+            "Taux d'approbation",
+            f"{round(approved / max(len([a for a in prov_atis if a.statut in ('approuve', 'rejete')]), 1) * 100)}%",
+        ],
         ["Inspections", str(len(prov_insp))],
         ["Taux de conformite", f"{round(conformes / max(len(prov_insp), 1) * 100)}%"],
     ]
 
-    t = Table(kpis, colWidths=[8*cm, 6*cm])
-    t.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), BLEU),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 10),
-        ("PADDING", (0, 0), (-1, -1), 8),
-        ("LINEBELOW", (0, 0), (-1, -2), 0.5, colors.HexColor("#e5e7eb")),
-        ("LINEBELOW", (0, -1), (-1, -1), 1, BLEU),
-    ]))
+    t = Table(kpis, colWidths=[8 * cm, 6 * cm])
+    t.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), BLEU),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 10),
+                ("PADDING", (0, 0), (-1, -1), 8),
+                ("LINEBELOW", (0, 0), (-1, -2), 0.5, colors.HexColor("#e5e7eb")),
+                ("LINEBELOW", (0, -1), (-1, -1), 1, BLEU),
+            ]
+        )
+    )
     story.append(t)
-    story.append(Spacer(1, 0.6*cm))
+    story.append(Spacer(1, 0.6 * cm))
 
     # Sector breakdown
     from collections import Counter
+
     sectors = Counter(a.secteur for a in prov_atis)
     if sectors:
         story.append(Paragraph("<b>Repartition sectorielle</b>", ParagraphStyle("h3", parent=body, textColor=BLEU)))
-        story.append(Spacer(1, 0.2*cm))
+        story.append(Spacer(1, 0.2 * cm))
         for sect, count in sectors.most_common():
             story.append(Paragraph(f"• {sect.capitalize()} : {count} ATI(s)", body))
 
-    story.append(Spacer(1, 1*cm))
+    story.append(Spacer(1, 1 * cm))
     story.append(HRFlowable(width="100%", thickness=1, color=VERT))
-    story.append(Paragraph("Document genere automatiquement par la PNPI", ParagraphStyle("footer", parent=center, fontSize=8, textColor=colors.gray, spaceBefore=8)))
+    story.append(
+        Paragraph(
+            "Document genere automatiquement par la PNPI",
+            ParagraphStyle("footer", parent=center, fontSize=8, textColor=colors.gray, spaceBefore=8),
+        )
+    )
 
     doc.build(story)
     buf.seek(0)
 
-    write_audit_event(db, actor=current_user.username, action="export.province_pdf",
-                     target=province, details=f"Rapport provincial {prov_label}")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="export.province_pdf",
+        target=province,
+        details=f"Rapport provincial {prov_label}",
+    )
     db.commit()
 
     return Response(
@@ -1394,13 +1697,10 @@ async def create_digital_archive(
     """Create a sealed digital archive of ATI data for long-term preservation."""
     import hashlib
     import json as json_lib
-    from datetime import datetime as dt
 
     year = data.get("year", now_utc().year)
 
-    all_atis = db.execute(
-        select(AgrementTechniqueIndustrielORM)
-    ).scalars().all()
+    all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
     year_atis = [a for a in all_atis if a.date_soumission.year == year]
 
     archive_data = {
@@ -1412,17 +1712,20 @@ async def create_digital_archive(
             "created_by": current_user.username,
             "record_count": len(year_atis),
         },
-        "records": [{
-            "numero_ati": a.numero_ati,
-            "operateur": a.operateur.raison_sociale if a.operateur else None,
-            "nif": a.operateur.nif_gabon if a.operateur else None,
-            "secteur": a.secteur,
-            "type_activite": a.type_activite,
-            "statut": a.statut,
-            "date_soumission": a.date_soumission.isoformat(),
-            "date_decision": a.date_decision.isoformat() if a.date_decision else None,
-            "sla_jours": a.sla_jours,
-        } for a in year_atis],
+        "records": [
+            {
+                "numero_ati": a.numero_ati,
+                "operateur": a.operateur.raison_sociale if a.operateur else None,
+                "nif": a.operateur.nif_gabon if a.operateur else None,
+                "secteur": a.secteur,
+                "type_activite": a.type_activite,
+                "statut": a.statut,
+                "date_soumission": a.date_soumission.isoformat(),
+                "date_decision": a.date_decision.isoformat() if a.date_decision else None,
+                "sla_jours": a.sla_jours,
+            }
+            for a in year_atis
+        ],
     }
 
     # Compute integrity hash
@@ -1430,12 +1733,20 @@ async def create_digital_archive(
     integrity_hash = hashlib.sha256(content.encode()).hexdigest()
     archive_data["metadata"]["integrity_sha256"] = integrity_hash
 
-    write_audit_event(db, actor=current_user.username, action="archive.create",
-                     target=str(year), details=f"Archive {year}: {len(year_atis)} ATIs, hash={integrity_hash[:16]}")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="archive.create",
+        target=str(year),
+        details=f"Archive {year}: {len(year_atis)} ATIs, hash={integrity_hash[:16]}",
+    )
     db.commit()
 
     return Response(
         content=json_lib.dumps(archive_data, indent=2, ensure_ascii=False),
         media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="archive_pnpi_{year}.json"', "X-PNPI-Integrity": integrity_hash},
+        headers={
+            "Content-Disposition": f'attachment; filename="archive_pnpi_{year}.json"',
+            "X-PNPI-Integrity": integrity_hash,
+        },
     )

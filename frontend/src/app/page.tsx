@@ -18,15 +18,9 @@ import { KpiCard } from "./components/KpiCard";
 import { SectorCard } from "./components/SectorCard";
 import { UnitsTable } from "./components/UnitsTable";
 
-const ForecastChart = dynamic(
-  () => import("./components/ForecastChart"),
-  { ssr: false }
-);
+const ForecastChart = dynamic(() => import("./components/ForecastChart"), { ssr: false });
 
-const MapSection = dynamic(
-  () => import("./components/MapSection"),
-  { ssr: false }
-);
+const MapSection = dynamic(() => import("./components/MapSection"), { ssr: false });
 
 const normalizeNumber = (value: number) =>
   value >= 1_000 ? `${(value / 1_000).toFixed(1)}k` : value.toFixed(0);
@@ -129,10 +123,19 @@ export default async function HomePage() {
           <div className="cards-grid">
             {baselineVsTarget.map((entry) => (
               <div className="chart-card" key={entry.metric}>
-                <p style={{ margin: 0, color: "#6c7482", textTransform: "uppercase", fontSize: "0.85rem" }}>
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#6c7482",
+                    textTransform: "uppercase",
+                    fontSize: "0.85rem",
+                  }}
+                >
                   {entry.metric}
                 </p>
-                <div style={{ marginTop: "0.6rem", display: "flex", justifyContent: "space-between" }}>
+                <div
+                  style={{ marginTop: "0.6rem", display: "flex", justifyContent: "space-between" }}
+                >
                   <div>
                     <div style={{ color: "#082251", fontWeight: 700 }}>Baseline 2026</div>
                     <div style={{ fontSize: "1.25rem" }}>{entry.baseline}</div>
@@ -205,8 +208,8 @@ export default async function HomePage() {
           <h2>Tableau de bord indisponible</h2>
           <p style={{ color: "#b42318" }}>{message}</p>
           <p>
-            Verifiez NEXT_PUBLIC_BACKEND_URL, PNPI_BACKEND_USERNAME et
-            PNPI_BACKEND_PASSWORD, puis relancez le serveur Next.js.
+            Verifiez NEXT_PUBLIC_BACKEND_URL, PNPI_BACKEND_USERNAME et PNPI_BACKEND_PASSWORD, puis
+            relancez le serveur Next.js.
           </p>
         </div>
       </section>
@@ -238,7 +241,9 @@ const AlertGrid = ({ alerts }: { alerts: DashboardAlert[] }) => {
           >
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
               <strong>{alert.title}</strong>
-              <span style={{ color, fontWeight: 700, textTransform: "uppercase", fontSize: "0.75rem" }}>
+              <span
+                style={{ color, fontWeight: 700, textTransform: "uppercase", fontSize: "0.75rem" }}
+              >
                 {alert.severity}
               </span>
             </div>

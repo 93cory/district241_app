@@ -4,6 +4,7 @@ For JWT-based APIs, CSRF risk comes from cookie-based auth (httpOnly tokens).
 This middleware validates the Origin header on state-changing requests to prevent
 cross-origin form submissions.
 """
+
 from __future__ import annotations
 
 import logging

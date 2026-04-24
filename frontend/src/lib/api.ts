@@ -189,43 +189,35 @@ export interface AuditEvent {
   details: string;
 }
 
-export const fetchDashboard = (): Promise<DashboardSnapshot> =>
-  request("/dashboard/indicators");
+export const fetchDashboard = (): Promise<DashboardSnapshot> => request("/dashboard/indicators");
 
-export const fetchForecast = (): Promise<ForecastPoint[]> =>
-  request("/dashboard/forecast");
+export const fetchForecast = (): Promise<ForecastPoint[]> => request("/dashboard/forecast");
 
-export const fetchDashboardAlerts = (): Promise<DashboardAlert[]> =>
-  request("/dashboard/alerts");
+export const fetchDashboardAlerts = (): Promise<DashboardAlert[]> => request("/dashboard/alerts");
 
 export const fetchBatches = (): Promise<TraceBatch[]> => request("/batches");
 
 export const fetchUnits = (): Promise<IndustrialUnit[]> => request("/units");
 
-export const fetchDeclarations = (): Promise<ProductionDeclaration[]> =>
-  request("/declarations");
+export const fetchDeclarations = (): Promise<ProductionDeclaration[]> => request("/declarations");
 
 export const fetchAdminUsers = (): Promise<UserAccount[]> => request("/admin/users");
 
-export const fetchNotifications = (): Promise<Notification[]> =>
-  request("/admin/notifications");
+export const fetchNotifications = (): Promise<Notification[]> => request("/admin/notifications");
 
 export const fetchFieldReports = (): Promise<FieldReport[]> => request("/field-reports");
 
-export const fetchPilotageDossiers = (): Promise<ProjectDossier[]> =>
-  request("/pilotage/dossiers");
+export const fetchPilotageDossiers = (): Promise<ProjectDossier[]> => request("/pilotage/dossiers");
 
-export const fetchPilotageKpis = (): Promise<PilotageKpiSnapshot> =>
-  request("/pilotage/kpis");
+export const fetchPilotageKpis = (): Promise<PilotageKpiSnapshot> => request("/pilotage/kpis");
 
-export const fetchPilotageQueue = (): Promise<ProjectDossier[]> =>
-  request("/pilotage/queue");
+export const fetchPilotageQueue = (): Promise<ProjectDossier[]> => request("/pilotage/queue");
 
 export const fetchPilotageExecutiveDashboard = (): Promise<PilotageExecutiveDashboard> =>
   request("/pilotage/executive-dashboard");
 
 export const fetchPilotageDossierHistory = (
-  dossierId: string
+  dossierId: string,
 ): Promise<ProjectDossierTransition[]> =>
   request(`/pilotage/dossiers/${encodeURIComponent(dossierId)}/history`);
 
@@ -307,14 +299,11 @@ export interface ATIResume {
 // PNPI API calls
 // ---------------------------------------------------------------------------
 
-export const fetchPNPIKpis = (): Promise<PNPIDashboardKpis> =>
-  request("/pnpi/dashboard/kpis");
+export const fetchPNPIKpis = (): Promise<PNPIDashboardKpis> => request("/pnpi/dashboard/kpis");
 
-export const fetchPNPICarte = (): Promise<OperateurGeoPoint[]> =>
-  request("/pnpi/dashboard/carte");
+export const fetchPNPICarte = (): Promise<OperateurGeoPoint[]> => request("/pnpi/dashboard/carte");
 
-export const fetchPNPISecteurs = (): Promise<SecteurStats[]> =>
-  request("/pnpi/dashboard/secteurs");
+export const fetchPNPISecteurs = (): Promise<SecteurStats[]> => request("/pnpi/dashboard/secteurs");
 
 export const fetchPNPIProvinces = (): Promise<ProvinceStats[]> =>
   request("/pnpi/dashboard/provinces");
@@ -325,8 +314,7 @@ export const fetchPNPIPipeline = (): Promise<ATIPipelineStats> =>
 export const fetchPNPITendances = (): Promise<MensuelStats[]> =>
   request("/pnpi/dashboard/tendances");
 
-export const fetchPNPIRecents = (): Promise<ATIResume[]> =>
-  request("/pnpi/dashboard/recents");
+export const fetchPNPIRecents = (): Promise<ATIResume[]> => request("/pnpi/dashboard/recents");
 
 export interface TransformationIndexBreakdownItem {
   score: number;
@@ -345,36 +333,78 @@ export const fetchTransformationIndex = (): Promise<TransformationIndexData> =>
   request("/pnpi/dashboard/transformation-index");
 // ATI detail types
 export interface ATIRead {
-  id: string; numero_ati: string; operateur_id: string; type_activite: string;
-  secteur: string; statut: string; etape: string; priorite: string;
-  instructeur_username: string | null; date_soumission: string;
-  date_decision: string | null; date_expiration: string | null; sla_jours: number;
-  qr_code_data: string | null; motif_rejet: string | null;
-  numero_reference_decision: string | null; observations: string | null;
-  created_by: string | null; updated_at: string; age_jours: number; is_overdue: boolean;
+  id: string;
+  numero_ati: string;
+  operateur_id: string;
+  type_activite: string;
+  secteur: string;
+  statut: string;
+  etape: string;
+  priorite: string;
+  instructeur_username: string | null;
+  date_soumission: string;
+  date_decision: string | null;
+  date_expiration: string | null;
+  sla_jours: number;
+  qr_code_data: string | null;
+  motif_rejet: string | null;
+  numero_reference_decision: string | null;
+  observations: string | null;
+  created_by: string | null;
+  updated_at: string;
+  age_jours: number;
+  is_overdue: boolean;
 }
 export interface ATIBrief {
-  id: string; numero_ati: string; type_activite: string; secteur: string;
-  statut: string; etape: string; priorite: string;
+  id: string;
+  numero_ati: string;
+  type_activite: string;
+  secteur: string;
+  statut: string;
+  etape: string;
+  priorite: string;
   instructeur_username: string | null;
-  date_soumission: string; age_jours: number; is_overdue: boolean;
+  date_soumission: string;
+  age_jours: number;
+  is_overdue: boolean;
 }
 export interface ATITransitionRead {
-  id: string; ati_id: string; changed_by: string; previous_statut: string | null;
-  new_statut: string | null; previous_etape: string | null; new_etape: string | null;
-  note: string; changed_at: string;
+  id: string;
+  ati_id: string;
+  changed_by: string;
+  previous_statut: string | null;
+  new_statut: string | null;
+  previous_etape: string | null;
+  new_etape: string | null;
+  note: string;
+  changed_at: string;
 }
 export interface OperateurBrief {
-  id: string; nif_gabon: string; raison_sociale: string; secteur: string;
-  province: string; ville: string; is_active: boolean; effectif_declare: number | null;
+  id: string;
+  nif_gabon: string;
+  raison_sociale: string;
+  secteur: string;
+  province: string;
+  ville: string;
+  is_active: boolean;
+  effectif_declare: number | null;
 }
 export interface OperateurRead extends OperateurBrief {
-  latitude: number | null; longitude: number | null;
-  contact_email: string | null; contact_telephone: string | null;
-  created_at: string; created_by: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  contact_email: string | null;
+  contact_telephone: string | null;
+  created_at: string;
+  created_by: string | null;
 }
 // PNPI ATI + Operateurs fetch
-export const fetchPNPIATIs = (params?: { statut?: string; secteur?: string; province?: string; skip?: number; limit?: number }): Promise<ATIRead[]> => {
+export const fetchPNPIATIs = (params?: {
+  statut?: string;
+  secteur?: string;
+  province?: string;
+  skip?: number;
+  limit?: number;
+}): Promise<ATIRead[]> => {
   const qs = new URLSearchParams();
   if (params?.statut) qs.set("statut", params.statut);
   if (params?.secteur) qs.set("secteur", params.secteur);
@@ -384,9 +414,16 @@ export const fetchPNPIATIs = (params?: { statut?: string; secteur?: string; prov
   const q = qs.toString();
   return request(`/pnpi/ati${q ? "?" + q : ""}`);
 };
-export const fetchPNPIATI = (id: string): Promise<ATIRead> => request(`/pnpi/ati/${encodeURIComponent(id)}`);
-export const fetchPNPIATIHistorique = (id: string): Promise<ATITransitionRead[]> => request(`/pnpi/ati/${encodeURIComponent(id)}/historique`);
-export const fetchPNPIOperateurs = (params?: { secteur?: string; province?: string; skip?: number; limit?: number }): Promise<OperateurBrief[]> => {
+export const fetchPNPIATI = (id: string): Promise<ATIRead> =>
+  request(`/pnpi/ati/${encodeURIComponent(id)}`);
+export const fetchPNPIATIHistorique = (id: string): Promise<ATITransitionRead[]> =>
+  request(`/pnpi/ati/${encodeURIComponent(id)}/historique`);
+export const fetchPNPIOperateurs = (params?: {
+  secteur?: string;
+  province?: string;
+  skip?: number;
+  limit?: number;
+}): Promise<OperateurBrief[]> => {
   const qs = new URLSearchParams();
   if (params?.secteur) qs.set("secteur", params.secteur);
   if (params?.province) qs.set("province", params.province);
@@ -395,8 +432,10 @@ export const fetchPNPIOperateurs = (params?: { secteur?: string; province?: stri
   const q = qs.toString();
   return request(`/pnpi/operateurs${q ? "?" + q : ""}`);
 };
-export const fetchPNPIOperateur = (id: string): Promise<OperateurRead> => request(`/pnpi/operateurs/${encodeURIComponent(id)}`);
-export const fetchPNPIOperateurATIs = (id: string): Promise<ATIBrief[]> => request(`/pnpi/operateurs/${encodeURIComponent(id)}/ati`);
+export const fetchPNPIOperateur = (id: string): Promise<OperateurRead> =>
+  request(`/pnpi/operateurs/${encodeURIComponent(id)}`);
+export const fetchPNPIOperateurATIs = (id: string): Promise<ATIBrief[]> =>
+  request(`/pnpi/operateurs/${encodeURIComponent(id)}/ati`);
 
 // ---------------------------------------------------------------------------
 // Inspections
@@ -427,7 +466,14 @@ export const fetchPNPIInspections = async (params?: {
   inspecteur_username?: string;
   limit?: number;
 }): Promise<InspectionRead[]> => {
-  const q = params ? "?" + new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)])).toString() : "";
+  const q = params
+    ? "?" +
+      new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined)
+          .map(([k, v]) => [k, String(v)]),
+      ).toString()
+    : "";
   return request<InspectionRead[]>(`/pnpi/inspections${q}`);
 };
 
@@ -464,8 +510,7 @@ export interface PNPIAlert {
   created_at: string;
 }
 
-export const fetchPNPIAlerts = (): Promise<PNPIAlert[]> =>
-  request("/pnpi/alerts");
+export const fetchPNPIAlerts = (): Promise<PNPIAlert[]> => request("/pnpi/alerts");
 
 // ---------------------------------------------------------------------------
 // PNPI Historique (audit trail)

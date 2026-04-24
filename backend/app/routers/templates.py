@@ -1,14 +1,10 @@
 """PNPI · Templates ATI pre-remplis par secteur."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
-from sqlalchemy import select
-from sqlalchemy.orm import Session
-from typing import Optional
 
-from ..database import get_db
-from ..core.auth import User, get_current_user, require_roles, Role
+from ..core.auth import User, get_current_user
 
 router = APIRouter(prefix="/templates", tags=["Templates"])
 
@@ -20,7 +16,12 @@ BUILTIN_TEMPLATES = [
         "nom": "Scierie industrielle",
         "description": "Transformation primaire du bois · sciage, sechage, rabotage",
         "type_activite": "Exploitation et transformation du bois : sciage, sechage en four, rabotage, traitement anti-termites. Production de planches, chevrons, madriers.",
-        "documents_requis": ["Permis forestier (CPAET)", "Etude d'impact environnemental", "Plan d'amenagement durable", "Certificat FSC/PEFC (si applicable)"],
+        "documents_requis": [
+            "Permis forestier (CPAET)",
+            "Etude d'impact environnemental",
+            "Plan d'amenagement durable",
+            "Certificat FSC/PEFC (si applicable)",
+        ],
     },
     {
         "id": "tpl-bois-contreplaque",
@@ -44,7 +45,12 @@ BUILTIN_TEMPLATES = [
         "nom": "Transformation de manganese",
         "description": "Enrichissement et transformation du minerai de manganese",
         "type_activite": "Enrichissement du minerai de manganese : lavage, separation gravimetrique, sechage, expedition. Teneur et capacite a preciser.",
-        "documents_requis": ["Convention miniere", "Permis d'exploitation", "Etude d'impact", "Plan de gestion des residus"],
+        "documents_requis": [
+            "Convention miniere",
+            "Permis d'exploitation",
+            "Etude d'impact",
+            "Plan de gestion des residus",
+        ],
     },
     {
         "id": "tpl-agro-huile",
@@ -76,7 +82,11 @@ BUILTIN_TEMPLATES = [
         "nom": "Usine de peintures",
         "description": "Fabrication de peintures et revetements",
         "type_activite": "Fabrication de peintures : melange de pigments, liants, solvants, conditionnement. Gamme de produits et capacite a preciser.",
-        "documents_requis": ["Fiche de securite des produits", "Norme environnementale", "Plan de gestion des dechets chimiques"],
+        "documents_requis": [
+            "Fiche de securite des produits",
+            "Norme environnementale",
+            "Plan de gestion des dechets chimiques",
+        ],
     },
     {
         "id": "tpl-btp-ciment",
@@ -84,7 +94,11 @@ BUILTIN_TEMPLATES = [
         "nom": "Cimenterie / Unite de broyage",
         "description": "Production de ciment ou unite de broyage de clinker",
         "type_activite": "Production de ciment : broyage de clinker, ajout de gypse et additifs, ensachage. Capacite en tonnes/an et source du clinker a preciser.",
-        "documents_requis": ["Etude d'impact environnemental", "Permis de construire industriel", "Norme qualite ciment NF/CEMAC"],
+        "documents_requis": [
+            "Etude d'impact environnemental",
+            "Permis de construire industriel",
+            "Norme qualite ciment NF/CEMAC",
+        ],
     },
     {
         "id": "tpl-energie-solaire",
@@ -92,14 +106,19 @@ BUILTIN_TEMPLATES = [
         "nom": "Centrale solaire",
         "description": "Installation photovoltaique de production d'electricite",
         "type_activite": "Production d'electricite solaire photovoltaique : installation de panneaux, onduleurs, raccordement reseau ou stockage batteries. Puissance crete a preciser.",
-        "documents_requis": ["Concession energetique", "Etude de raccordement SEEG", "Etude d'impact", "Plan de demantellement"],
+        "documents_requis": [
+            "Concession energetique",
+            "Etude de raccordement SEEG",
+            "Etude d'impact",
+            "Plan de demantellement",
+        ],
     },
 ]
 
 
 @router.get("/list")
 async def list_templates(
-    secteur: Optional[str] = Query(None),
+    secteur: str | None = Query(None),
     _: User = Depends(get_current_user),
 ):
     """List available ATI templates, optionally filtered by sector."""

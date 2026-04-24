@@ -27,7 +27,9 @@ export default async function TeamWorkloadPage() {
   try {
     const profile = await fetchBackendProfile();
     if (!((profile.roles ?? []) as string[]).some((r) => ALLOWED.has(r))) redirect("/connexion");
-  } catch { redirect("/connexion"); }
+  } catch {
+    redirect("/connexion");
+  }
 
   let team: TeamMember[] = [];
   let error = "";
@@ -48,17 +50,33 @@ export default async function TeamWorkloadPage() {
       <div className="chart-card">
         <div className="pnpi-page-head">
           <div>
-            <Link href="/pnpi" className="pnpi-back-link">&larr; Tableau de bord</Link>
+            <Link href="/pnpi" className="pnpi-back-link">
+              &larr; Tableau de bord
+            </Link>
             <h2>Tableau d&apos;equipe</h2>
             <p className="pnpi-page-sub">
               {team.length} instructeur(s) &middot; {totalActifs} dossier(s) actif(s)
-              {totalRetard > 0 && <> &middot; <span className="pnpi-overdue-count">{totalRetard} en retard</span></>}
-              {satures > 0 && <> &middot; <strong style={{ color: "#B42318" }}>{satures} sature(s)</strong></>}
+              {totalRetard > 0 && (
+                <>
+                  {" "}
+                  &middot; <span className="pnpi-overdue-count">{totalRetard} en retard</span>
+                </>
+              )}
+              {satures > 0 && (
+                <>
+                  {" "}
+                  &middot; <strong style={{ color: "#B42318" }}>{satures} sature(s)</strong>
+                </>
+              )}
             </p>
           </div>
         </div>
 
-        {error && <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">{error}</div>}
+        {error && (
+          <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">
+            {error}
+          </div>
+        )}
 
         {team.length === 0 ? (
           <div className="pnpi-empty">Aucun instructeur actif dans l&apos;equipe.</div>
@@ -95,7 +113,9 @@ export default async function TeamWorkloadPage() {
                         <span style={{ color: "var(--gabon-green)" }}>0</span>
                       )}
                     </td>
-                    <td className="num">{m.decisions_mois} ({m.approuves_mois} OK)</td>
+                    <td className="num">
+                      {m.decisions_mois} ({m.approuves_mois} OK)
+                    </td>
                     <td className="num">
                       {m.taux_approbation_pct !== null ? `${m.taux_approbation_pct}%` : "—"}
                     </td>

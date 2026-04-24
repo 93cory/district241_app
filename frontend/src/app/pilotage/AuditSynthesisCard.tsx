@@ -80,12 +80,8 @@ export const AuditSynthesisCard = ({ events }: Props) => {
       last7: in7.length,
       last30: in30.length,
       last90: in90.length,
-      topActions: [...actionCounts.entries()]
-        .sort((left, right) => right[1] - left[1])
-        .slice(0, 6),
-      topActors: [...actorCounts.entries()]
-        .sort((left, right) => right[1] - left[1])
-        .slice(0, 6),
+      topActions: [...actionCounts.entries()].sort((left, right) => right[1] - left[1]).slice(0, 6),
+      topActors: [...actorCounts.entries()].sort((left, right) => right[1] - left[1]).slice(0, 6),
       trend30Days: trend,
       trendMax: maxCount,
       selectedDayEvents: selectedEvents,
@@ -103,7 +99,11 @@ export const AuditSynthesisCard = ({ events }: Props) => {
             type="button"
             className="export-link"
             onClick={() => setPeriod(item)}
-            style={period === item ? { borderColor: "#0f2f64", color: "#0f2f64", fontWeight: 700 } : undefined}
+            style={
+              period === item
+                ? { borderColor: "#0f2f64", color: "#0f2f64", fontWeight: 700 }
+                : undefined
+            }
           >
             {PERIOD_LABEL[item]}
           </button>
@@ -133,7 +133,13 @@ export const AuditSynthesisCard = ({ events }: Props) => {
         )}
       </div>
 
-      <div style={{ display: "grid", gap: "0.8rem", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))" }}>
+      <div
+        style={{
+          display: "grid",
+          gap: "0.8rem",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+        }}
+      >
         <div>
           <p style={{ marginTop: 0, marginBottom: "0.4rem", fontWeight: 700 }}>
             Evolution journaliere (30 jours)
@@ -151,14 +157,17 @@ export const AuditSynthesisCard = ({ events }: Props) => {
             }}
           >
             {trend30Days.map((item, index) => {
-              const height = trendMax === 0 ? 2 : Math.max(2, Math.round((item.count / trendMax) * 92));
+              const height =
+                trendMax === 0 ? 2 : Math.max(2, Math.round((item.count / trendMax) * 92));
               const isWeekMark = index % 7 === 0;
               const isSelected = selectedDay === item.day;
               return (
                 <button
                   key={item.day}
                   type="button"
-                  onClick={() => setSelectedDay((current) => (current === item.day ? null : item.day))}
+                  onClick={() =>
+                    setSelectedDay((current) => (current === item.day ? null : item.day))
+                  }
                   title={`${item.day}: ${item.count}`}
                   style={{
                     height,
@@ -184,8 +193,12 @@ export const AuditSynthesisCard = ({ events }: Props) => {
           )}
         </div>
         <div>
-          <p style={{ marginTop: 0, marginBottom: "0.4rem", fontWeight: 700 }}>Actions les plus frequentes</p>
-          {topActions.length === 0 && <p style={{ margin: 0, color: "#6c7482" }}>Aucun evenement.</p>}
+          <p style={{ marginTop: 0, marginBottom: "0.4rem", fontWeight: 700 }}>
+            Actions les plus frequentes
+          </p>
+          {topActions.length === 0 && (
+            <p style={{ margin: 0, color: "#6c7482" }}>Aucun evenement.</p>
+          )}
           {topActions.map(([action, count]) => (
             <div
               key={action}
@@ -204,7 +217,9 @@ export const AuditSynthesisCard = ({ events }: Props) => {
 
         <div>
           <p style={{ marginTop: 0, marginBottom: "0.4rem", fontWeight: 700 }}>Top acteurs</p>
-          {topActors.length === 0 && <p style={{ margin: 0, color: "#6c7482" }}>Aucun evenement.</p>}
+          {topActors.length === 0 && (
+            <p style={{ margin: 0, color: "#6c7482" }}>Aucun evenement.</p>
+          )}
           {topActors.map(([actor, count]) => (
             <div
               key={actor}
@@ -228,7 +243,9 @@ export const AuditSynthesisCard = ({ events }: Props) => {
             Evenements du {selectedDay} ({selectedDayEvents.length})
           </p>
           {selectedDayEvents.length === 0 ? (
-            <p style={{ margin: 0, color: "#6c7482" }}>Aucun evenement pour ce jour et ce filtre periode.</p>
+            <p style={{ margin: 0, color: "#6c7482" }}>
+              Aucun evenement pour ce jour et ce filtre periode.
+            </p>
           ) : (
             <div className="table-scroll">
               <table className="annex-table">

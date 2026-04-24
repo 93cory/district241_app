@@ -40,21 +40,34 @@ export function useForm<T extends Record<string, unknown>>({
   }, []);
 
   const handleChange = useCallback(
-    (field: keyof T) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-      const value = e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value;
-      setValue(field, value as T[keyof T]);
-    },
+    (field: keyof T) =>
+      (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const value =
+          e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value;
+        setValue(field, value as T[keyof T]);
+      },
     [setValue],
   );
 
-  const handleBlur = useCallback((field: keyof T) => () => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    // Validate single field
-    const rule = rules[field];
-    if (!rule) return;
-    const error = validateField(field, values[field], rule, values);
-    setErrors((prev) => (error ? { ...prev, [field]: error } : (() => { const n = { ...prev }; delete n[field]; return n; })()));
-  }, [rules, values]);
+  const handleBlur = useCallback(
+    (field: keyof T) => () => {
+      setTouched((prev) => ({ ...prev, [field]: true }));
+      // Validate single field
+      const rule = rules[field];
+      if (!rule) return;
+      const error = validateField(field, values[field], rule, values);
+      setErrors((prev) =>
+        error
+          ? { ...prev, [field]: error }
+          : (() => {
+              const n = { ...prev };
+              delete n[field];
+              return n;
+            })(),
+      );
+    },
+    [rules, values],
+  );
 
   const validate = useCallback((): boolean => {
     const newErrors: Errors<T> = {};

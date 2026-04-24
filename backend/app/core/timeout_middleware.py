@@ -1,4 +1,5 @@
 """Middleware that enforces a maximum request duration."""
+
 from __future__ import annotations
 
 import asyncio
@@ -19,9 +20,7 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app, timeout_seconds: int | None = None) -> None:
         super().__init__(app)
-        self.timeout = timeout_seconds or int(
-            os.getenv("PNPI_REQUEST_TIMEOUT_SECONDS", str(DEFAULT_TIMEOUT_SECONDS))
-        )
+        self.timeout = timeout_seconds or int(os.getenv("PNPI_REQUEST_TIMEOUT_SECONDS", str(DEFAULT_TIMEOUT_SECONDS)))
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         # Skip timeout for long-running endpoints (exports, uploads, websockets)
@@ -33,7 +32,7 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
 
         try:
             return await asyncio.wait_for(call_next(request), timeout=self.timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning("Request timeout (%ss): %s %s", self.timeout, request.method, path)
             return JSONResponse(
                 status_code=504,

@@ -36,25 +36,114 @@ interface InspectionMock {
 }
 
 const atis: ATIMock[] = [
-  { id: "ATI-E2E-001", numero_ati: "ATI-2026-0001", operateur: "Bois Gabon SARL", secteur: "bois", statut: "soumis", priorite: "normale", etape: "reception", age_jours: 5, is_overdue: false },
-  { id: "ATI-E2E-002", numero_ati: "ATI-2026-0002", operateur: "Mines du Haut-Ogooue", secteur: "mines", statut: "en_instruction", priorite: "elevee", etape: "instruction", age_jours: 18, is_overdue: false },
-  { id: "ATI-E2E-003", numero_ati: "ATI-2026-0003", operateur: "Agro Ngounie SA", secteur: "agroalimentaire", statut: "approuve", priorite: "normale", etape: "decision", age_jours: 45, is_overdue: false },
-  { id: "ATI-E2E-004", numero_ati: "ATI-2026-0004", operateur: "Peche Maritime", secteur: "agroalimentaire", statut: "rejete", priorite: "urgente", etape: "decision", age_jours: 60, is_overdue: true },
+  {
+    id: "ATI-E2E-001",
+    numero_ati: "ATI-2026-0001",
+    operateur: "Bois Gabon SARL",
+    secteur: "bois",
+    statut: "soumis",
+    priorite: "normale",
+    etape: "reception",
+    age_jours: 5,
+    is_overdue: false,
+  },
+  {
+    id: "ATI-E2E-002",
+    numero_ati: "ATI-2026-0002",
+    operateur: "Mines du Haut-Ogooue",
+    secteur: "mines",
+    statut: "en_instruction",
+    priorite: "elevee",
+    etape: "instruction",
+    age_jours: 18,
+    is_overdue: false,
+  },
+  {
+    id: "ATI-E2E-003",
+    numero_ati: "ATI-2026-0003",
+    operateur: "Agro Ngounie SA",
+    secteur: "agroalimentaire",
+    statut: "approuve",
+    priorite: "normale",
+    etape: "decision",
+    age_jours: 45,
+    is_overdue: false,
+  },
+  {
+    id: "ATI-E2E-004",
+    numero_ati: "ATI-2026-0004",
+    operateur: "Peche Maritime",
+    secteur: "agroalimentaire",
+    statut: "rejete",
+    priorite: "urgente",
+    etape: "decision",
+    age_jours: 60,
+    is_overdue: true,
+  },
 ];
 
 const operateurs: OperateurMock[] = [
-  { id: "OP-E2E-001", nif_gabon: "NIF-001", raison_sociale: "Bois Gabon SARL", secteur: "bois", province: "estuaire", ville: "Libreville", is_active: true },
-  { id: "OP-E2E-002", nif_gabon: "NIF-002", raison_sociale: "Mines du Haut-Ogooue", secteur: "mines", province: "haut_ogooue", ville: "Franceville", is_active: true },
-  { id: "OP-E2E-003", nif_gabon: "NIF-003", raison_sociale: "Agro Ngounie SA", secteur: "agroalimentaire", province: "ngounie", ville: "Mouila", is_active: false },
+  {
+    id: "OP-E2E-001",
+    nif_gabon: "NIF-001",
+    raison_sociale: "Bois Gabon SARL",
+    secteur: "bois",
+    province: "estuaire",
+    ville: "Libreville",
+    is_active: true,
+  },
+  {
+    id: "OP-E2E-002",
+    nif_gabon: "NIF-002",
+    raison_sociale: "Mines du Haut-Ogooue",
+    secteur: "mines",
+    province: "haut_ogooue",
+    ville: "Franceville",
+    is_active: true,
+  },
+  {
+    id: "OP-E2E-003",
+    nif_gabon: "NIF-003",
+    raison_sociale: "Agro Ngounie SA",
+    secteur: "agroalimentaire",
+    province: "ngounie",
+    ville: "Mouila",
+    is_active: false,
+  },
 ];
 
 const inspections: InspectionMock[] = [
-  { id: "INS-E2E-001", operateur_nom: "Bois Gabon SARL", inspecteur: "inspecteur", statut_conformite: "conforme", date_inspection: "2026-03-01", observations: "RAS" },
-  { id: "INS-E2E-002", operateur_nom: "Mines du Haut-Ogooue", inspecteur: "inspecteur", statut_conformite: "non_conforme", date_inspection: "2026-03-02", observations: "Depassement rejets" },
+  {
+    id: "INS-E2E-001",
+    operateur_nom: "Bois Gabon SARL",
+    inspecteur: "inspecteur",
+    statut_conformite: "conforme",
+    date_inspection: "2026-03-01",
+    observations: "RAS",
+  },
+  {
+    id: "INS-E2E-002",
+    operateur_nom: "Mines du Haut-Ogooue",
+    inspecteur: "inspecteur",
+    statut_conformite: "non_conforme",
+    date_inspection: "2026-03-02",
+    observations: "Depassement rejets",
+  },
 ];
 
-const STATUT_COLORS: Record<string, string> = { soumis: "#f59e0b", en_instruction: "#3b82f6", en_validation: "#8b5cf6", approuve: "#10b981", rejete: "#ef4444", expire: "#9ca3af" };
-const CONF_COLORS: Record<string, string> = { conforme: "#10b981", non_conforme: "#ef4444", partiel: "#f59e0b" };
+const STATUT_COLORS: Record<string, string> = {
+  soumis: "#f59e0b",
+  en_instruction: "#3b82f6",
+  en_validation: "#8b5cf6",
+  approuve: "#10b981",
+  rejete: "#ef4444",
+  expire: "#9ca3af",
+};
+const CONF_COLORS: Record<string, string> = {
+  conforme: "#10b981",
+  non_conforme: "#ef4444",
+  partiel: "#f59e0b",
+};
 
 export default function PNPIE2EPage() {
   const [statutFilter, setStatutFilter] = useState("");
@@ -64,13 +153,19 @@ export default function PNPIE2EPage() {
   const filteredATIs = atis.filter((a) => {
     if (statutFilter && a.statut !== statutFilter) return false;
     if (secteurFilter && a.secteur !== secteurFilter) return false;
-    if (searchText && !a.operateur.toLowerCase().includes(searchText.toLowerCase()) && !a.numero_ati.toLowerCase().includes(searchText.toLowerCase())) return false;
+    if (
+      searchText &&
+      !a.operateur.toLowerCase().includes(searchText.toLowerCase()) &&
+      !a.numero_ati.toLowerCase().includes(searchText.toLowerCase())
+    )
+      return false;
     return true;
   });
 
   const filteredOps = operateurs.filter((o) => {
     if (secteurFilter && o.secteur !== secteurFilter) return false;
-    if (searchText && !o.raison_sociale.toLowerCase().includes(searchText.toLowerCase())) return false;
+    if (searchText && !o.raison_sociale.toLowerCase().includes(searchText.toLowerCase()))
+      return false;
     return true;
   });
 
@@ -81,8 +176,17 @@ export default function PNPIE2EPage() {
 
       {/* Filters */}
       <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-        <input placeholder="Recherche" value={searchText} onChange={(e) => setSearchText(e.target.value)} data-testid="search-input" />
-        <select value={statutFilter} onChange={(e) => setStatutFilter(e.target.value)} data-testid="statut-filter">
+        <input
+          placeholder="Recherche"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          data-testid="search-input"
+        />
+        <select
+          value={statutFilter}
+          onChange={(e) => setStatutFilter(e.target.value)}
+          data-testid="statut-filter"
+        >
           <option value="">Tous statuts</option>
           <option value="soumis">Soumis</option>
           <option value="en_instruction">En instruction</option>
@@ -90,7 +194,11 @@ export default function PNPIE2EPage() {
           <option value="approuve">Approuve</option>
           <option value="rejete">Rejete</option>
         </select>
-        <select value={secteurFilter} onChange={(e) => setSecteurFilter(e.target.value)} data-testid="secteur-filter">
+        <select
+          value={secteurFilter}
+          onChange={(e) => setSecteurFilter(e.target.value)}
+          data-testid="secteur-filter"
+        >
           <option value="">Tous secteurs</option>
           <option value="bois">Bois</option>
           <option value="mines">Mines</option>
@@ -117,7 +225,11 @@ export default function PNPIE2EPage() {
               <td style={{ padding: "8px" }}>{a.numero_ati}</td>
               <td style={{ padding: "8px" }}>{a.operateur}</td>
               <td style={{ padding: "8px" }}>{a.secteur}</td>
-              <td style={{ padding: "8px" }}><span style={{ color: STATUT_COLORS[a.statut] || "#6b7280", fontWeight: 600 }}>{a.statut}</span></td>
+              <td style={{ padding: "8px" }}>
+                <span style={{ color: STATUT_COLORS[a.statut] || "#6b7280", fontWeight: 600 }}>
+                  {a.statut}
+                </span>
+              </td>
               <td style={{ padding: "8px" }}>{a.priorite}</td>
               <td style={{ padding: "8px", textAlign: "right" }}>{a.age_jours}</td>
             </tr>
@@ -168,7 +280,13 @@ export default function PNPIE2EPage() {
               <td style={{ padding: "8px" }}>{i.id}</td>
               <td style={{ padding: "8px" }}>{i.operateur_nom}</td>
               <td style={{ padding: "8px" }}>{i.inspecteur}</td>
-              <td style={{ padding: "8px" }}><span style={{ color: CONF_COLORS[i.statut_conformite] || "#6b7280", fontWeight: 600 }}>{i.statut_conformite}</span></td>
+              <td style={{ padding: "8px" }}>
+                <span
+                  style={{ color: CONF_COLORS[i.statut_conformite] || "#6b7280", fontWeight: 600 }}
+                >
+                  {i.statut_conformite}
+                </span>
+              </td>
               <td style={{ padding: "8px" }}>{i.date_inspection}</td>
             </tr>
           ))}
@@ -177,12 +295,29 @@ export default function PNPIE2EPage() {
 
       {/* Pipeline summary */}
       <h2 style={{ marginTop: "2rem" }}>Pipeline ATI</h2>
-      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }} data-testid="pipeline-summary">
+      <div
+        style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}
+        data-testid="pipeline-summary"
+      >
         {Object.entries(
-          atis.reduce<Record<string, number>>((acc, a) => { acc[a.statut] = (acc[a.statut] || 0) + 1; return acc; }, {})
+          atis.reduce<Record<string, number>>((acc, a) => {
+            acc[a.statut] = (acc[a.statut] || 0) + 1;
+            return acc;
+          }, {}),
         ).map(([statut, count]) => (
-          <div key={statut} style={{ padding: "1rem", background: "#f9fafb", borderRadius: "8px", minWidth: "120px", textAlign: "center" }}>
-            <div style={{ color: STATUT_COLORS[statut], fontWeight: 700, fontSize: "1.5rem" }}>{count}</div>
+          <div
+            key={statut}
+            style={{
+              padding: "1rem",
+              background: "#f9fafb",
+              borderRadius: "8px",
+              minWidth: "120px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ color: STATUT_COLORS[statut], fontWeight: 700, fontSize: "1.5rem" }}>
+              {count}
+            </div>
             <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>{statut}</div>
           </div>
         ))}

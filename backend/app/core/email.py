@@ -1,4 +1,5 @@
 """PNPI · Service d'envoi d'emails."""
+
 from __future__ import annotations
 
 import logging
@@ -6,7 +7,6 @@ import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import List, Optional
 
 logger = logging.getLogger("pnpi.email")
 
@@ -19,10 +19,10 @@ SMTP_ENABLED = bool(SMTP_HOST and SMTP_USER)
 
 
 def send_email(
-    to: List[str],
+    to: list[str],
     subject: str,
     body_html: str,
-    body_text: Optional[str] = None,
+    body_text: str | None = None,
 ) -> bool:
     """Send an email. Returns True on success."""
     if not SMTP_ENABLED:
@@ -53,7 +53,8 @@ def send_email(
 
 # --- Email Templates ---
 
-def email_ati_approved(to: List[str], ati_numero: str, operateur: str) -> bool:
+
+def email_ati_approved(to: list[str], ati_numero: str, operateur: str) -> bool:
     subject = f"ATI {ati_numero} approuve"
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -77,7 +78,7 @@ def email_ati_approved(to: List[str], ati_numero: str, operateur: str) -> bool:
     return send_email(to, subject, html)
 
 
-def email_ati_rejected(to: List[str], ati_numero: str, operateur: str, motif: str) -> bool:
+def email_ati_rejected(to: list[str], ati_numero: str, operateur: str, motif: str) -> bool:
     subject = f"ATI {ati_numero} rejete"
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -102,7 +103,7 @@ def email_ati_rejected(to: List[str], ati_numero: str, operateur: str, motif: st
     return send_email(to, subject, html)
 
 
-def email_sla_alert(to: List[str], ati_numero: str, days_overdue: int, severity: str) -> bool:
+def email_sla_alert(to: list[str], ati_numero: str, days_overdue: int, severity: str) -> bool:
     subject = f"Alerte SLA · ATI {ati_numero} en retard de {days_overdue} jours"
     color = "#b42318" if severity == "critical" else "#f2b800"
     html = f"""
@@ -127,7 +128,7 @@ def email_sla_alert(to: List[str], ati_numero: str, days_overdue: int, severity:
     return send_email(to, subject, html)
 
 
-def email_inspection_complete(to: List[str], inspection_id: str, operateur: str, statut: str) -> bool:
+def email_inspection_complete(to: list[str], inspection_id: str, operateur: str, statut: str) -> bool:
     subject = f"Inspection {inspection_id} terminee · {statut}"
     color = "#006233" if statut == "conforme" else "#b42318"
     html = f"""

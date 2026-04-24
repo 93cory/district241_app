@@ -1,7 +1,6 @@
 """PNPI · Templates d'emails de notification."""
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 
 def _base_template(content: str, footer: str = "") -> str:
@@ -111,7 +110,7 @@ def email_sla_warning(
     </p>
     <div style="background:#fef3c7;border-radius:12px;padding:14px 18px;margin:16px 0;">
       <div style="height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
-        <div style="height:100%;width:{min(pct, 100)}%;background:{'#b42318' if pct >= 100 else '#d97706'};border-radius:4px;"></div>
+        <div style="height:100%;width:{min(pct, 100)}%;background:{"#b42318" if pct >= 100 else "#d97706"};border-radius:4px;"></div>
       </div>
       <div style="font-size:12px;color:#92400e;margin-top:6px;text-align:center;">
         {jours_ecoules} / {sla_jours} jours

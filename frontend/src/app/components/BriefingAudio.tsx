@@ -133,7 +133,10 @@ export function BriefingAudio({ text, label = "Ecouter le briefing", compact = f
             {state === "playing" && (
               <span className="briefing-audio-live" aria-live="polite">
                 <span className="briefing-audio-wave" aria-hidden="true">
-                  <span /><span /><span /><span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
                 </span>
                 Lecture en cours
               </span>

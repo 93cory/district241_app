@@ -23,7 +23,14 @@ export function EmptyState({
       }}
     >
       <span style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>{icon}</span>
-      <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-primary, #1f2937)", marginBottom: "0.4rem" }}>
+      <h3
+        style={{
+          fontSize: "1.1rem",
+          fontWeight: 600,
+          color: "var(--text-primary, #1f2937)",
+          marginBottom: "0.4rem",
+        }}
+      >
         {title}
       </h3>
       <p style={{ fontSize: "0.85rem", maxWidth: "360px", lineHeight: 1.5 }}>{message}</p>

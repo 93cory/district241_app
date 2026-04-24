@@ -1,13 +1,15 @@
 """PNPI · Versioning des documents ATI."""
+
 from __future__ import annotations
 
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from ..database import get_db
 from ..core.auth import User, get_current_user
+from ..database import get_db
 from ..models.pnpi import DocumentVersionORM
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
@@ -25,20 +27,25 @@ async def get_document_versions(
     if document_id:
         query = query.where(DocumentVersionORM.document_id == document_id)
 
-    versions = db.execute(query.order_by(
-        DocumentVersionORM.document_id, DocumentVersionORM.version.desc()
-    )).scalars().all()
+    versions = (
+        db.execute(query.order_by(DocumentVersionORM.document_id, DocumentVersionORM.version.desc())).scalars().all()
+    )
 
-    return {"versions": [{
-        "id": v.id,
-        "document_id": v.document_id,
-        "version": v.version,
-        "filename": v.filename,
-        "file_size": v.file_size,
-        "uploaded_by": v.uploaded_by,
-        "comment": v.comment,
-        "created_at": v.created_at.isoformat(),
-    } for v in versions]}
+    return {
+        "versions": [
+            {
+                "id": v.id,
+                "document_id": v.document_id,
+                "version": v.version,
+                "filename": v.filename,
+                "file_size": v.file_size,
+                "uploaded_by": v.uploaded_by,
+                "comment": v.comment,
+                "created_at": v.created_at.isoformat(),
+            }
+            for v in versions
+        ]
+    }
 
 
 @router.post("/ati/{ati_id}/upload-version")
@@ -52,11 +59,12 @@ async def upload_document_version(
     document_id = data.get("document_id") or str(uuid.uuid4())
 
     # Get latest version number
-    latest = db.execute(
-        select(func.max(DocumentVersionORM.version)).where(
-            DocumentVersionORM.document_id == document_id
-        )
-    ).scalar() or 0
+    latest = (
+        db.execute(
+            select(func.max(DocumentVersionORM.version)).where(DocumentVersionORM.document_id == document_id)
+        ).scalar()
+        or 0
+    )
 
     version = DocumentVersionORM(
         id=str(uuid.uuid4()),

@@ -2,10 +2,17 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <div style={{
-      minHeight: "80vh", display: "flex", alignItems: "center", justifyContent: "center",
-      flexDirection: "column", textAlign: "center", padding: 32,
-    }}>
+    <div
+      style={{
+        minHeight: "80vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        textAlign: "center",
+        padding: 32,
+      }}
+    >
       <div style={{ fontSize: 80, fontWeight: 800, color: "#dce4ef", lineHeight: 1 }}>404</div>
       <h1 style={{ fontSize: 24, fontWeight: 700, color: "#0c2a4a", margin: "16px 0 8px" }}>
         Page introuvable
@@ -16,8 +23,12 @@ export default function NotFound() {
       <Link
         href="/"
         style={{
-          display: "inline-block", padding: "12px 24px", borderRadius: 12,
-          background: "#006233", color: "#fff", fontWeight: 600,
+          display: "inline-block",
+          padding: "12px 24px",
+          borderRadius: 12,
+          background: "#006233",
+          color: "#fff",
+          fontWeight: 600,
           textDecoration: "none",
         }}
       >

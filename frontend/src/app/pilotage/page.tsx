@@ -55,7 +55,8 @@ export default async function PilotagePage() {
     redirect("/connexion");
   }
   const roles = profile.roles ?? [];
-  const allowed = roles.includes("admin") || roles.includes("ministre") || roles.includes("inspecteur");
+  const allowed =
+    roles.includes("admin") || roles.includes("ministre") || roles.includes("inspecteur");
   if (!allowed) {
     redirect("/");
   }
@@ -70,30 +71,43 @@ export default async function PilotagePage() {
   return (
     <section className="section">
       <div className="chart-card reveal">
-        <h1 style={{ marginTop: 0, marginBottom: "0.6rem" }}>
-          Plateforme de Pilotage Industriel
-        </h1>
+        <h1 style={{ marginTop: 0, marginBottom: "0.6rem" }}>Plateforme de Pilotage Industriel</h1>
         <p style={{ margin: 0, color: "#3a4351" }}>
-          Suivi du flux ministeriel des dossiers: reception, instruction, validation et
-          decision.
+          Suivi du flux ministeriel des dossiers: reception, instruction, validation et decision.
         </p>
       </div>
 
       <div className="hero-grid reveal-stagger" style={{ marginTop: "1rem" }}>
-        <Kpi title="Dossiers totaux" value={String(kpis.total_dossiers)} detail="Portefeuille actif" />
+        <Kpi
+          title="Dossiers totaux"
+          value={String(kpis.total_dossiers)}
+          detail="Portefeuille actif"
+        />
         <Kpi
           title="Dossiers en cours"
           value={String(kpis.in_progress_dossiers)}
           detail="Soumis, instruction, interministeriel"
         />
-        <Kpi title="Hors SLA" value={String(kpis.overdue_dossiers)} detail="Traitement prioritaire requis" />
-        <Kpi title="Taux d'approbation" value={formatPercent(kpis.approval_rate)} detail="Sur dossiers decides" />
+        <Kpi
+          title="Hors SLA"
+          value={String(kpis.overdue_dossiers)}
+          detail="Traitement prioritaire requis"
+        />
+        <Kpi
+          title="Taux d'approbation"
+          value={formatPercent(kpis.approval_rate)}
+          detail="Sur dossiers decides"
+        />
         <Kpi
           title="Delai median"
           value={`${kpis.median_processing_days.toFixed(1)} j`}
           detail="Duree de traitement"
         />
-        <Kpi title="Conformite SLA" value={formatPercent(kpis.sla_compliance_rate)} detail="Decisions dans le delai" />
+        <Kpi
+          title="Conformite SLA"
+          value={formatPercent(kpis.sla_compliance_rate)}
+          detail="Decisions dans le delai"
+        />
       </div>
 
       <div className="cards-grid reveal-stagger">
@@ -215,7 +229,7 @@ export default async function PilotagePage() {
 }
 
 const Kpi = ({ title, value, detail }: { title: string; value: string; detail: string }) => (
-    <div className="chart-card kpi-card">
+  <div className="chart-card kpi-card">
     <p style={{ margin: 0, color: "#6c7482", textTransform: "uppercase", fontSize: "0.82rem" }}>
       {title}
     </p>

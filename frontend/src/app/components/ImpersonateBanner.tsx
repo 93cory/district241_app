@@ -22,7 +22,16 @@ export async function ImpersonateBanner({ profile }: Props) {
     <div className="impersonate-banner" role="status" aria-live="polite">
       <div className="impersonate-banner-inner">
         <div className="impersonate-banner-icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
             <path d="M23 11l-3-3m0 0l-3 3m3-3v7" />
@@ -31,8 +40,8 @@ export async function ImpersonateBanner({ profile }: Props) {
         <div className="impersonate-banner-text">
           <strong>Mode simulation actif</strong>
           <span>
-            Vous visualisez la plateforme comme{" "}
-            <strong>{profile.full_name}</strong> ({profile.username}, {profile.roles.join(", ")})
+            Vous visualisez la plateforme comme <strong>{profile.full_name}</strong> (
+            {profile.username}, {profile.roles.join(", ")})
           </span>
         </div>
         <ImpersonateStopButton />

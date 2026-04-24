@@ -21,38 +21,74 @@ export default async function EconomicImpactPage() {
       </p>
 
       {/* Hero KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
         {[
-          { label: "Emplois estimes", value: s.emplois_estimes.toLocaleString("fr-FR"), color: "#006233", icon: "\u{1F477}" },
-          { label: "Investissement", value: `${(s.investissement_mfcfa / 1000).toFixed(1)} Mds FCFA`, color: "#0c7eb4", icon: "\u{1F4B0}" },
+          {
+            label: "Emplois estimes",
+            value: s.emplois_estimes.toLocaleString("fr-FR"),
+            color: "#006233",
+            icon: "\u{1F477}",
+          },
+          {
+            label: "Investissement",
+            value: `${(s.investissement_mfcfa / 1000).toFixed(1)} Mds FCFA`,
+            color: "#0c7eb4",
+            icon: "\u{1F4B0}",
+          },
           { label: "ATIs approuves", value: s.atis_approuves, color: "#051B36", icon: "\u{1F4CB}" },
           { label: "Operateurs", value: s.operateurs_actifs, color: "#7c3aed", icon: "\u{1F3ED}" },
-        ].map(k => (
+        ].map((k) => (
           <div key={k.label} className="chart-card" style={{ padding: "16px 18px" }}>
             <div style={{ fontSize: 22 }}>{k.icon}</div>
             <div style={{ fontSize: 24, fontWeight: 800, color: k.color }}>{k.value}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-soft)" }}>{k.label}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-soft)" }}>
+              {k.label}
+            </div>
           </div>
         ))}
       </div>
 
       {/* YoY comparison */}
       <div className="chart-card" style={{ padding: 20, marginBottom: 16 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 10px" }}>Croissance annuelle emplois</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 10px" }}>
+          Croissance annuelle emplois
+        </h3>
         <div style={{ display: "flex", gap: 20, alignItems: "baseline" }}>
           <div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: "#006233" }}>{s.emplois_cette_annee}</div>
-            <div style={{ fontSize: 11, color: "var(--text-soft)" }}>{new Date().getFullYear()}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: "#006233" }}>
+              {s.emplois_cette_annee}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-soft)" }}>
+              {new Date().getFullYear()}
+            </div>
           </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-soft, #9ca3af)" }}>{s.emplois_annee_precedente}</div>
-            <div style={{ fontSize: 11, color: "var(--text-soft)" }}>{new Date().getFullYear() - 1}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--text-soft, #9ca3af)" }}>
+              {s.emplois_annee_precedente}
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-soft)" }}>
+              {new Date().getFullYear() - 1}
+            </div>
           </div>
-          <span style={{
-            padding: "4px 12px", borderRadius: 8, fontSize: 14, fontWeight: 800,
-            background: `${growthColor}12`, color: growthColor,
-          }}>
-            {s.croissance_emploi_pct > 0 ? "+" : ""}{s.croissance_emploi_pct}%
+          <span
+            style={{
+              padding: "4px 12px",
+              borderRadius: 8,
+              fontSize: 14,
+              fontWeight: 800,
+              background: `${growthColor}12`,
+              color: growthColor,
+            }}
+          >
+            {s.croissance_emploi_pct > 0 ? "+" : ""}
+            {s.croissance_emploi_pct}%
           </span>
         </div>
       </div>
@@ -62,10 +98,16 @@ export default async function EconomicImpactPage() {
         <div className="chart-card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 12px" }}>Par secteur</h3>
           {data.by_sector.map((s: any) => (
-            <div key={s.secteur} style={{
-              display: "flex", justifyContent: "space-between", padding: "6px 0",
-              borderBottom: "1px solid var(--line, #eee)", fontSize: 12,
-            }}>
+            <div
+              key={s.secteur}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "6px 0",
+                borderBottom: "1px solid var(--line, #eee)",
+                fontSize: 12,
+              }}
+            >
               <span style={{ fontWeight: 600, textTransform: "capitalize" }}>{s.secteur}</span>
               <div style={{ display: "flex", gap: 12 }}>
                 <span>{s.jobs} emplois</span>
@@ -79,10 +121,16 @@ export default async function EconomicImpactPage() {
         <div className="chart-card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 12px" }}>Par province</h3>
           {data.by_province.map((p: any) => (
-            <div key={p.province} style={{
-              display: "flex", justifyContent: "space-between", padding: "6px 0",
-              borderBottom: "1px solid var(--line, #eee)", fontSize: 12,
-            }}>
+            <div
+              key={p.province}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "6px 0",
+                borderBottom: "1px solid var(--line, #eee)",
+                fontSize: 12,
+              }}
+            >
               <span style={{ fontWeight: 600 }}>{p.province}</span>
               <div style={{ display: "flex", gap: 12 }}>
                 <span>{p.jobs} emplois</span>

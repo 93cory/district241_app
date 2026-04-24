@@ -12,8 +12,18 @@ interface CalendarEvent {
 }
 
 const MONTHS_FR = [
-  "Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre",
+  "Janvier",
+  "Fevrier",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Aout",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Decembre",
 ];
 
 const DAYS_FR = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -39,13 +49,17 @@ export default function CalendarPage() {
   }, [year, month]);
 
   const prevMonth = () => {
-    if (month === 0) { setMonth(11); setYear(year - 1); }
-    else setMonth(month - 1);
+    if (month === 0) {
+      setMonth(11);
+      setYear(year - 1);
+    } else setMonth(month - 1);
   };
 
   const nextMonth = () => {
-    if (month === 11) { setMonth(0); setYear(year + 1); }
-    else setMonth(month + 1);
+    if (month === 11) {
+      setMonth(0);
+      setYear(year + 1);
+    } else setMonth(month + 1);
   };
 
   // Build calendar grid
@@ -69,42 +83,82 @@ export default function CalendarPage() {
       <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 20px" }}>Calendrier PNPI</h1>
 
       {/* Navigation */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <button onClick={prevMonth} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer" }}>&laquo;</button>
-        <span style={{ fontSize: 18, fontWeight: 700 }}>{MONTHS_FR[month]} {year}</span>
-        <button onClick={nextMonth} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer" }}>&raquo;</button>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <button
+          onClick={prevMonth}
+          style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer" }}
+        >
+          &laquo;
+        </button>
+        <span style={{ fontSize: 18, fontWeight: 700 }}>
+          {MONTHS_FR[month]} {year}
+        </span>
+        <button
+          onClick={nextMonth}
+          style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer" }}
+        >
+          &raquo;
+        </button>
       </div>
 
       {/* Grid */}
-      <div style={{
-        display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 1,
-        background: "var(--line, #dce4ef)", borderRadius: 14, overflow: "hidden",
-        opacity: loading ? 0.5 : 1, transition: "opacity 200ms",
-      }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: 1,
+          background: "var(--line, #dce4ef)",
+          borderRadius: 14,
+          overflow: "hidden",
+          opacity: loading ? 0.5 : 1,
+          transition: "opacity 200ms",
+        }}
+      >
         {DAYS_FR.map((d) => (
-          <div key={d} style={{
-            padding: "8px 4px", textAlign: "center", fontSize: 12,
-            fontWeight: 700, background: "var(--bg-base, #f4f8fb)",
-            color: "var(--text-soft, #526175)",
-          }}>
+          <div
+            key={d}
+            style={{
+              padding: "8px 4px",
+              textAlign: "center",
+              fontSize: 12,
+              fontWeight: 700,
+              background: "var(--bg-base, #f4f8fb)",
+              color: "var(--text-soft, #526175)",
+            }}
+          >
             {d}
           </div>
         ))}
         {cells.map((day, i) => {
           const dayEvents = day ? getEventsForDay(day) : [];
           return (
-            <div key={i} style={{
-              minHeight: 80, padding: 4, background: "var(--bg-layer, #fff)",
-              border: isToday(day || 0) ? "2px solid #006233" : "none",
-              borderRadius: isToday(day || 0) ? 8 : 0,
-            }}>
+            <div
+              key={i}
+              style={{
+                minHeight: 80,
+                padding: 4,
+                background: "var(--bg-layer, #fff)",
+                border: isToday(day || 0) ? "2px solid #006233" : "none",
+                borderRadius: isToday(day || 0) ? 8 : 0,
+              }}
+            >
               {day && (
                 <>
-                  <div style={{
-                    fontSize: 12, fontWeight: isToday(day) ? 800 : 500,
-                    color: isToday(day) ? "#006233" : "var(--text-main, #0c2a4a)",
-                    marginBottom: 2,
-                  }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: isToday(day) ? 800 : 500,
+                      color: isToday(day) ? "#006233" : "var(--text-main, #0c2a4a)",
+                      marginBottom: 2,
+                    }}
+                  >
                     {day}
                   </div>
                   {dayEvents.slice(0, 3).map((ev) => (
@@ -113,10 +167,17 @@ export default function CalendarPage() {
                       href={ev.link}
                       title={ev.title}
                       style={{
-                        display: "block", padding: "1px 4px", marginBottom: 1,
-                        borderRadius: 4, fontSize: 10, fontWeight: 600,
-                        background: `${ev.color}18`, color: ev.color,
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        display: "block",
+                        padding: "1px 4px",
+                        marginBottom: 1,
+                        borderRadius: 4,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        background: `${ev.color}18`,
+                        color: ev.color,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
                         textDecoration: "none",
                       }}
                     >
@@ -124,7 +185,13 @@ export default function CalendarPage() {
                     </a>
                   ))}
                   {dayEvents.length > 3 && (
-                    <div style={{ fontSize: 10, color: "var(--text-soft, #526175)", textAlign: "center" }}>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: "var(--text-soft, #526175)",
+                        textAlign: "center",
+                      }}
+                    >
                       +{dayEvents.length - 3}
                     </div>
                   )}

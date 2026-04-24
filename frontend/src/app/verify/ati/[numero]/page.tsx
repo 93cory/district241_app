@@ -37,25 +37,42 @@ export default async function VerifyATIPage({ params }: Props) {
   const status = data ? STATUS_CONFIG[data.statut] || STATUS_CONFIG.soumis : null;
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg, #051B36 0%, #0C7EB4 100%)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      padding: 24,
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 24, padding: "36px 32px",
-        maxWidth: 480, width: "100%",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-      }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #051B36 0%, #0C7EB4 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 24,
+          padding: "36px 32px",
+          maxWidth: 480,
+          width: "100%",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+        }}
+      >
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            padding: "6px 16px", borderRadius: 20,
-            background: "linear-gradient(135deg, #009E60, #FCD116, #003DA5)",
-            color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: 1,
-          }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "6px 16px",
+              borderRadius: 20,
+              background: "linear-gradient(135deg, #009E60, #FCD116, #003DA5)",
+              color: "#fff",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 1,
+            }}
+          >
             REPUBLIQUE GABONAISE
           </div>
           <h1 style={{ fontSize: 20, fontWeight: 800, margin: "12px 0 2px", color: "#051B36" }}>
@@ -67,11 +84,17 @@ export default async function VerifyATIPage({ params }: Props) {
         </div>
 
         {error && (
-          <div style={{
-            padding: 16, borderRadius: 14,
-            background: "#fef2f2", border: "1px solid #fecaca",
-            textAlign: "center", color: "#b42318", fontSize: 14,
-          }}>
+          <div
+            style={{
+              padding: 16,
+              borderRadius: 14,
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              textAlign: "center",
+              color: "#b42318",
+              fontSize: 14,
+            }}
+          >
             {error}
           </div>
         )}
@@ -79,11 +102,16 @@ export default async function VerifyATIPage({ params }: Props) {
         {data && status && (
           <>
             {/* Status badge */}
-            <div style={{
-              textAlign: "center", marginBottom: 20,
-              padding: "16px 20px", borderRadius: 16,
-              background: status.bg, border: `2px solid ${status.color}`,
-            }}>
+            <div
+              style={{
+                textAlign: "center",
+                marginBottom: 20,
+                padding: "16px 20px",
+                borderRadius: 16,
+                background: status.bg,
+                border: `2px solid ${status.color}`,
+              }}
+            >
               <div style={{ fontSize: 36 }}>{status.icon}</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: status.color, marginTop: 4 }}>
                 {status.label}
@@ -103,32 +131,69 @@ export default async function VerifyATIPage({ params }: Props) {
                 ["NIF Gabon", data.nif],
                 ["Secteur", data.secteur],
                 ["Activite", data.type_activite],
-                ["Date d'approbation", data.date_approbation ? new Date(data.date_approbation).toLocaleDateString("fr-FR") : "\u2014"],
-                ["Date d'expiration", data.date_expiration ? new Date(data.date_expiration).toLocaleDateString("fr-FR") : "Illimitee"],
+                [
+                  "Date d'approbation",
+                  data.date_approbation
+                    ? new Date(data.date_approbation).toLocaleDateString("fr-FR")
+                    : "\u2014",
+                ],
+                [
+                  "Date d'expiration",
+                  data.date_expiration
+                    ? new Date(data.date_expiration).toLocaleDateString("fr-FR")
+                    : "Illimitee",
+                ],
               ].map(([label, value]) => (
-                <div key={label as string} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f0f0f0" }}>
+                <div
+                  key={label as string}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    padding: "6px 0",
+                    borderBottom: "1px solid #f0f0f0",
+                  }}
+                >
                   <span style={{ fontSize: 13, color: "#526175", fontWeight: 600 }}>{label}</span>
-                  <span style={{ fontSize: 13, color: "#051B36", fontWeight: 600, textAlign: "right", maxWidth: "60%" }}>{value || "\u2014"}</span>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: "#051B36",
+                      fontWeight: 600,
+                      textAlign: "right",
+                      maxWidth: "60%",
+                    }}
+                  >
+                    {value || "\u2014"}
+                  </span>
                 </div>
               ))}
             </div>
 
             {/* Timestamp */}
-            <div style={{
-              textAlign: "center", marginTop: 20,
-              fontSize: 11, color: "#6b7280",
-            }}>
+            <div
+              style={{
+                textAlign: "center",
+                marginTop: 20,
+                fontSize: 11,
+                color: "#6b7280",
+              }}
+            >
               Verifie le {new Date(data.verified_at).toLocaleString("fr-FR")}
             </div>
           </>
         )}
 
         {/* Footer */}
-        <div style={{
-          textAlign: "center", marginTop: 24, paddingTop: 16,
-          borderTop: "1px solid #f0f0f0",
-          fontSize: 11, color: "#6b7280",
-        }}>
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: 24,
+            paddingTop: 16,
+            borderTop: "1px solid #f0f0f0",
+            fontSize: 11,
+            color: "#6b7280",
+          }}
+        >
           Ministere de l&apos;Industrie et de la Transformation Locale &mdash; PNPI
         </div>
       </div>

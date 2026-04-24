@@ -22,7 +22,9 @@ export default async function InspectionsPage({ searchParams }: { searchParams: 
     const profile = await fetchBackendProfile();
     if (!((profile.roles ?? []) as string[]).some((r) => ALLOWED.has(r))) redirect("/connexion");
     userRoles = profile.roles ?? [];
-  } catch { redirect("/connexion"); }
+  } catch {
+    redirect("/connexion");
+  }
 
   const statut_conformite = searchParams.statut_conformite ?? "";
   const inspecteur = searchParams.inspecteur ?? "";
@@ -40,11 +42,12 @@ export default async function InspectionsPage({ searchParams }: { searchParams: 
     ]);
 
     const conformeCount = inspections.filter((i) => i.statut_conformite === "conforme").length;
-    const nonConformeCount = inspections.filter((i) => i.statut_conformite === "non_conforme").length;
+    const nonConformeCount = inspections.filter(
+      (i) => i.statut_conformite === "non_conforme",
+    ).length;
     const partielCount = inspections.filter((i) => i.statut_conformite === "partiel").length;
-    const tauxConformite = inspections.length > 0
-      ? Math.round((conformeCount / inspections.length) * 100)
-      : 0;
+    const tauxConformite =
+      inspections.length > 0 ? Math.round((conformeCount / inspections.length) * 100) : 0;
 
     return (
       <section className="section">
@@ -52,12 +55,13 @@ export default async function InspectionsPage({ searchParams }: { searchParams: 
           {/* Header */}
           <div className="pnpi-page-head">
             <div>
-              <Link href="/pnpi" className="pnpi-back-link">&larr; Tableau de bord</Link>
+              <Link href="/pnpi" className="pnpi-back-link">
+                &larr; Tableau de bord
+              </Link>
               <h2>Inspections de conformite</h2>
               <p className="pnpi-page-sub">
                 {inspections.length} rapport(s) &middot;{" "}
-                <span className="pnpi-text-conforme">{conformeCount} conformes</span>{" "}
-                &middot;{" "}
+                <span className="pnpi-text-conforme">{conformeCount} conformes</span> &middot;{" "}
                 <span className="pnpi-text-non-conforme">{nonConformeCount} non conformes</span>
               </p>
             </div>
@@ -70,11 +74,36 @@ export default async function InspectionsPage({ searchParams }: { searchParams: 
 
           {/* KPIs */}
           <div className="hero-grid" style={{ marginBottom: "1.5rem" }}>
-            <KpiCard tone="primary" label="Total inspections" value={inspections.length} sublabel="Rapports enregistres" />
-            <KpiCard tone="success" label="Taux conformite" value={`${tauxConformite}%`} sublabel="Objectif national : 90%" />
-            <KpiCard tone="success" label="Conformes" value={conformeCount} sublabel="Operateurs en regle" />
-            <KpiCard tone="accent"  label="Partiels" value={partielCount} sublabel="Conformite partielle" />
-            <KpiCard tone="neutral" label="Non conformes" value={nonConformeCount} sublabel="Mesures correctives requises" />
+            <KpiCard
+              tone="primary"
+              label="Total inspections"
+              value={inspections.length}
+              sublabel="Rapports enregistres"
+            />
+            <KpiCard
+              tone="success"
+              label="Taux conformite"
+              value={`${tauxConformite}%`}
+              sublabel="Objectif national : 90%"
+            />
+            <KpiCard
+              tone="success"
+              label="Conformes"
+              value={conformeCount}
+              sublabel="Operateurs en regle"
+            />
+            <KpiCard
+              tone="accent"
+              label="Partiels"
+              value={partielCount}
+              sublabel="Conformite partielle"
+            />
+            <KpiCard
+              tone="neutral"
+              label="Non conformes"
+              value={nonConformeCount}
+              sublabel="Mesures correctives requises"
+            />
           </div>
 
           <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
@@ -90,7 +119,17 @@ export default async function InspectionsPage({ searchParams }: { searchParams: 
               {inspections.length === 0 ? (
                 <div className="pnpi-empty">
                   <div className="pnpi-empty-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="M9 12l2 2 4-4" />
                       <circle cx="12" cy="12" r="9" />
                     </svg>

@@ -51,9 +51,7 @@ export default function DashboardConfigPage() {
   }, []);
 
   const toggle = (id: string) => {
-    setWidgets((prev) =>
-      prev.map((w) => (w.id === id ? { ...w, enabled: !w.enabled } : w))
-    );
+    setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, enabled: !w.enabled } : w)));
   };
 
   const moveUp = (idx: number) => {
@@ -90,9 +88,13 @@ export default function DashboardConfigPage() {
       <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px" }}>
         Configuration du Dashboard
       </h1>
-      <p style={{
-        color: "var(--text-soft, #526175)", fontSize: 14, margin: "0 0 24px",
-      }}>
+      <p
+        style={{
+          color: "var(--text-soft, #526175)",
+          fontSize: 14,
+          margin: "0 0 24px",
+        }}
+      >
         Activez, desactivez ou reordonnez les widgets de votre tableau de bord.
       </p>
 
@@ -114,8 +116,11 @@ export default function DashboardConfigPage() {
               setDragIdx(null);
             }}
             style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 14px", borderRadius: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "10px 14px",
+              borderRadius: 12,
               background: w.enabled ? "var(--bg-layer, #fff)" : "var(--bg-base, #f4f8fb)",
               border: `1.5px solid ${w.enabled ? "var(--accent, #006233)" : "var(--line, #dce4ef)"}`,
               opacity: w.enabled ? 1 : 0.6,
@@ -137,8 +142,11 @@ export default function DashboardConfigPage() {
               onClick={() => moveUp(idx)}
               disabled={idx === 0}
               style={{
-                background: "none", border: "none", cursor: "pointer",
-                fontSize: 16, opacity: idx === 0 ? 0.3 : 1,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 16,
+                opacity: idx === 0 ? 0.3 : 1,
               }}
               aria-label="Monter"
             >
@@ -148,8 +156,11 @@ export default function DashboardConfigPage() {
               onClick={() => moveDown(idx)}
               disabled={idx === widgets.length - 1}
               style={{
-                background: "none", border: "none", cursor: "pointer",
-                fontSize: 16, opacity: idx === widgets.length - 1 ? 0.3 : 1,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 16,
+                opacity: idx === widgets.length - 1 ? 0.3 : 1,
               }}
               aria-label="Descendre"
             >
@@ -163,8 +174,13 @@ export default function DashboardConfigPage() {
         <button
           onClick={save}
           style={{
-            padding: "10px 24px", borderRadius: 12, border: "none",
-            background: "#006233", color: "#fff", fontWeight: 700, cursor: "pointer",
+            padding: "10px 24px",
+            borderRadius: 12,
+            border: "none",
+            background: "#006233",
+            color: "#fff",
+            fontWeight: 700,
+            cursor: "pointer",
           }}
         >
           Enregistrer
@@ -172,10 +188,13 @@ export default function DashboardConfigPage() {
         <button
           onClick={reset}
           style={{
-            padding: "10px 24px", borderRadius: 12,
+            padding: "10px 24px",
+            borderRadius: 12,
             border: "1.5px solid var(--line, #dce4ef)",
-            background: "transparent", color: "var(--text-soft, #526175)",
-            fontWeight: 600, cursor: "pointer",
+            background: "transparent",
+            color: "var(--text-soft, #526175)",
+            fontWeight: 600,
+            cursor: "pointer",
           }}
         >
           Reinitialiser

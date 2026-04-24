@@ -93,7 +93,11 @@ export function SignaturePad({
     if (!drawingRef.current) return;
     drawingRef.current = false;
     lastPointRef.current = null;
-    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
   };
 
   const clear = () => {
@@ -123,7 +127,11 @@ export function SignaturePad({
       <div className="signature-pad-head">
         <div>
           <div className="signature-pad-title">Signature electronique</div>
-          {signerName && <div className="signature-pad-sub">Signataire : <strong>{signerName}</strong></div>}
+          {signerName && (
+            <div className="signature-pad-sub">
+              Signataire : <strong>{signerName}</strong>
+            </div>
+          )}
         </div>
         <button type="button" onClick={clear} className="pnpi-filter-btn" disabled={!hasSignature}>
           Effacer
@@ -143,7 +151,8 @@ export function SignaturePad({
 
       <div className="signature-pad-baseline">
         <span className="signature-pad-hint">
-          En signant ci-dessus, vous confirmez avoir pris connaissance du contenu de cette inspection.
+          En signant ci-dessus, vous confirmez avoir pris connaissance du contenu de cette
+          inspection.
         </span>
       </div>
 

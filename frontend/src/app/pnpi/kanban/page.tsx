@@ -78,7 +78,7 @@ export default function KanbanPage() {
           return item ? { ...col, items: [...col.items, item] } : col;
         }
         return col;
-      })
+      }),
     );
 
     // API call to update status
@@ -104,7 +104,9 @@ export default function KanbanPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "24px 32px", textAlign: "center", color: "var(--text-soft, #526175)" }}>
+      <div
+        style={{ padding: "24px 32px", textAlign: "center", color: "var(--text-soft, #526175)" }}
+      >
         Chargement du tableau Kanban...
       </div>
     );
@@ -116,36 +118,61 @@ export default function KanbanPage() {
         Pipeline ATI · Vue Kanban
       </h1>
 
-      <div style={{
-        display: "flex", gap: 12, overflowX: "auto",
-        paddingBottom: 12, minHeight: 500,
-      }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          overflowX: "auto",
+          paddingBottom: 12,
+          minHeight: 500,
+        }}
+      >
         {columns.map((col) => (
           <div
             key={col.id}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => handleDrop(col.id)}
             style={{
-              flex: "0 0 240px", display: "flex", flexDirection: "column",
-              background: "var(--bg-base, #f4f8fb)", borderRadius: 16,
-              padding: 10, minHeight: 400,
+              flex: "0 0 240px",
+              display: "flex",
+              flexDirection: "column",
+              background: "var(--bg-base, #f4f8fb)",
+              borderRadius: 16,
+              padding: 10,
+              minHeight: 400,
             }}
           >
             {/* Column header */}
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "8px 10px", marginBottom: 8,
-            }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 10px",
+                marginBottom: 8,
+              }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{
-                  width: 10, height: 10, borderRadius: "50%", background: col.color,
-                }} />
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: col.color,
+                  }}
+                />
                 <span style={{ fontSize: 13, fontWeight: 700 }}>{col.label}</span>
               </div>
-              <span style={{
-                padding: "2px 8px", borderRadius: 8, fontSize: 11, fontWeight: 700,
-                background: `${col.color}15`, color: col.color,
-              }}>
+              <span
+                style={{
+                  padding: "2px 8px",
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: `${col.color}15`,
+                  color: col.color,
+                }}
+              >
                 {col.items.length}
               </span>
             </div>
@@ -158,10 +185,12 @@ export default function KanbanPage() {
                   draggable
                   onDragStart={() => setDragItem({ atiId: item.id, fromCol: col.id })}
                   style={{
-                    padding: "10px 12px", borderRadius: 10,
+                    padding: "10px 12px",
+                    borderRadius: 10,
                     background: "var(--bg-layer, #fff)",
                     border: `1px solid ${item.is_overdue ? "#b4231840" : "var(--line, #dce4ef)"}`,
-                    cursor: "grab", fontSize: 12,
+                    cursor: "grab",
+                    fontSize: 12,
                     boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                   }}
                 >
@@ -170,28 +199,41 @@ export default function KanbanPage() {
                     {item.operateur}
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{
-                      padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 600,
-                      background: "var(--bg-base, #f4f8fb)",
-                    }}>
+                    <span
+                      style={{
+                        padding: "1px 6px",
+                        borderRadius: 4,
+                        fontSize: 10,
+                        fontWeight: 600,
+                        background: "var(--bg-base, #f4f8fb)",
+                      }}
+                    >
                       {item.secteur}
                     </span>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700,
-                      color: item.is_overdue ? "#b42318" : "var(--text-soft, #9ca3af)",
-                    }}>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: item.is_overdue ? "#b42318" : "var(--text-soft, #9ca3af)",
+                      }}
+                    >
                       {item.age_jours}j / {item.sla_jours}j
                     </span>
                   </div>
                 </div>
               ))}
               {col.items.length === 0 && (
-                <div style={{
-                  padding: 16, textAlign: "center", fontSize: 12,
-                  color: "var(--text-soft, #9ca3af)", fontStyle: "italic",
-                  border: "2px dashed var(--line, #dce4ef)",
-                  borderRadius: 10,
-                }}>
+                <div
+                  style={{
+                    padding: 16,
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: "var(--text-soft, #9ca3af)",
+                    fontStyle: "italic",
+                    border: "2px dashed var(--line, #dce4ef)",
+                    borderRadius: 10,
+                  }}
+                >
                   Deposer ici
                 </div>
               )}

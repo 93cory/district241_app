@@ -63,23 +63,39 @@ const CarteOperateurs = ({ operateurs }: Props) => {
     () =>
       operateurs.filter(
         (op): op is OperateurGeoPoint & { latitude: number; longitude: number } =>
-          op.latitude != null && op.longitude != null
+          op.latitude != null && op.longitude != null,
       ),
-    [operateurs]
+    [operateurs],
   );
 
   const legende = useMemo(() => {
     const secteurs = [...new Set(markers.map((m) => m.secteur))];
-    return secteurs.map((s) => ({ secteur: s, color: SECTEUR_COLORS[s] ?? "#6b7280", label: SECTEUR_LABELS[s] ?? s }));
+    return secteurs.map((s) => ({
+      secteur: s,
+      color: SECTEUR_COLORS[s] ?? "#6b7280",
+      label: SECTEUR_LABELS[s] ?? s,
+    }));
   }, [markers]);
 
   return (
     <div>
-      <div style={{ height: "400px", borderRadius: "10px", overflow: "hidden", border: "1px solid #e5e7eb" }}>
-        <MapContainer center={[-0.5, 11.5]} zoom={6} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
+      <div
+        style={{
+          height: "400px",
+          borderRadius: "10px",
+          overflow: "hidden",
+          border: "1px solid #e5e7eb",
+        }}
+      >
+        <MapContainer
+          center={[-0.5, 11.5]}
+          zoom={6}
+          scrollWheelZoom
+          style={{ height: "100%", width: "100%" }}
+        >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; OpenStreetMap contributors'
+            attribution="&copy; OpenStreetMap contributors"
           />
           {markers.map((op) => (
             <Marker
@@ -91,17 +107,35 @@ const CarteOperateurs = ({ operateurs }: Props) => {
                 <div style={{ minWidth: "180px" }}>
                   <strong style={{ color: "#003F8F" }}>{op.raison_sociale}</strong>
                   <div style={{ marginTop: "0.4rem", fontSize: "0.85rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
+                    <div
+                      style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}
+                    >
                       <span style={{ color: "#6b7280" }}>Secteur</span>
-                      <span style={{ color: SECTEUR_COLORS[op.secteur] ?? "#374151", fontWeight: 600 }}>
+                      <span
+                        style={{ color: SECTEUR_COLORS[op.secteur] ?? "#374151", fontWeight: 600 }}
+                      >
                         {SECTEUR_LABELS[op.secteur] ?? op.secteur}
                       </span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", marginTop: "0.2rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                        marginTop: "0.2rem",
+                      }}
+                    >
                       <span style={{ color: "#6b7280" }}>Province</span>
                       <span>{op.province.replace("_", " ")}</span>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", marginTop: "0.2rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "0.5rem",
+                        marginTop: "0.2rem",
+                      }}
+                    >
                       <span style={{ color: "#6b7280" }}>ATIs actifs</span>
                       <strong>{op.nb_atis_actifs}</strong>
                     </div>
@@ -131,8 +165,27 @@ const CarteOperateurs = ({ operateurs }: Props) => {
       {legende.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginTop: "0.75rem" }}>
           {legende.map((l) => (
-            <div key={l.secteur} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.8rem", color: "#374151" }}>
-              <span style={{ width: "10px", height: "10px", borderRadius: "999px", background: l.color, display: "inline-block", border: "1.5px solid #fff", boxShadow: `0 0 0 1px ${l.color}` }} />
+            <div
+              key={l.secteur}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.35rem",
+                fontSize: "0.8rem",
+                color: "#374151",
+              }}
+            >
+              <span
+                style={{
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "999px",
+                  background: l.color,
+                  display: "inline-block",
+                  border: "1.5px solid #fff",
+                  boxShadow: `0 0 0 1px ${l.color}`,
+                }}
+              />
               {l.label}
             </div>
           ))}

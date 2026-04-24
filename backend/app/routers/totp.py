@@ -1,11 +1,11 @@
 """PNPI / PNPI · Endpoints de gestion 2FA (TOTP)."""
+
 from __future__ import annotations
 
 import hashlib
 import io
 import json
 import secrets
-from typing import List, Optional
 
 import pyotp
 import qrcode
@@ -14,8 +14,8 @@ from fastapi import APIRouter, Depends, Form, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..core.auth import Role, User, get_current_user, create_access_token, issue_refresh_token, user_from_row
 from ..core.audit import write_audit_event
+from ..core.auth import Role, User, create_access_token, get_current_user, issue_refresh_token, user_from_row
 from ..database import get_db, now_utc
 from ..models.core import UserAccountORM
 
@@ -25,6 +25,7 @@ router = APIRouter(prefix="/auth/2fa", tags=["2FA"])
 # ---------------------------------------------------------------------------
 # Pydantic schemas
 # ---------------------------------------------------------------------------
+
 
 class TOTPSetupResponse(BaseModel):
     secret: str
@@ -38,7 +39,7 @@ class TOTPConfirmRequest(BaseModel):
 
 class TOTPConfirmResponse(BaseModel):
     enabled: bool
-    backup_codes: Optional[List[str]] = None
+    backup_codes: list[str] | None = None
 
 
 class TOTPVerifyRequest(BaseModel):
@@ -51,7 +52,7 @@ class TOTPVerifyResponse(BaseModel):
 
 
 class TOTPDisableRequest(BaseModel):
-    code: Optional[str] = None
+    code: str | None = None
 
 
 class TOTPDisableResponse(BaseModel):
@@ -61,6 +62,7 @@ class TOTPDisableResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _generate_qr_svg(provisioning_uri: str) -> str:
     """Generate a QR code as an SVG string from a provisioning URI."""
@@ -85,6 +87,7 @@ def _get_user_row(db: Session, username: str) -> UserAccountORM:
 # ---------------------------------------------------------------------------
 # POST /auth/2fa/setup · Generate TOTP secret for current user
 # ---------------------------------------------------------------------------
+
 
 @router.post("/setup", response_model=TOTPSetupResponse)
 async def totp_setup(
@@ -130,6 +133,7 @@ async def totp_setup(
 # ---------------------------------------------------------------------------
 # POST /auth/2fa/confirm · Confirm TOTP setup with a valid code
 # ---------------------------------------------------------------------------
+
 
 @router.post("/confirm", response_model=TOTPConfirmResponse)
 async def totp_confirm(
@@ -182,12 +186,13 @@ async def totp_confirm(
 # POST /auth/2fa/verify · Verify TOTP code during login
 # ---------------------------------------------------------------------------
 
+
 @router.post("/verify", response_model=TOTPVerifyResponse)
 async def totp_verify(
     payload: TOTPVerifyRequest,
     db: Session = Depends(get_db),
 ) -> TOTPVerifyResponse:
-    from ..main import enforce_rate_limit, AUTH_RATE_LIMIT_MAX_REQUESTS
+    from ..main import AUTH_RATE_LIMIT_MAX_REQUESTS, enforce_rate_limit
 
     await enforce_rate_limit(key=f"auth:2fa_verify:{payload.username}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
 
@@ -218,6 +223,7 @@ async def totp_verify(
 # ---------------------------------------------------------------------------
 # DELETE /auth/2fa/disable · Disable 2FA for current user (admin or self)
 # ---------------------------------------------------------------------------
+
 
 @router.delete("/disable", response_model=TOTPDisableResponse)
 async def totp_disable(
@@ -269,13 +275,14 @@ async def totp_disable(
 # POST /auth/2fa/verify-backup · Verify a backup code during login
 # ---------------------------------------------------------------------------
 
+
 @router.post("/verify-backup")
 async def verify_backup_code(
     code: str = Form(...),
     username: str = Form(...),
     db: Session = Depends(get_db),
 ):
-    from ..main import enforce_rate_limit, AUTH_RATE_LIMIT_MAX_REQUESTS
+    from ..main import AUTH_RATE_LIMIT_MAX_REQUESTS, enforce_rate_limit
 
     await enforce_rate_limit(key=f"auth:2fa_backup:{username}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
 
@@ -303,9 +310,7 @@ async def verify_backup_code(
 
     # Issue tokens
     user = user_from_row(row)
-    access_token = create_access_token(
-        data={"sub": user.username, "roles": [r.value for r in user.roles]}
-    )
+    access_token = create_access_token(data={"sub": user.username, "roles": [r.value for r in user.roles]})
     refresh_token = issue_refresh_token(db, username=user.username)
 
     write_audit_event(

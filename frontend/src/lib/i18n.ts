@@ -43,8 +43,12 @@ const translations: Record<Locale, Record<string, string>> = {
 
 let currentLocale: Locale = "fr";
 
-export function setLocale(locale: Locale) { currentLocale = locale; }
-export function getLocale(): Locale { return currentLocale; }
+export function setLocale(locale: Locale) {
+  currentLocale = locale;
+}
+export function getLocale(): Locale {
+  return currentLocale;
+}
 export function t(key: string): string {
   return translations[currentLocale]?.[key] ?? translations.fr[key] ?? key;
 }

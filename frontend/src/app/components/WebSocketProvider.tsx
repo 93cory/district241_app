@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useRef, useState, ReactNode, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
 
 interface WSContextType {
   unreadCount: number;
@@ -8,13 +16,22 @@ interface WSContextType {
   connected: boolean;
 }
 
-const WSContext = createContext<WSContextType>({ unreadCount: 0, lastNotification: null, connected: false });
+const WSContext = createContext<WSContextType>({
+  unreadCount: 0,
+  lastNotification: null,
+  connected: false,
+});
 
-export function useWebSocket() { return useContext(WSContext); }
+export function useWebSocket() {
+  return useContext(WSContext);
+}
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
-  const [lastNotification, setLastNotification] = useState<{ title: string; severity: string } | null>(null);
+  const [lastNotification, setLastNotification] = useState<{
+    title: string;
+    severity: string;
+  } | null>(null);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<NodeJS.Timeout | null>(null);
@@ -29,7 +46,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const backendHost = process.env.NEXT_PUBLIC_WS_URL || window.location.host;
-      const ws = new WebSocket(`${protocol}//${backendHost}/ws/notifications?token=${session.token}`);
+      const ws = new WebSocket(
+        `${protocol}//${backendHost}/ws/notifications?token=${session.token}`,
+      );
 
       ws.onopen = () => {
         setConnected(true);

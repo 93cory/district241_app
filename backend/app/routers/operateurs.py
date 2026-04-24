@@ -1,19 +1,19 @@
 """PNPI · Endpoints de gestion des operateurs industriels."""
+
 from __future__ import annotations
 
 import csv
 import io
 import uuid
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.audit import write_audit_event
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..core.pagination import PaginatedResponse, PaginationParams
-from ..core.scoring import compute_operator_score, compute_all_scores
+from ..core.scoring import compute_all_scores, compute_operator_score
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -21,7 +21,6 @@ from ..models.pnpi import (
     OperateurIndustrielORM,
 )
 from ..schemas.pnpi import ATIBrief, OperateurBrief, OperateurCreate, OperateurRead
-
 
 router = APIRouter(prefix="/pnpi", tags=["Operateurs"])
 
@@ -104,12 +103,12 @@ async def import_operateurs_csv(
         raise HTTPException(
             status_code=400,
             detail=f"Colonnes requises: {', '.join(sorted(required))}. "
-                   f"Colonnes trouvees: {', '.join(reader.fieldnames or [])}",
+            f"Colonnes trouvees: {', '.join(reader.fieldnames or [])}",
         )
 
     created = 0
     skipped = 0
-    errors: List[str] = []
+    errors: list[str] = []
 
     try:
         for i, row in enumerate(reader, start=2):
@@ -146,13 +145,17 @@ async def import_operateurs_csv(
             db.add(op)
             created += 1
 
-        write_audit_event(db, actor=current_user.username, action="operateurs.import_csv",
-                          target=file.filename or "unknown.csv",
-                          details=f"{created} crees, {skipped} ignores, {len(errors)} erreurs")
+        write_audit_event(
+            db,
+            actor=current_user.username,
+            action="operateurs.import_csv",
+            target=file.filename or "unknown.csv",
+            details=f"{created} crees, {skipped} ignores, {len(errors)} erreurs",
+        )
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erreur import CSV: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur import CSV: {e!s}")
 
     return {
         "status": "ok",
@@ -170,16 +173,18 @@ async def get_operators_ranking(
     return compute_all_scores(db)
 
 
-@router.get("/operateurs", response_model=List[OperateurBrief], summary="Lister les operateurs industriels")
+@router.get("/operateurs", response_model=list[OperateurBrief], summary="Lister les operateurs industriels")
 async def list_operateurs(
-    secteur: Optional[str] = Query(default=None),
-    province: Optional[str] = Query(default=None),
-    is_active: Optional[bool] = Query(default=None),
+    secteur: str | None = Query(default=None),
+    province: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
     db: Session = Depends(get_db),
-) -> List[OperateurBrief]:
+) -> list[OperateurBrief]:
     query = select(OperateurIndustrielORM)
     roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
     privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
@@ -203,17 +208,17 @@ async def list_operateurs(
     return briefs
 
 
-@router.get("/operateurs/paginated", response_model=PaginatedResponse,
-            summary="Lister les operateurs avec pagination")
+@router.get("/operateurs/paginated", response_model=PaginatedResponse, summary="Lister les operateurs avec pagination")
 async def list_operateurs_paginated(
-    secteur: Optional[str] = Query(default=None),
-    province: Optional[str] = Query(default=None),
-    is_active: Optional[bool] = Query(default=None),
+    secteur: str | None = Query(default=None),
+    province: str | None = Query(default=None),
+    is_active: bool | None = Query(default=None),
     pagination: PaginationParams = Depends(),
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ) -> PaginatedResponse:
     from sqlalchemy import func as sa_func
+
     base_query = select(OperateurIndustrielORM)
     if secteur is not None:
         base_query = base_query.where(OperateurIndustrielORM.secteur == secteur)
@@ -223,7 +228,9 @@ async def list_operateurs_paginated(
         base_query = base_query.where(OperateurIndustrielORM.is_active.is_(is_active))
 
     total = db.execute(select(sa_func.count()).select_from(base_query.subquery())).scalar_one()
-    data_query = base_query.order_by(OperateurIndustrielORM.raison_sociale).offset(pagination.skip).limit(pagination.limit)
+    data_query = (
+        base_query.order_by(OperateurIndustrielORM.raison_sociale).offset(pagination.skip).limit(pagination.limit)
+    )
     ops = db.execute(data_query).scalars().all()
 
     return PaginatedResponse.create(
@@ -233,8 +240,12 @@ async def list_operateurs_paginated(
     )
 
 
-@router.post("/operateurs", response_model=OperateurRead, status_code=status.HTTP_201_CREATED,
-             summary="Enregistrer un nouvel operateur")
+@router.post(
+    "/operateurs",
+    response_model=OperateurRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Enregistrer un nouvel operateur",
+)
 async def create_operateur(
     payload: OperateurCreate,
     current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre)),
@@ -279,7 +290,9 @@ async def create_operateur(
 @router.get("/operateurs/{operateur_id}", response_model=OperateurRead, summary="Detail d'un operateur")
 async def get_operateur(
     operateur_id: str,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
     db: Session = Depends(get_db),
 ) -> OperateurRead:
     op = db.get(OperateurIndustrielORM, operateur_id)
@@ -290,14 +303,19 @@ async def get_operateur(
     roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
     privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
     if not (roles & privileged) and "operateur" in roles:
-        has_link = db.execute(
-            select(AgrementTechniqueIndustrielORM.id)
-            .where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
-            .where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
-            .limit(1)
-        ).scalar() is not None
+        has_link = (
+            db.execute(
+                select(AgrementTechniqueIndustrielORM.id)
+                .where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
+                .where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
+                .limit(1)
+            ).scalar()
+            is not None
+        )
         if not has_link:
-            raise HTTPException(status_code=403, detail="Acces restreint aux operateurs avec lesquels vous avez interagi.")
+            raise HTTPException(
+                status_code=403, detail="Acces restreint aux operateurs avec lesquels vous avez interagi."
+            )
     return _to_operateur_read(op)
 
 
@@ -313,10 +331,13 @@ async def operateur_risk_profile(
         raise HTTPException(status_code=404, detail="Operateur introuvable.")
 
     # ATIs
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM)
-        .where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
-    ).scalars().all()
+    atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
+        )
+        .scalars()
+        .all()
+    )
 
     terminal = {"approuve", "rejete", "expire"}
     rejected = sum(1 for a in atis if a.statut == "rejete")
@@ -324,11 +345,15 @@ async def operateur_risk_profile(
     overdue = sum(1 for a in atis if a.statut not in terminal and _ati_is_overdue(a))
 
     # Inspections
-    inspections = db.execute(
-        select(InspectionConformiteORM)
-        .where(InspectionConformiteORM.operateur_id == operateur_id)
-        .order_by(InspectionConformiteORM.date_inspection.desc())
-    ).scalars().all()
+    inspections = (
+        db.execute(
+            select(InspectionConformiteORM)
+            .where(InspectionConformiteORM.operateur_id == operateur_id)
+            .order_by(InspectionConformiteORM.date_inspection.desc())
+        )
+        .scalars()
+        .all()
+    )
 
     non_conforme = sum(1 for i in inspections if i.statut_conformite == "non_conforme")
     partiel = sum(1 for i in inspections if i.statut_conformite == "partiel")
@@ -368,20 +393,19 @@ async def operateur_risk_profile(
     }
 
 
-@router.get("/operateurs/{operateur_id}/ati", response_model=List[ATIBrief], summary="ATI d'un operateur")
+@router.get("/operateurs/{operateur_id}/ati", response_model=list[ATIBrief], summary="ATI d'un operateur")
 async def list_operateur_atis(
     operateur_id: str,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
     db: Session = Depends(get_db),
-) -> List[ATIBrief]:
+) -> list[ATIBrief]:
     op = db.get(OperateurIndustrielORM, operateur_id)
     if not op:
         raise HTTPException(status_code=404, detail="Operateur introuvable.")
 
-    query = (
-        select(AgrementTechniqueIndustrielORM)
-        .where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
-    )
+    query = select(AgrementTechniqueIndustrielORM).where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
     # Operateur ne voit que ses propres ATI, meme pour un operateur qu'il a cree.
     roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
     privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
@@ -391,8 +415,11 @@ async def list_operateur_atis(
     return [_to_ati_brief(a) for a in atis]
 
 
-@router.post("/operateurs/{operateur_id}/toggle-active", response_model=OperateurRead,
-             summary="Activer ou desactiver un operateur")
+@router.post(
+    "/operateurs/{operateur_id}/toggle-active",
+    response_model=OperateurRead,
+    summary="Activer ou desactiver un operateur",
+)
 async def toggle_operateur_active(
     operateur_id: str,
     current_user: User = Depends(require_roles(Role.admin, Role.directeur)),
@@ -433,59 +460,69 @@ async def get_operator_timeline(
     events = []
 
     # ATI events
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.operateur_id == operateur_id
+    atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     for ati in atis:
-        events.append({
-            "date": ati.date_soumission.isoformat(),
-            "type": "ati_submission",
-            "icon": "\U0001f4cb",
-            "title": f"ATI {ati.numero_ati} soumis",
-            "detail": ati.type_activite[:80] if ati.type_activite else "",
-            "color": "#0c7eb4",
-        })
+        events.append(
+            {
+                "date": ati.date_soumission.isoformat(),
+                "type": "ati_submission",
+                "icon": "\U0001f4cb",
+                "title": f"ATI {ati.numero_ati} soumis",
+                "detail": ati.type_activite[:80] if ati.type_activite else "",
+                "color": "#0c7eb4",
+            }
+        )
         if ati.date_decision:
             color = "#006233" if ati.statut == "approuve" else "#b42318"
-            events.append({
-                "date": ati.date_decision.isoformat(),
-                "type": "ati_decision",
-                "icon": "\u2713" if ati.statut == "approuve" else "\u2715",
-                "title": f"ATI {ati.numero_ati} {ati.statut}",
-                "detail": "",
-                "color": color,
-            })
+            events.append(
+                {
+                    "date": ati.date_decision.isoformat(),
+                    "type": "ati_decision",
+                    "icon": "\u2713" if ati.statut == "approuve" else "\u2715",
+                    "title": f"ATI {ati.numero_ati} {ati.statut}",
+                    "detail": "",
+                    "color": color,
+                }
+            )
         if ati.date_expiration:
-            events.append({
-                "date": ati.date_expiration.isoformat(),
-                "type": "ati_expiration",
-                "icon": "\u23f0",
-                "title": f"ATI {ati.numero_ati} expire",
-                "detail": "",
-                "color": "#d97706",
-            })
+            events.append(
+                {
+                    "date": ati.date_expiration.isoformat(),
+                    "type": "ati_expiration",
+                    "icon": "\u23f0",
+                    "title": f"ATI {ati.numero_ati} expire",
+                    "detail": "",
+                    "color": "#d97706",
+                }
+            )
 
     # Inspections
-    inspections = db.execute(
-        select(InspectionConformiteORM).where(
-            InspectionConformiteORM.operateur_id == operateur_id
-        )
-    ).scalars().all()
+    inspections = (
+        db.execute(select(InspectionConformiteORM).where(InspectionConformiteORM.operateur_id == operateur_id))
+        .scalars()
+        .all()
+    )
 
     for insp in inspections:
         colors = {"conforme": "#006233", "non_conforme": "#b42318", "partiel": "#d97706"}
         icons = {"conforme": "\u2705", "non_conforme": "\u274c", "partiel": "\u26a0\ufe0f"}
-        events.append({
-            "date": insp.date_inspection.isoformat(),
-            "type": "inspection",
-            "icon": icons.get(insp.statut_conformite, "\U0001f50d"),
-            "title": f"Inspection · {insp.statut_conformite.replace('_', ' ')}",
-            "detail": f"Inspecteur: {insp.inspecteur_username}",
-            "color": colors.get(insp.statut_conformite, "#526175"),
-        })
+        events.append(
+            {
+                "date": insp.date_inspection.isoformat(),
+                "type": "inspection",
+                "icon": icons.get(insp.statut_conformite, "\U0001f50d"),
+                "title": f"Inspection · {insp.statut_conformite.replace('_', ' ')}",
+                "detail": f"Inspecteur: {insp.inspecteur_username}",
+                "color": colors.get(insp.statut_conformite, "#526175"),
+            }
+        )
 
     events.sort(key=lambda e: e["date"])
     return {"operateur_id": operateur_id, "events": events}
@@ -507,8 +544,11 @@ async def soft_delete_operateur(
     op.deleted_at = now_utc()
     op.is_active = False
     write_audit_event(
-        db, actor=current_user.username, action="operateur.soft_delete",
-        target=operateur_id, details=f"Operateur {op.raison_sociale} supprime",
+        db,
+        actor=current_user.username,
+        action="operateur.soft_delete",
+        target=operateur_id,
+        details=f"Operateur {op.raison_sociale} supprime",
     )
     db.commit()
     return {"message": f"Operateur '{op.raison_sociale}' supprime.", "id": operateur_id}
@@ -530,8 +570,11 @@ async def restore_operateur(
     op.deleted_at = None
     op.is_active = True
     write_audit_event(
-        db, actor=current_user.username, action="operateur.restore",
-        target=operateur_id, details=f"Operateur {op.raison_sociale} restaure",
+        db,
+        actor=current_user.username,
+        action="operateur.restore",
+        target=operateur_id,
+        details=f"Operateur {op.raison_sociale} restaure",
     )
     db.commit()
     return {"message": f"Operateur '{op.raison_sociale}' restaure.", "id": operateur_id}

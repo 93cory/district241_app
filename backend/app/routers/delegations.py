@@ -1,18 +1,19 @@
 """PNPI · Systeme de delegation de dossiers."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select, and_
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..core.auth import User, get_current_user
 from ..database import get_db
-from ..core.auth import User, get_current_user, require_roles, Role
-from ..models.pnpi import DelegationORM
 from ..models.core import UserAccountORM
+from ..models.pnpi import DelegationORM
 
 router = APIRouter(prefix="/delegations", tags=["Delegations"])
 
@@ -30,15 +31,25 @@ async def my_delegations(
     db: Session = Depends(get_db),
 ):
     """List delegations I've created or received."""
-    given = db.execute(
-        select(DelegationORM).where(DelegationORM.from_username == current_user.username)
-        .order_by(DelegationORM.created_at.desc())
-    ).scalars().all()
+    given = (
+        db.execute(
+            select(DelegationORM)
+            .where(DelegationORM.from_username == current_user.username)
+            .order_by(DelegationORM.created_at.desc())
+        )
+        .scalars()
+        .all()
+    )
 
-    received = db.execute(
-        select(DelegationORM).where(DelegationORM.to_username == current_user.username)
-        .order_by(DelegationORM.created_at.desc())
-    ).scalars().all()
+    received = (
+        db.execute(
+            select(DelegationORM)
+            .where(DelegationORM.to_username == current_user.username)
+            .order_by(DelegationORM.created_at.desc())
+        )
+        .scalars()
+        .all()
+    )
 
     def serialize(d):
         return {
@@ -78,8 +89,8 @@ async def create_delegation(
         from_username=current_user.username,
         to_username=data.to_username,
         reason=data.reason,
-        start_date=datetime.fromisoformat(data.start_date).replace(tzinfo=timezone.utc),
-        end_date=datetime.fromisoformat(data.end_date).replace(tzinfo=timezone.utc),
+        start_date=datetime.fromisoformat(data.start_date).replace(tzinfo=UTC),
+        end_date=datetime.fromisoformat(data.end_date).replace(tzinfo=UTC),
         is_active=True,
     )
     db.add(deleg)

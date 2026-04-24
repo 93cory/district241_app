@@ -9,7 +9,11 @@ const STATUS_STYLES: Record<string, { color: string; bg: string; icon: string }>
 };
 
 const GRADE_COLORS: Record<string, string> = {
-  A: "#006233", B: "#0c7eb4", C: "#d97706", D: "#e65100", E: "#b42318",
+  A: "#006233",
+  B: "#0c7eb4",
+  C: "#d97706",
+  D: "#e65100",
+  E: "#b42318",
 };
 
 export default async function DataQualityPage() {
@@ -35,16 +39,27 @@ export default async function DataQualityPage() {
       {/* Global score */}
       <div className="chart-card" style={{ padding: 24, textAlign: "center", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20 }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: "50%",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: `${gradeColor}12`, border: `4px solid ${gradeColor}`,
-          }}>
+          <div
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: `${gradeColor}12`,
+              border: `4px solid ${gradeColor}`,
+            }}
+          >
             <span style={{ fontSize: 32, fontWeight: 800, color: gradeColor }}>{data.grade}</span>
           </div>
           <div style={{ textAlign: "left" }}>
-            <div style={{ fontSize: 36, fontWeight: 800, color: gradeColor }}>{data.global_score}%</div>
-            <div style={{ fontSize: 13, color: "var(--text-soft, #526175)" }}>Score global de qualite</div>
+            <div style={{ fontSize: 36, fontWeight: 800, color: gradeColor }}>
+              {data.global_score}%
+            </div>
+            <div style={{ fontSize: 13, color: "var(--text-soft, #526175)" }}>
+              Score global de qualite
+            </div>
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 16 }}>
@@ -69,29 +84,50 @@ export default async function DataQualityPage() {
           const style = STATUS_STYLES[check.status] || STATUS_STYLES.warning;
           return (
             <div key={check.name} className="chart-card" style={{ padding: "14px 18px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 6,
+                }}
+              >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{
-                    width: 24, height: 24, borderRadius: 6,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    background: style.bg, color: style.color, fontSize: 14, fontWeight: 700,
-                  }}>
+                  <span
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 6,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: style.bg,
+                      color: style.color,
+                      fontSize: 14,
+                      fontWeight: 700,
+                    }}
+                  >
                     {style.icon}
                   </span>
                   <span style={{ fontSize: 14, fontWeight: 700 }}>{check.name}</span>
                 </div>
-                <span style={{ fontSize: 18, fontWeight: 800, color: style.color }}>{check.score}%</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: style.color }}>
+                  {check.score}%
+                </span>
               </div>
               <div style={{ fontSize: 12, color: "var(--text-soft, #526175)", marginBottom: 6 }}>
                 {check.description}
               </div>
               <div style={{ height: 6, borderRadius: 3, background: "var(--line, #e5e7eb)" }}>
-                <div style={{
-                  height: "100%", borderRadius: 3,
-                  width: `${check.score}%`,
-                  background: style.color,
-                  transition: "width 500ms ease",
-                }} />
+                <div
+                  style={{
+                    height: "100%",
+                    borderRadius: 3,
+                    width: `${check.score}%`,
+                    background: style.color,
+                    transition: "width 500ms ease",
+                  }}
+                />
               </div>
             </div>
           );

@@ -2,11 +2,12 @@
 
 Genere un hash SHA-256 du contenu + metadata pour garantir l'integrite.
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def generate_signature(
@@ -21,7 +22,7 @@ def generate_signature(
     Returns a signature dict that can be embedded in the document
     or stored separately for verification.
     """
-    timestamp = datetime.now(timezone.utc)
+    timestamp = datetime.now(UTC)
 
     # Create signature payload
     payload = {

@@ -1,13 +1,16 @@
 """PNPI · Annonces broadcast pour tous les utilisateurs."""
+
 from __future__ import annotations
 
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Query
+from datetime import UTC
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..database import get_db, now_utc, as_utc
-from ..core.auth import User, get_current_user, require_roles, Role
+from ..core.auth import Role, User, get_current_user, require_roles
+from ..database import as_utc, get_db, now_utc
 from ..models.pnpi import AnnouncementORM
 
 router = APIRouter(prefix="/announcements", tags=["Announcements"])
@@ -20,9 +23,13 @@ async def get_active_announcements(
 ):
     """Get active announcements visible to the current user."""
     now = now_utc()
-    query = select(AnnouncementORM).where(
-        AnnouncementORM.is_active.is_(True),
-    ).order_by(AnnouncementORM.created_at.desc())
+    query = (
+        select(AnnouncementORM)
+        .where(
+            AnnouncementORM.is_active.is_(True),
+        )
+        .order_by(AnnouncementORM.created_at.desc())
+    )
 
     all_ann = db.execute(query).scalars().all()
 
@@ -37,14 +44,16 @@ async def get_active_announcements(
             allowed = set(r.strip() for r in ann.target_roles.split(",") if r.strip())
             if not (user_roles & allowed):
                 continue
-        result.append({
-            "id": ann.id,
-            "title": ann.title,
-            "body": ann.body,
-            "severity": ann.severity,
-            "created_by": ann.created_by,
-            "created_at": ann.created_at.isoformat(),
-        })
+        result.append(
+            {
+                "id": ann.id,
+                "title": ann.title,
+                "body": ann.body,
+                "severity": ann.severity,
+                "created_by": ann.created_by,
+                "created_at": ann.created_at.isoformat(),
+            }
+        )
 
     return {"announcements": result}
 
@@ -54,16 +63,23 @@ async def list_all_announcements(
     _: User = Depends(require_roles(Role.admin)),
     db: Session = Depends(get_db),
 ):
-    all_ann = db.execute(
-        select(AnnouncementORM).order_by(AnnouncementORM.created_at.desc())
-    ).scalars().all()
-    return {"announcements": [{
-        "id": a.id, "title": a.title, "body": a.body,
-        "severity": a.severity, "target_roles": a.target_roles,
-        "is_active": a.is_active, "created_by": a.created_by,
-        "created_at": a.created_at.isoformat(),
-        "expires_at": a.expires_at.isoformat() if a.expires_at else None,
-    } for a in all_ann]}
+    all_ann = db.execute(select(AnnouncementORM).order_by(AnnouncementORM.created_at.desc())).scalars().all()
+    return {
+        "announcements": [
+            {
+                "id": a.id,
+                "title": a.title,
+                "body": a.body,
+                "severity": a.severity,
+                "target_roles": a.target_roles,
+                "is_active": a.is_active,
+                "created_by": a.created_by,
+                "created_at": a.created_at.isoformat(),
+                "expires_at": a.expires_at.isoformat() if a.expires_at else None,
+            }
+            for a in all_ann
+        ]
+    }
 
 
 @router.post("/create")
@@ -72,7 +88,7 @@ async def create_announcement(
     current_user: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     title = (data.get("title") or "").strip()
     body = (data.get("body") or "").strip()
@@ -81,7 +97,7 @@ async def create_announcement(
 
     expires_at = None
     if data.get("expires_at"):
-        expires_at = datetime.fromisoformat(data["expires_at"]).replace(tzinfo=timezone.utc)
+        expires_at = datetime.fromisoformat(data["expires_at"]).replace(tzinfo=UTC)
 
     ann = AnnouncementORM(
         id=str(uuid.uuid4()),

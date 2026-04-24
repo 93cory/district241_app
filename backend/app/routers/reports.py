@@ -1,15 +1,15 @@
 """PNPI · Constructeur de rapports personnalises."""
+
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..core.auth import Role, User, require_roles
 from ..database import get_db, now_utc
-from ..core.auth import User, require_roles, Role
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
     InspectionConformiteORM,
@@ -23,18 +23,18 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 async def build_report(
     metric: str = Query(..., description="atis|inspections|operateurs"),
     group_by: str = Query("secteur", description="secteur|province|mois|statut"),
-    date_start: Optional[str] = Query(None),
-    date_end: Optional[str] = Query(None),
-    secteur: Optional[str] = Query(None),
-    province: Optional[str] = Query(None),
+    date_start: str | None = Query(None),
+    date_end: str | None = Query(None),
+    secteur: str | None = Query(None),
+    province: str | None = Query(None),
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
     db: Session = Depends(get_db),
 ):
     """Dynamic report builder · aggregate any metric by any dimension."""
 
-    now = datetime.now(timezone.utc)
-    start = datetime.fromisoformat(date_start).replace(tzinfo=timezone.utc) if date_start else now - timedelta(days=365)
-    end = datetime.fromisoformat(date_end).replace(tzinfo=timezone.utc) if date_end else now
+    now = datetime.now(UTC)
+    start = datetime.fromisoformat(date_start).replace(tzinfo=UTC) if date_start else now - timedelta(days=365)
+    end = datetime.fromisoformat(date_end).replace(tzinfo=UTC) if date_end else now
 
     if metric == "atis":
         return _report_atis(db, group_by, start, end, secteur, province)
@@ -91,9 +91,7 @@ def _report_atis(db, group_by, start, end, secteur, province):
 
 
 def _report_inspections(db, group_by, start, end, secteur, province):
-    query = select(InspectionConformiteORM).where(
-        InspectionConformiteORM.date_inspection.between(start, end)
-    )
+    query = select(InspectionConformiteORM).where(InspectionConformiteORM.date_inspection.between(start, end))
 
     inspections = db.execute(query).scalars().all()
 
@@ -168,13 +166,17 @@ async def pivot_table(
     from collections import defaultdict
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    now = now_utc()
+    now_utc()
 
     def get_dim(ati, dim):
-        if dim == "secteur": return ati.secteur
-        if dim == "province": return (ati.operateur.province if ati.operateur else "inconnu").replace("_", " ").title()
-        if dim == "mois": return ati.date_soumission.strftime("%Y-%m")
-        if dim == "statut": return ati.statut
+        if dim == "secteur":
+            return ati.secteur
+        if dim == "province":
+            return (ati.operateur.province if ati.operateur else "inconnu").replace("_", " ").title()
+        if dim == "mois":
+            return ati.date_soumission.strftime("%Y-%m")
+        if dim == "statut":
+            return ati.statut
         return "total"
 
     # Build pivot
@@ -204,10 +206,7 @@ async def pivot_table(
         row_total = 0
         for c in sorted_cols:
             values = pivot[r][c]
-            if metric == "avg_days":
-                val = round(sum(values) / len(values), 1) if values else 0
-            else:
-                val = len(values)
+            val = (round(sum(values) / len(values), 1) if values else 0) if metric == "avg_days" else len(values)
             row_data[c] = val
             row_total += val if metric == "count" else 0
         if metric == "count":

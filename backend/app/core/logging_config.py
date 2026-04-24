@@ -1,13 +1,13 @@
 """Structured JSON logging with request correlation IDs."""
+
 from __future__ import annotations
 
 import json
 import logging
 import os
 import sys
-import uuid
 from contextvars import ContextVar
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # Context variable for request correlation
 correlation_id: ContextVar[str] = ContextVar("correlation_id", default="-")
@@ -18,7 +18,7 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         log_entry = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
@@ -46,10 +46,12 @@ def setup_logging() -> None:
     if log_format == "json":
         handler.setFormatter(JSONFormatter())
     else:
-        handler.setFormatter(logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s (%(correlation_id)s) %(message)s",
-            defaults={"correlation_id": "-"},
-        ))
+        handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s [%(levelname)s] %(name)s (%(correlation_id)s) %(message)s",
+                defaults={"correlation_id": "-"},
+            )
+        )
 
     root_logger.addHandler(handler)
 

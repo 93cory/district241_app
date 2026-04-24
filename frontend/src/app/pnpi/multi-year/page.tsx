@@ -6,7 +6,10 @@ export default async function MultiYearPage() {
   let years: any[] = [];
   try {
     const res = await backendRequest("/pnpi/dashboard/multi-year");
-    if (res.ok) { const d = await res.json(); years = d.years || []; }
+    if (res.ok) {
+      const d = await res.json();
+      years = d.years || [];
+    }
   } catch {}
 
   const metrics = [
@@ -29,11 +32,15 @@ export default async function MultiYearPage() {
             <thead>
               <tr>
                 <th>Indicateur</th>
-                {years.map(y => <th key={y.year} style={{ textAlign: "center", fontSize: 15, fontWeight: 800 }}>{y.year}</th>)}
+                {years.map((y) => (
+                  <th key={y.year} style={{ textAlign: "center", fontSize: 15, fontWeight: 800 }}>
+                    {y.year}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {metrics.map(m => (
+              {metrics.map((m) => (
                 <tr key={m.key}>
                   <td style={{ fontWeight: 600 }}>{m.label}</td>
                   {years.map((y, i) => {
@@ -47,10 +54,14 @@ export default async function MultiYearPage() {
                       <td key={y.year} style={{ textAlign: "center" }}>
                         <span style={{ fontSize: 16, fontWeight: 700, color: m.color }}>{val}</span>
                         {prev != null && val !== prev && (
-                          <span style={{
-                            marginLeft: 6, fontSize: 11, fontWeight: 700,
-                            color: good ? "#006233" : "#b42318",
-                          }}>
+                          <span
+                            style={{
+                              marginLeft: 6,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: good ? "#006233" : "#b42318",
+                            }}
+                          >
                             {isUp ? "\u2191" : "\u2193"}
                           </span>
                         )}
@@ -67,15 +78,34 @@ export default async function MultiYearPage() {
       {/* Bar chart comparison */}
       {years.length > 0 && (
         <div className="chart-card" style={{ padding: 20, marginTop: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 14px" }}>Soumissions par annee</h3>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 16, height: 120, justifyContent: "center" }}>
-            {[...years].reverse().map(y => {
-              const max = Math.max(...years.map(yr => yr.soumissions), 1);
+          <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 14px" }}>
+            Soumissions par annee
+          </h3>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              gap: 16,
+              height: 120,
+              justifyContent: "center",
+            }}
+          >
+            {[...years].reverse().map((y) => {
+              const max = Math.max(...years.map((yr) => yr.soumissions), 1);
               const h = (y.soumissions / max) * 100;
               return (
                 <div key={y.year} style={{ textAlign: "center", flex: "0 0 80px" }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>{y.soumissions}</div>
-                  <div style={{ height: h, background: "#006233", borderRadius: "6px 6px 0 0", minHeight: 4 }} />
+                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
+                    {y.soumissions}
+                  </div>
+                  <div
+                    style={{
+                      height: h,
+                      background: "#006233",
+                      borderRadius: "6px 6px 0 0",
+                      minHeight: 4,
+                    }}
+                  />
                   <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>{y.year}</div>
                 </div>
               );

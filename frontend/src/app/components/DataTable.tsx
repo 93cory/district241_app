@@ -95,7 +95,11 @@ export function DataTable<T extends Record<string, unknown>>({
             <tr>
               <td
                 colSpan={columns.length}
-                style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary, #9ca3af)" }}
+                style={{
+                  padding: "2rem",
+                  textAlign: "center",
+                  color: "var(--text-secondary, #9ca3af)",
+                }}
               >
                 {emptyMessage}
               </td>
@@ -110,7 +114,9 @@ export function DataTable<T extends Record<string, unknown>>({
                   borderBottom: "1px solid var(--border-color, #f3f4f6)",
                   transition: "background 150ms",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--hover-bg, #f9fafb)")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--hover-bg, #f9fafb)")
+                }
                 onMouseLeave={(e) => (e.currentTarget.style.background = "")}
               >
                 {columns.map((col) => (

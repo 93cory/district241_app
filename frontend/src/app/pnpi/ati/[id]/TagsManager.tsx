@@ -9,7 +9,16 @@ interface Tag {
   created_by: string;
 }
 
-const PRESET_COLORS = ["#006233", "#0c7eb4", "#7c3aed", "#b42318", "#d97706", "#059669", "#dc2626", "#2563eb"];
+const PRESET_COLORS = [
+  "#006233",
+  "#0c7eb4",
+  "#7c3aed",
+  "#b42318",
+  "#d97706",
+  "#059669",
+  "#dc2626",
+  "#2563eb",
+];
 
 export function TagsManager({ atiId }: { atiId: string }) {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -19,12 +28,14 @@ export function TagsManager({ atiId }: { atiId: string }) {
 
   const load = () => {
     fetch(`/api/pnpi/ati/${atiId}/tags`)
-      .then((r) => r.ok ? r.json() : { tags: [] })
+      .then((r) => (r.ok ? r.json() : { tags: [] }))
       .then((d) => setTags(d.tags || []))
       .catch(() => {});
   };
 
-  useEffect(() => { load(); }, [atiId]);
+  useEffect(() => {
+    load();
+  }, [atiId]);
 
   const add = async () => {
     if (!newLabel.trim()) return;
@@ -35,7 +46,10 @@ export function TagsManager({ atiId }: { atiId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ label: newLabel.trim(), color: newColor }),
       });
-      if (res.ok) { setNewLabel(""); load(); }
+      if (res.ok) {
+        setNewLabel("");
+        load();
+      }
     } catch {}
     setAdding(false);
   };
@@ -52,18 +66,28 @@ export function TagsManager({ atiId }: { atiId: string }) {
           <span
             key={tag.id}
             style={{
-              display: "inline-flex", alignItems: "center", gap: 4,
-              padding: "3px 10px", borderRadius: 8,
-              background: `${tag.color}15`, color: tag.color,
-              fontSize: 12, fontWeight: 700,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "3px 10px",
+              borderRadius: 8,
+              background: `${tag.color}15`,
+              color: tag.color,
+              fontSize: 12,
+              fontWeight: 700,
             }}
           >
             {tag.label}
             <button
               onClick={() => remove(tag.id)}
               style={{
-                background: "none", border: "none", color: tag.color,
-                cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1,
+                background: "none",
+                border: "none",
+                color: tag.color,
+                cursor: "pointer",
+                fontSize: 14,
+                padding: 0,
+                lineHeight: 1,
               }}
               aria-label={`Supprimer le tag ${tag.label}`}
             >
@@ -83,8 +107,11 @@ export function TagsManager({ atiId }: { atiId: string }) {
           placeholder="Nouveau tag..."
           maxLength={50}
           style={{
-            padding: "5px 10px", borderRadius: 8, fontSize: 12,
-            border: "1px solid var(--line, #dce4ef)", width: 130,
+            padding: "5px 10px",
+            borderRadius: 8,
+            fontSize: 12,
+            border: "1px solid var(--line, #dce4ef)",
+            width: 130,
           }}
         />
         <div style={{ display: "flex", gap: 3 }}>
@@ -93,9 +120,13 @@ export function TagsManager({ atiId }: { atiId: string }) {
               key={c}
               onClick={() => setNewColor(c)}
               style={{
-                width: 16, height: 16, borderRadius: 4,
-                background: c, border: newColor === c ? "2px solid #000" : "1px solid #dce4ef",
-                cursor: "pointer", padding: 0,
+                width: 16,
+                height: 16,
+                borderRadius: 4,
+                background: c,
+                border: newColor === c ? "2px solid #000" : "1px solid #dce4ef",
+                cursor: "pointer",
+                padding: 0,
               }}
               aria-label={`Couleur ${c}`}
             />
@@ -105,9 +136,14 @@ export function TagsManager({ atiId }: { atiId: string }) {
           onClick={add}
           disabled={adding || !newLabel.trim()}
           style={{
-            padding: "4px 12px", borderRadius: 8, border: "none",
-            background: "#006233", color: "#fff", fontSize: 11,
-            fontWeight: 600, cursor: "pointer",
+            padding: "4px 12px",
+            borderRadius: 8,
+            border: "none",
+            background: "#006233",
+            color: "#fff",
+            fontSize: 11,
+            fontWeight: 600,
+            cursor: "pointer",
             opacity: adding || !newLabel.trim() ? 0.5 : 1,
           }}
         >

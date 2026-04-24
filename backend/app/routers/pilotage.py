@@ -1,42 +1,41 @@
 """PNPI / PNPI · Endpoints de pilotage des dossiers industriels."""
+
 from __future__ import annotations
 
 import uuid
 from collections import defaultdict
-from datetime import date
 from statistics import median
-from typing import Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
+from ..core.audit import _emit_sla_notifications, create_system_notification, write_audit_event
 from ..core.auth import Role, User, require_roles
-from ..core.audit import write_audit_event, _emit_sla_notifications, create_system_notification
 from ..database import get_db, now_utc
 from ..models.pilotage import ProjectDossierORM, ProjectDossierTransitionORM
-
 
 router = APIRouter(tags=["Pilotage"])
 
 # ---------------------------------------------------------------------------
 # SLA policy (shared mutable state · in production should be DB-backed)
 # ---------------------------------------------------------------------------
-_sla_policy_days: Dict[str, int] = {
+_sla_policy_days: dict[str, int] = {
     "low": 45,
     "medium": 30,
     "high": 21,
 }
 
 
-def get_sla_policy() -> Dict[str, int]:
+def get_sla_policy() -> dict[str, int]:
     return _sla_policy_days
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _compute_dossier_age_days(row: ProjectDossierORM) -> int:
     return max((now_utc().date() - row.submitted_at.date()).days, 0)
@@ -66,7 +65,7 @@ def _normalize_dossier_priority(value: str) -> str:
     return normalized
 
 
-def _resolve_sla_days(priority: str, explicit_sla_days: Optional[int]) -> int:
+def _resolve_sla_days(priority: str, explicit_sla_days: int | None) -> int:
     if explicit_sla_days is not None:
         if explicit_sla_days < 1 or explicit_sla_days > 365:
             raise HTTPException(status_code=400, detail="SLA invalide (1-365 jours).")
@@ -74,7 +73,7 @@ def _resolve_sla_days(priority: str, explicit_sla_days: Optional[int]) -> int:
     return _sla_policy_days.get(priority, 30)
 
 
-def _allowed_stage_progression(stage: str) -> List[str]:
+def _allowed_stage_progression(stage: str) -> list[str]:
     order = ["reception", "instruction", "validation", "decision"]
     if stage not in order:
         return order
@@ -85,7 +84,7 @@ def _allowed_stage_progression(stage: str) -> List[str]:
     return allowed
 
 
-def _allowed_status_progression(status: str) -> List[str]:
+def _allowed_status_progression(status: str) -> list[str]:
     mapping = {
         "submitted": ["submitted", "under_review"],
         "under_review": ["under_review", "interministerial"],
@@ -138,10 +137,10 @@ def record_dossier_transition(
     *,
     dossier_id: str,
     changed_by: str,
-    previous_status: Optional[str],
-    new_status: Optional[str],
-    previous_stage: Optional[str],
-    new_stage: Optional[str],
+    previous_status: str | None,
+    new_status: str | None,
+    previous_stage: str | None,
+    new_stage: str | None,
     note: str,
     changed_at=None,
 ) -> None:
@@ -200,10 +199,7 @@ def to_project_dossier_transition_read(row: ProjectDossierTransitionORM) -> dict
 
 def _compute_pilotage_kpis(db: Session) -> dict:
     dossiers = (
-        db.execute(select(ProjectDossierORM).order_by(ProjectDossierORM.updated_at.desc()))
-        .scalars()
-        .unique()
-        .all()
+        db.execute(select(ProjectDossierORM).order_by(ProjectDossierORM.updated_at.desc())).scalars().unique().all()
     )
     if not dossiers:
         return {
@@ -222,31 +218,26 @@ def _compute_pilotage_kpis(db: Session) -> dict:
     decision_statuses = {"approved", "rejected"}
     in_progress_count = sum(1 for d in dossiers if d.status in in_progress_statuses)
     overdue_count = sum(
-        1
-        for d in dossiers
-        if _compute_dossier_age_days(d) > d.sla_days and d.status not in decision_statuses
+        1 for d in dossiers if _compute_dossier_age_days(d) > d.sla_days and d.status not in decision_statuses
     )
 
     decided = [d for d in dossiers if d.status in decision_statuses]
     approved_count = sum(1 for d in decided if d.status == "approved")
     approval_rate = (approved_count / len(decided)) if decided else 0
 
-    durations: List[int] = []
+    durations: list[int] = []
     for d in decided:
         if d.decision_at:
             duration = (d.decision_at.date() - d.submitted_at.date()).days
             durations.append(max(duration, 0))
     median_processing_days = float(median(durations)) if durations else 0
     compliant_count = sum(
-        1
-        for d in decided
-        if d.decision_at
-        and (d.decision_at.date() - d.submitted_at.date()).days <= d.sla_days
+        1 for d in decided if d.decision_at and (d.decision_at.date() - d.submitted_at.date()).days <= d.sla_days
     )
     sla_compliance_rate = (compliant_count / len(durations)) if durations else 0
 
-    status_counter: Dict[str, int] = defaultdict(int)
-    stage_counter: Dict[str, int] = defaultdict(int)
+    status_counter: dict[str, int] = defaultdict(int)
+    stage_counter: dict[str, int] = defaultdict(int)
     for d in dossiers:
         status_counter[d.status] += 1
         stage_counter[d.stage] += 1
@@ -259,14 +250,8 @@ def _compute_pilotage_kpis(db: Session) -> dict:
         "approval_rate": round(approval_rate, 4),
         "median_processing_days": round(median_processing_days, 1),
         "sla_compliance_rate": round(sla_compliance_rate, 4),
-        "status_breakdown": [
-            {"key": key, "count": count}
-            for key, count in sorted(status_counter.items())
-        ],
-        "stage_breakdown": [
-            {"key": key, "count": count}
-            for key, count in sorted(stage_counter.items())
-        ],
+        "status_breakdown": [{"key": key, "count": count} for key, count in sorted(status_counter.items())],
+        "stage_breakdown": [{"key": key, "count": count} for key, count in sorted(stage_counter.items())],
     }
 
 
@@ -287,31 +272,27 @@ def _compute_pilotage_executive_dashboard(db: Session) -> dict:
 
     decision_statuses = {"approved", "rejected"}
     overdue_backlog = sum(
-        1
-        for d in dossiers
-        if d.status not in decision_statuses and _compute_dossier_age_days(d) > d.sla_days
+        1 for d in dossiers if d.status not in decision_statuses and _compute_dossier_age_days(d) > d.sla_days
     )
     decided = [d for d in dossiers if d.status in decision_statuses]
     approved = sum(1 for d in decided if d.status == "approved")
     approval_rate = (approved / len(decided)) if decided else 0
 
-    def build_breakdown(values: Dict[str, list]) -> List[dict]:
+    def build_breakdown(values: dict[str, list]) -> list[dict]:
         result = []
         for key, entries in sorted(values.items()):
             overdue = sum(
-                1
-                for d in entries
-                if d.status not in decision_statuses and _compute_dossier_age_days(d) > d.sla_days
+                1 for d in entries if d.status not in decision_statuses and _compute_dossier_age_days(d) > d.sla_days
             )
             result.append({"key": key, "total": len(entries), "overdue": overdue})
         return result
 
-    by_sector_map: Dict[str, list] = defaultdict(list)
-    by_location_map: Dict[str, list] = defaultdict(list)
-    by_direction_map: Dict[str, list] = defaultdict(list)
-    by_stage_map: Dict[str, List[int]] = defaultdict(list)
-    month_created: Dict[str, int] = defaultdict(int)
-    month_decided: Dict[str, int] = defaultdict(int)
+    by_sector_map: dict[str, list] = defaultdict(list)
+    by_location_map: dict[str, list] = defaultdict(list)
+    by_direction_map: dict[str, list] = defaultdict(list)
+    by_stage_map: dict[str, list[int]] = defaultdict(list)
+    month_created: dict[str, int] = defaultdict(int)
+    month_decided: dict[str, int] = defaultdict(int)
 
     for d in dossiers:
         by_sector_map[d.sector or "Non renseigne"].append(d)
@@ -373,17 +354,13 @@ def _filter_pilotage_transitions(rows, *, dossier_id, changed_by, date_from, dat
 # Endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.get("/pilotage/dossiers")
 async def list_project_dossiers(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
-    rows = (
-        db.execute(select(ProjectDossierORM).order_by(ProjectDossierORM.updated_at.desc()))
-        .scalars()
-        .unique()
-        .all()
-    )
+    rows = db.execute(select(ProjectDossierORM).order_by(ProjectDossierORM.updated_at.desc())).scalars().unique().all()
     return [to_project_dossier_read(row) for row in rows]
 
 
@@ -431,14 +408,11 @@ async def create_project_dossier(
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
+
     submitted_at = now_utc()
     year = submitted_at.year
     prefix = f"DOS-{year}-"
-    existing = (
-        db.execute(select(ProjectDossierORM.id).where(ProjectDossierORM.id.like(f"{prefix}%")))
-        .scalars()
-        .all()
-    )
+    existing = db.execute(select(ProjectDossierORM.id).where(ProjectDossierORM.id.like(f"{prefix}%"))).scalars().all()
     next_index = len(existing) + 1
 
     priority = _normalize_dossier_priority(payload.get("priority", "medium"))
@@ -515,6 +489,7 @@ async def update_project_dossier(
     db: Session = Depends(get_db),
 ):
     from ..main import log_action
+
     row = db.get(ProjectDossierORM, dossier_id)
     if not row:
         raise HTTPException(status_code=404, detail="Dossier introuvable.")
@@ -583,7 +558,7 @@ async def update_project_dossier(
         raise HTTPException(status_code=400, detail="Aucun changement detecte.")
 
     row.updated_at = now_utc()
-    notes: List[str] = []
+    notes: list[str] = []
     if row.priority != previous_priority:
         notes.append(f"priorite: {previous_priority} -> {row.priority}")
     if row.sla_days != previous_sla_days:
@@ -593,9 +568,7 @@ async def update_project_dossier(
             f"assignation: {(previous_assigned_to or 'Non renseigne')} -> {(row.assigned_to or 'Non renseigne')}"
         )
     if row.assigned_role != previous_assigned_role:
-        notes.append(
-            f"role: {(previous_assigned_role or 'Non renseigne')} -> {(row.assigned_role or 'Non renseigne')}"
-        )
+        notes.append(f"role: {(previous_assigned_role or 'Non renseigne')} -> {(row.assigned_role or 'Non renseigne')}")
     if row.decision_reason != previous_decision_reason and row.decision_reason:
         notes.append("motif de decision renseigne")
     if row.decision_reference != previous_decision_reference and row.decision_reference:
@@ -623,7 +596,11 @@ async def update_project_dossier(
             target_role=Role.ministre,
             notification_key=f"dossier-status:{row.id}:{row.status}:{row.updated_at.date().isoformat()}",
         )
-    if row.assigned_role and row.assigned_role != previous_assigned_role and row.assigned_role in Role._value2member_map_:
+    if (
+        row.assigned_role
+        and row.assigned_role != previous_assigned_role
+        and row.assigned_role in Role._value2member_map_
+    ):
         create_system_notification(
             db,
             title="Reaffectation dossier",
@@ -689,12 +666,7 @@ async def pilotage_queue(
     db: Session = Depends(get_db),
 ):
     roles = {role.value for role in current_user.roles}
-    rows = (
-        db.execute(select(ProjectDossierORM).order_by(ProjectDossierORM.updated_at.desc()))
-        .scalars()
-        .unique()
-        .all()
-    )
+    rows = db.execute(select(ProjectDossierORM).order_by(ProjectDossierORM.updated_at.desc())).scalars().unique().all()
     filtered = [
         row
         for row in rows
@@ -746,10 +718,7 @@ async def export_dossier_decision_document(
         f"Reference: {row.decision_reference or 'Non renseigne'}",
         f"Motif: {row.decision_reason or 'Non renseigne'}",
     ]
-    escaped_lines = [
-        line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
-        for line in lines
-    ]
+    escaped_lines = [line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)") for line in lines]
     text_commands = ["BT /F1 10 Tf 40 760 Td"]
     for index, line in enumerate(escaped_lines):
         if index > 0:
@@ -791,9 +760,10 @@ async def dashboard_metrics(
     _: User = Depends(require_roles(Role.ministre, Role.operateur)),
     db: Session = Depends(get_db),
 ):
-    from ..main import _compute_sector_indicators, _compute_forecast_from_db
-    from ..models.core import UnitORM, TraceBatchORM
     from sqlalchemy import func
+
+    from ..main import _compute_sector_indicators
+    from ..models.core import TraceBatchORM, UnitORM
 
     indicators = _compute_sector_indicators(db)
     all_units = db.execute(select(UnitORM)).scalars().unique().all()
@@ -806,7 +776,15 @@ async def dashboard_metrics(
     national_index = (total_local / denominator) if denominator > 0 else 0.0
     return {
         "created_at": now_utc(),
-        "indicators": [{"sector": i.sector, "local_volume_tons": i.local_volume_tons, "import_volume_tons": i.import_volume_tons, "jobs": i.jobs} for i in indicators],
+        "indicators": [
+            {
+                "sector": i.sector,
+                "local_volume_tons": i.local_volume_tons,
+                "import_volume_tons": i.import_volume_tons,
+                "jobs": i.jobs,
+            }
+            for i in indicators
+        ],
         "national_index": round(national_index, 4),
         "jobs_created": sum(metric.jobs for metric in indicators),
         "import_gap_tons": max(total_import - total_local, 0),
@@ -822,6 +800,7 @@ async def dashboard_forecast(
     db: Session = Depends(get_db),
 ):
     from ..main import _compute_forecast_from_db
+
     return _compute_forecast_from_db(db)
 
 
@@ -831,6 +810,7 @@ async def dashboard_alerts(
     db: Session = Depends(get_db),
 ):
     from ..main import _compute_dashboard_alerts
+
     _emit_sla_notifications(db)
     db.commit()
     return _compute_dashboard_alerts(db)

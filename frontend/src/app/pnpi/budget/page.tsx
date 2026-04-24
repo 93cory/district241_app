@@ -20,18 +20,33 @@ export default async function BudgetPage() {
       </p>
 
       {/* Total */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 20 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
         <div className="chart-card" style={{ padding: "16px 18px", textAlign: "center" }}>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "#006233" }}>{fmt(data.total_cost_fcfa)} FCFA</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "#006233" }}>
+            {fmt(data.total_cost_fcfa)} FCFA
+          </div>
           <div style={{ fontSize: 11, color: "var(--text-soft)" }}>Cout total estime</div>
-          <div style={{ fontSize: 12, color: "var(--text-soft, #9ca3af)" }}>~{fmt(data.total_cost_eur)} EUR</div>
+          <div style={{ fontSize: 12, color: "var(--text-soft, #9ca3af)" }}>
+            ~{fmt(data.total_cost_eur)} EUR
+          </div>
         </div>
         <div className="chart-card" style={{ padding: "16px 18px", textAlign: "center" }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#0c7eb4" }}>{fmt(data.avg_cost_per_ati)} FCFA</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#0c7eb4" }}>
+            {fmt(data.avg_cost_per_ati)} FCFA
+          </div>
           <div style={{ fontSize: 11, color: "var(--text-soft)" }}>Cout moyen par ATI</div>
         </div>
         <div className="chart-card" style={{ padding: "16px 18px", textAlign: "center" }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#7c3aed" }}>{fmt(data.breakdown.inspections)} FCFA</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#7c3aed" }}>
+            {fmt(data.breakdown.inspections)} FCFA
+          </div>
           <div style={{ fontSize: 11, color: "var(--text-soft)" }}>Budget inspections</div>
         </div>
       </div>
@@ -41,7 +56,16 @@ export default async function BudgetPage() {
         <div className="chart-card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 12px" }}>Par poste</h3>
           {Object.entries(data.breakdown).map(([key, val]: any) => (
-            <div key={key} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--line, #eee)", fontSize: 13 }}>
+            <div
+              key={key}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "6px 0",
+                borderBottom: "1px solid var(--line, #eee)",
+                fontSize: 13,
+              }}
+            >
               <span style={{ fontWeight: 600, textTransform: "capitalize" }}>{key}</span>
               <span style={{ fontWeight: 700 }}>{fmt(val)} FCFA</span>
             </div>
@@ -50,7 +74,16 @@ export default async function BudgetPage() {
         <div className="chart-card" style={{ padding: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 12px" }}>Par secteur</h3>
           {data.by_sector.slice(0, 8).map((s: any) => (
-            <div key={s.secteur} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--line, #eee)", fontSize: 13 }}>
+            <div
+              key={s.secteur}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "6px 0",
+                borderBottom: "1px solid var(--line, #eee)",
+                fontSize: 13,
+              }}
+            >
               <span style={{ fontWeight: 600, textTransform: "capitalize" }}>{s.secteur}</span>
               <span style={{ fontWeight: 700 }}>{fmt(s.cost_fcfa)} FCFA</span>
             </div>
@@ -65,7 +98,20 @@ export default async function BudgetPage() {
           {data.monthly.map((m: any) => {
             const max = Math.max(...data.monthly.map((x: any) => x.cost_fcfa), 1);
             const h = (m.cost_fcfa / max) * 80;
-            const monthLabels = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"];
+            const monthLabels = [
+              "Jan",
+              "Fev",
+              "Mar",
+              "Avr",
+              "Mai",
+              "Jun",
+              "Jul",
+              "Aou",
+              "Sep",
+              "Oct",
+              "Nov",
+              "Dec",
+            ];
             const mm = parseInt(m.month.slice(5), 10) - 1;
             const monthFull = monthLabels[mm] ?? m.month;
             return (
@@ -74,7 +120,9 @@ export default async function BudgetPage() {
                 <div className="pnpi-bar-fill" style={{ height: h, minHeight: 2 }} />
                 <span className="pnpi-bar-label">{m.month.slice(5)}</span>
                 <div className="pnpi-bar-tooltip" role="tooltip">
-                  <strong>{monthFull} {m.month.slice(0, 4)}</strong>
+                  <strong>
+                    {monthFull} {m.month.slice(0, 4)}
+                  </strong>
                   <span>{fmt(m.cost_fcfa)} FCFA</span>
                 </div>
               </div>

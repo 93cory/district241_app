@@ -1,9 +1,11 @@
 """PNPI · Endpoints pour la gestion des regles de workflow."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from ..core.auth import User, require_roles, Role
-from ..core.workflow_engine import get_all_rules, evaluate_rules, RuleTrigger
+
+from ..core.auth import Role, User, require_roles
+from ..core.workflow_engine import RuleTrigger, evaluate_rules, get_all_rules
 
 router = APIRouter(prefix="/workflows", tags=["Workflows"])
 
@@ -34,7 +36,6 @@ async def simulate_rules(
         "trigger": trigger,
         "context": context,
         "matched_rules": [
-            {"id": r.id, "name": r.name, "action": r.action.value, "action_params": r.action_params}
-            for r in matched
+            {"id": r.id, "name": r.name, "action": r.action.value, "action_params": r.action_params} for r in matched
         ],
     }

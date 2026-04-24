@@ -53,7 +53,7 @@ type SearchParams = { severity?: string };
 export default async function NotificationsPage({ searchParams }: { searchParams: SearchParams }) {
   try {
     const profile = await fetchBackendProfile();
-    if (!((profile.roles ?? []) as string[]).some(r => ALLOWED.has(r))) redirect("/connexion");
+    if (!((profile.roles ?? []) as string[]).some((r) => ALLOWED.has(r))) redirect("/connexion");
   } catch {
     redirect("/connexion");
   }
@@ -64,16 +64,16 @@ export default async function NotificationsPage({ searchParams }: { searchParams
     const activeSeverity = searchParams.severity ?? "";
 
     const totalCount = alerts.length;
-    const criticalCount = alerts.filter(a => a.severity === "critical").length;
-    const highCount = alerts.filter(a => a.severity === "high").length;
-    const mediumCount = alerts.filter(a => a.severity === "medium").length;
-    const slaCount = alerts.filter(a => a.type === "sla_overdue").length;
-    const ncCount = alerts.filter(a => a.type === "non_conforme").length;
-    const expiringCount = alerts.filter(a => a.type === "expiring_soon").length;
+    const criticalCount = alerts.filter((a) => a.severity === "critical").length;
+    const highCount = alerts.filter((a) => a.severity === "high").length;
+    const mediumCount = alerts.filter((a) => a.severity === "medium").length;
+    const slaCount = alerts.filter((a) => a.type === "sla_overdue").length;
+    const ncCount = alerts.filter((a) => a.type === "non_conforme").length;
+    const expiringCount = alerts.filter((a) => a.type === "expiring_soon").length;
 
     // Filter by severity if specified
     const filteredAlerts = activeSeverity
-      ? alerts.filter(a => a.severity === activeSeverity)
+      ? alerts.filter((a) => a.severity === activeSeverity)
       : alerts;
 
     return (
@@ -95,11 +95,15 @@ export default async function NotificationsPage({ searchParams }: { searchParams
           }}
         >
           <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#003F8F" }}>{totalCount}</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#003F8F" }}>
+              {totalCount}
+            </div>
             <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Total alertes</div>
           </div>
           <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#dc2626" }}>{criticalCount}</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#dc2626" }}>
+              {criticalCount}
+            </div>
             <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Critiques</div>
           </div>
           <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
@@ -107,7 +111,9 @@ export default async function NotificationsPage({ searchParams }: { searchParams
             <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Hautes</div>
           </div>
           <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#3b82f6" }}>{mediumCount}</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#3b82f6" }}>
+              {mediumCount}
+            </div>
             <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Moyennes</div>
           </div>
           <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
@@ -119,7 +125,9 @@ export default async function NotificationsPage({ searchParams }: { searchParams
             <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Non conforme</div>
           </div>
           <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#f59e0b" }}>{expiringCount}</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#f59e0b" }}>
+              {expiringCount}
+            </div>
             <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Expiration ATI</div>
           </div>
         </div>
@@ -129,18 +137,26 @@ export default async function NotificationsPage({ searchParams }: { searchParams
           <h2 style={{ margin: "0 0 0.25rem", color: "#003F8F" }}>Alertes PNPI</h2>
           <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.875rem" }}>
             {totalCount} alerte(s) &middot;{" "}
-            <span style={{ color: "#dc2626", fontWeight: 600 }}>{criticalCount} critiques</span> &middot;{" "}
-            <span style={{ color: "#f59e0b", fontWeight: 600 }}>{highCount} hautes</span>
+            <span style={{ color: "#dc2626", fontWeight: 600 }}>{criticalCount} critiques</span>{" "}
+            &middot; <span style={{ color: "#f59e0b", fontWeight: 600 }}>{highCount} hautes</span>
           </p>
 
           {/* Severity filter tabs */}
           <NotificationsSeverityFilter
             activeSeverity={activeSeverity}
-            counts={{ all: totalCount, critical: criticalCount, high: highCount, medium: mediumCount, info: totalCount - criticalCount - highCount - mediumCount }}
+            counts={{
+              all: totalCount,
+              critical: criticalCount,
+              high: highCount,
+              medium: mediumCount,
+              info: totalCount - criticalCount - highCount - mediumCount,
+            }}
           />
 
           {filteredAlerts.length === 0 ? (
-            <p style={{ color: "#6b7280", textAlign: "center", padding: "2rem 0" }}>Aucune alerte.</p>
+            <p style={{ color: "#6b7280", textAlign: "center", padding: "2rem 0" }}>
+              Aucune alerte.
+            </p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {filteredAlerts.map((alert, idx) => {
@@ -167,7 +183,14 @@ export default async function NotificationsPage({ searchParams }: { searchParams
                       }}
                     >
                       <div style={{ flex: 1 }}>
-                        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            alignItems: "center",
+                            flexWrap: "wrap",
+                          }}
+                        >
                           {/* Severity badge */}
                           <span
                             style={{
@@ -227,7 +250,11 @@ export default async function NotificationsPage({ searchParams }: { searchParams
 
                 if (href) {
                   return (
-                    <Link key={idx} href={href} style={{ textDecoration: "none", display: "block" }}>
+                    <Link
+                      key={idx}
+                      href={href}
+                      style={{ textDecoration: "none", display: "block" }}
+                    >
                       {card}
                     </Link>
                   );

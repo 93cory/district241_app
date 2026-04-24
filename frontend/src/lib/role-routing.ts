@@ -22,7 +22,7 @@ export interface NavLink {
 interface NavEntry {
   href: string;
   label: string;
-  roles: string[];  // which roles can see this link
+  roles: string[]; // which roles can see this link
 }
 
 const ALL_DECISION = ["admin", "ministre", "directeur"];
@@ -36,7 +36,11 @@ const NAV_ENTRIES: NavEntry[] = [
   { href: "/pnpi/live", label: "Temps reel", roles: ALL_DECISION },
   { href: "/pnpi/ati", label: "Agrements ATI", roles: ALL_FIELD },
   { href: "/pnpi/operateurs", label: "Operateurs", roles: [...ALL_FIELD, "operateur"] },
-  { href: "/pnpi/inspections", label: "Inspections", roles: ["admin", "ministre", "directeur", "inspecteur"] },
+  {
+    href: "/pnpi/inspections",
+    label: "Inspections",
+    roles: ["admin", "ministre", "directeur", "inspecteur"],
+  },
   { href: "/pnpi/stats", label: "Statistiques", roles: ALL_FIELD },
   { href: "/pnpi/search", label: "Recherche", roles: ALL_FIELD },
   { href: "/pnpi/calendar", label: "Calendrier", roles: [...ALL_PNPI, "inspecteur"] },
@@ -46,7 +50,11 @@ const NAV_ENTRIES: NavEntry[] = [
   // Dashboard & Analytics
   { href: "/pnpi/comparison", label: "Comparaison", roles: ALL_DECISION.concat("ministre") },
   { href: "/pnpi/impact", label: "Impact", roles: ALL_DECISION },
-  { href: "/pnpi/heatmap", label: "Heatmap", roles: ["admin", "ministre", "directeur", "inspecteur"] },
+  {
+    href: "/pnpi/heatmap",
+    label: "Heatmap",
+    roles: ["admin", "ministre", "directeur", "inspecteur"],
+  },
   { href: "/pnpi/kanban", label: "Kanban", roles: [...ALL_PNPI, "inspecteur"] },
   { href: "/pnpi/data-quality", label: "Qualite", roles: ALL_DECISION },
   { href: "/pnpi/performance", label: "Performance", roles: ALL_DECISION },
@@ -63,14 +71,34 @@ const NAV_ENTRIES: NavEntry[] = [
 
   // Operations
   { href: "/pnpi/mes-dossiers", label: "Mes Dossiers", roles: ["directeur", "instructeur"] },
-  { href: "/pnpi/mes-stats", label: "Mes Statistiques", roles: ["directeur", "instructeur", "inspecteur"] },
+  {
+    href: "/pnpi/mes-stats",
+    label: "Mes Statistiques",
+    roles: ["directeur", "instructeur", "inspecteur"],
+  },
   { href: "/pnpi/equipe", label: "Tableau d'equipe", roles: ["admin", "directeur"] },
-  { href: "/pnpi/delegations", label: "Delegations", roles: ["admin", "directeur", "instructeur", "inspecteur"] },
-  { href: "/pnpi/objectives", label: "Objectifs", roles: ["admin", "directeur", "instructeur", "inspecteur"] },
-  { href: "/pnpi/renewals", label: "Renouvellements", roles: ["admin", "directeur", "instructeur", "operateur"] },
+  {
+    href: "/pnpi/delegations",
+    label: "Delegations",
+    roles: ["admin", "directeur", "instructeur", "inspecteur"],
+  },
+  {
+    href: "/pnpi/objectives",
+    label: "Objectifs",
+    roles: ["admin", "directeur", "instructeur", "inspecteur"],
+  },
+  {
+    href: "/pnpi/renewals",
+    label: "Renouvellements",
+    roles: ["admin", "directeur", "instructeur", "operateur"],
+  },
   { href: "/pnpi/triage", label: "Triage", roles: ["admin", "directeur", "instructeur"] },
   { href: "/pnpi/workflow-timing", label: "Timing", roles: ["admin", "directeur"] },
-  { href: "/pnpi/certifications", label: "Certifications", roles: ["admin", "directeur", "instructeur", "operateur"] },
+  {
+    href: "/pnpi/certifications",
+    label: "Certifications",
+    roles: ["admin", "directeur", "instructeur", "operateur"],
+  },
   { href: "/pnpi/email-alerts", label: "Alertes email", roles: ALL_PNPI },
 
   // Strategic
@@ -188,8 +216,8 @@ export interface MegaSection {
 
 export interface MegaNavData {
   sections: MegaSection[];
-  tools: NavLink[];           // outils transversaux (recherche, annuaire...)
-  quickAccess: NavLink[];     // "Mon espace" selon role
+  tools: NavLink[]; // outils transversaux (recherche, annuaire...)
+  quickAccess: NavLink[]; // "Mon espace" selon role
 }
 
 /**
@@ -218,9 +246,7 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
 
   // Helper : filtre une liste de hrefs selon les permissions
   const pick = (refs: Array<[string, string]>): NavLink[] =>
-    refs
-      .filter(([href]) => permitted.has(href))
-      .map(([href, label]) => ({ href, label }));
+    refs.filter(([href]) => permitted.has(href)).map(([href, label]) => ({ href, label }));
 
   const filterGroups = (groups: MegaGroup[]): MegaGroup[] =>
     groups
@@ -327,9 +353,7 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
         },
         {
           title: "Mobilite",
-          items: pick([
-            ["/pnpi/mobile", "Terrain mobile"],
-          ]),
+          items: pick([["/pnpi/mobile", "Terrain mobile"]]),
         },
       ]),
     },

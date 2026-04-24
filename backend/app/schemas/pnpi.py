@@ -1,15 +1,15 @@
 """PNPI · Schemas Pydantic pour la plateforme industrielle gabonaise."""
+
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
-
 
 # ---------------------------------------------------------------------------
 # Operateurs industriels
 # ---------------------------------------------------------------------------
+
 
 class OperateurCreate(BaseModel):
     nif_gabon: str = Field(..., examples=["GA-NIF-2024-00123"])
@@ -17,11 +17,11 @@ class OperateurCreate(BaseModel):
     secteur: str = Field(..., examples=["bois"])
     province: str = Field(..., examples=["estuaire"])
     ville: str = Field(..., examples=["Libreville"])
-    latitude: Optional[float] = Field(None, examples=[0.3924])
-    longitude: Optional[float] = Field(None, examples=[9.4536])
-    contact_email: Optional[str] = Field(None, examples=["contact@sgtb-gabon.ga"])
-    contact_telephone: Optional[str] = Field(None, examples=["+241 01 23 45 67"])
-    effectif_declare: Optional[int] = Field(None, examples=[150])
+    latitude: float | None = Field(None, examples=[0.3924])
+    longitude: float | None = Field(None, examples=[9.4536])
+    contact_email: str | None = Field(None, examples=["contact@sgtb-gabon.ga"])
+    contact_telephone: str | None = Field(None, examples=["+241 01 23 45 67"])
+    effectif_declare: int | None = Field(None, examples=[150])
     is_active: bool = True
 
 
@@ -32,14 +32,14 @@ class OperateurRead(BaseModel):
     secteur: str
     province: str
     ville: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    contact_email: Optional[str] = None
-    contact_telephone: Optional[str] = None
-    effectif_declare: Optional[int] = None
+    latitude: float | None = None
+    longitude: float | None = None
+    contact_email: str | None = None
+    contact_telephone: str | None = None
+    effectif_declare: int | None = None
     is_active: bool
     created_at: datetime
-    created_by: Optional[str] = None
+    created_by: str | None = None
 
     class Config:
         from_attributes = True
@@ -53,7 +53,7 @@ class OperateurBrief(BaseModel):
     province: str
     ville: str
     is_active: bool
-    effectif_declare: Optional[int] = None
+    effectif_declare: int | None = None
 
     class Config:
         from_attributes = True
@@ -63,14 +63,15 @@ class OperateurBrief(BaseModel):
 # ATI (Agrement Technique Industriel)
 # ---------------------------------------------------------------------------
 
+
 class ATICreate(BaseModel):
     operateur_id: str = Field(..., examples=["op-abc123"])
     type_activite: str = Field(..., examples=["Scierie et transformation premiere du bois"])
     secteur: str = Field(..., examples=["bois"])
     priorite: str = Field("normale", examples=["normale", "haute", "urgente"])
     sla_jours: int = Field(30, examples=[30, 21, 45])
-    observations: Optional[str] = Field(None, examples=["Premiere demande d'agrement"])
-    instructeur_username: Optional[str] = Field(None, examples=["instructeur1"])
+    observations: str | None = Field(None, examples=["Premiere demande d'agrement"])
+    instructeur_username: str | None = Field(None, examples=["instructeur1"])
 
 
 class ATIRead(BaseModel):
@@ -82,16 +83,16 @@ class ATIRead(BaseModel):
     statut: str
     etape: str
     priorite: str
-    instructeur_username: Optional[str] = None
+    instructeur_username: str | None = None
     date_soumission: datetime
-    date_decision: Optional[datetime] = None
-    date_expiration: Optional[datetime] = None
+    date_decision: datetime | None = None
+    date_expiration: datetime | None = None
     sla_jours: int
-    qr_code_data: Optional[str] = None
-    motif_rejet: Optional[str] = None
-    numero_reference_decision: Optional[str] = None
-    observations: Optional[str] = None
-    created_by: Optional[str] = None
+    qr_code_data: str | None = None
+    motif_rejet: str | None = None
+    numero_reference_decision: str | None = None
+    observations: str | None = None
+    created_by: str | None = None
     updated_at: datetime
     age_jours: int
     is_overdue: bool
@@ -108,7 +109,7 @@ class ATIBrief(BaseModel):
     statut: str
     etape: str
     priorite: str
-    instructeur_username: Optional[str] = None
+    instructeur_username: str | None = None
     date_soumission: datetime
     age_jours: int
     is_overdue: bool
@@ -118,22 +119,22 @@ class ATIBrief(BaseModel):
 
 
 class ATIStatusUpdate(BaseModel):
-    new_statut: Optional[str] = None
-    new_etape: Optional[str] = None
+    new_statut: str | None = None
+    new_etape: str | None = None
     note: str = ""
-    motif_rejet: Optional[str] = None
-    numero_reference_decision: Optional[str] = None
-    instructeur_username: Optional[str] = None
+    motif_rejet: str | None = None
+    numero_reference_decision: str | None = None
+    instructeur_username: str | None = None
 
 
 class ATITransitionRead(BaseModel):
     id: str
     ati_id: str
     changed_by: str
-    previous_statut: Optional[str] = None
-    new_statut: Optional[str] = None
-    previous_etape: Optional[str] = None
-    new_etape: Optional[str] = None
+    previous_statut: str | None = None
+    new_statut: str | None = None
+    previous_etape: str | None = None
+    new_etape: str | None = None
     note: str
     changed_at: datetime
 
@@ -145,31 +146,32 @@ class ATITransitionRead(BaseModel):
 # Inspections de conformite
 # ---------------------------------------------------------------------------
 
+
 class InspectionCreate(BaseModel):
     operateur_id: str
-    ati_id: Optional[str] = None
+    ati_id: str | None = None
     date_inspection: datetime
     statut_conformite: str  # conforme, non_conforme, partiel
     observations: str
-    mesures_correctives: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    mesures_correctives: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class InspectionRead(BaseModel):
     id: str
     operateur_id: str
     operateur_nom: str = ""
-    ati_id: Optional[str] = None
-    ati_numero: Optional[str] = None
+    ati_id: str | None = None
+    ati_numero: str | None = None
     inspecteur_username: str
     inspecteur_nom: str = ""
     date_inspection: datetime
     statut_conformite: str
     observations: str
-    mesures_correctives: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    mesures_correctives: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     province: str = ""
     secteur: str = ""
     created_at: datetime
@@ -181,6 +183,7 @@ class InspectionRead(BaseModel):
 # ---------------------------------------------------------------------------
 # Dashboard KPIs
 # ---------------------------------------------------------------------------
+
 
 class PNPIDashboardKpis(BaseModel):
     atis_total: int
@@ -202,7 +205,7 @@ class OperateurGeoPoint(BaseModel):
     latitude: float
     longitude: float
     nb_atis_actifs: int
-    statut_dernier_ati: Optional[str] = None
+    statut_dernier_ati: str | None = None
 
 
 class SecteurStats(BaseModel):

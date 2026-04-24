@@ -6,14 +6,15 @@ lors des transitions ATI. Exemples :
 - Quand age > SLA * 0.8 → envoyer alerte SLA
 - Quand statut = approuve → generer certificat
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
 
-class RuleTrigger(str, Enum):
+class RuleTrigger(StrEnum):
     ON_SUBMIT = "on_submit"
     ON_TRANSITION = "on_transition"
     ON_APPROVE = "on_approve"
@@ -23,7 +24,7 @@ class RuleTrigger(str, Enum):
     ON_INSPECTION_COMPLETE = "on_inspection_complete"
 
 
-class RuleAction(str, Enum):
+class RuleAction(StrEnum):
     NOTIFY_USER = "notify_user"
     NOTIFY_ROLE = "notify_role"
     SEND_EMAIL = "send_email"
@@ -35,8 +36,8 @@ class RuleAction(str, Enum):
 
 @dataclass
 class WorkflowCondition:
-    field: str        # e.g. "secteur", "statut", "age_jours", "province"
-    operator: str     # "eq", "ne", "gt", "lt", "gte", "lte", "in", "contains"
+    field: str  # e.g. "secteur", "statut", "age_jours", "province"
+    operator: str  # "eq", "ne", "gt", "lt", "gte", "lte", "in", "contains"
     value: Any
 
 
@@ -140,15 +141,24 @@ def evaluate_condition(condition: WorkflowCondition, context: dict) -> bool:
     target_value = condition.value
 
     match condition.operator:
-        case "eq": return field_value == target_value
-        case "ne": return field_value != target_value
-        case "gt": return field_value is not None and field_value > target_value
-        case "lt": return field_value is not None and field_value < target_value
-        case "gte": return field_value is not None and field_value >= target_value
-        case "lte": return field_value is not None and field_value <= target_value
-        case "in": return field_value in target_value
-        case "contains": return target_value in (field_value or "")
-        case _: return False
+        case "eq":
+            return field_value == target_value
+        case "ne":
+            return field_value != target_value
+        case "gt":
+            return field_value is not None and field_value > target_value
+        case "lt":
+            return field_value is not None and field_value < target_value
+        case "gte":
+            return field_value is not None and field_value >= target_value
+        case "lte":
+            return field_value is not None and field_value <= target_value
+        case "in":
+            return field_value in target_value
+        case "contains":
+            return target_value in (field_value or "")
+        case _:
+            return False
 
 
 def evaluate_rules(trigger: RuleTrigger, context: dict) -> list[WorkflowRule]:
@@ -172,10 +182,7 @@ def get_all_rules() -> list[dict]:
             "name": r.name,
             "description": r.description,
             "trigger": r.trigger.value,
-            "conditions": [
-                {"field": c.field, "operator": c.operator, "value": c.value}
-                for c in r.conditions
-            ],
+            "conditions": [{"field": c.field, "operator": c.operator, "value": c.value} for c in r.conditions],
             "action": r.action.value,
             "action_params": r.action_params,
             "is_active": r.is_active,

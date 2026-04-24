@@ -1,13 +1,13 @@
 """PNPI · Scoring de conformite par operateur industriel."""
+
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Dict, List
 
-from sqlalchemy.orm import Session
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from ..database import now_utc, as_utc
+from ..database import as_utc, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
     InspectionConformiteORM,
@@ -15,7 +15,7 @@ from ..models.pnpi import (
 )
 
 
-def compute_operator_score(db: Session, operateur_id: str) -> Dict:
+def compute_operator_score(db: Session, operateur_id: str) -> dict:
     """
     Score composite 0-100 pour un operateur.
     Piliers :
@@ -33,18 +33,24 @@ def compute_operator_score(db: Session, operateur_id: str) -> Dict:
     year_ago = now - timedelta(days=365)
 
     # Fetch ATIs
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.operateur_id == operateur_id
+    atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     # Fetch inspections
-    inspections = db.execute(
-        select(InspectionConformiteORM).where(
-            InspectionConformiteORM.operateur_id == operateur_id
-        ).order_by(InspectionConformiteORM.date_inspection.desc())
-    ).scalars().all()
+    inspections = (
+        db.execute(
+            select(InspectionConformiteORM)
+            .where(InspectionConformiteORM.operateur_id == operateur_id)
+            .order_by(InspectionConformiteORM.date_inspection.desc())
+        )
+        .scalars()
+        .all()
+    )
 
     # 1. ATI Compliance (30 pts)
     if atis:
@@ -68,11 +74,10 @@ def compute_operator_score(db: Session, operateur_id: str) -> Dict:
 
     # 3. Document Completeness (15 pts)
     from ..models.pnpi import DocumentDossierORM
+
     doc_count = 0
     for ati in atis:
-        docs = db.execute(
-            select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati.id)
-        ).scalars().all()
+        docs = db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati.id)).scalars().all()
         doc_count += len(docs)
     if atis:
         avg_docs = doc_count / len(atis)
@@ -84,8 +89,7 @@ def compute_operator_score(db: Session, operateur_id: str) -> Dict:
     decided_with_sla = [a for a in atis if a.statut in {"approuve", "rejete"} and a.date_decision]
     if decided_with_sla:
         on_time = sum(
-            1 for a in decided_with_sla
-            if (a.date_decision.date() - a.date_soumission.date()).days <= a.sla_jours
+            1 for a in decided_with_sla if (a.date_decision.date() - a.date_soumission.date()).days <= a.sla_jours
         )
         sla_score = on_time / len(decided_with_sla) * 15
     else:
@@ -137,11 +141,9 @@ def compute_operator_score(db: Session, operateur_id: str) -> Dict:
     }
 
 
-def compute_all_scores(db: Session) -> List[Dict]:
+def compute_all_scores(db: Session) -> list[dict]:
     """Compute scores for all active operators."""
-    ops = db.execute(
-        select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))
-    ).scalars().all()
+    ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
 
     results = []
     for op in ops:

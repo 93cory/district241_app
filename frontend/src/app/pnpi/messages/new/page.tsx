@@ -41,7 +41,7 @@ export default function NewMessagePage() {
         (u) =>
           u.username.toLowerCase().includes(q) ||
           u.full_name?.toLowerCase().includes(q) ||
-          u.roles?.some((r) => r.toLowerCase().includes(q))
+          u.roles?.some((r) => r.toLowerCase().includes(q)),
       )
       .slice(0, 12);
   }, [query, users]);
@@ -102,7 +102,11 @@ export default function NewMessagePage() {
               autoComplete="off"
             />
             {open && suggestions.length > 0 && (
-              <div className="msg-new-suggestions" role="listbox" aria-label="Liste des destinataires">
+              <div
+                className="msg-new-suggestions"
+                role="listbox"
+                aria-label="Liste des destinataires"
+              >
                 {suggestions.map((u) => (
                   <button
                     type="button"
@@ -125,12 +129,16 @@ export default function NewMessagePage() {
               </div>
             )}
             {recipient && !open && (
-              <div className="msg-new-picked">Selectionne : <strong>{recipient}</strong></div>
+              <div className="msg-new-picked">
+                Selectionne : <strong>{recipient}</strong>
+              </div>
             )}
           </div>
 
           <div className="pnpi-form-field">
-            <label htmlFor="msg-subject" className="pnpi-form-label pnpi-form-label-req">Sujet</label>
+            <label htmlFor="msg-subject" className="pnpi-form-label pnpi-form-label-req">
+              Sujet
+            </label>
             <input
               id="msg-subject"
               className="pnpi-form-input"
@@ -141,7 +149,9 @@ export default function NewMessagePage() {
           </div>
 
           <div className="pnpi-form-field">
-            <label htmlFor="msg-body" className="pnpi-form-label pnpi-form-label-req">Message</label>
+            <label htmlFor="msg-body" className="pnpi-form-label pnpi-form-label-req">
+              Message
+            </label>
             <textarea
               id="msg-body"
               className="pnpi-form-textarea"

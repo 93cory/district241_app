@@ -13,8 +13,16 @@ const SECTEUR_LABELS: Record<string, string> = {
   services: "Services",
 };
 const PROVINCES = [
-  "", "estuaire", "haut_ogooue", "ogooue_maritime", "ngounie", "nyanga",
-  "moyen_ogooue", "ogooue_lolo", "ogooue_ivindo", "woleu_ntem",
+  "",
+  "estuaire",
+  "haut_ogooue",
+  "ogooue_maritime",
+  "ngounie",
+  "nyanga",
+  "moyen_ogooue",
+  "ogooue_lolo",
+  "ogooue_ivindo",
+  "woleu_ntem",
 ];
 
 export function OperateursFiltersClient({
@@ -35,7 +43,7 @@ export function OperateursFiltersClient({
       else params.delete(key);
       router.push(`${pathname}?${params.toString()}`);
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   );
 
   const hasFilters = Boolean(secteur || province);
@@ -43,7 +51,9 @@ export function OperateursFiltersClient({
   return (
     <div className="pnpi-filter-bar">
       <div className="pnpi-form-field">
-        <label htmlFor="op-filter-secteur" className="pnpi-form-label">Secteur</label>
+        <label htmlFor="op-filter-secteur" className="pnpi-form-label">
+          Secteur
+        </label>
         <select
           id="op-filter-secteur"
           className="pnpi-form-select"
@@ -51,13 +61,17 @@ export function OperateursFiltersClient({
           onChange={(e) => updateFilter("secteur", e.target.value)}
         >
           {SECTEURS.map((s) => (
-            <option key={s} value={s}>{SECTEUR_LABELS[s] ?? s}</option>
+            <option key={s} value={s}>
+              {SECTEUR_LABELS[s] ?? s}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="op-filter-province" className="pnpi-form-label">Province</label>
+        <label htmlFor="op-filter-province" className="pnpi-form-label">
+          Province
+        </label>
         <select
           id="op-filter-province"
           className="pnpi-form-select"
@@ -66,18 +80,16 @@ export function OperateursFiltersClient({
         >
           <option value="">Toutes provinces</option>
           {PROVINCES.slice(1).map((p) => (
-            <option key={p} value={p}>{p.replace(/_/g, " ")}</option>
+            <option key={p} value={p}>
+              {p.replace(/_/g, " ")}
+            </option>
           ))}
         </select>
       </div>
 
       {hasFilters && (
         <div className="pnpi-filter-bar-actions">
-          <button
-            type="button"
-            className="pnpi-filter-btn"
-            onClick={() => router.push(pathname)}
-          >
+          <button type="button" className="pnpi-filter-btn" onClick={() => router.push(pathname)}>
             Reinitialiser
           </button>
         </div>

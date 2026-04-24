@@ -56,7 +56,9 @@ export function ImpersonateForm({ users }: { users: UserRow[] }) {
   return (
     <form onSubmit={submit} className="pnpi-form-stack" style={{ marginTop: "1.25rem" }}>
       <div className="pnpi-form-field">
-        <label htmlFor="sim-search" className="pnpi-form-label">Rechercher un utilisateur</label>
+        <label htmlFor="sim-search" className="pnpi-form-label">
+          Rechercher un utilisateur
+        </label>
         <input
           id="sim-search"
           type="text"
@@ -95,15 +97,17 @@ export function ImpersonateForm({ users }: { users: UserRow[] }) {
           <div>
             <strong>Vous allez simuler</strong>
             <p style={{ margin: "0.25rem 0 0" }}>
-              {user.full_name} <span className="pnpi-mono">({user.username})</span> &middot;{" "}
-              roles : {user.roles.join(", ")}
+              {user.full_name} <span className="pnpi-mono">({user.username})</span> &middot; roles :{" "}
+              {user.roles.join(", ")}
             </p>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">{error}</div>
+        <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">
+          {error}
+        </div>
       )}
 
       <div className="pnpi-form-actions">

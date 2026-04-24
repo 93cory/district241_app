@@ -20,7 +20,11 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
   }
 
   return (
-    <nav className="pagination" aria-label="Pagination" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "1rem" }}>
+    <nav
+      className="pagination"
+      aria-label="Pagination"
+      style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "1rem" }}
+    >
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
@@ -32,7 +36,9 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
 
       {pages.map((p, i) =>
         p === "..." ? (
-          <span key={`ellipsis-${i}`} style={{ padding: "0 0.25rem" }}>...</span>
+          <span key={`ellipsis-${i}`} style={{ padding: "0 0.25rem" }}>
+            ...
+          </span>
         ) : (
           <button
             key={p}
@@ -63,7 +69,9 @@ export function Pagination({ page, totalPages, total, onPageChange }: Pagination
         &raquo;
       </button>
 
-      <span style={{ marginLeft: "0.5rem", fontSize: "0.85rem", color: "var(--text-secondary, #666)" }}>
+      <span
+        style={{ marginLeft: "0.5rem", fontSize: "0.85rem", color: "var(--text-secondary, #666)" }}
+      >
         {total} resultat{total > 1 ? "s" : ""}
       </span>
     </nav>

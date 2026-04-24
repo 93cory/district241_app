@@ -5,10 +5,10 @@ Endpoints pour:
 - Impots (DGI): Verification NIF et activites agreees
 - Emploi (MTEPS): Liste des operateurs actifs par secteur
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import select
@@ -26,12 +26,13 @@ router = APIRouter(prefix="/integration", tags=["Integration"])
 # Simple API key auth for external systems
 INTEGRATION_API_KEYS = {
     "dgdi": "PNPI_DGDI_KEY",  # Douanes
-    "dgi": "PNPI_DGI_KEY",    # Impots
-    "mteps": "PNPI_MTEPS_KEY", # Emploi
+    "dgi": "PNPI_DGI_KEY",  # Impots
+    "mteps": "PNPI_MTEPS_KEY",  # Emploi
 }
 
 import os
 import secrets
+
 
 async def verify_api_key(x_api_key: str = Header(...), x_system_id: str = Header(...)):
     """Verify external system API key."""
@@ -53,33 +54,37 @@ async def verify_operateur_by_nif(
     db: Session = Depends(get_db),
 ):
     """Verify an operator by NIF. Used by customs and tax systems."""
-    op = db.execute(
-        select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)
-    ).scalar_one_or_none()
+    op = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)).scalar_one_or_none()
 
     if not op:
         return {"found": False, "nif": nif}
 
     # Get approved ATIs
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.operateur_id == op.id,
-            AgrementTechniqueIndustrielORM.statut == "approuve",
+    atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(
+                AgrementTechniqueIndustrielORM.operateur_id == op.id,
+                AgrementTechniqueIndustrielORM.statut == "approuve",
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     active_atis = []
     for ati in atis:
         is_expired = ati.date_expiration and ati.date_expiration.date() < now.date()
         if not is_expired:
-            active_atis.append({
-                "numero_ati": ati.numero_ati,
-                "secteur": ati.secteur,
-                "type_activite": ati.type_activite,
-                "date_approbation": ati.date_decision.isoformat() if ati.date_decision else None,
-                "date_expiration": ati.date_expiration.isoformat() if ati.date_expiration else None,
-            })
+            active_atis.append(
+                {
+                    "numero_ati": ati.numero_ati,
+                    "secteur": ati.secteur,
+                    "type_activite": ati.type_activite,
+                    "date_approbation": ati.date_decision.isoformat() if ati.date_decision else None,
+                    "date_expiration": ati.date_expiration.isoformat() if ati.date_expiration else None,
+                }
+            )
 
     return {
         "found": True,
@@ -95,8 +100,8 @@ async def verify_operateur_by_nif(
 
 @router.get("/operateurs-actifs")
 async def list_active_operateurs(
-    secteur: Optional[str] = Query(None),
-    province: Optional[str] = Query(None),
+    secteur: str | None = Query(None),
+    province: str | None = Query(None),
     system_id: str = Depends(verify_api_key),
     db: Session = Depends(get_db),
 ):
@@ -123,7 +128,7 @@ async def list_active_operateurs(
             }
             for op in ops
         ],
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
     }
 
 
@@ -134,26 +139,28 @@ async def check_conformite(
     db: Session = Depends(get_db),
 ):
     """Check compliance status for an operator by NIF. Used by all external systems."""
-    op = db.execute(
-        select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)
-    ).scalar_one_or_none()
+    op = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)).scalar_one_or_none()
 
     if not op:
         return {"found": False, "nif": nif}
 
     # Latest inspection
-    latest_insp = db.execute(
-        select(InspectionConformiteORM).where(
-            InspectionConformiteORM.operateur_id == op.id
-        ).order_by(InspectionConformiteORM.date_inspection.desc())
-    ).scalars().first()
+    latest_insp = (
+        db.execute(
+            select(InspectionConformiteORM)
+            .where(InspectionConformiteORM.operateur_id == op.id)
+            .order_by(InspectionConformiteORM.date_inspection.desc())
+        )
+        .scalars()
+        .first()
+    )
 
     # ATI stats
-    atis = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.operateur_id == op.id
-        )
-    ).scalars().all()
+    atis = (
+        db.execute(select(AgrementTechniqueIndustrielORM).where(AgrementTechniqueIndustrielORM.operateur_id == op.id))
+        .scalars()
+        .all()
+    )
 
     return {
         "found": True,
@@ -164,12 +171,14 @@ async def check_conformite(
             "date": latest_insp.date_inspection.isoformat() if latest_insp else None,
             "statut": latest_insp.statut_conformite if latest_insp else None,
             "inspecteur": latest_insp.inspecteur_username if latest_insp else None,
-        } if latest_insp else None,
+        }
+        if latest_insp
+        else None,
         "atis": {
             "total": len(atis),
             "approuves": sum(1 for a in atis if a.statut == "approuve"),
             "rejetes": sum(1 for a in atis if a.statut == "rejete"),
             "en_cours": sum(1 for a in atis if a.statut not in {"approuve", "rejete", "expire"}),
         },
-        "verified_at": datetime.now(timezone.utc).isoformat(),
+        "verified_at": datetime.now(UTC).isoformat(),
     }

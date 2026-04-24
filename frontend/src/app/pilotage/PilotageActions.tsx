@@ -9,7 +9,13 @@ interface Props {
   dossiers: ProjectDossier[];
 }
 
-const statusOptions = ["submitted", "under_review", "interministerial", "approved", "rejected"] as const;
+const statusOptions = [
+  "submitted",
+  "under_review",
+  "interministerial",
+  "approved",
+  "rejected",
+] as const;
 const stageOptions = ["reception", "instruction", "validation", "decision"] as const;
 const priorityOptions = ["low", "medium", "high"] as const;
 const roleOptions = ["inspecteur", "ministre", "admin"] as const;
@@ -159,23 +165,37 @@ export const PilotageActions = ({ dossiers }: Props) => {
             }}
           >
             <input type="hidden" name="dossier_id" value={dossier.id} />
-            <p style={{ margin: "0 0 0.45rem", fontWeight: 700 }}>{dossier.id} - {dossier.company_name}</p>
+            <p style={{ margin: "0 0 0.45rem", fontWeight: 700 }}>
+              {dossier.id} - {dossier.company_name}
+            </p>
             <div style={{ display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
-              <select name={`status-${dossier.id}`} defaultValue={dossier.status} style={compactFieldStyle}>
+              <select
+                name={`status-${dossier.id}`}
+                defaultValue={dossier.status}
+                style={compactFieldStyle}
+              >
                 {statusOptions.map((option) => (
                   <option key={option} value={option}>
                     {statusLabel[option]}
                   </option>
                 ))}
               </select>
-              <select name={`stage-${dossier.id}`} defaultValue={dossier.stage} style={compactFieldStyle}>
+              <select
+                name={`stage-${dossier.id}`}
+                defaultValue={dossier.stage}
+                style={compactFieldStyle}
+              >
                 {stageOptions.map((option) => (
                   <option key={option} value={option}>
                     {stageLabel[option]}
                   </option>
                 ))}
               </select>
-              <select name={`priority-${dossier.id}`} defaultValue={dossier.priority} style={compactFieldStyle}>
+              <select
+                name={`priority-${dossier.id}`}
+                defaultValue={dossier.priority}
+                style={compactFieldStyle}
+              >
                 {priorityOptions.map((option) => (
                   <option key={option} value={option}>
                     {priorityLabel[option]}

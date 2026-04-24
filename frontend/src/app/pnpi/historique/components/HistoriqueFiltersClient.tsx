@@ -36,7 +36,13 @@ interface Props {
   actionType: string;
 }
 
-export function HistoriqueFiltersClient({ acteur, dateFrom, dateTo, atiNumero, actionType }: Props) {
+export function HistoriqueFiltersClient({
+  acteur,
+  dateFrom,
+  dateTo,
+  atiNumero,
+  actionType,
+}: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -101,7 +107,9 @@ export function HistoriqueFiltersClient({ acteur, dateFrom, dateTo, atiNumero, a
             placeholder="ATI-2025-..."
             value={localAtiNumero}
             onChange={(e) => setLocalAtiNumero(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") apply();
+            }}
             style={inputStyle}
           />
         </div>
@@ -114,7 +122,9 @@ export function HistoriqueFiltersClient({ acteur, dateFrom, dateTo, atiNumero, a
             placeholder="Filtrer par acteur..."
             value={localActeur}
             onChange={(e) => setLocalActeur(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") apply(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") apply();
+            }}
             style={inputStyle}
           />
         </div>
@@ -128,7 +138,9 @@ export function HistoriqueFiltersClient({ acteur, dateFrom, dateTo, atiNumero, a
             style={{ ...inputStyle, minWidth: "160px" }}
           >
             {ACTION_TYPES.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
           </select>
         </div>

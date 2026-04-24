@@ -3,10 +3,9 @@
 Source : Code de l'investissement du Gabon (Loi 15/98) + decrets sectoriels.
 Citation directe depuis les fiches ATI pour les instructeurs.
 """
-from typing import List, Dict
 
 # Format : liste d'articles reglementaires pour chaque secteur
-REGLEMENTATION_BY_SECTOR: Dict[str, List[Dict[str, str]]] = {
+REGLEMENTATION_BY_SECTOR: dict[str, list[dict[str, str]]] = {
     "bois": [
         {
             "ref": "Loi 16/01",
@@ -108,7 +107,7 @@ REGLEMENTATION_BY_SECTOR: Dict[str, List[Dict[str, str]]] = {
 }
 
 # References transversales applicables a tous les secteurs
-REGLEMENTATION_TRANSVERSE: List[Dict[str, str]] = [
+REGLEMENTATION_TRANSVERSE: list[dict[str, str]] = [
     {
         "ref": "Loi 15/98",
         "titre": "Code de l'investissement",
@@ -126,7 +125,7 @@ REGLEMENTATION_TRANSVERSE: List[Dict[str, str]] = [
 ]
 
 
-def get_regulations_for_sector(sector: str) -> List[Dict[str, str]]:
+def get_regulations_for_sector(sector: str) -> list[dict[str, str]]:
     """Retourne les articles reglementaires applicables au secteur + transverses."""
     sector_specific = REGLEMENTATION_BY_SECTOR.get(sector, [])
     return sector_specific + REGLEMENTATION_TRANSVERSE

@@ -5,10 +5,11 @@ Configure via variables d'environnement :
   PNPI_AT_USERNAME, PNPI_AT_API_KEY (Africa's Talking)
   PNPI_TWILIO_SID, PNPI_TWILIO_TOKEN, PNPI_TWILIO_FROM (Twilio)
 """
+
 from __future__ import annotations
 
-import os
 import logging
+import os
 
 logger = logging.getLogger("pnpi.sms")
 
@@ -46,6 +47,7 @@ def send_sms(to: str, message: str) -> dict:
 def _send_at(to: str, message: str) -> dict:
     """Send via Africa's Talking."""
     import africastalking
+
     username = os.environ.get("PNPI_AT_USERNAME", "")
     api_key = os.environ.get("PNPI_AT_API_KEY", "")
     africastalking.initialize(username, api_key)
@@ -57,6 +59,7 @@ def _send_at(to: str, message: str) -> dict:
 def _send_twilio(to: str, message: str) -> dict:
     """Send via Twilio."""
     from twilio.rest import Client
+
     sid = os.environ.get("PNPI_TWILIO_SID", "")
     token = os.environ.get("PNPI_TWILIO_TOKEN", "")
     from_number = os.environ.get("PNPI_TWILIO_FROM", "")

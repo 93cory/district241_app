@@ -42,7 +42,13 @@ function fileExt(name: string): string {
   return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
 }
 
-export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; initialDocs?: DocumentRead[] }) {
+export function DocumentUpload({
+  atiId,
+  initialDocs = [],
+}: {
+  atiId: string;
+  initialDocs?: DocumentRead[];
+}) {
   const [docs, setDocs] = useState<DocumentRead[]>(initialDocs);
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [defaultType, setDefaultType] = useState("autre");
@@ -84,7 +90,7 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
       }
       if (valid.length) setQueue((prev) => [...prev, ...valid]);
     },
-    [defaultType]
+    [defaultType],
   );
 
   const removeQueueItem = (id: string) => setQueue((prev) => prev.filter((q) => q.id !== id));
@@ -103,7 +109,7 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
         body: form,
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({} as { detail?: string }));
+        const body = await res.json().catch(() => ({}) as { detail?: string });
         throw new Error(body.detail ?? `Erreur ${res.status}`);
       }
       const newDoc = (await res.json()) as DocumentRead;
@@ -154,7 +160,7 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
     try {
       const res = await fetch(
         `/api/ati/${encodeURIComponent(atiId)}/documents?docId=${encodeURIComponent(docId)}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       setDocs((prev) => prev.filter((d) => d.id !== docId));
@@ -187,19 +193,35 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
           className="docupload-input"
           aria-label="Selectionner des fichiers a joindre"
         />
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
           <polyline points="17 8 12 3 7 8" />
           <line x1="12" y1="3" x2="12" y2="15" />
         </svg>
         <div className="docupload-text">
-          <strong>{isDragging ? "Relachez pour ajouter" : "Deposer un ou plusieurs fichiers ici"}</strong>
-          <span className="docupload-hint">ou cliquer pour parcourir &middot; {ACCEPT} &middot; max {MAX_SIZE_MB} Mo</span>
+          <strong>
+            {isDragging ? "Relachez pour ajouter" : "Deposer un ou plusieurs fichiers ici"}
+          </strong>
+          <span className="docupload-hint">
+            ou cliquer pour parcourir &middot; {ACCEPT} &middot; max {MAX_SIZE_MB} Mo
+          </span>
         </div>
       </label>
 
       <div className="docupload-type-row">
-        <label htmlFor="docupload-type" className="pnpi-form-label">Type par defaut pour les prochains fichiers</label>
+        <label htmlFor="docupload-type" className="pnpi-form-label">
+          Type par defaut pour les prochains fichiers
+        </label>
         <select
           id="docupload-type"
           className="pnpi-form-select"
@@ -207,7 +229,9 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
           onChange={(e) => setDefaultType(e.target.value)}
         >
           {Object.entries(TYPE_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
+            <option key={v} value={v}>
+              {l}
+            </option>
           ))}
         </select>
       </div>
@@ -246,7 +270,9 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
                   aria-label={`Type du document ${q.file.name}`}
                 >
                   {Object.entries(TYPE_LABELS).map(([v, l]) => (
-                    <option key={v} value={v}>{l}</option>
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
                   ))}
                 </select>
                 <span className={`docupload-status docupload-status--${q.status}`}>
@@ -279,7 +305,16 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
           {docs.map((doc) => (
             <li key={doc.id} className="docupload-item">
               <div className="docupload-item-icon" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
@@ -299,7 +334,17 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
                 className="docupload-dl"
                 title="Telecharger"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
@@ -312,7 +357,17 @@ export function DocumentUpload({ atiId, initialDocs = [] }: { atiId: string; ini
                 aria-label={`Supprimer ${doc.nom_fichier}`}
                 title="Supprimer"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
                   <polyline points="3 6 5 6 21 6" />
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                 </svg>

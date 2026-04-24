@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     if (!response.ok) {
       return new Response(
         JSON.stringify({ error: `Export transitions PDF indisponible (${response.status})` }),
-        { status: response.status, headers: { "Content-Type": "application/json" } }
+        { status: response.status, headers: { "Content-Type": "application/json" } },
       );
     }
 

@@ -5,7 +5,14 @@ import { fetchBackendProfile } from "../../../lib/backend";
 import { ATIFiltersClient } from "./components/ATIFiltersClient";
 import { ATITableWithSelection } from "./ATITableWithSelection";
 
-const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur", "operateur"]);
+const PNPI_ROLES = new Set([
+  "admin",
+  "ministre",
+  "directeur",
+  "instructeur",
+  "inspecteur",
+  "operateur",
+]);
 
 const STATUT_LABELS: Record<string, string> = {
   soumis: "Soumis",
@@ -22,7 +29,9 @@ export default async function ATIListPage({ searchParams }: { searchParams: Sear
   try {
     const profile = await fetchBackendProfile();
     if (!((profile.roles ?? []) as string[]).some((r) => PNPI_ROLES.has(r))) redirect("/connexion");
-  } catch { redirect("/connexion"); }
+  } catch {
+    redirect("/connexion");
+  }
 
   const statut = searchParams.statut ?? "";
   const secteur = searchParams.secteur ?? "";
@@ -61,13 +70,16 @@ export default async function ATIListPage({ searchParams }: { searchParams: Sear
           {/* Header */}
           <div className="pnpi-page-head">
             <div>
-              <Link href="/pnpi" className="pnpi-back-link">&larr; Tableau de bord</Link>
+              <Link href="/pnpi" className="pnpi-back-link">
+                &larr; Tableau de bord
+              </Link>
               <h2>Gestion des Agrements Techniques Industriels</h2>
               <p className="pnpi-page-sub">
                 Page {page} &middot; {atis.length} dossier(s)
                 {overdueCount > 0 && (
                   <>
-                    {" "}&middot;{" "}
+                    {" "}
+                    &middot;{" "}
                     <span className="pnpi-overdue-count">{overdueCount} en retard SLA</span>
                   </>
                 )}

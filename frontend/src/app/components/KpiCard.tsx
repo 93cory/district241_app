@@ -27,9 +27,14 @@ export function KPICard({
   const finalLabel = label ?? title ?? "";
   const finalSub = sublabel ?? detail ?? "";
   const trendDir: "up" | "down" | "flat" | undefined = trend
-    ? trend.value > 0 ? "up" : trend.value < 0 ? "down" : "flat"
+    ? trend.value > 0
+      ? "up"
+      : trend.value < 0
+        ? "down"
+        : "flat"
     : undefined;
-  const trendArrow = trendDir === "up" ? "↑" : trendDir === "down" ? "↓" : trendDir === "flat" ? "→" : "";
+  const trendArrow =
+    trendDir === "up" ? "↑" : trendDir === "down" ? "↓" : trendDir === "flat" ? "→" : "";
 
   return (
     <article className={`kpi-card kpi-card--${tone}`}>

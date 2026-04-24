@@ -32,11 +32,16 @@ export function ATIComments({ atiId, currentUsername = "", canPostInternal = tru
         const data = await res.json();
         setComments(data.comments ?? []);
       }
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [atiId]);
+  useEffect(() => {
+    load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [atiId]);
 
   const send = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,28 +71,37 @@ export function ATIComments({ atiId, currentUsername = "", canPostInternal = tru
     <div className="ati-comments">
       <div className="ati-comments-head">
         <h3 className="pnpi-card-subtitle">
-          Commentaires &amp; discussion {comments.length > 0 && <span className="ati-comments-count">({comments.length})</span>}
+          Commentaires &amp; discussion{" "}
+          {comments.length > 0 && <span className="ati-comments-count">({comments.length})</span>}
         </h3>
       </div>
 
       {loading ? (
         <div className="ati-comments-loading">Chargement des commentaires...</div>
       ) : comments.length === 0 ? (
-        <div className="ati-comments-empty">
-          Aucun commentaire pour l&apos;instant.
-        </div>
+        <div className="ati-comments-empty">Aucun commentaire pour l&apos;instant.</div>
       ) : (
         <ul className="ati-comments-list">
           {comments.map((c) => {
             const isMe = currentUsername && c.author === currentUsername;
             return (
-              <li key={c.id} className={`ati-comment ${c.is_internal ? "is-internal" : ""} ${isMe ? "is-me" : ""}`}>
+              <li
+                key={c.id}
+                className={`ati-comment ${c.is_internal ? "is-internal" : ""} ${isMe ? "is-me" : ""}`}
+              >
                 <div className="ati-comment-head">
                   <span className="ati-comment-author">{c.author}</span>
-                  {c.is_internal && <span className="ati-comment-badge" title="Visible uniquement du personnel">interne</span>}
+                  {c.is_internal && (
+                    <span className="ati-comment-badge" title="Visible uniquement du personnel">
+                      interne
+                    </span>
+                  )}
                   <span className="ati-comment-date">
                     {new Date(c.created_at).toLocaleString("fr-FR", {
-                      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })}
                   </span>
                 </div>
@@ -102,7 +116,11 @@ export function ATIComments({ atiId, currentUsername = "", canPostInternal = tru
         <textarea
           className="pnpi-form-textarea"
           rows={3}
-          placeholder={canPostInternal ? "Ecrire un commentaire ou une note interne..." : "Poser une question a l'instructeur..."}
+          placeholder={
+            canPostInternal
+              ? "Ecrire un commentaire ou une note interne..."
+              : "Poser une question a l'instructeur..."
+          }
           value={body}
           onChange={(e) => setBody(e.target.value)}
           disabled={busy}
@@ -118,7 +136,9 @@ export function ATIComments({ atiId, currentUsername = "", canPostInternal = tru
               <span>Note interne (invisible pour l&apos;operateur)</span>
             </label>
           ) : (
-            <span className="ati-comments-hint">Ce commentaire sera visible de l&apos;instructeur.</span>
+            <span className="ati-comments-hint">
+              Ce commentaire sera visible de l&apos;instructeur.
+            </span>
           )}
           <button type="submit" disabled={busy || !body.trim()} className="btn-primary">
             {busy ? "Envoi..." : "Publier"}

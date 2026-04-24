@@ -18,7 +18,8 @@ export function InspectionsFiltersClient({
 
   const update = (key: string, value: string) => {
     const params = new URLSearchParams();
-    if (key !== "statut_conformite" && statut_conformite) params.set("statut_conformite", statut_conformite);
+    if (key !== "statut_conformite" && statut_conformite)
+      params.set("statut_conformite", statut_conformite);
     if (key !== "inspecteur" && inspecteur) params.set("inspecteur", inspecteur);
     if (value) params.set(key, value);
     router.push(`/pnpi/inspections${params.toString() ? "?" + params.toString() : ""}`);
@@ -29,7 +30,9 @@ export function InspectionsFiltersClient({
   return (
     <div className="pnpi-filter-bar">
       <div className="pnpi-form-field">
-        <label htmlFor="insp-filter-statut" className="pnpi-form-label">Conformite</label>
+        <label htmlFor="insp-filter-statut" className="pnpi-form-label">
+          Conformite
+        </label>
         <select
           id="insp-filter-statut"
           className="pnpi-form-select"
@@ -38,13 +41,17 @@ export function InspectionsFiltersClient({
         >
           <option value="">Tous statuts</option>
           {STATUTS_CONF.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="insp-filter-inspecteur" className="pnpi-form-label">Inspecteur</label>
+        <label htmlFor="insp-filter-inspecteur" className="pnpi-form-label">
+          Inspecteur
+        </label>
         <input
           id="insp-filter-inspecteur"
           className="pnpi-form-input"

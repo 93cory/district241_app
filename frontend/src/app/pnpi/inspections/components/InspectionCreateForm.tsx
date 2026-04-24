@@ -55,7 +55,9 @@ export function InspectionCreateForm({ operateurs }: { operateurs: OperateurBrie
   return (
     <form onSubmit={handleSubmit} className="pnpi-form-stack">
       <div className="pnpi-form-field">
-        <label htmlFor="insp-operateur" className="pnpi-form-label pnpi-form-label-req">Operateur</label>
+        <label htmlFor="insp-operateur" className="pnpi-form-label pnpi-form-label-req">
+          Operateur
+        </label>
         <select
           id="insp-operateur"
           className="pnpi-form-select"
@@ -65,13 +67,17 @@ export function InspectionCreateForm({ operateurs }: { operateurs: OperateurBrie
         >
           <option value="">Selectionner un operateur</option>
           {operateurs.map((op) => (
-            <option key={op.id} value={op.id}>{op.raison_sociale}</option>
+            <option key={op.id} value={op.id}>
+              {op.raison_sociale}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="insp-ati" className="pnpi-form-label">Reference ATI</label>
+        <label htmlFor="insp-ati" className="pnpi-form-label">
+          Reference ATI
+        </label>
         <input
           id="insp-ati"
           className="pnpi-form-input"
@@ -82,7 +88,9 @@ export function InspectionCreateForm({ operateurs }: { operateurs: OperateurBrie
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="insp-date" className="pnpi-form-label pnpi-form-label-req">Date d&apos;inspection</label>
+        <label htmlFor="insp-date" className="pnpi-form-label pnpi-form-label-req">
+          Date d&apos;inspection
+        </label>
         <input
           id="insp-date"
           type="datetime-local"
@@ -94,7 +102,9 @@ export function InspectionCreateForm({ operateurs }: { operateurs: OperateurBrie
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="insp-statut" className="pnpi-form-label pnpi-form-label-req">Statut de conformite</label>
+        <label htmlFor="insp-statut" className="pnpi-form-label pnpi-form-label-req">
+          Statut de conformite
+        </label>
         <select
           id="insp-statut"
           className="pnpi-form-select"
@@ -103,14 +113,18 @@ export function InspectionCreateForm({ operateurs }: { operateurs: OperateurBrie
           onChange={(e) => setForm((f) => ({ ...f, statut_conformite: e.target.value }))}
         >
           {STATUTS.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="pnpi-form-field">
         <div className="pnpi-form-label-row">
-          <label htmlFor="insp-observations" className="pnpi-form-label pnpi-form-label-req">Observations</label>
+          <label htmlFor="insp-observations" className="pnpi-form-label pnpi-form-label-req">
+            Observations
+          </label>
           <VoiceInput
             value={form.observations}
             onChange={(v) => setForm((f) => ({ ...f, observations: v }))}
@@ -130,7 +144,9 @@ export function InspectionCreateForm({ operateurs }: { operateurs: OperateurBrie
 
       <div className="pnpi-form-field">
         <div className="pnpi-form-label-row">
-          <label htmlFor="insp-mesures" className="pnpi-form-label">Mesures correctives</label>
+          <label htmlFor="insp-mesures" className="pnpi-form-label">
+            Mesures correctives
+          </label>
           <VoiceInput
             value={form.mesures_correctives}
             onChange={(v) => setForm((f) => ({ ...f, mesures_correctives: v }))}

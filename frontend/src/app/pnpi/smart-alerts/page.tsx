@@ -13,7 +13,10 @@ export default async function SmartAlertsPage() {
   let alerts: any[] = [];
   try {
     const res = await backendRequest("/pnpi/dashboard/smart-alerts");
-    if (res.ok) { const d = await res.json(); alerts = d.alerts || []; }
+    if (res.ok) {
+      const d = await res.json();
+      alerts = d.alerts || [];
+    }
   } catch {}
 
   return (
@@ -27,27 +30,52 @@ export default async function SmartAlertsPage() {
         <div className="chart-card" style={{ padding: 32, textAlign: "center" }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>{"\u2705"}</div>
           <div style={{ fontWeight: 700 }}>Aucune anomalie detectee</div>
-          <div style={{ fontSize: 13, color: "var(--text-soft)" }}>Tous les indicateurs sont dans les normes.</div>
+          <div style={{ fontSize: 13, color: "var(--text-soft)" }}>
+            Tous les indicateurs sont dans les normes.
+          </div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {alerts.map((a, i) => {
             const s = SEV[a.severity] || SEV.info;
             return (
-              <div key={i} style={{
-                padding: "16px 20px", borderRadius: 14,
-                background: s.bg, borderLeft: `5px solid ${s.color}`,
-              }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <div
+                key={i}
+                style={{
+                  padding: "16px 20px",
+                  borderRadius: 14,
+                  background: s.bg,
+                  borderLeft: `5px solid ${s.color}`,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    marginBottom: 6,
+                  }}
+                >
                   <div style={{ fontSize: 15, fontWeight: 700, color: s.color }}>
                     {s.icon} {a.title}
                   </div>
-                  <span style={{
-                    padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-                    background: `${s.color}15`, color: s.color, textTransform: "uppercase",
-                  }}>{a.severity}</span>
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      background: `${s.color}15`,
+                      color: s.color,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {a.severity}
+                  </span>
                 </div>
-                <div style={{ fontSize: 13, color: "var(--text-main)", marginBottom: 6 }}>{a.detail}</div>
+                <div style={{ fontSize: 13, color: "var(--text-main)", marginBottom: 6 }}>
+                  {a.detail}
+                </div>
                 <div style={{ fontSize: 12, color: s.color, fontWeight: 600 }}>
                   {"\u{1F4A1}"} {a.recommendation}
                 </div>

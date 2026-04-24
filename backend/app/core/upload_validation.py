@@ -1,9 +1,9 @@
 """File upload validation · size limits and MIME type checking."""
+
 from __future__ import annotations
 
 import logging
 import os
-from typing import Set
 
 from fastapi import HTTPException, UploadFile, status
 
@@ -14,7 +14,7 @@ MAX_DOCUMENT_SIZE = int(os.getenv("PNPI_MAX_UPLOAD_MB", "10")) * 1024 * 1024  # 
 MAX_PHOTO_SIZE = 5 * 1024 * 1024  # 5 MB
 
 # Allowed MIME types per category
-ALLOWED_DOCUMENT_TYPES: Set[str] = {
+ALLOWED_DOCUMENT_TYPES: set[str] = {
     "application/pdf",
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -24,17 +24,33 @@ ALLOWED_DOCUMENT_TYPES: Set[str] = {
     "text/plain",
 }
 
-ALLOWED_IMAGE_TYPES: Set[str] = {
+ALLOWED_IMAGE_TYPES: set[str] = {
     "image/jpeg",
     "image/png",
     "image/webp",
 }
 
 # Dangerous file extensions (always blocked)
-BLOCKED_EXTENSIONS: Set[str] = {
-    ".exe", ".bat", ".cmd", ".com", ".msi", ".scr", ".pif",
-    ".js", ".vbs", ".wsf", ".ps1", ".sh", ".php", ".py",
-    ".dll", ".sys", ".cpl", ".hta", ".inf",
+BLOCKED_EXTENSIONS: set[str] = {
+    ".exe",
+    ".bat",
+    ".cmd",
+    ".com",
+    ".msi",
+    ".scr",
+    ".pif",
+    ".js",
+    ".vbs",
+    ".wsf",
+    ".ps1",
+    ".sh",
+    ".php",
+    ".py",
+    ".dll",
+    ".sys",
+    ".cpl",
+    ".hta",
+    ".inf",
 }
 
 
@@ -86,7 +102,7 @@ def _check_size(content: bytes, max_size: int, filename: str | None) -> None:
         raise HTTPException(status_code=400, detail="Fichier vide.")
 
 
-def _check_mime(content_type: str | None, allowed: Set[str], filename: str | None) -> None:
+def _check_mime(content_type: str | None, allowed: set[str], filename: str | None) -> None:
     if not content_type or content_type not in allowed:
         types_str = ", ".join(sorted(t.split("/")[1] for t in allowed))
         raise HTTPException(

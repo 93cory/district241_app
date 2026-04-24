@@ -1,19 +1,27 @@
 """PNPI / PNPI · Endpoints d'administration (utilisateurs, notifications)."""
+
 from __future__ import annotations
 
-from datetime import datetime as dt, timezone
-from typing import List, Optional
+from datetime import UTC
+from datetime import datetime as dt
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from sqlalchemy.orm import Session
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
-from ..core.auth import Role, User, require_roles, get_password_hash, validate_password_policy, roles_to_csv, csv_to_roles
 from ..core.audit import write_audit_event
-from ..core.sms import send_sms, SMS_ENABLED
+from ..core.auth import (
+    Role,
+    User,
+    csv_to_roles,
+    get_password_hash,
+    require_roles,
+    roles_to_csv,
+    validate_password_policy,
+)
+from ..core.sms import SMS_ENABLED, send_sms
 from ..database import get_db, now_utc
 from ..models.core import AuditEventORM, NotificationORM, UserAccountORM
-
 
 router = APIRouter(tags=["Administration"])
 
@@ -112,7 +120,7 @@ async def update_user_account(
     if "province" in payload:
         row.province = payload["province"] or None
 
-    if "password" in payload and payload["password"]:
+    if payload.get("password"):
         policy_error = validate_password_policy(payload["password"])
         if policy_error:
             raise HTTPException(status_code=400, detail=policy_error)
@@ -172,6 +180,7 @@ async def create_notification(
     db: Session = Depends(get_db),
 ):
     import uuid
+
     target_role_raw = payload.get("target_role")
     target_role_value = None
     if target_role_raw:
@@ -215,9 +224,8 @@ async def mark_notification_read(
 
     role_values = {role.value for role in current_user.roles}
     is_ministere_or_admin = Role.ministre.value in role_values or Role.admin.value in role_values
-    if not is_ministere_or_admin:
-        if row.target_role is not None and row.target_role not in role_values:
-            raise HTTPException(status_code=403, detail="Acces refuse pour cette notification.")
+    if not is_ministere_or_admin and row.target_role is not None and row.target_role not in role_values:
+        raise HTTPException(status_code=403, detail="Acces refuse pour cette notification.")
 
     row.is_read = payload.get("is_read", True)
     write_audit_event(
@@ -239,7 +247,8 @@ async def bulk_import_users(
     db: Session = Depends(get_db),
 ):
     """Import users from CSV. Columns: username,full_name,roles,password"""
-    import csv, io
+    import csv
+    import io
 
     content = await file.read()
     reader = csv.DictReader(io.StringIO(content.decode("utf-8-sig")))
@@ -289,8 +298,13 @@ async def bulk_import_users(
         created.append(username)
 
     if created:
-        write_audit_event(db, actor=current_user.username, action="admin.bulk_import",
-                         target=f"{len(created)} users", details=f"Imported: {', '.join(created[:10])}")
+        write_audit_event(
+            db,
+            actor=current_user.username,
+            action="admin.bulk_import",
+            target=f"{len(created)} users",
+            details=f"Imported: {', '.join(created[:10])}",
+        )
         db.commit()
 
     return {
@@ -303,11 +317,11 @@ async def bulk_import_users(
 
 @router.get("/admin/audit-logs")
 async def search_audit_logs(
-    actor: Optional[str] = Query(None),
-    action: Optional[str] = Query(None),
-    target: Optional[str] = Query(None),
-    date_start: Optional[str] = Query(None),
-    date_end: Optional[str] = Query(None),
+    actor: str | None = Query(None),
+    action: str | None = Query(None),
+    target: str | None = Query(None),
+    date_start: str | None = Query(None),
+    date_end: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     _: User = Depends(require_roles(Role.admin)),
@@ -323,17 +337,15 @@ async def search_audit_logs(
     if target:
         query = query.where(AuditEventORM.target.ilike(f"%{target}%"))
     if date_start:
-        start = dt.fromisoformat(date_start).replace(tzinfo=timezone.utc)
+        start = dt.fromisoformat(date_start).replace(tzinfo=UTC)
         query = query.where(AuditEventORM.timestamp >= start)
     if date_end:
-        end = dt.fromisoformat(date_end).replace(tzinfo=timezone.utc)
+        end = dt.fromisoformat(date_end).replace(tzinfo=UTC)
         query = query.where(AuditEventORM.timestamp <= end)
 
     total = db.execute(select(func.count()).select_from(query.subquery())).scalar() or 0
 
-    events = db.execute(
-        query.order_by(AuditEventORM.timestamp.desc()).offset(skip).limit(limit)
-    ).scalars().all()
+    events = db.execute(query.order_by(AuditEventORM.timestamp.desc()).offset(skip).limit(limit)).scalars().all()
 
     return {
         "total": total,
@@ -374,25 +386,97 @@ async def admin_send_sms(
 RACI_DEFAULT = {
     "roles": ["Operateur", "Instructeur", "Directeur", "Ministre", "Inspecteur", "Admin"],
     "stages": [
-        {"stage": "Soumission ATI",       "raci": {"Operateur":"R","Instructeur":"I","Directeur":"I","Ministre":"","Inspecteur":"","Admin":"I"}},
-        {"stage": "Instruction dossier",  "raci": {"Operateur":"I","Instructeur":"R","Directeur":"C","Ministre":"","Inspecteur":"","Admin":""}},
-        {"stage": "Validation technique", "raci": {"Operateur":"I","Instructeur":"A","Directeur":"R","Ministre":"I","Inspecteur":"C","Admin":""}},
-        {"stage": "Decision finale",      "raci": {"Operateur":"I","Instructeur":"I","Directeur":"A","Ministre":"R","Inspecteur":"","Admin":"I"}},
-        {"stage": "Emission certificat",  "raci": {"Operateur":"I","Instructeur":"R","Directeur":"A","Ministre":"","Inspecteur":"","Admin":""}},
-        {"stage": "Inspection conformite","raci": {"Operateur":"I","Instructeur":"C","Directeur":"A","Ministre":"I","Inspecteur":"R","Admin":""}},
-        {"stage": "Rapport inspection",   "raci": {"Operateur":"I","Instructeur":"I","Directeur":"A","Ministre":"I","Inspecteur":"R","Admin":""}},
+        {
+            "stage": "Soumission ATI",
+            "raci": {
+                "Operateur": "R",
+                "Instructeur": "I",
+                "Directeur": "I",
+                "Ministre": "",
+                "Inspecteur": "",
+                "Admin": "I",
+            },
+        },
+        {
+            "stage": "Instruction dossier",
+            "raci": {
+                "Operateur": "I",
+                "Instructeur": "R",
+                "Directeur": "C",
+                "Ministre": "",
+                "Inspecteur": "",
+                "Admin": "",
+            },
+        },
+        {
+            "stage": "Validation technique",
+            "raci": {
+                "Operateur": "I",
+                "Instructeur": "A",
+                "Directeur": "R",
+                "Ministre": "I",
+                "Inspecteur": "C",
+                "Admin": "",
+            },
+        },
+        {
+            "stage": "Decision finale",
+            "raci": {
+                "Operateur": "I",
+                "Instructeur": "I",
+                "Directeur": "A",
+                "Ministre": "R",
+                "Inspecteur": "",
+                "Admin": "I",
+            },
+        },
+        {
+            "stage": "Emission certificat",
+            "raci": {
+                "Operateur": "I",
+                "Instructeur": "R",
+                "Directeur": "A",
+                "Ministre": "",
+                "Inspecteur": "",
+                "Admin": "",
+            },
+        },
+        {
+            "stage": "Inspection conformite",
+            "raci": {
+                "Operateur": "I",
+                "Instructeur": "C",
+                "Directeur": "A",
+                "Ministre": "I",
+                "Inspecteur": "R",
+                "Admin": "",
+            },
+        },
+        {
+            "stage": "Rapport inspection",
+            "raci": {
+                "Operateur": "I",
+                "Instructeur": "I",
+                "Directeur": "A",
+                "Ministre": "I",
+                "Inspecteur": "R",
+                "Admin": "",
+            },
+        },
     ],
 }
 
 
 def _raci_path():
     from pathlib import Path
+
     return Path(__file__).resolve().parents[1] / "data" / "raci.json"
 
 
 @router.get("/admin/raci", summary="Charger la matrice RACI (persistance fichier)")
 async def get_raci(_: User = Depends(require_roles(Role.admin, Role.directeur, Role.ministre))):
     import json
+
     p = _raci_path()
     if not p.exists():
         return RACI_DEFAULT
@@ -409,6 +493,7 @@ async def update_raci(
     db: Session = Depends(get_db),
 ):
     import json
+
     if "roles" not in data or "stages" not in data:
         raise HTTPException(400, "Format invalide : roles + stages requis.")
 
@@ -416,8 +501,13 @@ async def update_raci(
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    write_audit_event(db, actor=current_user.username, action="admin.raci.update",
-                      target="raci_matrix", details=f"{len(data.get('stages', []))} etapes")
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="admin.raci.update",
+        target="raci_matrix",
+        details=f"{len(data.get('stages', []))} etapes",
+    )
     db.commit()
     return {"status": "ok"}
 
@@ -429,17 +519,20 @@ async def list_backups(
     """Liste les fichiers de sauvegarde sur le disque local (backups/)."""
     import os
     from pathlib import Path
+
     backup_dir = Path(os.getenv("PNPI_BACKUP_DIR", "backups"))
     if not backup_dir.exists():
         return {"backups": [], "dir": str(backup_dir), "s3_enabled": False}
     files = []
     for f in sorted(backup_dir.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
         if f.is_file():
-            files.append({
-                "name": f.name,
-                "size_bytes": f.stat().st_size,
-                "modified_at": dt.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).isoformat(),
-            })
+            files.append(
+                {
+                    "name": f.name,
+                    "size_bytes": f.stat().st_size,
+                    "modified_at": dt.fromtimestamp(f.stat().st_mtime, tz=UTC).isoformat(),
+                }
+            )
     return {
         "backups": files[:50],
         "dir": str(backup_dir),
@@ -453,8 +546,8 @@ async def create_backup(
     db: Session = Depends(get_db),
 ):
     """Lance une sauvegarde via le script backup_s3.py (si configure S3) ou locale."""
-    import subprocess
     import os
+    import subprocess
     from pathlib import Path
 
     backup_dir = Path(os.getenv("PNPI_BACKUP_DIR", "backups"))
@@ -469,9 +562,15 @@ async def create_backup(
         dest = backup_dir / f"pnpi_{timestamp}.db"
         try:
             import shutil
+
             shutil.copy2(src, dest)
-            write_audit_event(db, actor=current_user.username, action="admin.backup.create",
-                              target=dest.name, details=f"Sauvegarde locale : {dest.name}")
+            write_audit_event(
+                db,
+                actor=current_user.username,
+                action="admin.backup.create",
+                target=dest.name,
+                details=f"Sauvegarde locale : {dest.name}",
+            )
             db.commit()
             return {
                 "status": "ok",
@@ -485,12 +584,21 @@ async def create_backup(
     # PostgreSQL : delegue au script backup_s3
     if os.getenv("PNPI_S3_ENDPOINT"):
         try:
+            import sys as _sys
+
             result = subprocess.run(
-                ["python", "scripts/backup_s3.py", "backup"],
-                capture_output=True, text=True, timeout=300,
+                [_sys.executable, "scripts/backup_s3.py", "backup"],
+                capture_output=True,
+                text=True,
+                timeout=300,
             )
-            write_audit_event(db, actor=current_user.username, action="admin.backup.create",
-                              target="s3", details=f"Sauvegarde S3 : {result.returncode}")
+            write_audit_event(
+                db,
+                actor=current_user.username,
+                action="admin.backup.create",
+                target="s3",
+                details=f"Sauvegarde S3 : {result.returncode}",
+            )
             db.commit()
             return {
                 "status": "ok" if result.returncode == 0 else "error",
@@ -513,6 +621,7 @@ async def impersonate_user(
     Action integralement tracee dans l'audit pour conformite.
     """
     from datetime import timedelta
+
     from ..core.auth import create_access_token, user_from_row
 
     target = db.get(UserAccountORM, username)

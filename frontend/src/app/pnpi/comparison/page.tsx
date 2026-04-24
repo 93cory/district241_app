@@ -23,11 +23,13 @@ export default async function ComparisonPage({ searchParams }: Props) {
   if (hasParams) {
     try {
       const res = await backendRequest(
-        `/pnpi/dashboard/comparison?period1_start=${p1_start}&period1_end=${p1_end}&period2_start=${p2_start}&period2_end=${p2_end}`
+        `/pnpi/dashboard/comparison?period1_start=${p1_start}&period1_end=${p1_end}&period2_start=${p2_start}&period2_end=${p2_end}`,
       );
       if (res.ok) data = await res.json();
       else error = "Erreur de chargement.";
-    } catch { error = "Erreur de connexion."; }
+    } catch {
+      error = "Erreur de connexion.";
+    }
   }
 
   const LABELS: Record<string, string> = {
@@ -49,31 +51,87 @@ export default async function ComparisonPage({ searchParams }: Props) {
       </p>
 
       <form style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-        <fieldset style={{ border: "1.5px solid var(--line, #dce4ef)", borderRadius: 14, padding: 16 }}>
+        <fieldset
+          style={{ border: "1.5px solid var(--line, #dce4ef)", borderRadius: 14, padding: 16 }}
+        >
           <legend style={{ fontWeight: 700, fontSize: 13 }}>Periode 1</legend>
           <div style={{ display: "flex", gap: 8 }}>
-            <input type="date" name="p1_start" defaultValue={p1_start || ""} style={{ flex: 1, padding: 8, borderRadius: 8, border: "1px solid var(--line, #dce4ef)" }} />
-            <input type="date" name="p1_end" defaultValue={p1_end || ""} style={{ flex: 1, padding: 8, borderRadius: 8, border: "1px solid var(--line, #dce4ef)" }} />
+            <input
+              type="date"
+              name="p1_start"
+              defaultValue={p1_start || ""}
+              style={{
+                flex: 1,
+                padding: 8,
+                borderRadius: 8,
+                border: "1px solid var(--line, #dce4ef)",
+              }}
+            />
+            <input
+              type="date"
+              name="p1_end"
+              defaultValue={p1_end || ""}
+              style={{
+                flex: 1,
+                padding: 8,
+                borderRadius: 8,
+                border: "1px solid var(--line, #dce4ef)",
+              }}
+            />
           </div>
         </fieldset>
-        <fieldset style={{ border: "1.5px solid var(--line, #dce4ef)", borderRadius: 14, padding: 16 }}>
+        <fieldset
+          style={{ border: "1.5px solid var(--line, #dce4ef)", borderRadius: 14, padding: 16 }}
+        >
           <legend style={{ fontWeight: 700, fontSize: 13 }}>Periode 2</legend>
           <div style={{ display: "flex", gap: 8 }}>
-            <input type="date" name="p2_start" defaultValue={p2_start || ""} style={{ flex: 1, padding: 8, borderRadius: 8, border: "1px solid var(--line, #dce4ef)" }} />
-            <input type="date" name="p2_end" defaultValue={p2_end || ""} style={{ flex: 1, padding: 8, borderRadius: 8, border: "1px solid var(--line, #dce4ef)" }} />
+            <input
+              type="date"
+              name="p2_start"
+              defaultValue={p2_start || ""}
+              style={{
+                flex: 1,
+                padding: 8,
+                borderRadius: 8,
+                border: "1px solid var(--line, #dce4ef)",
+              }}
+            />
+            <input
+              type="date"
+              name="p2_end"
+              defaultValue={p2_end || ""}
+              style={{
+                flex: 1,
+                padding: 8,
+                borderRadius: 8,
+                border: "1px solid var(--line, #dce4ef)",
+              }}
+            />
           </div>
         </fieldset>
         <div style={{ gridColumn: "1 / -1", textAlign: "center" }}>
-          <button type="submit" style={{
-            padding: "10px 28px", borderRadius: 12, border: "none",
-            background: "#006233", color: "#fff", fontWeight: 700, cursor: "pointer",
-          }}>
+          <button
+            type="submit"
+            style={{
+              padding: "10px 28px",
+              borderRadius: 12,
+              border: "none",
+              background: "#006233",
+              color: "#fff",
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
             Comparer
           </button>
         </div>
       </form>
 
-      {error && <div style={{ padding: 14, borderRadius: 12, background: "#fff5f5", color: "#b42318" }}>{error}</div>}
+      {error && (
+        <div style={{ padding: 14, borderRadius: 12, background: "#fff5f5", color: "#b42318" }}>
+          {error}
+        </div>
+      )}
 
       {data && (
         <div className="chart-card" style={{ padding: 20 }}>
@@ -99,12 +157,18 @@ export default async function ComparisonPage({ searchParams }: Props) {
                       <td style={{ textAlign: "center" }}>{v1}</td>
                       <td style={{ textAlign: "center" }}>{v2}</td>
                       <td style={{ textAlign: "center" }}>
-                        <span style={{
-                          padding: "2px 10px", borderRadius: 6, fontSize: 12, fontWeight: 700,
-                          background: delta === 0 ? "#f3f4f6" : positive ? "#dcfce7" : "#fef2f2",
-                          color: delta === 0 ? "#526175" : positive ? "#166534" : "#b42318",
-                        }}>
-                          {delta > 0 ? "+" : ""}{delta}%
+                        <span
+                          style={{
+                            padding: "2px 10px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            background: delta === 0 ? "#f3f4f6" : positive ? "#dcfce7" : "#fef2f2",
+                            color: delta === 0 ? "#526175" : positive ? "#166534" : "#b42318",
+                          }}
+                        >
+                          {delta > 0 ? "+" : ""}
+                          {delta}%
                         </span>
                       </td>
                     </tr>

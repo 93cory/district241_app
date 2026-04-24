@@ -3,19 +3,19 @@
 Utilise une approche legere sans bibliotheque GraphQL lourde.
 Parse les requetes simples et retourne les donnees demandees.
 """
+
 from __future__ import annotations
 
-import json
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..database import get_db
 from ..core.auth import User, get_current_user
+from ..database import get_db
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
-    OperateurIndustrielORM,
     InspectionConformiteORM,
+    OperateurIndustrielORM,
 )
 
 router = APIRouter(tags=["GraphQL"])
@@ -72,14 +72,20 @@ def _resolve_atis(db: Session, args: dict) -> list[dict]:
     query = query.order_by(AgrementTechniqueIndustrielORM.date_soumission.desc()).limit(limit)
 
     atis = db.execute(query).scalars().all()
-    return [{
-        "id": a.id, "numero_ati": a.numero_ati, "secteur": a.secteur,
-        "statut": a.statut, "type_activite": a.type_activite,
-        "date_soumission": a.date_soumission.isoformat(),
-        "sla_jours": a.sla_jours,
-        "operateur_nom": a.operateur.raison_sociale if a.operateur else None,
-        "operateur_nif": a.operateur.nif_gabon if a.operateur else None,
-    } for a in atis]
+    return [
+        {
+            "id": a.id,
+            "numero_ati": a.numero_ati,
+            "secteur": a.secteur,
+            "statut": a.statut,
+            "type_activite": a.type_activite,
+            "date_soumission": a.date_soumission.isoformat(),
+            "sla_jours": a.sla_jours,
+            "operateur_nom": a.operateur.raison_sociale if a.operateur else None,
+            "operateur_nif": a.operateur.nif_gabon if a.operateur else None,
+        }
+        for a in atis
+    ]
 
 
 def _resolve_operateurs(db: Session, args: dict) -> list[dict]:
@@ -91,11 +97,19 @@ def _resolve_operateurs(db: Session, args: dict) -> list[dict]:
 
     limit = min(args.get("limit", 50), 100)
     ops = db.execute(query.order_by(OperateurIndustrielORM.raison_sociale).limit(limit)).scalars().all()
-    return [{
-        "id": o.id, "raison_sociale": o.raison_sociale, "nif_gabon": o.nif_gabon,
-        "secteur": o.secteur, "province": o.province, "ville": o.ville,
-        "email": o.email, "telephone": o.telephone,
-    } for o in ops]
+    return [
+        {
+            "id": o.id,
+            "raison_sociale": o.raison_sociale,
+            "nif_gabon": o.nif_gabon,
+            "secteur": o.secteur,
+            "province": o.province,
+            "ville": o.ville,
+            "email": o.email,
+            "telephone": o.telephone,
+        }
+        for o in ops
+    ]
 
 
 def _resolve_inspections(db: Session, args: dict) -> list[dict]:
@@ -105,18 +119,24 @@ def _resolve_inspections(db: Session, args: dict) -> list[dict]:
 
     limit = min(args.get("limit", 50), 100)
     insps = db.execute(query.order_by(InspectionConformiteORM.date_inspection.desc()).limit(limit)).scalars().all()
-    return [{
-        "id": i.id, "statut_conformite": i.statut_conformite,
-        "inspecteur": i.inspecteur_username,
-        "date_inspection": i.date_inspection.isoformat(),
-        "observations": (i.observations or "")[:200],
-        "operateur_nom": i.operateur.raison_sociale if i.operateur else None,
-    } for i in insps]
+    return [
+        {
+            "id": i.id,
+            "statut_conformite": i.statut_conformite,
+            "inspecteur": i.inspecteur_username,
+            "date_inspection": i.date_inspection.isoformat(),
+            "observations": (i.observations or "")[:200],
+            "operateur_nom": i.operateur.raison_sociale if i.operateur else None,
+        }
+        for i in insps
+    ]
 
 
 def _resolve_kpis(db: Session) -> dict:
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    all_ops = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    all_ops = (
+        db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.is_active.is_(True))).scalars().all()
+    )
     all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
     return {
         "atis_total": len(all_atis),

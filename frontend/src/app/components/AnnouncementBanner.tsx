@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react";
 
 interface Announcement {
-  id: string; title: string; body: string;
-  severity: string; created_at: string;
+  id: string;
+  title: string;
+  body: string;
+  severity: string;
+  created_at: string;
 }
 
 const SEV_STYLES: Record<string, { bg: string; border: string; color: string; icon: string }> = {
@@ -20,33 +23,57 @@ export function AnnouncementBanner() {
 
   useEffect(() => {
     fetch("/api/announcements/active")
-      .then(r => r.ok ? r.json() : { announcements: [] })
-      .then(d => setAnnouncements(d.announcements || []))
+      .then((r) => (r.ok ? r.json() : { announcements: [] }))
+      .then((d) => setAnnouncements(d.announcements || []))
       .catch(() => {});
   }, []);
 
-  const visible = announcements.filter(a => !dismissed.has(a.id));
+  const visible = announcements.filter((a) => !dismissed.has(a.id));
   if (visible.length === 0) return null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "0 16px", marginBottom: 8 }}>
-      {visible.map(ann => {
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        padding: "0 16px",
+        marginBottom: 8,
+      }}
+    >
+      {visible.map((ann) => {
         const style = SEV_STYLES[ann.severity] || SEV_STYLES.info;
         return (
-          <div key={ann.id} style={{
-            display: "flex", alignItems: "flex-start", gap: 10,
-            padding: "10px 14px", borderRadius: 10,
-            background: style.bg, borderLeft: `4px solid ${style.border}`,
-          }}>
+          <div
+            key={ann.id}
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              padding: "10px 14px",
+              borderRadius: 10,
+              background: style.bg,
+              borderLeft: `4px solid ${style.border}`,
+            }}
+          >
             <span style={{ fontSize: 16 }}>{style.icon}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: style.color }}>{ann.title}</div>
               <div style={{ fontSize: 12, color: style.color, opacity: 0.85 }}>{ann.body}</div>
             </div>
             <button
-              onClick={() => setDismissed(prev => new Set([...prev, ann.id]))}
-              style={{ background: "none", border: "none", color: style.color, cursor: "pointer", fontSize: 16, opacity: 0.6 }}
-            >&times;</button>
+              onClick={() => setDismissed((prev) => new Set([...prev, ann.id]))}
+              style={{
+                background: "none",
+                border: "none",
+                color: style.color,
+                cursor: "pointer",
+                fontSize: 16,
+                opacity: 0.6,
+              }}
+            >
+              &times;
+            </button>
           </div>
         );
       })}

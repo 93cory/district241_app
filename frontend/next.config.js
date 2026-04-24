@@ -6,6 +6,10 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
+  // Build ID explicite (evite TypeError "generate is not a function" avec
+  // Next 14.2.35 quand le champ est absent de la config).
+  generateBuildId: async () => null,
+
   // Security headers
   async headers() {
     return [

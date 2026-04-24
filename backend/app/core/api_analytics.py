@@ -3,13 +3,13 @@
 Exposes aggregated stats via /admin/api-analytics endpoint.
 For production, consider flushing to DB or Redis periodically.
 """
+
 from __future__ import annotations
 
 import time
 from collections import defaultdict
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Dict, List
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -35,9 +35,9 @@ class APIAnalytics:
     """In-memory API usage analytics."""
 
     def __init__(self) -> None:
-        self._endpoints: Dict[str, EndpointStats] = defaultdict(EndpointStats)
-        self._status_codes: Dict[int, int] = defaultdict(int)
-        self._hourly_hits: Dict[str, int] = defaultdict(int)
+        self._endpoints: dict[str, EndpointStats] = defaultdict(EndpointStats)
+        self._status_codes: dict[int, int] = defaultdict(int)
+        self._hourly_hits: dict[str, int] = defaultdict(int)
         self._started_at = time.time()
 
     def record(self, method: str, path: str, status_code: int, duration_ms: float) -> None:
@@ -47,7 +47,7 @@ class APIAnalytics:
         self._endpoints[key].record(duration_ms, is_error)
         self._status_codes[status_code] += 1
 
-        hour = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:00")
+        hour = datetime.now(UTC).strftime("%Y-%m-%d %H:00")
         self._hourly_hits[hour] += 1
 
     def get_summary(self) -> dict:
@@ -76,13 +76,9 @@ class APIAnalytics:
             "error_rate_pct": round(total_errors / total_hits * 100, 2) if total_hits > 0 else 0,
             "unique_endpoints": len(self._endpoints),
             "top_endpoints": [
-                {"endpoint": k, "hits": v.hits, "errors": v.errors, "avg_ms": v.avg_ms}
-                for k, v in top_endpoints
+                {"endpoint": k, "hits": v.hits, "errors": v.errors, "avg_ms": v.avg_ms} for k, v in top_endpoints
             ],
-            "slowest_endpoints": [
-                {"endpoint": k, "avg_ms": v.avg_ms, "hits": v.hits}
-                for k, v in slowest
-            ],
+            "slowest_endpoints": [{"endpoint": k, "avg_ms": v.avg_ms, "hits": v.hits} for k, v in slowest],
             "status_codes": dict(sorted(self._status_codes.items())),
             "hourly_traffic": dict(sorted(self._hourly_hits.items())[-24:]),
         }

@@ -1,19 +1,16 @@
 """PNPI · WebSocket pour notifications temps reel."""
+
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 from collections import defaultdict
-from typing import Dict, List, Set
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from jose import JWTError, jwt
-from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from ..config import settings
-from ..core.auth import csv_to_roles, Role
 from ..database import SessionLocal, now_utc
 from ..models.core import NotificationORM
 
@@ -22,7 +19,7 @@ logger = logging.getLogger("pnpi.ws")
 router = APIRouter(tags=["WebSocket"])
 
 # Active connections per username
-_connections: Dict[str, List[WebSocket]] = defaultdict(list)
+_connections: dict[str, list[WebSocket]] = defaultdict(list)
 
 
 async def _authenticate_ws(token: str) -> dict | None:
@@ -54,16 +51,16 @@ async def ws_notifications(websocket: WebSocket, token: str = Query(...)):
         # Send initial unread count
         db = SessionLocal()
         try:
-            unread = db.execute(
-                select(NotificationORM).where(NotificationORM.is_read.is_(False))
-            ).scalars().all()
+            unread = db.execute(select(NotificationORM).where(NotificationORM.is_read.is_(False))).scalars().all()
             user_roles = set(user["roles"])
             user_notifs = [n for n in unread if n.target_role is None or n.target_role in user_roles]
-            await websocket.send_json({
-                "type": "init",
-                "unread_count": len(user_notifs),
-                "timestamp": now_utc().isoformat(),
-            })
+            await websocket.send_json(
+                {
+                    "type": "init",
+                    "unread_count": len(user_notifs),
+                    "timestamp": now_utc().isoformat(),
+                }
+            )
         finally:
             db.close()
 
@@ -86,15 +83,17 @@ async def ws_notifications(websocket: WebSocket, token: str = Query(...)):
 
 async def broadcast_notification(target_role: str | None, title: str, severity: str = "info"):
     """Broadcast a notification to all connected users with matching role."""
-    message = json.dumps({
-        "type": "notification",
-        "title": title,
-        "severity": severity,
-        "target_role": target_role,
-        "timestamp": now_utc().isoformat(),
-    })
+    message = json.dumps(
+        {
+            "type": "notification",
+            "title": title,
+            "severity": severity,
+            "target_role": target_role,
+            "timestamp": now_utc().isoformat(),
+        }
+    )
 
-    dead: List[tuple] = []
+    dead: list[tuple] = []
     for username, sockets in _connections.items():
         for ws in sockets:
             try:

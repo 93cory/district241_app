@@ -43,7 +43,9 @@ function formatDate(iso: string): string {
 export function Timeline({ events }: TimelineProps) {
   if (events.length === 0) {
     return (
-      <p style={{ color: "var(--text-secondary, #9ca3af)", textAlign: "center", padding: "1.5rem" }}>
+      <p
+        style={{ color: "var(--text-secondary, #9ca3af)", textAlign: "center", padding: "1.5rem" }}
+      >
         Aucun evenement
       </p>
     );
@@ -93,8 +95,16 @@ export function Timeline({ events }: TimelineProps) {
 
             {/* Content */}
             <div>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", flexWrap: "wrap" }}>
-                <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text-primary, #1f2937)" }}>
+              <div
+                style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", flexWrap: "wrap" }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    color: "var(--text-primary, #1f2937)",
+                  }}
+                >
                   {event.summary}
                 </span>
                 <span style={{ fontSize: "0.72rem", color: "var(--text-secondary, #9ca3af)" }}>
@@ -102,7 +112,14 @@ export function Timeline({ events }: TimelineProps) {
                 </span>
               </div>
               {event.detail && (
-                <p style={{ margin: "0.2rem 0 0", fontSize: "0.8rem", color: "var(--text-secondary, #6b7280)", lineHeight: 1.4 }}>
+                <p
+                  style={{
+                    margin: "0.2rem 0 0",
+                    fontSize: "0.8rem",
+                    color: "var(--text-secondary, #6b7280)",
+                    lineHeight: 1.4,
+                  }}
+                >
                   {event.detail}
                 </p>
               )}

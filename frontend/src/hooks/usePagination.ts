@@ -19,10 +19,7 @@ interface UsePaginationOptions {
 
 const fetcher = (url: string) => fetch(url).then((r) => (r.ok ? r.json() : null));
 
-export function usePagination<T = unknown>(
-  basePath: string,
-  options: UsePaginationOptions = {},
-) {
+export function usePagination<T = unknown>(basePath: string, options: UsePaginationOptions = {}) {
   const { pageSize = 25, filters = {} } = options;
   const [page, setPage] = useState(1);
 

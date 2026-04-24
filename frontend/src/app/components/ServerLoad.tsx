@@ -32,17 +32,27 @@ export function ServerLoad() {
     <div
       title={latency !== null ? `Latence: ${latency}ms` : "Serveur indisponible"}
       style={{
-        display: "flex", alignItems: "center", gap: 4,
-        padding: "3px 8px", borderRadius: 6,
-        fontSize: 10, fontWeight: 600, color,
+        display: "flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "3px 8px",
+        borderRadius: 6,
+        fontSize: 10,
+        fontWeight: 600,
+        color,
         background: `${color}10`,
         cursor: "default",
       }}
     >
-      <span style={{
-        width: 6, height: 6, borderRadius: "50%", background: color,
-        animation: status === "good" ? "none" : "pulse 2s infinite",
-      }} />
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: color,
+          animation: status === "good" ? "none" : "pulse 2s infinite",
+        }}
+      />
       {latency !== null ? `${latency}ms` : labels[status]}
     </div>
   );

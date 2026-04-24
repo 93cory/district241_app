@@ -37,11 +37,15 @@ export function ResubmitForm({ atiId, motifRejet }: Props) {
   };
 
   return (
-    <div style={{
-      padding: 20, borderRadius: 16,
-      background: "#fff5f5", border: "1.5px solid #fecaca",
-      marginTop: 16,
-    }}>
+    <div
+      style={{
+        padding: 20,
+        borderRadius: 16,
+        background: "#fff5f5",
+        border: "1.5px solid #fecaca",
+        marginTop: 16,
+      }}
+    >
       <h3 style={{ margin: "0 0 8px", fontSize: 16, fontWeight: 700, color: "#b42318" }}>
         Demande rejetee
       </h3>
@@ -55,8 +59,13 @@ export function ResubmitForm({ atiId, motifRejet }: Props) {
         <button
           onClick={() => setShowForm(true)}
           style={{
-            padding: "10px 20px", borderRadius: 12, border: "none",
-            background: "#006233", color: "#fff", fontWeight: 600, cursor: "pointer",
+            padding: "10px 20px",
+            borderRadius: 12,
+            border: "none",
+            background: "#006233",
+            color: "#fff",
+            fontWeight: 600,
+            cursor: "pointer",
           }}
         >
           Corriger et resoumettre
@@ -71,8 +80,13 @@ export function ResubmitForm({ atiId, motifRejet }: Props) {
             onChange={(e) => setObservations(e.target.value)}
             rows={4}
             style={{
-              width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 14,
-              border: "1.5px solid #dce4ef", marginBottom: 12, boxSizing: "border-box",
+              width: "100%",
+              padding: "10px 14px",
+              borderRadius: 12,
+              fontSize: 14,
+              border: "1.5px solid #dce4ef",
+              marginBottom: 12,
+              boxSizing: "border-box",
             }}
             placeholder="Decrivez les corrections apportees suite au rejet..."
           />
@@ -81,8 +95,13 @@ export function ResubmitForm({ atiId, motifRejet }: Props) {
               type="button"
               onClick={() => setShowForm(false)}
               style={{
-                padding: "10px 20px", borderRadius: 12, border: "1px solid #dce4ef",
-                background: "#fff", color: "#526175", fontWeight: 600, cursor: "pointer",
+                padding: "10px 20px",
+                borderRadius: 12,
+                border: "1px solid #dce4ef",
+                background: "#fff",
+                color: "#526175",
+                fontWeight: 600,
+                cursor: "pointer",
               }}
             >
               Annuler
@@ -91,9 +110,14 @@ export function ResubmitForm({ atiId, motifRejet }: Props) {
               type="submit"
               disabled={pending}
               style={{
-                padding: "10px 20px", borderRadius: 12, border: "none",
-                background: "#006233", color: "#fff", fontWeight: 600,
-                cursor: "pointer", opacity: pending ? 0.6 : 1,
+                padding: "10px 20px",
+                borderRadius: 12,
+                border: "none",
+                background: "#006233",
+                color: "#fff",
+                fontWeight: 600,
+                cursor: "pointer",
+                opacity: pending ? 0.6 : 1,
               }}
             >
               {pending ? "Resoumission..." : "Resoumettre l'ATI"}

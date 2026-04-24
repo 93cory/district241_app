@@ -16,7 +16,15 @@ interface MegaNavProps {
 // -------------------------------------------------------------
 const ICONS: Record<string, JSX.Element> = {
   dashboard: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <rect x="3" y="3" width="7" height="9" rx="1.5" />
       <rect x="14" y="3" width="7" height="5" rx="1.5" />
       <rect x="14" y="12" width="7" height="9" rx="1.5" />
@@ -24,45 +32,101 @@ const ICONS: Record<string, JSX.Element> = {
     </svg>
   ),
   seal: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M9 12l2 2 4-4" />
       <circle cx="12" cy="12" r="9" />
       <path d="M12 3v3M12 18v3M3 12h3M18 12h3" />
     </svg>
   ),
   map: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" />
       <path d="M9 4v16" />
       <path d="M15 6v16" />
     </svg>
   ),
   chart: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M3 3v18h18" />
       <path d="M7 14l4-4 3 3 5-6" />
     </svg>
   ),
   gear: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   ),
   search: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <circle cx="11" cy="11" r="7" />
       <path d="M21 21l-4.35-4.35" />
     </svg>
   ),
   user: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
   ),
   chevron: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <polyline points="6 9 12 15 18 9" />
     </svg>
   ),
@@ -108,7 +172,9 @@ export function MegaNav({ sections, tools, quickAccess }: MegaNavProps) {
 
   const isActiveSection = (section: MegaSection): boolean => {
     if (pathname === section.href) return true;
-    return section.groups.some((g) => g.items.some((it) => pathname === it.href || pathname.startsWith(it.href + "/")));
+    return section.groups.some((g) =>
+      g.items.some((it) => pathname === it.href || pathname.startsWith(it.href + "/")),
+    );
   };
 
   return (
@@ -139,11 +205,7 @@ export function MegaNav({ sections, tools, quickAccess }: MegaNavProps) {
             </button>
 
             {open && (
-              <div
-                className="mega-nav-panel"
-                role="menu"
-                onMouseLeave={() => setOpenKey(null)}
-              >
+              <div className="mega-nav-panel" role="menu" onMouseLeave={() => setOpenKey(null)}>
                 <div className="mega-nav-panel-head">
                   <div className="mega-nav-panel-icon">{ICONS[section.icon]}</div>
                   <div>
@@ -160,8 +222,7 @@ export function MegaNav({ sections, tools, quickAccess }: MegaNavProps) {
                       <ul>
                         {group.items.map((item) => {
                           const itActive =
-                            pathname === item.href ||
-                            pathname.startsWith(item.href + "/");
+                            pathname === item.href || pathname.startsWith(item.href + "/");
                           return (
                             <li key={item.href}>
                               <Link
@@ -202,7 +263,9 @@ export function MegaNav({ sections, tools, quickAccess }: MegaNavProps) {
           >
             <span className="mega-nav-icon">{ICONS.search}</span>
             <span>Outils</span>
-            <span className={`mega-nav-chevron ${toolsOpen ? "is-open" : ""}`}>{ICONS.chevron}</span>
+            <span className={`mega-nav-chevron ${toolsOpen ? "is-open" : ""}`}>
+              {ICONS.chevron}
+            </span>
           </button>
 
           {toolsOpen && (
@@ -237,8 +300,7 @@ export function MegaNav({ sections, tools, quickAccess }: MegaNavProps) {
       {quickAccess.length > 0 && (
         <div className="mega-nav-quick">
           {quickAccess.map((q) => {
-            const itActive =
-              pathname === q.href || pathname.startsWith(q.href + "/");
+            const itActive = pathname === q.href || pathname.startsWith(q.href + "/");
             return (
               <Link
                 key={q.href}

@@ -33,40 +33,55 @@ export function LoginHistory() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p style={{ fontSize: 13, color: "var(--text-soft, #526175)" }}>Chargement...</p>;
+  if (loading)
+    return <p style={{ fontSize: 13, color: "var(--text-soft, #526175)" }}>Chargement...</p>;
 
   return (
     <div>
       <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700 }}>Historique de connexion</h3>
       {records.length === 0 ? (
-        <p style={{ fontSize: 13, color: "var(--text-soft, #526175)" }}>Aucune connexion enregistree.</p>
+        <p style={{ fontSize: 13, color: "var(--text-soft, #526175)" }}>
+          Aucune connexion enregistree.
+        </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {records.map((r) => (
             <div
               key={r.id}
               style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "8px 12px", borderRadius: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 12px",
+                borderRadius: 10,
                 background: r.success ? "var(--bg-base, #f4f8fb)" : "rgba(180, 35, 24, 0.06)",
                 border: `1px solid ${r.success ? "var(--line, #dce4ef)" : "rgba(180, 35, 24, 0.2)"}`,
                 fontSize: 13,
               }}
             >
-              <span style={{
-                width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
-                background: r.success ? "#006233" : "#b42318",
-              }} />
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  background: r.success ? "#006233" : "#b42318",
+                }}
+              />
               <span style={{ flex: 1 }}>
                 <strong>{r.method === "biometric" ? "Biometrie" : "Mot de passe"}</strong>
                 {" · "}
                 {parseUA(r.user_agent)}
-                {r.ip_address && <span style={{ color: "var(--text-soft, #526175)" }}> ({r.ip_address})</span>}
+                {r.ip_address && (
+                  <span style={{ color: "var(--text-soft, #526175)" }}> ({r.ip_address})</span>
+                )}
               </span>
               {!r.success && (
                 <span style={{ fontSize: 11, color: "#b42318", fontWeight: 600 }}>Echec</span>
               )}
-              <span style={{ fontSize: 11, color: "var(--text-soft, #526175)", whiteSpace: "nowrap" }}>
+              <span
+                style={{ fontSize: 11, color: "var(--text-soft, #526175)", whiteSpace: "nowrap" }}
+              >
                 {new Date(r.created_at).toLocaleString("fr-FR")}
               </span>
             </div>

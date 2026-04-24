@@ -11,10 +11,10 @@ export async function POST(request: Request) {
     const password = String(payload.password ?? "");
 
     if (!username || !password) {
-      return new NextResponse(
-        JSON.stringify({ error: "Utilisateur et mot de passe requis." }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return new NextResponse(JSON.stringify({ error: "Utilisateur et mot de passe requis." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const form = new URLSearchParams({ username, password });
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     if (!tokenResponse.ok) {
       return new NextResponse(
         JSON.stringify({ error: `Authentification echouee (${tokenResponse.status}).` }),
-        { status: tokenResponse.status, headers: { "Content-Type": "application/json" } }
+        { status: tokenResponse.status, headers: { "Content-Type": "application/json" } },
       );
     }
 
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     if (!tokenBody.access_token || !tokenBody.refresh_token) {
       return new NextResponse(
         JSON.stringify({ error: "Reponse d'authentification incomplete (token manquant)." }),
-        { status: 502, headers: { "Content-Type": "application/json" } }
+        { status: 502, headers: { "Content-Type": "application/json" } },
       );
     }
 
@@ -65,11 +65,15 @@ export async function POST(request: Request) {
     if (!meResponse.ok) {
       return new NextResponse(
         JSON.stringify({ error: `Lecture profil echouee (${meResponse.status}).` }),
-        { status: meResponse.status, headers: { "Content-Type": "application/json" } }
+        { status: meResponse.status, headers: { "Content-Type": "application/json" } },
       );
     }
 
-    const meBody = (await meResponse.json()) as { roles?: string[]; username: string; full_name: string };
+    const meBody = (await meResponse.json()) as {
+      roles?: string[];
+      username: string;
+      full_name: string;
+    };
     const roles = meBody.roles ?? [];
     const redirectTo = getDefaultRouteForRoles(roles);
 

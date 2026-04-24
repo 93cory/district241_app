@@ -1,15 +1,11 @@
 import { backendRequest, getBackendAuthHeaders, backendBaseUrl } from "../../../../../lib/backend";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ atiId: string }> },
-) {
+export async function GET(_request: Request, { params }: { params: Promise<{ atiId: string }> }) {
   try {
     const { atiId } = await params;
-    const response = await backendRequest(
-      `/pnpi/ati/${encodeURIComponent(atiId)}/documents`,
-      { cache: "no-store" },
-    );
+    const response = await backendRequest(`/pnpi/ati/${encodeURIComponent(atiId)}/documents`, {
+      cache: "no-store",
+    });
     const body = await response.text();
     return new Response(body, {
       status: response.status,
@@ -24,10 +20,7 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ atiId: string }> },
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ atiId: string }> }) {
   try {
     const { atiId } = await params;
     const authHeaders = await getBackendAuthHeaders();
@@ -62,10 +55,7 @@ export async function POST(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ atiId: string }> },
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ atiId: string }> }) {
   try {
     await params;
     const url = new URL(request.url);
@@ -77,10 +67,10 @@ export async function DELETE(
       });
     }
 
-    const response = await backendRequest(
-      `/pnpi/documents/${encodeURIComponent(docId)}`,
-      { method: "DELETE", cache: "no-store" },
-    );
+    const response = await backendRequest(`/pnpi/documents/${encodeURIComponent(docId)}`, {
+      method: "DELETE",
+      cache: "no-store",
+    });
 
     const body = await response.text();
     return new Response(body, {

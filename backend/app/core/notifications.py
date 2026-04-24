@@ -1,13 +1,12 @@
 """PNPI · Service de notifications email pour les alertes SLA."""
+
 from __future__ import annotations
 
+import logging
 import os
 import smtplib
-import logging
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import List
-from datetime import datetime
+from email.mime.text import MIMEText
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +18,7 @@ SMTP_FROM = os.getenv("SMTP_FROM", "noreply@pnpi.gouv.ga")
 SMTP_ENABLED = bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD)
 
 
-def send_email(to: List[str], subject: str, html_body: str) -> bool:
+def send_email(to: list[str], subject: str, html_body: str) -> bool:
     """Envoie un email HTML. Retourne True si succès, False sinon."""
     if not SMTP_ENABLED:
         logger.info(f"[NOTIFICATIONS] Email non configure · simuler envoi vers {to}: {subject}")
@@ -44,7 +43,7 @@ def send_email(to: List[str], subject: str, html_body: str) -> bool:
         return False
 
 
-def notify_ati_approved(numero_ati: str, raison_sociale: str, to_emails: List[str]) -> bool:
+def notify_ati_approved(numero_ati: str, raison_sociale: str, to_emails: list[str]) -> bool:
     subject = f"[PNPI] ATI {numero_ati} approuve"
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -64,7 +63,7 @@ def notify_ati_approved(numero_ati: str, raison_sociale: str, to_emails: List[st
     return send_email(to_emails, subject, html)
 
 
-def notify_ati_rejected(numero_ati: str, raison_sociale: str, motif: str, to_emails: List[str]) -> bool:
+def notify_ati_rejected(numero_ati: str, raison_sociale: str, motif: str, to_emails: list[str]) -> bool:
     subject = f"[PNPI] ATI {numero_ati} rejete"
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -75,7 +74,7 @@ def notify_ati_rejected(numero_ati: str, raison_sociale: str, motif: str, to_ema
       <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
         <p>L'ATI <strong>{numero_ati}</strong> pour l'operateur <strong>{raison_sociale}</strong> a ete rejete.</p>
         <div style="background: #fef2f2; border: 1px solid #ef4444; border-radius: 6px; padding: 12px; margin: 16px 0;">
-          <strong>Motif :</strong> {motif or 'Non specifie'}
+          <strong>Motif :</strong> {motif or "Non specifie"}
         </div>
         <p style="color: #6b7280; font-size: 12px;">Vous pouvez soumettre une nouvelle demande apres correction des points signales.</p>
       </div>
@@ -84,7 +83,7 @@ def notify_ati_rejected(numero_ati: str, raison_sociale: str, motif: str, to_ema
     return send_email(to_emails, subject, html)
 
 
-def notify_sla_overdue(overdue_atis: List[dict], to_emails: List[str]) -> bool:
+def notify_sla_overdue(overdue_atis: list[dict], to_emails: list[str]) -> bool:
     """overdue_atis: list of {numero_ati, type_activite, age_jours, sla_jours, instructeur}"""
     if not overdue_atis:
         return False

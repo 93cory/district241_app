@@ -46,9 +46,7 @@ export function MobileNav({ children }: MobileNavProps) {
       </button>
 
       {/* Desktop: always visible */}
-      <div className="desktop-nav">
-        {children}
-      </div>
+      <div className="desktop-nav">{children}</div>
 
       {/* Mobile: slide-in drawer */}
       {open && (
@@ -58,9 +56,7 @@ export function MobileNav({ children }: MobileNavProps) {
             onClick={(e) => e.stopPropagation()}
             aria-label="Menu principal"
           >
-            <div onClick={() => setOpen(false)}>
-              {children}
-            </div>
+            <div onClick={() => setOpen(false)}>{children}</div>
           </nav>
         </div>
       )}

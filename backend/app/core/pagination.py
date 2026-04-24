@@ -1,7 +1,9 @@
 """Standardized pagination for list endpoints."""
+
 from __future__ import annotations
 
-from typing import Any, Generic, List, Sequence, TypeVar
+from collections.abc import Sequence
+from typing import Any, TypeVar
 
 from fastapi import Query
 from pydantic import BaseModel
@@ -25,14 +27,15 @@ class PaginationParams:
 
 class PaginatedResponse(BaseModel):
     """Generic paginated response wrapper."""
-    items: List[Any]
+
+    items: list[Any]
     total: int
     page: int
     page_size: int
     total_pages: int
 
     @classmethod
-    def create(cls, items: Sequence[Any], total: int, params: PaginationParams) -> "PaginatedResponse":
+    def create(cls, items: Sequence[Any], total: int, params: PaginationParams) -> PaginatedResponse:
         return cls(
             items=list(items),
             total=total,

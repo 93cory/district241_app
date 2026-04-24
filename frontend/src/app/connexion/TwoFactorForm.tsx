@@ -72,8 +72,7 @@ export const TwoFactorForm = ({ username, onBack }: TwoFactorFormProps) => {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        background:
-          "linear-gradient(135deg, #001f5c 0%, #003F8F 50%, #005f6b 100%)",
+        background: "linear-gradient(135deg, #001f5c 0%, #003F8F 50%, #005f6b 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -149,8 +148,7 @@ export const TwoFactorForm = ({ username, onBack }: TwoFactorFormProps) => {
               fontSize: "0.82rem",
             }}
           >
-            Saisissez le code a 6 chiffres de votre application
-            d&apos;authentification.
+            Saisissez le code a 6 chiffres de votre application d&apos;authentification.
           </p>
 
           <form onSubmit={onSubmit}>
@@ -199,12 +197,8 @@ export const TwoFactorForm = ({ username, onBack }: TwoFactorFormProps) => {
                 borderRadius: "8px",
                 fontWeight: 700,
                 fontSize: "0.95rem",
-                cursor:
-                  busy || code.length !== 6 ? "not-allowed" : "pointer",
-                boxShadow:
-                  busy || code.length !== 6
-                    ? "none"
-                    : "0 4px 12px rgba(0,63,143,0.35)",
+                cursor: busy || code.length !== 6 ? "not-allowed" : "pointer",
+                boxShadow: busy || code.length !== 6 ? "none" : "0 4px 12px rgba(0,63,143,0.35)",
                 transition: "all 0.2s",
               }}
             >

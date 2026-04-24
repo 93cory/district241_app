@@ -35,7 +35,9 @@ export default async function SimulateurPage() {
       <div className="chart-card">
         <div className="pnpi-page-head">
           <div>
-            <Link href="/admin" className="pnpi-back-link">&larr; Administration</Link>
+            <Link href="/admin" className="pnpi-back-link">
+              &larr; Administration
+            </Link>
             <h2>Simulateur de role</h2>
             <p className="pnpi-page-sub">
               Visualisez la plateforme comme un autre utilisateur pour deboguer ou verifier
@@ -46,15 +48,17 @@ export default async function SimulateurPage() {
         </div>
 
         {error && (
-          <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">{error}</div>
+          <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">
+            {error}
+          </div>
         )}
 
         <div className="pnpi-form-alert pnpi-form-alert--info" role="status">
           <div>
             <strong>Comment ca marche</strong>
             <p style={{ margin: "0.25rem 0 0" }}>
-              Vous conservez votre session admin en arriere-plan. Une banniere visible en haut
-              de chaque page permet de revenir a votre identite reelle en un clic.
+              Vous conservez votre session admin en arriere-plan. Une banniere visible en haut de
+              chaque page permet de revenir a votre identite reelle en un clic.
             </p>
           </div>
         </div>

@@ -53,7 +53,10 @@ export function ChangePasswordForm() {
   };
 
   const inputStyle = (field: string) => ({
-    width: "100%", padding: "10px 14px", borderRadius: 12, fontSize: 14,
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: 12,
+    fontSize: 14,
     border: `1.5px solid ${fieldErrors[field] ? "#b42318" : "#dce4ef"}`,
     background: fieldErrors[field] ? "#fff5f5" : "#f6f8fb",
     boxSizing: "border-box" as const,
@@ -64,35 +67,77 @@ export function ChangePasswordForm() {
       <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 16px" }}>Changer le mot de passe</h3>
 
       {error && (
-        <div style={{ padding: "10px 14px", borderRadius: 10, background: "#fff5f5", color: "#b42318", fontSize: 13, marginBottom: 14, border: "1px solid #fecaca" }}>
+        <div
+          style={{
+            padding: "10px 14px",
+            borderRadius: 10,
+            background: "#fff5f5",
+            color: "#b42318",
+            fontSize: 13,
+            marginBottom: 14,
+            border: "1px solid #fecaca",
+          }}
+        >
           {error}
         </div>
       )}
 
       <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Mot de passe actuel</label>
-        <input type="password" value={currentPwd} onChange={(e) => setCurrentPwd(e.target.value)} style={inputStyle("current")} />
-        {fieldErrors.current && <span style={{ fontSize: 12, color: "#b42318" }}>{fieldErrors.current}</span>}
+        <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>
+          Mot de passe actuel
+        </label>
+        <input
+          type="password"
+          value={currentPwd}
+          onChange={(e) => setCurrentPwd(e.target.value)}
+          style={inputStyle("current")}
+        />
+        {fieldErrors.current && (
+          <span style={{ fontSize: 12, color: "#b42318" }}>{fieldErrors.current}</span>
+        )}
       </div>
 
       <div style={{ marginBottom: 14 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Nouveau mot de passe</label>
-        <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} style={inputStyle("new")} />
-        {fieldErrors.new && <span style={{ fontSize: 12, color: "#b42318" }}>{fieldErrors.new}</span>}
+        <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>
+          Nouveau mot de passe
+        </label>
+        <input
+          type="password"
+          value={newPwd}
+          onChange={(e) => setNewPwd(e.target.value)}
+          style={inputStyle("new")}
+        />
+        {fieldErrors.new && (
+          <span style={{ fontSize: 12, color: "#b42318" }}>{fieldErrors.new}</span>
+        )}
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Confirmer le nouveau mot de passe</label>
-        <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} style={inputStyle("confirm")} />
-        {fieldErrors.confirm && <span style={{ fontSize: 12, color: "#b42318" }}>{fieldErrors.confirm}</span>}
+        <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>
+          Confirmer le nouveau mot de passe
+        </label>
+        <input
+          type="password"
+          value={confirmPwd}
+          onChange={(e) => setConfirmPwd(e.target.value)}
+          style={inputStyle("confirm")}
+        />
+        {fieldErrors.confirm && (
+          <span style={{ fontSize: 12, color: "#b42318" }}>{fieldErrors.confirm}</span>
+        )}
       </div>
 
       <button
         type="submit"
         disabled={pending}
         style={{
-          padding: "10px 24px", borderRadius: 12, border: "none",
-          background: "#006233", color: "#fff", fontWeight: 600, cursor: "pointer",
+          padding: "10px 24px",
+          borderRadius: 12,
+          border: "none",
+          background: "#006233",
+          color: "#fff",
+          fontWeight: 600,
+          cursor: "pointer",
           opacity: pending ? 0.6 : 1,
         }}
       >

@@ -43,7 +43,13 @@ export function ProgressSteps({
         return (
           <div
             key={step.key}
-            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              position: "relative",
+            }}
           >
             {/* Connector line */}
             {i > 0 && (

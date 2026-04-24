@@ -12,32 +12,39 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     title: "Bienvenue sur PNPI !",
-    description: "La Plateforme Nationale de la Politique Industrielle vous permet de gerer les agrements techniques, suivre les inspections et piloter la politique industrielle du Gabon.",
+    description:
+      "La Plateforme Nationale de la Politique Industrielle vous permet de gerer les agrements techniques, suivre les inspections et piloter la politique industrielle du Gabon.",
   },
   {
     title: "Navigation",
-    description: "Utilisez la barre de navigation en haut pour acceder aux differentes sections. Les liens disponibles dependent de votre role.",
+    description:
+      "Utilisez la barre de navigation en haut pour acceder aux differentes sections. Les liens disponibles dependent de votre role.",
     target: "nav",
   },
   {
     title: "Theme sombre",
-    description: "Cliquez sur le bouton de theme pour basculer entre les modes clair, sombre et automatique.",
+    description:
+      "Cliquez sur le bouton de theme pour basculer entre les modes clair, sombre et automatique.",
   },
   {
     title: "Notifications",
-    description: "La cloche de notifications vous alerte des evenements importants : ATI approuves, alertes SLA, messages recus.",
+    description:
+      "La cloche de notifications vous alerte des evenements importants : ATI approuves, alertes SLA, messages recus.",
   },
   {
     title: "Messages",
-    description: "Communiquez directement avec les autres utilisateurs via la messagerie interne. Lien disponible dans la navigation.",
+    description:
+      "Communiquez directement avec les autres utilisateurs via la messagerie interne. Lien disponible dans la navigation.",
   },
   {
     title: "Mon profil",
-    description: "Depuis votre profil, configurez la 2FA, la biometrie, les preferences de notification et consultez votre historique de connexion.",
+    description:
+      "Depuis votre profil, configurez la 2FA, la biometrie, les preferences de notification et consultez votre historique de connexion.",
   },
   {
     title: "Aide",
-    description: "Besoin d'aide ? La page Aide contient des FAQ detaillees pour chaque fonctionnalite. Bonne utilisation de PNPI !",
+    description:
+      "Besoin d'aide ? La page Aide contient des FAQ detaillees pour chaque fonctionnalite. Bonne utilisation de PNPI !",
   },
 ];
 
@@ -88,7 +95,9 @@ export function OnboardingTour() {
       {/* Backdrop */}
       <div
         style={{
-          position: "fixed", inset: 0, zIndex: 99998,
+          position: "fixed",
+          inset: 0,
+          zIndex: 99998,
           background: "rgba(0, 0, 0, 0.5)",
           backdropFilter: "blur(2px)",
         }}
@@ -96,18 +105,22 @@ export function OnboardingTour() {
       />
 
       {/* Tour card */}
-      <div style={{
-        position: "fixed",
-        top: "50%", left: "50%",
-        transform: "translate(-50%, -50%)",
-        zIndex: 99999,
-        background: "var(--bg-layer, #fff)",
-        borderRadius: 20,
-        padding: "28px 32px",
-        maxWidth: 440, width: "90%",
-        boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
-        animation: "reveal-up 300ms ease-out",
-      }}>
+      <div
+        style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          zIndex: 99999,
+          background: "var(--bg-layer, #fff)",
+          borderRadius: 20,
+          padding: "28px 32px",
+          maxWidth: 440,
+          width: "90%",
+          boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+          animation: "reveal-up 300ms ease-out",
+        }}
+      >
         {/* Progress dots */}
         <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 16 }}>
           {TOUR_STEPS.map((_, i) => (
@@ -126,10 +139,15 @@ export function OnboardingTour() {
         </div>
 
         {/* Step counter */}
-        <div style={{
-          fontSize: 11, fontWeight: 600, color: "var(--text-soft, #9ca3af)",
-          marginBottom: 8, textAlign: "center",
-        }}>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: "var(--text-soft, #9ca3af)",
+            marginBottom: 8,
+            textAlign: "center",
+          }}
+        >
           {step + 1} / {TOUR_STEPS.length}
         </div>
 
@@ -137,10 +155,15 @@ export function OnboardingTour() {
         <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 8px", textAlign: "center" }}>
           {currentStep.title}
         </h3>
-        <p style={{
-          fontSize: 14, lineHeight: 1.6, color: "var(--text-soft, #526175)",
-          margin: "0 0 20px", textAlign: "center",
-        }}>
+        <p
+          style={{
+            fontSize: 14,
+            lineHeight: 1.6,
+            color: "var(--text-soft, #526175)",
+            margin: "0 0 20px",
+            textAlign: "center",
+          }}
+        >
           {currentStep.description}
         </p>
 
@@ -149,8 +172,11 @@ export function OnboardingTour() {
           <button
             onClick={skip}
             style={{
-              background: "none", border: "none", color: "var(--text-soft, #9ca3af)",
-              fontSize: 13, cursor: "pointer",
+              background: "none",
+              border: "none",
+              color: "var(--text-soft, #9ca3af)",
+              fontSize: 13,
+              cursor: "pointer",
             }}
           >
             Passer
@@ -160,10 +186,13 @@ export function OnboardingTour() {
               <button
                 onClick={prev}
                 style={{
-                  padding: "8px 16px", borderRadius: 10,
+                  padding: "8px 16px",
+                  borderRadius: 10,
                   border: "1.5px solid var(--line, #dce4ef)",
-                  background: "transparent", fontSize: 13,
-                  fontWeight: 600, cursor: "pointer",
+                  background: "transparent",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
                   color: "var(--text-soft, #526175)",
                 }}
               >
@@ -173,9 +202,14 @@ export function OnboardingTour() {
             <button
               onClick={next}
               style={{
-                padding: "8px 20px", borderRadius: 10, border: "none",
-                background: "#006233", color: "#fff",
-                fontSize: 13, fontWeight: 700, cursor: "pointer",
+                padding: "8px 20px",
+                borderRadius: 10,
+                border: "none",
+                background: "#006233",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
               }}
             >
               {isLast ? "Terminer" : "Suivant"}

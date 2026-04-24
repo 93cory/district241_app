@@ -34,7 +34,9 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [geoStatus, setGeoStatus] = useState<"unknown" | "requesting" | "granted" | "denied" | "unavailable">("unknown");
+  const [geoStatus, setGeoStatus] = useState<
+    "unknown" | "requesting" | "granted" | "denied" | "unavailable"
+  >("unknown");
   const [coords, setCoords] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
@@ -43,7 +45,9 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
 
   const loadPhotos = useCallback(async () => {
     try {
-      const res = await fetch(`/api/pnpi/inspections/${inspectionId}/photos`, { cache: "no-store" });
+      const res = await fetch(`/api/pnpi/inspections/${inspectionId}/photos`, {
+        cache: "no-store",
+      });
       if (res.ok) setPhotos((await res.json()) as Photo[]);
     } catch {
       /* ignore */
@@ -52,7 +56,9 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
     }
   }, [inspectionId]);
 
-  useEffect(() => { loadPhotos(); }, [loadPhotos]);
+  useEffect(() => {
+    loadPhotos();
+  }, [loadPhotos]);
 
   // Capture GPS au chargement, en arriere-plan
   useEffect(() => {
@@ -63,11 +69,15 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
     setGeoStatus("requesting");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
+        setCoords({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
         setGeoStatus("granted");
       },
       () => setGeoStatus("denied"),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );
   }, []);
 
@@ -79,11 +89,15 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
     setGeoStatus("requesting");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
+        setCoords({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
         setGeoStatus("granted");
       },
       () => setGeoStatus("denied"),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   };
 
@@ -164,11 +178,18 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
 
   const geoBadge = (() => {
     switch (geoStatus) {
-      case "granted": return coords ? `Position : ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)} (±${Math.round(coords.accuracy)} m)` : "Position capturee";
-      case "requesting": return "Localisation en cours...";
-      case "denied": return "Geolocalisation refusee";
-      case "unavailable": return "Geolocalisation non disponible";
-      default: return "Position inconnue";
+      case "granted":
+        return coords
+          ? `Position : ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)} (±${Math.round(coords.accuracy)} m)`
+          : "Position capturee";
+      case "requesting":
+        return "Localisation en cours...";
+      case "denied":
+        return "Geolocalisation refusee";
+      case "unavailable":
+        return "Geolocalisation non disponible";
+      default:
+        return "Position inconnue";
     }
   })();
 
@@ -207,7 +228,17 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
             className="docupload-input"
             aria-label="Prendre ou selectionner une photo"
           />
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg
+            width="32"
+            height="32"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
             <circle cx="12" cy="13" r="4" />
           </svg>
@@ -250,9 +281,12 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
                 />
               </a>
               <div className="photo-upload-meta">
-                <div className="photo-upload-name" title={p.nom_fichier}>{p.nom_fichier}</div>
+                <div className="photo-upload-name" title={p.nom_fichier}>
+                  {p.nom_fichier}
+                </div>
                 <div className="photo-upload-sub">
-                  {formatSize(p.taille_octets)} &middot; {new Date(p.uploaded_at).toLocaleDateString("fr-FR")}
+                  {formatSize(p.taille_octets)} &middot;{" "}
+                  {new Date(p.uploaded_at).toLocaleDateString("fr-FR")}
                 </div>
                 {p.latitude !== null && p.longitude !== null && (
                   <a
@@ -261,7 +295,17 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
                     rel="noopener noreferrer"
                     className="photo-upload-geo-link"
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
@@ -276,7 +320,17 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
                   className="photo-upload-delete"
                   aria-label={`Supprimer ${p.nom_fichier}`}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
                     <polyline points="3 6 5 6 21 6" />
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                   </svg>

@@ -12,13 +12,14 @@ Usage:
         await cache.set("expensive:key", result, ttl=300)
         return result
 """
+
 from __future__ import annotations
 
 import json
 import logging
 import os
 import time
-from typing import Any, Optional
+from typing import Any
 
 logger = logging.getLogger("pnpi.cache")
 
@@ -29,7 +30,7 @@ class _InMemoryCache:
     def __init__(self) -> None:
         self._store: dict[str, tuple[float, Any]] = {}
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         entry = self._store.get(key)
         if entry is None:
             return None
@@ -60,9 +61,10 @@ class _RedisCache:
 
     def __init__(self, url: str) -> None:
         import redis.asyncio as aioredis
+
         self._redis = aioredis.from_url(url, decode_responses=True)
 
-    async def get(self, key: str) -> Optional[Any]:
+    async def get(self, key: str) -> Any | None:
         raw = await self._redis.get(key)
         if raw is None:
             return None

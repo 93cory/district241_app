@@ -1,19 +1,17 @@
 """PNPI · Gestion des cles API pour les integrations externes."""
+
 from __future__ import annotations
 
 import hashlib
 import secrets
 import uuid
-from datetime import datetime
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 
-from ..core.auth import Role, User, require_roles
 from ..core.audit import write_audit_event
+from ..core.auth import Role, User, require_roles
 from ..database import get_db, now_utc
 
 router = APIRouter(prefix="/admin/api-keys", tags=["API Keys"])
@@ -28,8 +26,8 @@ _api_keys_store: list[dict] = []
 class APIKeyCreate(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, examples=["Douanes Gabon"])
     system_id: str = Field(..., min_length=2, max_length=50, examples=["douanes"])
-    permissions: List[str] = Field(default=["read"], examples=[["read", "write"]])
-    expires_days: Optional[int] = Field(None, examples=[365])
+    permissions: list[str] = Field(default=["read"], examples=[["read", "write"]])
+    expires_days: int | None = Field(None, examples=[365])
 
 
 class APIKeyResponse(BaseModel):
@@ -37,14 +35,14 @@ class APIKeyResponse(BaseModel):
     name: str
     system_id: str
     key_prefix: str
-    permissions: List[str]
+    permissions: list[str]
     created_at: str
-    expires_at: Optional[str]
+    expires_at: str | None
     is_active: bool
-    last_used_at: Optional[str] = None
+    last_used_at: str | None = None
 
 
-@router.get("", response_model=List[APIKeyResponse], summary="Lister les cles API")
+@router.get("", response_model=list[APIKeyResponse], summary="Lister les cles API")
 async def list_api_keys(
     _: User = Depends(require_roles(Role.admin)),
 ):
@@ -90,8 +88,11 @@ async def create_api_key(
     _api_keys_store.append(entry)
 
     write_audit_event(
-        db, actor=current_user.username, action="api_key.create",
-        target=payload.system_id, details=f"Cle API creee: {payload.name}",
+        db,
+        actor=current_user.username,
+        action="api_key.create",
+        target=payload.system_id,
+        details=f"Cle API creee: {payload.name}",
     )
     db.commit()
 
@@ -115,8 +116,11 @@ async def revoke_api_key(
         if k["id"] == key_id:
             k["is_active"] = False
             write_audit_event(
-                db, actor=current_user.username, action="api_key.revoke",
-                target=k["system_id"], details=f"Cle API revoquee: {k['name']}",
+                db,
+                actor=current_user.username,
+                action="api_key.revoke",
+                target=k["system_id"],
+                details=f"Cle API revoquee: {k['name']}",
             )
             db.commit()
             return {"message": f"Cle API '{k['name']}' revoquee."}

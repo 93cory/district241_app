@@ -56,7 +56,9 @@ export default async function MesStatsPage() {
     return (
       <section className="section">
         <div className="chart-card">
-          <Link href="/pnpi" className="pnpi-back-link">&larr; Tableau de bord</Link>
+          <Link href="/pnpi" className="pnpi-back-link">
+            &larr; Tableau de bord
+          </Link>
           <h2 style={{ marginTop: "0.5rem" }}>Mes statistiques</h2>
           <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">
             {error || "Aucune donnee disponible."}
@@ -74,11 +76,13 @@ export default async function MesStatsPage() {
       <div className="chart-card">
         <div className="pnpi-page-head">
           <div>
-            <Link href="/pnpi" className="pnpi-back-link">&larr; Tableau de bord</Link>
+            <Link href="/pnpi" className="pnpi-back-link">
+              &larr; Tableau de bord
+            </Link>
             <h2>Mes statistiques</h2>
             <p className="pnpi-page-sub">
-              Votre bilan personnel &middot; utilisateur : <strong>{stats.username}</strong>{" "}
-              ({stats.roles.join(", ")})
+              Votre bilan personnel &middot; utilisateur : <strong>{stats.username}</strong> (
+              {stats.roles.join(", ")})
             </p>
           </div>
         </div>
@@ -112,7 +116,10 @@ export default async function MesStatsPage() {
         </div>
 
         {/* Charge actuelle */}
-        <div className="chart-card mes-stats-charge" style={{ marginBottom: "1.5rem", boxShadow: "none" }}>
+        <div
+          className="chart-card mes-stats-charge"
+          style={{ marginBottom: "1.5rem", boxShadow: "none" }}
+        >
           <h3 className="pnpi-card-subtitle">Charge de travail actuelle</h3>
           <div className="mes-stats-charge-row">
             <div className="mes-stats-charge-item">

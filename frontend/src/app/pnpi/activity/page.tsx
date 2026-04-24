@@ -24,7 +24,10 @@ export default async function ActivityPage() {
   let events: any[] = [];
   try {
     const res = await backendRequest("/pnpi/dashboard/activity-feed?limit=40");
-    if (res.ok) { const d = await res.json(); events = d.events || []; }
+    if (res.ok) {
+      const d = await res.json();
+      events = d.events || [];
+    }
   } catch {}
 
   const now = new Date();
@@ -46,34 +49,55 @@ export default async function ActivityPage() {
 
       <div style={{ position: "relative", paddingLeft: 24 }}>
         {/* Timeline line */}
-        <div style={{
-          position: "absolute", left: 7, top: 0, bottom: 0, width: 2,
-          background: "var(--line, #dce4ef)",
-        }} />
+        <div
+          style={{
+            position: "absolute",
+            left: 7,
+            top: 0,
+            bottom: 0,
+            width: 2,
+            background: "var(--line, #dce4ef)",
+          }}
+        />
 
         {events.map((ev) => (
-          <div key={ev.id} style={{
-            position: "relative", marginBottom: 12,
-            paddingLeft: 20,
-          }}>
+          <div
+            key={ev.id}
+            style={{
+              position: "relative",
+              marginBottom: 12,
+              paddingLeft: 20,
+            }}
+          >
             {/* Dot */}
-            <div style={{
-              position: "absolute", left: -5, top: 4,
-              width: 16, height: 16, borderRadius: "50%",
-              background: "var(--bg-layer, #fff)",
-              border: "2px solid var(--line, #dce4ef)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 9,
-            }}>
+            <div
+              style={{
+                position: "absolute",
+                left: -5,
+                top: 4,
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                background: "var(--bg-layer, #fff)",
+                border: "2px solid var(--line, #dce4ef)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 9,
+              }}
+            >
               {ev.icon}
             </div>
 
-            <div style={{
-              padding: "10px 14px", borderRadius: 10,
-              background: "var(--bg-layer, #fff)",
-              border: "1px solid var(--line, #dce4ef)",
-              fontSize: 13,
-            }}>
+            <div
+              style={{
+                padding: "10px 14px",
+                borderRadius: 10,
+                background: "var(--bg-layer, #fff)",
+                border: "1px solid var(--line, #dce4ef)",
+                fontSize: 13,
+              }}
+            >
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
                 <span>
                   <strong>{ev.actor}</strong>
@@ -82,7 +106,9 @@ export default async function ActivityPage() {
                     {ACTION_LABELS[ev.action] || ev.action}
                   </span>
                 </span>
-                <span style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)", whiteSpace: "nowrap" }}>
+                <span
+                  style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)", whiteSpace: "nowrap" }}
+                >
                   {formatTime(ev.timestamp)}
                 </span>
               </div>

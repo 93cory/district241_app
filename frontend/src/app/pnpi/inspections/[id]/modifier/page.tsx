@@ -23,12 +23,21 @@ interface InspectionData {
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", border: "1px solid #d1d5db", borderRadius: "6px",
-  padding: "0.5rem 0.75rem", fontSize: "0.875rem", boxSizing: "border-box",
-  background: "#fafafa", outline: "none",
+  width: "100%",
+  border: "1px solid #d1d5db",
+  borderRadius: "6px",
+  padding: "0.5rem 0.75rem",
+  fontSize: "0.875rem",
+  boxSizing: "border-box",
+  background: "#fafafa",
+  outline: "none",
 };
 const labelStyle: React.CSSProperties = {
-  display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#374151", marginBottom: "0.25rem",
+  display: "block",
+  fontSize: "0.78rem",
+  fontWeight: 600,
+  color: "#374151",
+  marginBottom: "0.25rem",
 };
 
 export default function ModifierInspectionPage({ params }: { params: { id: string } }) {
@@ -48,7 +57,7 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
 
   useEffect(() => {
     fetch(`${BACKEND}/pnpi/inspections/${params.id}`, { credentials: "include" })
-      .then(r => {
+      .then((r) => {
         if (!r.ok) throw new Error(`Erreur ${r.status}`);
         return r.json();
       })
@@ -61,13 +70,17 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
         setLng(d.longitude != null ? String(d.longitude) : "");
         setLoading(false);
       })
-      .catch(e => { setError(e.message); setLoading(false); });
+      .catch((e) => {
+        setError(e.message);
+        setLoading(false);
+      });
   }, [params.id]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!data) return;
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`${BACKEND}/pnpi/inspections/${params.id}`, {
         method: "PATCH",
@@ -85,7 +98,10 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
         }),
       });
       const payload = await res.json();
-      if (!res.ok) { setError(payload.detail ?? `Erreur ${res.status}`); return; }
+      if (!res.ok) {
+        setError(payload.detail ?? `Erreur ${res.status}`);
+        return;
+      }
       setSuccess(true);
       setTimeout(() => router.push(`/pnpi/inspections/${params.id}`), 1200);
     } catch (err) {
@@ -95,42 +111,89 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
     }
   };
 
-  if (loading) return (
-    <section className="section">
-      <div className="chart-card" style={{ padding: "2rem", textAlign: "center", color: "#6b7280" }}>Chargement...</div>
-    </section>
-  );
+  if (loading)
+    return (
+      <section className="section">
+        <div
+          className="chart-card"
+          style={{ padding: "2rem", textAlign: "center", color: "#6b7280" }}
+        >
+          Chargement...
+        </div>
+      </section>
+    );
 
-  if (error && !data) return (
-    <section className="section">
-      <div className="chart-card" style={{ padding: "1.25rem" }}>
-        <p style={{ color: "#b42318" }}>{error}</p>
-        <Link href="/pnpi/inspections" style={{ color: "#003F8F" }}>← Retour aux inspections</Link>
-      </div>
-    </section>
-  );
+  if (error && !data)
+    return (
+      <section className="section">
+        <div className="chart-card" style={{ padding: "1.25rem" }}>
+          <p style={{ color: "#b42318" }}>{error}</p>
+          <Link href="/pnpi/inspections" style={{ color: "#003F8F" }}>
+            ← Retour aux inspections
+          </Link>
+        </div>
+      </section>
+    );
 
   return (
     <section className="section">
       <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem" }}>
-        <Link href="/pnpi/inspections" style={{ color: "#6b7280", textDecoration: "none" }}>Inspections</Link>
+        <Link href="/pnpi/inspections" style={{ color: "#6b7280", textDecoration: "none" }}>
+          Inspections
+        </Link>
         <span style={{ color: "#6b7280", margin: "0 0.5rem" }}>/</span>
-        <Link href={`/pnpi/inspections/${params.id}`} style={{ color: "#6b7280", textDecoration: "none", fontFamily: "monospace" }}>{params.id}</Link>
+        <Link
+          href={`/pnpi/inspections/${params.id}`}
+          style={{ color: "#6b7280", textDecoration: "none", fontFamily: "monospace" }}
+        >
+          {params.id}
+        </Link>
         <span style={{ color: "#6b7280", margin: "0 0.5rem" }}>/</span>
         <span style={{ color: "#003F8F", fontWeight: 600 }}>Modifier</span>
       </div>
 
       <div className="chart-card" style={{ padding: "1.5rem", maxWidth: "680px" }}>
-        <h2 style={{ margin: "0 0 0.25rem", color: "#003F8F" }}>Modifier le rapport d&apos;inspection</h2>
-        <p style={{ margin: "0 0 1.5rem", color: "#6b7280", fontSize: "0.875rem", fontFamily: "monospace" }}>{params.id}</p>
+        <h2 style={{ margin: "0 0 0.25rem", color: "#003F8F" }}>
+          Modifier le rapport d&apos;inspection
+        </h2>
+        <p
+          style={{
+            margin: "0 0 1.5rem",
+            color: "#6b7280",
+            fontSize: "0.875rem",
+            fontFamily: "monospace",
+          }}
+        >
+          {params.id}
+        </p>
 
         {error && (
-          <div style={{ padding: "0.625rem 0.875rem", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "6px", color: "#b42318", fontSize: "0.82rem", marginBottom: "1rem" }}>
+          <div
+            style={{
+              padding: "0.625rem 0.875rem",
+              background: "#fef2f2",
+              border: "1px solid #fca5a5",
+              borderRadius: "6px",
+              color: "#b42318",
+              fontSize: "0.82rem",
+              marginBottom: "1rem",
+            }}
+          >
             {error}
           </div>
         )}
         {success && (
-          <div style={{ padding: "0.625rem 0.875rem", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "6px", color: "#166534", fontSize: "0.82rem", marginBottom: "1rem" }}>
+          <div
+            style={{
+              padding: "0.625rem 0.875rem",
+              background: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              borderRadius: "6px",
+              color: "#166534",
+              fontSize: "0.82rem",
+              marginBottom: "1rem",
+            }}
+          >
             Rapport mis à jour. Redirection en cours...
           </div>
         )}
@@ -140,13 +203,19 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
           <div style={{ marginBottom: "1rem" }}>
             <label style={labelStyle}>Résultat de conformité *</label>
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              {CONF_OPTIONS.map(opt => (
+              {CONF_OPTIONS.map((opt) => (
                 <button
-                  key={opt.value} type="button"
+                  key={opt.value}
+                  type="button"
                   onClick={() => setStatut(opt.value)}
                   style={{
-                    flex: 1, padding: "0.6rem 0.5rem", borderRadius: "8px", cursor: "pointer",
-                    fontWeight: 700, fontSize: "0.82rem", border: "2px solid",
+                    flex: 1,
+                    padding: "0.6rem 0.5rem",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "0.82rem",
+                    border: "2px solid",
                     background: statut === opt.value ? `${opt.color}18` : "white",
                     color: opt.color,
                     borderColor: statut === opt.value ? opt.color : "#e5e7eb",
@@ -164,8 +233,9 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
             <label style={labelStyle}>Observations *</label>
             <textarea
               value={observations}
-              onChange={e => setObservations(e.target.value)}
-              required rows={5}
+              onChange={(e) => setObservations(e.target.value)}
+              required
+              rows={5}
               placeholder="Detaillez les constats de l'inspection..."
               style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
             />
@@ -173,10 +243,13 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
 
           {/* Mesures correctives */}
           <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Mesures correctives <span style={{ fontWeight: 400, color: "#6b7280" }}>(optionnel)</span></label>
+            <label style={labelStyle}>
+              Mesures correctives{" "}
+              <span style={{ fontWeight: 400, color: "#6b7280" }}>(optionnel)</span>
+            </label>
             <textarea
               value={mesures}
-              onChange={e => setMesures(e.target.value)}
+              onChange={(e) => setMesures(e.target.value)}
               rows={3}
               placeholder="Actions correctives a mettre en place..."
               style={{ ...inputStyle, resize: "vertical", fontFamily: "inherit" }}
@@ -185,26 +258,53 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
 
           {/* GPS */}
           <div style={{ marginBottom: "1.25rem" }}>
-            <label style={labelStyle}>Coordonnées GPS <span style={{ fontWeight: 400, color: "#6b7280" }}>(optionnel)</span></label>
+            <label style={labelStyle}>
+              Coordonnées GPS <span style={{ fontWeight: 400, color: "#6b7280" }}>(optionnel)</span>
+            </label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
               <div>
-                <div style={{ fontSize: "0.72rem", color: "#6b7280", marginBottom: "0.25rem" }}>Latitude</div>
-                <input value={lat} onChange={e => setLat(e.target.value)} placeholder="ex: -0.72345" type="number" step="0.00001" style={inputStyle} />
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", marginBottom: "0.25rem" }}>
+                  Latitude
+                </div>
+                <input
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  placeholder="ex: -0.72345"
+                  type="number"
+                  step="0.00001"
+                  style={inputStyle}
+                />
               </div>
               <div>
-                <div style={{ fontSize: "0.72rem", color: "#6b7280", marginBottom: "0.25rem" }}>Longitude</div>
-                <input value={lng} onChange={e => setLng(e.target.value)} placeholder="ex: 9.45678" type="number" step="0.00001" style={inputStyle} />
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", marginBottom: "0.25rem" }}>
+                  Longitude
+                </div>
+                <input
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  placeholder="ex: 9.45678"
+                  type="number"
+                  step="0.00001"
+                  style={inputStyle}
+                />
               </div>
             </div>
           </div>
 
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button
-              type="submit" disabled={busy || success || !statut}
+              type="submit"
+              disabled={busy || success || !statut}
               style={{
-                flex: 1, padding: "0.7rem", background: busy ? "#9ca3af" : "#003F8F",
-                color: "white", border: "none", borderRadius: "8px",
-                fontWeight: 700, fontSize: "0.875rem", cursor: busy ? "not-allowed" : "pointer",
+                flex: 1,
+                padding: "0.7rem",
+                background: busy ? "#9ca3af" : "#003F8F",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontWeight: 700,
+                fontSize: "0.875rem",
+                cursor: busy ? "not-allowed" : "pointer",
               }}
             >
               {busy ? "Enregistrement..." : "Enregistrer les modifications"}
@@ -212,9 +312,16 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
             <Link
               href={`/pnpi/inspections/${params.id}`}
               style={{
-                padding: "0.7rem 1.25rem", background: "#f9fafb", border: "1px solid #e5e7eb",
-                color: "#374151", borderRadius: "8px", fontWeight: 600, fontSize: "0.875rem",
-                textDecoration: "none", display: "flex", alignItems: "center",
+                padding: "0.7rem 1.25rem",
+                background: "#f9fafb",
+                border: "1px solid #e5e7eb",
+                color: "#374151",
+                borderRadius: "8px",
+                fontWeight: 600,
+                fontSize: "0.875rem",
+                textDecoration: "none",
+                display: "flex",
+                alignItems: "center",
               }}
             >
               Annuler

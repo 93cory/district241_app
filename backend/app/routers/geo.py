@@ -1,18 +1,16 @@
 """PNPI · Endpoints geospatiaux (PostGIS)."""
-from __future__ import annotations
 
-from typing import List, Optional
+from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import func, select, text
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from ..core.auth import Role, User, get_current_user, require_roles
 from ..database import get_db, now_utc
 from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
-from ..models.core import TraceBatchORM
 
 # ---------------------------------------------------------------------------
 # Province centroids (fallback when coordinates are missing)
@@ -40,16 +38,16 @@ class OperateurGeoResult(BaseModel):
     raison_sociale: str
     secteur: str
     province: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    latitude: float | None = None
+    longitude: float | None = None
     distance_km: float
 
 
 class GeoCluster(BaseModel):
     province: str
     nb_operateurs: int
-    centroid_lat: Optional[float] = None
-    centroid_lng: Optional[float] = None
+    centroid_lat: float | None = None
+    centroid_lng: float | None = None
 
 
 class InspectionHeatPoint(BaseModel):
@@ -67,7 +65,7 @@ router = APIRouter(prefix="/geo", tags=["Geospatial"])
 
 @router.get(
     "/operateurs/nearby",
-    response_model=List[OperateurGeoResult],
+    response_model=list[OperateurGeoResult],
     summary="Operateurs industriels dans un rayon donne",
 )
 def nearby_operateurs(
@@ -75,9 +73,7 @@ def nearby_operateurs(
     lng: float = Query(..., description="Longitude du point central"),
     radius_km: float = Query(50, ge=0, description="Rayon de recherche en km"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)
-    ),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
 ):
     """Recherche les operateurs industriels situes dans un rayon autour d'un point.
 
@@ -139,14 +135,12 @@ def nearby_operateurs(
 
 @router.get(
     "/operateurs/cluster",
-    response_model=List[GeoCluster],
+    response_model=list[GeoCluster],
     summary="Clusters d'operateurs par province avec centroide",
 )
 def cluster_operateurs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(Role.admin, Role.ministre, Role.directeur)
-    ),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
 ):
     """Agrege les operateurs par province et calcule le centroide reel
     a partir des geometries PostGIS (``ST_Centroid`` + ``ST_Collect``).
@@ -190,14 +184,12 @@ def cluster_operateurs(
 
 @router.get(
     "/inspections/heatmap",
-    response_model=List[InspectionHeatPoint],
+    response_model=list[InspectionHeatPoint],
     summary="Densite des inspections pour carte de chaleur",
 )
 def inspections_heatmap(
     db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_roles(Role.admin, Role.ministre, Role.directeur, Role.inspecteur)
-    ),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.inspecteur)),
 ):
     """Retourne les points agreges par grille de 0.1 degre pour generer
     une heatmap des inspections.  Utilise ``ST_SnapToGrid`` lorsque la
@@ -245,32 +237,38 @@ async def export_operateurs_geojson(
     db: Session = Depends(get_db),
 ):
     """Export operators as GeoJSON FeatureCollection."""
-    ops = db.execute(
-        select(OperateurIndustrielORM).where(
-            OperateurIndustrielORM.latitude.isnot(None),
-            OperateurIndustrielORM.longitude.isnot(None),
+    ops = (
+        db.execute(
+            select(OperateurIndustrielORM).where(
+                OperateurIndustrielORM.latitude.isnot(None),
+                OperateurIndustrielORM.longitude.isnot(None),
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     features = []
     for op in ops:
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [op.longitude, op.latitude],
-            },
-            "properties": {
-                "id": op.id,
-                "raison_sociale": op.raison_sociale,
-                "nif_gabon": op.nif_gabon,
-                "secteur": op.secteur,
-                "province": op.province,
-                "ville": op.ville,
-                "effectif_declare": op.effectif_declare,
-                "is_active": op.is_active,
-            },
-        })
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [op.longitude, op.latitude],
+                },
+                "properties": {
+                    "id": op.id,
+                    "raison_sociale": op.raison_sociale,
+                    "nif_gabon": op.nif_gabon,
+                    "secteur": op.secteur,
+                    "province": op.province,
+                    "ville": op.ville,
+                    "effectif_declare": op.effectif_declare,
+                    "is_active": op.is_active,
+                },
+            }
+        )
 
     geojson = {
         "type": "FeatureCollection",
@@ -295,29 +293,35 @@ async def export_inspections_geojson(
     db: Session = Depends(get_db),
 ):
     """Export inspections as GeoJSON."""
-    inspections = db.execute(
-        select(InspectionConformiteORM).where(
-            InspectionConformiteORM.latitude.isnot(None),
-            InspectionConformiteORM.longitude.isnot(None),
+    inspections = (
+        db.execute(
+            select(InspectionConformiteORM).where(
+                InspectionConformiteORM.latitude.isnot(None),
+                InspectionConformiteORM.longitude.isnot(None),
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     features = []
     for insp in inspections:
-        features.append({
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [insp.longitude, insp.latitude],
-            },
-            "properties": {
-                "id": insp.id,
-                "statut_conformite": insp.statut_conformite,
-                "inspecteur": insp.inspecteur_username,
-                "date_inspection": insp.date_inspection.isoformat() if insp.date_inspection else None,
-                "observations": insp.observations[:200] if insp.observations else "",
-            },
-        })
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [insp.longitude, insp.latitude],
+                },
+                "properties": {
+                    "id": insp.id,
+                    "statut_conformite": insp.statut_conformite,
+                    "inspecteur": insp.inspecteur_username,
+                    "date_inspection": insp.date_inspection.isoformat() if insp.date_inspection else None,
+                    "observations": insp.observations[:200] if insp.observations else "",
+                },
+            }
+        )
 
     return JSONResponse(
         content={"type": "FeatureCollection", "features": features},
@@ -328,9 +332,9 @@ async def export_inspections_geojson(
 
 @router.get("/export.geojson")
 async def export_geojson(
-    secteur: Optional[str] = Query(None),
-    province: Optional[str] = Query(None),
-    statut_conformite: Optional[str] = Query(None),
+    secteur: str | None = Query(None),
+    province: str | None = Query(None),
+    statut_conformite: str | None = Query(None),
     include_atis: bool = Query(True),
     include_inspections: bool = Query(False),
     current_user: User = Depends(get_current_user),
@@ -348,8 +352,8 @@ async def export_geojson(
     ops = db.execute(query).scalars().all()
 
     for op in ops:
-        lat = getattr(op, 'latitude', None)
-        lng = getattr(op, 'longitude', None)
+        lat = getattr(op, "latitude", None)
+        lng = getattr(op, "longitude", None)
 
         # Fallback to province centroids
         if not lat or not lng:
@@ -368,20 +372,22 @@ async def export_geojson(
         }
 
         if include_atis:
-            atis = db.execute(
-                select(AgrementTechniqueIndustrielORM).where(
-                    AgrementTechniqueIndustrielORM.operateur_id == op.id
+            atis = (
+                db.execute(
+                    select(AgrementTechniqueIndustrielORM).where(AgrementTechniqueIndustrielORM.operateur_id == op.id)
                 )
-            ).scalars().all()
+                .scalars()
+                .all()
+            )
             props["atis_count"] = len(atis)
             props["atis_approuves"] = sum(1 for a in atis if a.statut == "approuve")
 
         if include_inspections:
-            insps = db.execute(
-                select(InspectionConformiteORM).where(
-                    InspectionConformiteORM.operateur_id == op.id
-                )
-            ).scalars().all()
+            insps = (
+                db.execute(select(InspectionConformiteORM).where(InspectionConformiteORM.operateur_id == op.id))
+                .scalars()
+                .all()
+            )
 
             if statut_conformite:
                 insps = [i for i in insps if i.statut_conformite == statut_conformite]
@@ -390,11 +396,13 @@ async def export_geojson(
             if insps:
                 props["derniere_conformite"] = insps[-1].statut_conformite
 
-        features.append({
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [lng, lat]},
-            "properties": props,
-        })
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [lng, lat]},
+                "properties": props,
+            }
+        )
 
     geojson = {
         "type": "FeatureCollection",

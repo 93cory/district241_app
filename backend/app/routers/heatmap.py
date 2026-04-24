@@ -1,14 +1,16 @@
 """PNPI · Heatmap des non-conformites par province."""
+
 from __future__ import annotations
 
 from collections import defaultdict
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..database import get_db
 from ..core.auth import User, get_current_user
-from ..models.pnpi import InspectionConformiteORM, OperateurIndustrielORM
+from ..database import get_db
+from ..models.pnpi import InspectionConformiteORM
 
 router = APIRouter(prefix="/heatmap", tags=["Heatmap"])
 
@@ -53,18 +55,20 @@ async def non_conformity_heatmap(
         non_conf_rate = round(stats["non_conforme"] / stats["total"] * 100, 1) if stats["total"] else 0
         intensity = min(stats["non_conforme"] / max(1, max(s["non_conforme"] for s in province_stats.values())), 1.0)
 
-        result.append({
-            "province": prov,
-            "label": coords["label"],
-            "lat": coords["lat"],
-            "lng": coords["lng"],
-            "total": stats["total"],
-            "conforme": stats["conforme"],
-            "non_conforme": stats["non_conforme"],
-            "partiel": stats["partiel"],
-            "taux_non_conformite": non_conf_rate,
-            "intensity": round(intensity, 2),
-        })
+        result.append(
+            {
+                "province": prov,
+                "label": coords["label"],
+                "lat": coords["lat"],
+                "lng": coords["lng"],
+                "total": stats["total"],
+                "conforme": stats["conforme"],
+                "non_conforme": stats["non_conforme"],
+                "partiel": stats["partiel"],
+                "taux_non_conformite": non_conf_rate,
+                "intensity": round(intensity, 2),
+            }
+        )
 
     result.sort(key=lambda r: r["non_conforme"], reverse=True)
     return {"provinces": result}

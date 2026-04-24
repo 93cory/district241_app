@@ -10,7 +10,7 @@ export async function GET() {
     if (!response.ok) {
       return new Response(
         JSON.stringify({ error: `Export PDF inspecteurs indisponible (${response.status})` }),
-        { status: response.status, headers: { "Content-Type": "application/json" } }
+        { status: response.status, headers: { "Content-Type": "application/json" } },
       );
     }
 

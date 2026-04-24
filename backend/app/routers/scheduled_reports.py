@@ -1,14 +1,13 @@
 """PNPI · Planification de rapports automatiques."""
+
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 
-from ..database import get_db, now_utc
-from ..core.auth import User, require_roles, Role
+from fastapi import APIRouter, Depends, HTTPException
+
+from ..core.auth import Role, User, require_roles
+from ..database import now_utc
 
 router = APIRouter(prefix="/scheduled-reports", tags=["Scheduled Reports"])
 
@@ -84,6 +83,7 @@ async def delete_schedule(
 
 def _compute_next_run(frequency: str) -> str:
     from datetime import timedelta
+
     now = now_utc()
     if frequency == "daily":
         next_dt = now + timedelta(days=1)

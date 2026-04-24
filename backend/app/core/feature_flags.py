@@ -12,6 +12,7 @@ Flags are read from env vars with the PNPI_FF_ prefix:
 
 Flags default to enabled unless explicitly set to "0" or "false".
 """
+
 from __future__ import annotations
 
 import logging

@@ -49,7 +49,10 @@ const CustomTooltip = ({
     >
       <div style={{ fontWeight: 700, marginBottom: "0.4rem", color: "#003F8F" }}>{label}</div>
       {payload.map((p) => (
-        <div key={p.name} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", color: p.color }}>
+        <div
+          key={p.name}
+          style={{ display: "flex", justifyContent: "space-between", gap: "1rem", color: p.color }}
+        >
           <span>{p.name}</span>
           <strong>{p.value}</strong>
         </div>
@@ -70,7 +73,12 @@ const SecteurChart = ({ secteurs }: Props) => {
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-        <XAxis dataKey="name" tick={{ fontSize: 12, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+        <XAxis
+          dataKey="name"
+          tick={{ fontSize: 12, fill: "#6b7280" }}
+          axisLine={false}
+          tickLine={false}
+        />
         <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
         <Tooltip content={<CustomTooltip />} />
         <Legend

@@ -17,8 +17,14 @@ ignore = [
     "S101",  # assert used (OK in tests)
     "S105",  # hardcoded password (false positives on field names)
     "S106",  # hardcoded password argument
+    "S110",  # try-except-pass (pattern "best-effort silent" utilise partout)
+    "S608",  # SQL injection via raw query (faux positifs sur f-strings de log)
     "B008",  # function call in default argument (FastAPI Depends)
+    "B904",  # raise ... from err (trop de points d'appel, cosmetique)
     "E501",  # line too long (handled by formatter)
+    "E402",  # module-level import not at top (imports tardifs intentionnels)
+    "E701",  # multiple statements on one line (style if x: return)
+    "RUF003",  # ambiguous character (accents francais intentionnels)
 ]
 
 [lint.per-file-ignores]

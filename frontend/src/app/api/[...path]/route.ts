@@ -29,7 +29,7 @@ async function getAuth() {
 async function forward(
   req: NextRequest,
   ctx: { params: Promise<{ path: string[] }> },
-  method: string
+  method: string,
 ): Promise<NextResponse> {
   const auth = await getAuth();
   if (!auth) return NextResponse.json({ detail: "Non authentifie." }, { status: 401 });
@@ -67,7 +67,7 @@ async function forward(
   } catch (err) {
     return NextResponse.json(
       { detail: err instanceof Error ? err.message : "Erreur reseau" },
-      { status: 502 }
+      { status: 502 },
     );
   }
 
@@ -79,8 +79,7 @@ async function forward(
       status: backendRes.status,
       headers: {
         "Content-Type": respCT,
-        "Content-Disposition":
-          backendRes.headers.get("content-disposition") ?? "inline",
+        "Content-Disposition": backendRes.headers.get("content-disposition") ?? "inline",
       },
     });
   }

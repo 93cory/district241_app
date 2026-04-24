@@ -65,8 +65,11 @@ const MapSection = ({ units, fieldReports }: Props) => {
           if (!coords) return null;
           return { id: unit.id, name: unit.name, sector: unit.sector, coords };
         })
-        .filter((item): item is { id: string; name: string; sector: string; coords: [number, number] } => Boolean(item)),
-    [units]
+        .filter(
+          (item): item is { id: string; name: string; sector: string; coords: [number, number] } =>
+            Boolean(item),
+        ),
+    [units],
   );
 
   const reportMarkers = useMemo(
@@ -87,7 +90,7 @@ const MapSection = ({ units, fieldReports }: Props) => {
         })
         .filter(
           (
-            item
+            item,
           ): item is {
             id: string;
             title: string;
@@ -96,9 +99,9 @@ const MapSection = ({ units, fieldReports }: Props) => {
             comment: string;
             createdBy: string;
             coords: [number, number];
-          } => Boolean(item)
+          } => Boolean(item),
         ),
-    [fieldReports]
+    [fieldReports],
   );
 
   return (
@@ -138,7 +141,8 @@ const MapSection = ({ units, fieldReports }: Props) => {
         </MapContainer>
       </div>
       <p style={{ marginBottom: 0, color: "#6c7a8c", fontSize: "0.85rem" }}>
-        Marqueurs terrain actifs: {reportMarkers.length} - Unites geolocalisees: {unitMarkers.length}
+        Marqueurs terrain actifs: {reportMarkers.length} - Unites geolocalisees:{" "}
+        {unitMarkers.length}
       </p>
     </div>
   );

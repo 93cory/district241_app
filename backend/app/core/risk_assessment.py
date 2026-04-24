@@ -7,24 +7,29 @@ Score de risque composite base sur :
 - Completude du dossier
 - Charge de travail actuelle du pipeline
 """
+
 from __future__ import annotations
 
-from datetime import timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..database import now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
-    InspectionConformiteORM,
-    OperateurIndustrielORM,
     ATIChecklistItemORM,
+    InspectionConformiteORM,
 )
 
 SECTOR_COMPLEXITY = {
-    "mines": 0.9, "chimie": 0.85, "energie": 0.8,
-    "btp": 0.6, "bois": 0.55, "agroalimentaire": 0.5,
-    "peche": 0.45, "textile": 0.4, "autre": 0.3,
+    "mines": 0.9,
+    "chimie": 0.85,
+    "energie": 0.8,
+    "btp": 0.6,
+    "bois": 0.55,
+    "agroalimentaire": 0.5,
+    "peche": 0.45,
+    "textile": 0.4,
+    "autre": 0.3,
 }
 
 
@@ -41,17 +46,27 @@ def assess_risk(db: Session, ati_id: str) -> dict:
     # 1. Sector complexity (0-20)
     complexity = SECTOR_COMPLEXITY.get(ati.secteur, 0.5)
     sector_risk = round(complexity * 20)
-    factors.append({"name": "Complexite sectorielle", "score": sector_risk, "max": 20,
-                    "detail": f"Secteur {ati.secteur} · complexite {complexity:.0%}"})
+    factors.append(
+        {
+            "name": "Complexite sectorielle",
+            "score": sector_risk,
+            "max": 20,
+            "detail": f"Secteur {ati.secteur} · complexite {complexity:.0%}",
+        }
+    )
 
     # 2. Operator history (0-25)
     if op:
-        past_atis = db.execute(
-            select(AgrementTechniqueIndustrielORM).where(
-                AgrementTechniqueIndustrielORM.operateur_id == op.id,
-                AgrementTechniqueIndustrielORM.id != ati_id,
+        past_atis = (
+            db.execute(
+                select(AgrementTechniqueIndustrielORM).where(
+                    AgrementTechniqueIndustrielORM.operateur_id == op.id,
+                    AgrementTechniqueIndustrielORM.id != ati_id,
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         rejections = sum(1 for a in past_atis if a.statut == "rejete")
         total_past = len(past_atis)
 
@@ -72,11 +87,15 @@ def assess_risk(db: Session, ati_id: str) -> dict:
 
     # 3. Inspection conformity (0-20)
     if op:
-        inspections = db.execute(
-            select(InspectionConformiteORM).where(
-                InspectionConformiteORM.operateur_id == op.id
-            ).order_by(InspectionConformiteORM.date_inspection.desc())
-        ).scalars().all()
+        inspections = (
+            db.execute(
+                select(InspectionConformiteORM)
+                .where(InspectionConformiteORM.operateur_id == op.id)
+                .order_by(InspectionConformiteORM.date_inspection.desc())
+            )
+            .scalars()
+            .all()
+        )
 
         if not inspections:
             insp_risk = 12  # No inspection = moderate
@@ -98,9 +117,9 @@ def assess_risk(db: Session, ati_id: str) -> dict:
     factors.append({"name": "Conformite inspections", "score": insp_risk, "max": 20, "detail": detail})
 
     # 4. Checklist completeness (0-15)
-    checklist_items = db.execute(
-        select(ATIChecklistItemORM).where(ATIChecklistItemORM.ati_id == ati_id)
-    ).scalars().all()
+    checklist_items = (
+        db.execute(select(ATIChecklistItemORM).where(ATIChecklistItemORM.ati_id == ati_id)).scalars().all()
+    )
 
     if checklist_items:
         checked = sum(1 for i in checklist_items if i.is_checked)
@@ -113,11 +132,15 @@ def assess_risk(db: Session, ati_id: str) -> dict:
     factors.append({"name": "Completude dossier", "score": checklist_risk, "max": 15, "detail": detail})
 
     # 5. Pipeline pressure (0-10)
-    in_progress = db.execute(
-        select(AgrementTechniqueIndustrielORM).where(
-            AgrementTechniqueIndustrielORM.statut.notin_(["approuve", "rejete", "expire"])
+    in_progress = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM).where(
+                AgrementTechniqueIndustrielORM.statut.notin_(["approuve", "rejete", "expire"])
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     pipeline_load = len(in_progress)
     if pipeline_load > 30:
         pipeline_risk = 10

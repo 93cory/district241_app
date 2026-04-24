@@ -35,7 +35,23 @@ export default async function BriefingPage() {
   }
 
   const [snapshot, alerts, forecast, units, fieldReports] = await Promise.all([
-    fetchDashboard().catch(() => ({ total_units: 0, active_units: 0, total_volume_tons: 0, total_jobs: 0, avg_capacity_utilization: 0, national_index: 0, import_gap_tons: 0, jobs_created: 0, traced_batches: 0, indicators: [] as Array<{ sector: string; local_volume_tons: number; import_volume_tons: number; jobs: number }> })),
+    fetchDashboard().catch(() => ({
+      total_units: 0,
+      active_units: 0,
+      total_volume_tons: 0,
+      total_jobs: 0,
+      avg_capacity_utilization: 0,
+      national_index: 0,
+      import_gap_tons: 0,
+      jobs_created: 0,
+      traced_batches: 0,
+      indicators: [] as Array<{
+        sector: string;
+        local_volume_tons: number;
+        import_volume_tons: number;
+        jobs: number;
+      }>,
+    })),
     fetchDashboardAlerts().catch(() => []),
     fetchForecast().catch(() => []),
     fetchUnits().catch(() => []),
@@ -48,12 +64,14 @@ export default async function BriefingPage() {
   const growthDirection = forecastDelta >= 0 ? "hausse" : "repli";
   const activeUnitRate = units.length > 0 ? snapshot.active_units / units.length : 0;
 
-  const criticalCount = alerts.filter((alert) => alert.severity.toLowerCase() === "critical").length;
+  const criticalCount = alerts.filter(
+    (alert) => alert.severity.toLowerCase() === "critical",
+  ).length;
   const highCount = alerts.filter((alert) => alert.severity.toLowerCase() === "high").length;
   const mediumCount = alerts.filter((alert) => alert.severity.toLowerCase() === "medium").length;
   const openFieldReports = fieldReports.filter((report) => report.status !== "closed");
   const criticalFieldReports = openFieldReports.filter((report) =>
-    ["high", "critical"].includes(report.severity.toLowerCase())
+    ["high", "critical"].includes(report.severity.toLowerCase()),
   );
 
   const recommendations30 = [

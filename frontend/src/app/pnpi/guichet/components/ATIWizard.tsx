@@ -8,14 +8,18 @@ import { useToast } from "../../../components/Toast";
 
 const SECTEURS = ["bois", "mines", "agroalimentaire", "btp", "petrole", "services"];
 const SECTEUR_LABELS: Record<string, string> = {
-  bois: "Bois & Foret", mines: "Mines", agroalimentaire: "Agro-alimentaire",
-  btp: "BTP", petrole: "Petrole", services: "Services",
+  bois: "Bois & Foret",
+  mines: "Mines",
+  agroalimentaire: "Agro-alimentaire",
+  btp: "BTP",
+  petrole: "Petrole",
+  services: "Services",
 };
 
 const STEPS = [
   { key: "operateur", label: "Operateur" },
-  { key: "activite",  label: "Activite & secteur" },
-  { key: "resume",    label: "Confirmation" },
+  { key: "activite", label: "Activite & secteur" },
+  { key: "resume", label: "Confirmation" },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]["key"];
@@ -61,7 +65,7 @@ export function ATIWizard({
 
   const canProceedFrom = (s: StepKey): boolean => {
     if (s === "operateur") return Boolean(form.operateur_id);
-    if (s === "activite")  return Boolean(form.type_activite.trim() && form.secteur);
+    if (s === "activite") return Boolean(form.type_activite.trim() && form.secteur);
     return true;
   };
 
@@ -155,7 +159,9 @@ export function ATIWizard({
 
             <div className="pnpi-form-grid">
               <div className="pnpi-form-field">
-                <label htmlFor="w-sec" className="pnpi-form-label pnpi-form-label-req">Secteur</label>
+                <label htmlFor="w-sec" className="pnpi-form-label pnpi-form-label-req">
+                  Secteur
+                </label>
                 <select
                   id="w-sec"
                   className="pnpi-form-select"
@@ -165,12 +171,16 @@ export function ATIWizard({
                 >
                   <option value="">Selectionner</option>
                   {SECTEURS.map((s) => (
-                    <option key={s} value={s}>{SECTEUR_LABELS[s]}</option>
+                    <option key={s} value={s}>
+                      {SECTEUR_LABELS[s]}
+                    </option>
                   ))}
                 </select>
               </div>
               <div className="pnpi-form-field">
-                <label htmlFor="w-prio" className="pnpi-form-label">Priorite</label>
+                <label htmlFor="w-prio" className="pnpi-form-label">
+                  Priorite
+                </label>
                 <select
                   id="w-prio"
                   className="pnpi-form-select"
@@ -189,10 +199,10 @@ export function ATIWizard({
                 <div>
                   <strong>Delai de traitement estime</strong>
                   <p style={{ margin: "0.25rem 0 0" }}>
-                    Secteur <strong>{SECTEUR_LABELS[form.secteur]}</strong> :
-                    mediane <strong>{delayEstimate.delai_median}j</strong>,
-                    moyenne {delayEstimate.delai_moyen}j
-                    (sur {delayEstimate.nb_dossiers} dossier{delayEstimate.nb_dossiers > 1 ? "s" : ""} traites).
+                    Secteur <strong>{SECTEUR_LABELS[form.secteur]}</strong> : mediane{" "}
+                    <strong>{delayEstimate.delai_median}j</strong>, moyenne{" "}
+                    {delayEstimate.delai_moyen}j (sur {delayEstimate.nb_dossiers} dossier
+                    {delayEstimate.nb_dossiers > 1 ? "s" : ""} traites).
                   </p>
                 </div>
               </div>
@@ -219,25 +229,40 @@ export function ATIWizard({
             <h3 className="pnpi-card-subtitle">Verification avant soumission</h3>
             <dl className="ati-wizard-summary">
               <dt>Operateur</dt>
-              <dd>{selectedOperateur?.raison_sociale} &middot; {selectedOperateur?.province.replace(/_/g, " ")}</dd>
+              <dd>
+                {selectedOperateur?.raison_sociale} &middot;{" "}
+                {selectedOperateur?.province.replace(/_/g, " ")}
+              </dd>
               <dt>Secteur</dt>
               <dd>{SECTEUR_LABELS[form.secteur] ?? form.secteur}</dd>
               <dt>Type d&apos;activite</dt>
               <dd>{form.type_activite}</dd>
               <dt>Priorite</dt>
               <dd>{form.priorite}</dd>
-              {form.observations && (<>
-                <dt>Observations</dt>
-                <dd>{form.observations}</dd>
-              </>)}
-              {delayEstimate && (<>
-                <dt>Delai estime</dt>
-                <dd>~{delayEstimate.delai_median} jours (mediane secteur)</dd>
-              </>)}
+              {form.observations && (
+                <>
+                  <dt>Observations</dt>
+                  <dd>{form.observations}</dd>
+                </>
+              )}
+              {delayEstimate && (
+                <>
+                  <dt>Delai estime</dt>
+                  <dd>~{delayEstimate.delai_median} jours (mediane secteur)</dd>
+                </>
+              )}
             </dl>
 
-            {error && <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">{error}</div>}
-            {success && <div className="pnpi-form-alert pnpi-form-alert--success" role="status">{success}</div>}
+            {error && (
+              <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="pnpi-form-alert pnpi-form-alert--success" role="status">
+                {success}
+              </div>
+            )}
           </div>
         )}
       </div>

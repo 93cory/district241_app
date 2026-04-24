@@ -71,7 +71,7 @@ export async function GET() {
         has_refresh_token: Boolean(refreshToken),
         user: null,
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 }

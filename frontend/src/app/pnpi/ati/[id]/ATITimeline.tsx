@@ -35,60 +35,104 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function ATITimeline({ transitions }: Props) {
   if (!transitions.length) {
-    return <p style={{ color: "var(--text-soft, #526175)", fontSize: 14 }}>Aucune transition enregistree.</p>;
+    return (
+      <p style={{ color: "var(--text-soft, #526175)", fontSize: 14 }}>
+        Aucune transition enregistree.
+      </p>
+    );
   }
 
   const sorted = [...transitions].sort(
-    (a, b) => new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime()
+    (a, b) => new Date(a.changed_at).getTime() - new Date(b.changed_at).getTime(),
   );
 
   return (
     <div style={{ position: "relative", paddingLeft: 28 }}>
       {/* Vertical line */}
-      <div style={{
-        position: "absolute", left: 10, top: 8, bottom: 8, width: 2,
-        background: "var(--line, #dce4ef)",
-      }} />
+      <div
+        style={{
+          position: "absolute",
+          left: 10,
+          top: 8,
+          bottom: 8,
+          width: 2,
+          background: "var(--line, #dce4ef)",
+        }}
+      />
 
       {sorted.map((t, i) => {
         const color = STATUS_COLORS[t.new_statut || ""] || "#526175";
         const date = new Date(t.changed_at);
-        const dateStr = date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+        const dateStr = date.toLocaleDateString("fr-FR", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
         const timeStr = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
         return (
           <div key={t.id} style={{ position: "relative", marginBottom: 20, paddingLeft: 20 }}>
             {/* Dot */}
-            <div style={{
-              position: "absolute", left: -22, top: 4,
-              width: 16, height: 16, borderRadius: "50%",
-              background: color, border: "3px solid var(--bg-layer, #fff)",
-              boxShadow: `0 0 0 2px ${color}40`,
-            }} />
+            <div
+              style={{
+                position: "absolute",
+                left: -22,
+                top: 4,
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                background: color,
+                border: "3px solid var(--bg-layer, #fff)",
+                boxShadow: `0 0 0 2px ${color}40`,
+              }}
+            />
 
-            <div style={{
-              padding: "12px 16px", borderRadius: 12,
-              background: "var(--bg-base, #f4f8fb)",
-              border: `1px solid var(--line, #dce4ef)`,
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <div
+              style={{
+                padding: "12px 16px",
+                borderRadius: 12,
+                background: "var(--bg-base, #f4f8fb)",
+                border: `1px solid var(--line, #dce4ef)`,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 6,
+                }}
+              >
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   {t.previous_statut && (
                     <>
-                      <span style={{
-                        padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                        background: `${STATUS_COLORS[t.previous_statut] || "#526175"}20`,
-                        color: STATUS_COLORS[t.previous_statut] || "#526175",
-                      }}>
+                      <span
+                        style={{
+                          padding: "2px 8px",
+                          borderRadius: 6,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          background: `${STATUS_COLORS[t.previous_statut] || "#526175"}20`,
+                          color: STATUS_COLORS[t.previous_statut] || "#526175",
+                        }}
+                      >
                         {STATUS_LABELS[t.previous_statut] || t.previous_statut}
                       </span>
-                      <span style={{ color: "var(--text-soft, #526175)", fontSize: 13 }}>&rarr;</span>
+                      <span style={{ color: "var(--text-soft, #526175)", fontSize: 13 }}>
+                        &rarr;
+                      </span>
                     </>
                   )}
-                  <span style={{
-                    padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                    background: color, color: "#fff",
-                  }}>
+                  <span
+                    style={{
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      background: color,
+                      color: "#fff",
+                    }}
+                  >
                     {STATUS_LABELS[t.new_statut || ""] || t.new_statut || "\u2014"}
                   </span>
                 </div>

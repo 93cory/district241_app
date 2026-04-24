@@ -23,8 +23,16 @@ const SECTEUR_LABELS: Record<string, string> = {
   services: "Services",
 };
 const PROVINCES = [
-  "", "estuaire", "haut_ogooue", "ogooue_maritime", "ngounie", "nyanga",
-  "moyen_ogooue", "ogooue_lolo", "ogooue_ivindo", "woleu_ntem",
+  "",
+  "estuaire",
+  "haut_ogooue",
+  "ogooue_maritime",
+  "ngounie",
+  "nyanga",
+  "moyen_ogooue",
+  "ogooue_lolo",
+  "ogooue_ivindo",
+  "woleu_ntem",
 ];
 const PRIORITES = ["", "normale", "elevee", "urgente"];
 const PRIORITE_LABELS: Record<string, string> = {
@@ -64,7 +72,7 @@ export function ATIFiltersClient({
       else params.delete(key);
       router.push(`${pathname}?${params.toString()}`);
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   );
 
   const hasFilters = Boolean(statut || secteur || province || priorite || date_from || date_to);
@@ -72,7 +80,9 @@ export function ATIFiltersClient({
   return (
     <div className="pnpi-filter-bar">
       <div className="pnpi-form-field">
-        <label htmlFor="ati-filter-statut" className="pnpi-form-label">Statut</label>
+        <label htmlFor="ati-filter-statut" className="pnpi-form-label">
+          Statut
+        </label>
         <select
           id="ati-filter-statut"
           className="pnpi-form-select"
@@ -80,13 +90,17 @@ export function ATIFiltersClient({
           onChange={(e) => updateFilter("statut", e.target.value)}
         >
           {STATUTS.map((s) => (
-            <option key={s} value={s}>{STATUT_LABELS[s] ?? s}</option>
+            <option key={s} value={s}>
+              {STATUT_LABELS[s] ?? s}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="ati-filter-secteur" className="pnpi-form-label">Secteur</label>
+        <label htmlFor="ati-filter-secteur" className="pnpi-form-label">
+          Secteur
+        </label>
         <select
           id="ati-filter-secteur"
           className="pnpi-form-select"
@@ -94,13 +108,17 @@ export function ATIFiltersClient({
           onChange={(e) => updateFilter("secteur", e.target.value)}
         >
           {SECTEURS.map((s) => (
-            <option key={s} value={s}>{SECTEUR_LABELS[s] ?? s}</option>
+            <option key={s} value={s}>
+              {SECTEUR_LABELS[s] ?? s}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="ati-filter-province" className="pnpi-form-label">Province</label>
+        <label htmlFor="ati-filter-province" className="pnpi-form-label">
+          Province
+        </label>
         <select
           id="ati-filter-province"
           className="pnpi-form-select"
@@ -109,13 +127,17 @@ export function ATIFiltersClient({
         >
           <option value="">Toutes provinces</option>
           {PROVINCES.slice(1).map((p) => (
-            <option key={p} value={p}>{capitalize(p.replace(/_/g, " "))}</option>
+            <option key={p} value={p}>
+              {capitalize(p.replace(/_/g, " "))}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="ati-filter-priorite" className="pnpi-form-label">Priorite</label>
+        <label htmlFor="ati-filter-priorite" className="pnpi-form-label">
+          Priorite
+        </label>
         <select
           id="ati-filter-priorite"
           className="pnpi-form-select"
@@ -123,13 +145,17 @@ export function ATIFiltersClient({
           onChange={(e) => updateFilter("priorite", e.target.value)}
         >
           {PRIORITES.map((p) => (
-            <option key={p} value={p}>{PRIORITE_LABELS[p] ?? p}</option>
+            <option key={p} value={p}>
+              {PRIORITE_LABELS[p] ?? p}
+            </option>
           ))}
         </select>
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="ati-filter-date-from" className="pnpi-form-label">Du</label>
+        <label htmlFor="ati-filter-date-from" className="pnpi-form-label">
+          Du
+        </label>
         <input
           id="ati-filter-date-from"
           type="date"
@@ -140,7 +166,9 @@ export function ATIFiltersClient({
       </div>
 
       <div className="pnpi-form-field">
-        <label htmlFor="ati-filter-date-to" className="pnpi-form-label">Au</label>
+        <label htmlFor="ati-filter-date-to" className="pnpi-form-label">
+          Au
+        </label>
         <input
           id="ati-filter-date-to"
           type="date"
@@ -152,11 +180,7 @@ export function ATIFiltersClient({
 
       {hasFilters && (
         <div className="pnpi-filter-bar-actions">
-          <button
-            type="button"
-            className="pnpi-filter-btn"
-            onClick={() => router.push(pathname)}
-          >
+          <button type="button" className="pnpi-filter-btn" onClick={() => router.push(pathname)}>
             Reinitialiser
           </button>
         </div>

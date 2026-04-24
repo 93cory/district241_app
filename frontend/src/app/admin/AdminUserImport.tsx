@@ -31,10 +31,18 @@ export function AdminUserImport() {
   };
 
   return (
-    <div style={{ padding: 20, borderRadius: 16, background: "var(--bg-layer, #fff)", border: "1.5px solid var(--line, #dce4ef)" }}>
+    <div
+      style={{
+        padding: 20,
+        borderRadius: 16,
+        background: "var(--bg-layer, #fff)",
+        border: "1.5px solid var(--line, #dce4ef)",
+      }}
+    >
       <h3 style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700 }}>Import CSV utilisateurs</h3>
       <p style={{ fontSize: 13, color: "var(--text-soft, #526175)", margin: "0 0 14px" }}>
-        Format : <code>username,full_name,roles,password</code><br />
+        Format : <code>username,full_name,roles,password</code>
+        <br />
         Roles : admin, ministre, directeur, instructeur, inspecteur, operateur (separes par virgule)
       </p>
 
@@ -44,9 +52,14 @@ export function AdminUserImport() {
           onClick={handleUpload}
           disabled={uploading}
           style={{
-            padding: "8px 20px", borderRadius: 10, border: "none",
-            background: "#006233", color: "#fff", fontWeight: 600,
-            cursor: "pointer", opacity: uploading ? 0.6 : 1,
+            padding: "8px 20px",
+            borderRadius: 10,
+            border: "none",
+            background: "#006233",
+            color: "#fff",
+            fontWeight: 600,
+            cursor: "pointer",
+            opacity: uploading ? 0.6 : 1,
           }}
         >
           {uploading ? "Import..." : "Importer"}
@@ -54,7 +67,15 @@ export function AdminUserImport() {
       </div>
 
       {result && (
-        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "var(--bg-base, #f4f8fb)", fontSize: 13 }}>
+        <div
+          style={{
+            marginTop: 16,
+            padding: 14,
+            borderRadius: 12,
+            background: "var(--bg-base, #f4f8fb)",
+            fontSize: 13,
+          }}
+        >
           <div style={{ fontWeight: 700, marginBottom: 6 }}>
             Resultat : {result.created} cree(s), {result.errors} erreur(s)
           </div>

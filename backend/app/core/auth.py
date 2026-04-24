@@ -1,4 +1,5 @@
 """PNPI / PNPI · Authentification, autorisation et gestion des tokens."""
+
 from __future__ import annotations
 
 import hashlib
@@ -6,9 +7,9 @@ import os
 import re
 import secrets
 import uuid
+from collections.abc import Sequence
 from datetime import timedelta
-from enum import Enum
-from typing import Dict, List, Optional, Sequence, Tuple
+from enum import StrEnum
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -16,17 +17,15 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 
 from ..config import settings
-from ..database import SessionLocal, as_utc, get_db, now_utc
-
+from ..database import as_utc, get_db, now_utc
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     admin = "admin"
     ministre = "ministre"
     directeur = "directeur"
@@ -39,6 +38,7 @@ class Role(str, Enum):
 # Pydantic schemas
 # ---------------------------------------------------------------------------
 
+
 class Token(BaseModel):
     access_token: str
     refresh_token: str
@@ -46,9 +46,9 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: Optional[str] = None
-    roles: List[Role] = []
-    token_id: Optional[str] = None
+    username: str | None = None
+    roles: list[Role] = []
+    token_id: str | None = None
 
 
 class RefreshTokenRequest(BaseModel):
@@ -58,8 +58,8 @@ class RefreshTokenRequest(BaseModel):
 class User(BaseModel):
     username: str
     full_name: str
-    roles: List[Role]
-    province: Optional[str] = None
+    roles: list[Role]
+    province: str | None = None
 
 
 class UserInDB(User):
@@ -70,6 +70,7 @@ class UserInDB(User):
 # Password helpers
 # ---------------------------------------------------------------------------
 
+
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
@@ -78,7 +79,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def validate_password_policy(password: str) -> Optional[str]:
+def validate_password_policy(password: str) -> str | None:
     if len(password) < 12:
         return "Le mot de passe doit contenir au moins 12 caracteres."
     if not re.search(r"[A-Z]", password):
@@ -100,12 +101,13 @@ def token_digest(raw_token: str) -> str:
 # Role / CSV helpers
 # ---------------------------------------------------------------------------
 
+
 def roles_to_csv(roles: Sequence[Role]) -> str:
     return ",".join(sorted({role.value for role in roles}))
 
 
-def csv_to_roles(roles_csv: str) -> List[Role]:
-    roles: List[Role] = []
+def csv_to_roles(roles_csv: str) -> list[Role]:
+    roles: list[Role] = []
     for raw in [item.strip() for item in roles_csv.split(",") if item.strip()]:
         if raw in Role._value2member_map_:
             roles.append(Role(raw))
@@ -116,6 +118,7 @@ def csv_to_roles(roles_csv: str) -> List[Role]:
 # Fake in-memory users (seed fallback)
 # ---------------------------------------------------------------------------
 
+
 def build_user(username: str, password: str, full_name: str, roles: Sequence[Role]) -> UserInDB:
     return UserInDB(
         username=username,
@@ -125,10 +128,10 @@ def build_user(username: str, password: str, full_name: str, roles: Sequence[Rol
     )
 
 
-_fake_users_db: Optional[Dict[str, UserInDB]] = None
+_fake_users_db: dict[str, UserInDB] | None = None
 
 
-def get_fake_users_db() -> Dict[str, UserInDB]:
+def get_fake_users_db() -> dict[str, UserInDB]:
     """Lazy initialization to avoid bcrypt at import time."""
     global _fake_users_db
     if _fake_users_db is None:
@@ -174,14 +177,15 @@ def get_fake_users_db() -> Dict[str, UserInDB]:
 
 
 # backward compat alias
-fake_users_db: Dict[str, UserInDB] = {}  # populated lazily via get_fake_users_db()
+fake_users_db: dict[str, UserInDB] = {}  # populated lazily via get_fake_users_db()
 
 
 # ---------------------------------------------------------------------------
 # Token issuance
 # ---------------------------------------------------------------------------
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     expire = now_utc() + (expires_delta or timedelta(minutes=settings.access_token_expire_minutes))
     to_encode.update({"exp": expire, "token_type": "access", "jti": uuid.uuid4().hex})
@@ -192,7 +196,7 @@ def issue_refresh_token(
     db: Session,
     *,
     username: str,
-    client_ip: Optional[str] = None,
+    client_ip: str | None = None,
 ) -> str:
     # Import here to avoid circular imports at module level
     from ..models.core import RefreshTokenORM
@@ -216,6 +220,7 @@ def issue_refresh_token(
 # User resolution helpers
 # ---------------------------------------------------------------------------
 
+
 def user_from_row(row) -> UserInDB:
     return UserInDB(
         username=row.username,
@@ -226,7 +231,7 @@ def user_from_row(row) -> UserInDB:
     )
 
 
-def authenticate_user(db: Session, username: str, password: str) -> Tuple[Optional[UserInDB], Optional[str]]:
+def authenticate_user(db: Session, username: str, password: str) -> tuple[UserInDB | None, str | None]:
     from ..models.core import UserAccountORM
 
     now = now_utc()
@@ -290,7 +295,9 @@ async def get_current_user(
     user = get_fake_users_db().get(token_data.username)
     if user is None:
         raise credentials_exception
-    return User(username=user.username, full_name=user.full_name, roles=user.roles, province=getattr(user, "province", None))
+    return User(
+        username=user.username, full_name=user.full_name, roles=user.roles, province=getattr(user, "province", None)
+    )
 
 
 def require_roles(*allowed: Role):
@@ -309,8 +316,10 @@ def require_roles(*allowed: Role):
 # Security prerequisites check (production)
 # ---------------------------------------------------------------------------
 
+
 def enforce_security_prerequisites() -> None:
     import logging
+
     _logger = logging.getLogger("pnpi.security")
 
     is_prod = settings.env == "production"

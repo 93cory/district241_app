@@ -59,13 +59,25 @@ export default function LiveDashboardPage() {
         { label: "Rejetes", value: kpis.atis_rejetes, color: "#b42318", icon: "✕" },
         { label: "Inspections", value: kpis.inspections_total, color: "#7c3aed", icon: "🔍" },
         { label: "Operateurs actifs", value: kpis.operateurs_actifs, color: "#0c7eb4", icon: "🏭" },
-        { label: "SLA depasses", value: kpis.sla_overdue, color: kpis.sla_overdue > 0 ? "#b42318" : "#006233", icon: "⚠" },
+        {
+          label: "SLA depasses",
+          value: kpis.sla_overdue,
+          color: kpis.sla_overdue > 0 ? "#b42318" : "#006233",
+          icon: "⚠",
+        },
       ]
     : [];
 
   return (
     <div style={{ padding: "24px 32px", maxWidth: 1000, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
+      >
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Dashboard Temps Reel</h1>
           <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--text-soft, #526175)" }}>
@@ -73,11 +85,15 @@ export default function LiveDashboardPage() {
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{
-            width: 10, height: 10, borderRadius: "50%",
-            background: connected ? "#006233" : "#b42318",
-            animation: connected ? "pulse 2s infinite" : "none",
-          }} />
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              background: connected ? "#006233" : "#b42318",
+              animation: connected ? "pulse 2s infinite" : "none",
+            }}
+          />
           <span style={{ fontSize: 12, fontWeight: 600, color: connected ? "#006233" : "#b42318" }}>
             {connected ? "En direct" : "Deconnecte"}
           </span>
@@ -90,16 +106,21 @@ export default function LiveDashboardPage() {
         </div>
       ) : (
         <>
-          <div key={pulseKey} style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 14, marginBottom: 24,
-          }}>
+          <div
+            key={pulseKey}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 14,
+              marginBottom: 24,
+            }}
+          >
             {cards.map((card) => (
               <div
                 key={card.label}
                 style={{
-                  padding: "18px 20px", borderRadius: 16,
+                  padding: "18px 20px",
+                  borderRadius: 16,
                   background: "var(--bg-layer, #fff)",
                   border: `2px solid ${card.color}20`,
                   boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
@@ -107,9 +128,7 @@ export default function LiveDashboardPage() {
                 }}
               >
                 <div style={{ fontSize: 24, marginBottom: 4 }}>{card.icon}</div>
-                <div style={{ fontSize: 28, fontWeight: 800, color: card.color }}>
-                  {card.value}
-                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: card.color }}>{card.value}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-soft, #526175)" }}>
                   {card.label}
                 </div>
@@ -117,9 +136,13 @@ export default function LiveDashboardPage() {
             ))}
           </div>
 
-          <div style={{
-            textAlign: "center", fontSize: 11, color: "var(--text-soft, #9ca3af)",
-          }}>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: 11,
+              color: "var(--text-soft, #9ca3af)",
+            }}
+          >
             Derniere mise a jour : {new Date(kpis.last_updated).toLocaleTimeString("fr-FR")}
           </div>
         </>

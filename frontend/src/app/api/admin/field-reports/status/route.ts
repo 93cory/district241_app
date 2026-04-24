@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: payload.status ?? "in_progress" }),
         cache: "no-store",
-      }
+      },
     );
 
     const body = await response.text();
