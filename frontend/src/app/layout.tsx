@@ -4,8 +4,10 @@ import Image from "next/image";
 import { WebLogoutButton } from "./components/WebLogoutButton";
 import { SessionStatusBadge } from "./components/SessionStatusBadge";
 import { NotificationsBell } from "./components/NotificationsBell";
-import { NavLinks } from "./components/NavLinks";
+import { MegaNav } from "./components/MegaNav";
 import { MobileNav } from "./components/MobileNav";
+import { RepubliqueBand } from "./components/RepubliqueBand";
+import { ImpersonateBanner } from "./components/ImpersonateBanner";
 import { ToastProvider } from "./components/Toast";
 import { SessionTimeout } from "./components/SessionTimeout";
 import { PWAInstall } from "./components/PWAInstall";
@@ -23,51 +25,70 @@ import { OfflineBanner } from "./components/OfflineBanner";
 import { Breadcrumbs } from "./components/Breadcrumbs";
 import { Footer } from "./components/Footer";
 import { fetchBackendProfile } from "../lib/backend";
-import { getNavLinksForRoles } from "../lib/role-routing";
+import { getDefaultRouteForRoles, getMegaNavForRoles } from "../lib/role-routing";
 import "./globals.css";
+// Temporarily disabled: import "leaflet/dist/leaflet.css";
 
 export const metadata = {
   title: "PNPI | Plateforme Nationale de Pilotage Industriel",
   description:
-    "Ministere de l'Industrie du Gabon — Plateforme Nationale de Pilotage Industriel.",
+    "Ministere de l'Industrie du Gabon · Plateforme Nationale de Pilotage Industriel.",
   icons: { icon: "/pnpi_logo.png" },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let roles: string[] = [];
+  let profile: { username: string; full_name: string; roles: string[] } | null = null;
   try {
-    const profile = await fetchBackendProfile();
-    roles = profile.roles ?? [];
+    const p = await fetchBackendProfile();
+    profile = p;
+    roles = p.roles ?? [];
   } catch {
     roles = [];
   }
 
-  const navLinks = getNavLinksForRoles(roles);
+  const mega = getMegaNavForRoles(roles);
+  // Home link : si connecte, route par defaut du role ; sinon /connexion
+  const homeHref = roles.length ? getDefaultRouteForRoles(roles) : "/connexion";
 
   return (
-    <html lang="fr">
+    <html lang="fr" data-theme="light">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#006233" />
+        <link rel="apple-touch-icon" href="/pnpi_logo.png" />
+        <meta name="theme-color" content="#1E3A8A" />
+        <meta name="color-scheme" content="light" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <div className="page-shell">
           <a href="#main-content" className="skip-link">Aller au contenu principal</a>
+          <ImpersonateBanner profile={profile ?? undefined} />
           <header role="banner">
+            <RepubliqueBand />
             <nav className="top-nav" aria-label="Navigation principale">
-              <Link href="/" className="nav-brand">
+              <Link href={homeHref} className="nav-brand" aria-label="Accueil PNPI">
                 <Image src="/pnpi_logo.png" alt="PNPI" width={32} height={32} style={{ borderRadius: 6 }} />
                 <span>PNPI</span>
               </Link>
               <MobileNav>
-                <NavLinks links={navLinks} />
-                <SessionStatusBadge />
-                <ServerLoad />
-                <ThemeToggle />
-                <AccessibilityPanel />
-                {roles.length ? <NotificationsBell /> : null}
-                {roles.length ? <WebLogoutButton /> : null}
+                {roles.length ? (
+                  <MegaNav
+                    sections={mega.sections}
+                    tools={mega.tools}
+                    quickAccess={mega.quickAccess}
+                  />
+                ) : (
+                  <Link href="/connexion" className="mega-nav-quick-link">Connexion</Link>
+                )}
+                <div className="top-nav-actions">
+                  <SessionStatusBadge />
+                  <ServerLoad />
+                  <ThemeToggle />
+                  <AccessibilityPanel />
+                  {roles.length ? <NotificationsBell /> : null}
+                  {roles.length ? <WebLogoutButton /> : null}
+                </div>
               </MobileNav>
             </nav>
           </header>

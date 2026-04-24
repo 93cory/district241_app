@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { fetchPNPIATIs, fetchPNPIOperateurs } from "../../../lib/api";
-import { fetchBackendProfile } from "../../../lib/backend";
-import { ATICreateForm } from "./components/ATICreateForm";
+import { backendRequest, fetchBackendProfile } from "../../../lib/backend";
+import { ATIWizard } from "./components/ATIWizard";
 import { MonEspace } from "./MonEspace";
 
 const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "operateur"]);
@@ -19,20 +19,21 @@ export default async function GuichetPage() {
     userRoles = (profile.roles ?? []) as string[];
   } catch { redirect("/connexion"); }
 
-  const isOperateur = userRoles.includes("operateur") && !userRoles.some((r) => ["admin", "ministre", "directeur", "instructeur"].includes(r));
-
   try {
-    const [operateurs, atis] = await Promise.all([
-      fetchPNPIOperateurs(),
-      fetchPNPIATIs({ limit: 20 }),
+    // Les operateurs peuvent desormais lister les operateurs industriels
+    // pour choisir l'entreprise au nom de laquelle ils soumettent.
+    const [operateurs, atis, delaysRes] = await Promise.all([
+      fetchPNPIOperateurs({ limit: 200 }).catch(() => []),
+      fetchPNPIATIs({ limit: 20 }).catch(() => []),
+      backendRequest("/pnpi/delays-by-sector", { cache: "no-store" }).catch(() => null),
     ]);
+    const delays = delaysRes && delaysRes.ok ? await delaysRes.json() : [];
     const myATIs = atis.filter((a) => a.created_by === username);
 
     return (
       <section className="section">
         <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem", display: "flex", gap: "1rem", alignItems: "center" }}>
-          <Link href="/pnpi" style={{ color: "#6b7280", textDecoration: "none" }}>← Dashboard</Link>
-          <Link href="/pnpi/profil" style={{ color: "#003F8F", textDecoration: "none", fontWeight: 600 }}>Mon profil</Link>
+          <Link href="/profil" style={{ color: "#003F8F", textDecoration: "none", fontWeight: 600 }}>Mon profil</Link>
         </div>
         {/* KPIs */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.75rem", marginBottom: "1.25rem" }}>
@@ -85,7 +86,7 @@ export default async function GuichetPage() {
               <p style={{ margin: "0 0 1.25rem", color: "#6b7280", fontSize: "0.875rem" }}>
                 Soumettez une nouvelle demande d&apos;Agrement Technique Industriel.
               </p>
-              <ATICreateForm operateurs={operateurs} />
+              <ATIWizard operateurs={operateurs} delays={delays} />
             </div>
           </div>
           {/* My ATIs */}
@@ -107,7 +108,7 @@ export default async function GuichetPage() {
                 </div>
               )}
               {myATIs.length === 0 ? (
-                <p style={{ color: "#9ca3af", margin: 0 }}>Aucune demande soumise. Utilisez le formulaire ci-contre.</p>
+                <p style={{ color: "#6b7280", margin: 0 }}>Aucune demande soumise. Utilisez le formulaire ci-contre.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                   {myATIs.map((ati) => (
@@ -120,30 +121,27 @@ export default async function GuichetPage() {
                           </span>
                         </div>
                         <div style={{ fontSize: "0.8rem", color: "#374151" }}>{ati.type_activite.slice(0, 60)}{ati.type_activite.length > 60 ? "..." : ""}</div>
-                        <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginTop: "0.2rem" }}>
+                        <div style={{ fontSize: "0.72rem", color: "#6b7280", marginTop: "0.2rem" }}>
                           {new Date(ati.date_soumission).toLocaleDateString("fr-FR")} &middot; {ati.age_jours} j
-                          {ati.is_overdue && <span style={{ color: "#d97706", fontWeight: 600 }}> — EN RETARD</span>}
+                          {ati.is_overdue && <span style={{ color: "#d97706", fontWeight: 600 }}> · EN RETARD</span>}
                         </div>
                       </div>
                     </Link>
                   ))}
                 </div>
               )}
-              {/* Link to full ATI list for non-operateur roles */}
-              {!isOperateur && (
-                <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid #f3f4f6" }}>
-                  <Link href="/pnpi/ati" style={{ color: "#003F8F", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
-                    Voir tous mes dossiers →
-                  </Link>
-                </div>
-              )}
+              <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid #f3f4f6" }}>
+                <Link href="/pnpi/ati" style={{ color: "#003F8F", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>
+                  Voir tous mes dossiers →
+                </Link>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Mon Espace — enriched operator dashboard */}
+        {/* Mon Espace · enriched operator dashboard */}
         <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
-          <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Mon espace — Vue enrichie</h3>
+          <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Mon espace · Vue enrichie</h3>
           <MonEspace />
         </div>
       </section>

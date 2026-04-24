@@ -8,99 +8,123 @@ import { OperateurCreateForm } from "./components/OperateurCreateForm";
 
 const CarteOperateurs = dynamic(() => import("../components/CarteOperateurs"), {
   ssr: false,
-  loading: () => <div style={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: "0.82rem" }}>Chargement de la carte...</div>,
+  loading: () => <div className="pnpi-brief-map-loading">Chargement de la carte...</div>,
 });
 
-const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
-const SECTEUR_LABELS: Record<string, string> = { bois: "Bois", mines: "Mines", agroalimentaire: "Agro", btp: "BTP", petrole: "Petrole", services: "Services" };
-const SECTEUR_COLORS: Record<string, string> = { bois: "#16a34a", mines: "#d97706", agroalimentaire: "#059669", btp: "#2563eb", petrole: "#7c3aed", services: "#0284c7" };
+const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur", "operateur"]);
+const SECTEUR_LABELS: Record<string, string> = {
+  bois: "Bois", mines: "Mines", agroalimentaire: "Agro",
+  btp: "BTP", petrole: "Petrole", services: "Services",
+};
 
 type SearchParams = { secteur?: string; province?: string; page?: string };
 
 export default async function OperateursPage({ searchParams }: { searchParams: SearchParams }) {
-  try {
-    const profile = await fetchBackendProfile();
-    if (!((profile.roles ?? []) as string[]).some((r) => PNPI_ROLES.has(r))) redirect("/connexion");
-  } catch { redirect("/connexion"); }
-
   let canCreate = false;
   try {
     const profile = await fetchBackendProfile();
-    canCreate = ((profile.roles ?? []) as string[]).some(r => ["admin", "directeur", "instructeur"].includes(r));
-  } catch { /* ignore */ }
+    if (!((profile.roles ?? []) as string[]).some((r) => PNPI_ROLES.has(r))) redirect("/connexion");
+    canCreate = ((profile.roles ?? []) as string[]).some((r) => ["admin", "directeur", "instructeur"].includes(r));
+  } catch { redirect("/connexion"); }
 
   const secteur = searchParams.secteur ?? "";
   const province = searchParams.province ?? "";
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10));
   const PER_PAGE = 25;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
   try {
     const [raw, carte] = await Promise.all([
-      fetchPNPIOperateurs({ secteur: secteur || undefined, province: province || undefined, skip: (page - 1) * PER_PAGE, limit: PER_PAGE + 1 }),
+      fetchPNPIOperateurs({
+        secteur: secteur || undefined,
+        province: province || undefined,
+        skip: (page - 1) * PER_PAGE,
+        limit: PER_PAGE + 1,
+      }),
       fetchPNPICarte().catch(() => []),
     ]);
     const hasNext = raw.length > PER_PAGE;
     const operateurs = raw.slice(0, PER_PAGE);
     const totalEffectifs = operateurs.reduce((sum, op) => sum + (op.effectif_declare ?? 0), 0);
 
+    const pageParams = (targetPage: number) =>
+      new URLSearchParams({
+        ...(secteur && { secteur }),
+        ...(province && { province }),
+        page: String(targetPage),
+      }).toString();
+
     return (
       <section className="section">
-        <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
+        <div className="chart-card">
+          {/* Header */}
+          <div className="pnpi-page-head">
             <div>
-              <div style={{ marginBottom: "0.25rem" }}>
-                <Link href="/pnpi" style={{ color: "#6b7280", fontSize: "0.8rem", textDecoration: "none" }}>← Dashboard</Link>
-              </div>
-              <h2 style={{ margin: 0, color: "#003F8F" }}>Registre des operateurs industriels</h2>
-              <p style={{ margin: "0.2rem 0 0", color: "#6b7280", fontSize: "0.875rem" }}>
-                Page {page} &middot; {operateurs.length} operateur(s) affiches &middot; {totalEffectifs.toLocaleString("fr-FR")} emplois declares
+              <Link href="/pnpi" className="pnpi-back-link">&larr; Tableau de bord</Link>
+              <h2>Registre des operateurs industriels</h2>
+              <p className="pnpi-page-sub">
+                Page {page} &middot; {operateurs.length} operateur(s) affiches &middot;{" "}
+                {totalEffectifs.toLocaleString("fr-FR")} emplois declares
               </p>
             </div>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div className="pnpi-page-actions">
               {canCreate && <OperateurCreateForm />}
-              <a
-                href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/exports/operateurs.csv`}
-                style={{ padding: "0.4rem 0.75rem", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "6px", color: "#374151", fontSize: "0.78rem", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
-              >
-                ↓ CSV
+              <a href="/api/pnpi/exports/operateurs.csv" className="export-link">
+                <span aria-hidden="true">&darr;</span> Export CSV
               </a>
             </div>
           </div>
+
+          {/* Filtres */}
           <div style={{ marginBottom: "1rem" }}>
             <OperateursFiltersClient secteur={secteur} province={province} />
           </div>
+
+          {/* Table */}
           {operateurs.length === 0 ? (
-            <p style={{ color: "#9ca3af", textAlign: "center", padding: "2rem 0" }}>Aucun operateur trouve avec ces filtres.</p>
+            <div className="pnpi-empty">
+              <div className="pnpi-empty-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
+              </div>
+              <div>Aucun operateur trouve avec ces filtres.</div>
+            </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
+            <div className="table-scroll">
+              <table className="annex-table">
                 <thead>
-                  <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
+                  <tr>
                     {["Raison sociale", "NIF", "Secteur", "Province", "Ville", "Effectif", "Statut", "Dossier"].map((h) => (
-                      <th key={h} style={{ padding: "0.5rem 0.75rem", textAlign: "left", color: "#6b7280", fontWeight: 600, textTransform: "uppercase", fontSize: "0.7rem", whiteSpace: "nowrap" }}>{h}</th>
+                      <th key={h}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {operateurs.map((op) => (
-                    <tr key={op.id} style={{ borderBottom: "1px solid #f9fafb" }}>
-                      <td style={{ padding: "0.625rem 0.75rem", fontWeight: 600, color: "#1f2937" }}>{op.raison_sociale}</td>
-                      <td style={{ padding: "0.625rem 0.75rem", fontFamily: "monospace", color: "#6b7280", fontSize: "0.78rem" }}>{op.nif_gabon}</td>
-                      <td style={{ padding: "0.625rem 0.75rem" }}>
-                        <span style={{ padding: "0.15rem 0.5rem", borderRadius: "999px", background: `${SECTEUR_COLORS[op.secteur] ?? "#6b7280"}15`, color: SECTEUR_COLORS[op.secteur] ?? "#6b7280", fontWeight: 600, fontSize: "0.7rem" }}>
+                    <tr key={op.id}>
+                      <td style={{ fontWeight: 600 }}>{op.raison_sociale}</td>
+                      <td><span className="pnpi-mono">{op.nif_gabon}</span></td>
+                      <td>
+                        <span className={`pnpi-pill pnpi-pill--${op.secteur}`}>
                           {SECTEUR_LABELS[op.secteur] ?? op.secteur}
                         </span>
                       </td>
-                      <td style={{ padding: "0.625rem 0.75rem", color: "#374151" }}>{op.province.replace(/_/g, " ")}</td>
-                      <td style={{ padding: "0.625rem 0.75rem", color: "#6b7280" }}>{op.ville}</td>
-                      <td style={{ padding: "0.625rem 0.75rem", textAlign: "right", color: "#374151" }}>{op.effectif_declare?.toLocaleString("fr-FR") ?? "—"}</td>
-                      <td style={{ padding: "0.625rem 0.75rem", textAlign: "center" }}>
-                        <span style={{ padding: "0.15rem 0.45rem", borderRadius: "999px", background: op.is_active ? "#f0fdf4" : "#f9fafb", color: op.is_active ? "#16a34a" : "#9ca3af", fontWeight: 600, fontSize: "0.7rem" }}>
+                      <td style={{ textTransform: "capitalize" }}>{op.province.replace(/_/g, " ")}</td>
+                      <td>{op.ville}</td>
+                      <td className="num">
+                        {op.effectif_declare?.toLocaleString("fr-FR") ?? "—"}
+                      </td>
+                      <td style={{ textAlign: "center" }}>
+                        <span className={`pnpi-pill pnpi-pill--${op.is_active ? "active" : "inactive"}`}>
                           {op.is_active ? "Actif" : "Inactif"}
                         </span>
                       </td>
-                      <td style={{ padding: "0.625rem 0.75rem", textAlign: "center" }}>
-                        <Link href={`/pnpi/operateurs/${op.id}`} style={{ color: "#003F8F", fontWeight: 600, fontSize: "0.78rem", textDecoration: "none" }}>Voir →</Link>
+                      <td style={{ textAlign: "right" }}>
+                        <Link href={`/pnpi/operateurs/${op.id}`} className="pnpi-row-action">
+                          Voir <span aria-hidden="true">&rarr;</span>
+                        </Link>
                       </td>
                     </tr>
                   ))}
@@ -108,42 +132,52 @@ export default async function OperateursPage({ searchParams }: { searchParams: S
               </table>
             </div>
           )}
+
           {/* Pagination */}
           {(page > 1 || hasNext) && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem", padding: "0.75rem 0", borderTop: "1px solid #f3f4f6" }}>
-              <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+            <div className="pnpi-pagination">
+              <div className="pnpi-pagination-info">
                 Page {page} &middot; {operateurs.length} operateur(s) affiches
               </div>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div className="pnpi-pagination-ctrls">
                 {page > 1 && (
-                  <a
-                    href={`/pnpi/operateurs?${new URLSearchParams({ ...(secteur && { secteur }), ...(province && { province }), page: String(page - 1) })}`}
-                    style={{ padding: "0.4rem 0.875rem", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "6px", color: "#374151", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}
-                  >← Precedent</a>
+                  <a href={`/pnpi/operateurs?${pageParams(page - 1)}`} className="prev">
+                    <span aria-hidden="true">&larr;</span> Precedent
+                  </a>
                 )}
                 {hasNext && (
-                  <a
-                    href={`/pnpi/operateurs?${new URLSearchParams({ ...(secteur && { secteur }), ...(province && { province }), page: String(page + 1) })}`}
-                    style={{ padding: "0.4rem 0.875rem", background: "#003F8F", color: "white", border: "none", borderRadius: "6px", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}
-                  >Suivant →</a>
+                  <a href={`/pnpi/operateurs?${pageParams(page + 1)}`} className="next">
+                    Suivant <span aria-hidden="true">&rarr;</span>
+                  </a>
                 )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Carte des operateurs */}
+        {/* Carte */}
         {carte.length > 0 && (
-          <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
-            <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "0.95rem" }}>Carte des operateurs industriels</h3>
-            <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.8rem" }}>{carte.length} operateurs geocodes sur le territoire</p>
-            <CarteOperateurs operateurs={carte} />
+          <div className="chart-card" style={{ marginTop: "1.25rem" }}>
+            <h3 style={{ margin: "0 0 0.3rem" }}>Carte des operateurs industriels</h3>
+            <p className="pnpi-page-sub" style={{ marginBottom: "1rem" }}>
+              {carte.length} operateurs geocodes sur le territoire
+            </p>
+            <div className="pnpi-brief-map">
+              <CarteOperateurs operateurs={carte} />
+            </div>
           </div>
         )}
       </section>
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erreur inconnue";
-    return <section className="section"><div className="chart-card"><h2 style={{ color: "#b42318", marginTop: 0 }}>Erreur</h2><p style={{ color: "#b42318" }}>{msg}</p></div></section>;
+    return (
+      <section className="section">
+        <div className="chart-card">
+          <h2 style={{ color: "#b42318", marginTop: 0 }}>Erreur</h2>
+          <p style={{ color: "#b42318" }}>{msg}</p>
+        </div>
+      </section>
+    );
   }
 }

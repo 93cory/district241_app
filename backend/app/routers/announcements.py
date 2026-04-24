@@ -1,4 +1,4 @@
-"""PNPI — Annonces broadcast pour tous les utilisateurs."""
+"""PNPI · Annonces broadcast pour tous les utilisateurs."""
 from __future__ import annotations
 
 import uuid
@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..database import get_db, now_utc
+from ..database import get_db, now_utc, as_utc
 from ..core.auth import User, get_current_user, require_roles, Role
 from ..models.pnpi import AnnouncementORM
 
@@ -27,13 +27,14 @@ async def get_active_announcements(
     all_ann = db.execute(query).scalars().all()
 
     # Filter by expiration and role
-    user_roles = set(current_user.roles)
+    user_roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
     result = []
     for ann in all_ann:
-        if ann.expires_at and ann.expires_at < now:
+        exp = as_utc(ann.expires_at)
+        if exp and exp < now:
             continue
         if ann.target_roles:
-            allowed = set(ann.target_roles.split(","))
+            allowed = set(r.strip() for r in ann.target_roles.split(",") if r.strip())
             if not (user_roles & allowed):
                 continue
         result.append({

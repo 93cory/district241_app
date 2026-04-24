@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Guide avance des skills Claude Code — PNPI</title>
+<style>
+  :root {
+    --gabon-green: #006233;
+    --gabon-blue: #0c7eb4;
+    --gabon-yellow: #f2b800;
+    --ink: #051b36;
+    --ink-soft: #526175;
+    --paper: #f4f8fb;
+    --line: #dce4ef;
+    --code-bg: #0f172a;
+    --code-fg: #e2e8f0;
+    --warn: #b45309;
+    --danger: #b42318;
+    --ok: #006233;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--ink) 0%, var(--gabon-green) 100%);
+    color: #fff;
+    padding: 32px 40px 28px;
+    border-bottom: 4px solid var(--gabon-yellow);
+  }
+  .header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+  .header p { margin: 0; opacity: 0.85; font-size: 14px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 24px 80px; }
+
+  .toc {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 20px 0 28px;
+  }
+  .toc h2 { margin: 0 0 10px; font-size: 14px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; }
+  .toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 24px; }
+  .toc ol li { margin: 3px 0; break-inside: avoid; }
+  .toc a { color: var(--gabon-blue); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  .skill {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--gabon-blue);
+    border-radius: 14px;
+    padding: 20px 24px 22px;
+    margin-bottom: 18px;
+    scroll-margin-top: 16px;
+  }
+  .skill.gov   { border-left-color: var(--ink); }
+  .skill.code  { border-left-color: var(--gabon-green); }
+  .skill.ops   { border-left-color: var(--gabon-yellow); }
+  .skill.ui    { border-left-color: var(--gabon-blue); }
+  .skill.sec   { border-left-color: var(--danger); }
+
+  .skill h3 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+  }
+  .skill h3 code {
+    font-size: 13px;
+    background: var(--paper);
+    padding: 3px 10px;
+    border-radius: 6px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .skill .tagline { margin: 0 0 14px; color: var(--ink-soft); font-size: 14px; }
+  .skill h4 {
+    margin: 16px 0 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .skill p, .skill li { font-size: 14px; }
+  .skill ul { margin: 4px 0 0; padding-left: 22px; }
+  .skill li { margin: 3px 0; }
+
+  pre.cmd {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    overflow-x: auto;
+    margin: 6px 0 0;
+    line-height: 1.5;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+  }
+  pre.cmd .prompt { color: var(--gabon-yellow); user-select: none; }
+  pre.cmd .cmt    { color: #94a3b8; }
+
+  .tip {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-left: 4px solid var(--gabon-green);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-top: 10px;
+    color: #064e3b;
+  }
+  .warn {
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-left: 4px solid var(--warn);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-top: 10px;
+    color: #713f12;
+  }
+  .danger {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-left: 4px solid var(--danger);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-top: 10px;
+    color: #7f1d1d;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px) { .grid, .toc ol { grid-template-columns: 1fr; columns: 1; } }
+
+  h2.section {
+    margin: 32px 0 12px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+  }
+
+  footer {
+    margin-top: 40px;
+    padding: 20px 0;
+    color: var(--ink-soft);
+    font-size: 12px;
+    text-align: center;
+    border-top: 1px solid var(--line);
+  }
+
+  kbd {
+    font-family: inherit;
+    font-size: 11px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 1px 6px;
+  }
+
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 10px;
+  }
+  table.matrix th, table.matrix td {
+    border: 1px solid var(--line);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.matrix th {
+    background: var(--paper);
+    font-weight: 700;
+    color: var(--ink);
+  }
+  table.matrix tr:nth-child(even) td { background: #fafcfe; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Guide avance des skills Claude Code</h1>
+  <p>Usage dans le projet <strong>PNPI — Plateforme Nationale de Pilotage Industriel</strong> (Ministere de l'Industrie, Gabon)</p>
+</header>
+
+<main class="wrap">
+
+  <section class="toc">
+    <h2>12 skills installes — cliquez pour aller au detail</h2>
+    <ol>
+      <li><a href="#init">init</a></li>
+      <li><a href="#review">review</a></li>
+      <li><a href="#security-review">security-review</a></li>
+      <li><a href="#simplify">simplify</a></li>
+      <li><a href="#web-interface-guidelines">web-interface-guidelines</a></li>
+      <li><a href="#claude-api">claude-api</a></li>
+      <li><a href="#context7-mcp">context7-mcp</a></li>
+      <li><a href="#update-config">update-config</a></li>
+      <li><a href="#keybindings-help">keybindings-help</a></li>
+      <li><a href="#fewer-permission-prompts">fewer-permission-prompts</a></li>
+      <li><a href="#loop">loop</a></li>
+      <li><a href="#schedule">schedule</a></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2 class="section">Matrice d'usage dans PNPI — quand appeler quel skill ?</h2>
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Situation courante sur PNPI</th>
+          <th>Skill a utiliser</th>
+          <th>Commande</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Vous demarrez une nouvelle feature backend/frontend et voulez que Claude connaisse la structure</td>
+          <td>init</td>
+          <td><code>/init</code> (deja fait — CLAUDE.md a jour)</td>
+        </tr>
+        <tr>
+          <td>Vous finissez un lot (feat: lot N) et voulez revue avant merge</td>
+          <td>review</td>
+          <td><code>/review</code></td>
+        </tr>
+        <tr>
+          <td>Vous modifiez l'auth, les uploads, les webhooks, un router avec <em>payload: dict</em></td>
+          <td>security-review</td>
+          <td><code>/security-review</code></td>
+        </tr>
+        <tr>
+          <td>Un composant React ou endpoint FastAPI est devenu lourd/duplique</td>
+          <td>simplify</td>
+          <td><code>/simplify</code></td>
+        </tr>
+        <tr>
+          <td>Vous ajoutez une page Next.js et voulez validation UI institutionnelle</td>
+          <td>web-interface-guidelines</td>
+          <td><code>/web-interface-guidelines</code></td>
+        </tr>
+        <tr>
+          <td>Vous voulez brancher l'IA FAQ (ChatAssistant) sur Claude en vrai</td>
+          <td>claude-api</td>
+          <td>Claude detecte l'import <code>anthropic</code> automatiquement</td>
+        </tr>
+        <tr>
+          <td>Vous utilisez Recharts/SWR/Leaflet/Alembic et voulez la bonne syntaxe a jour</td>
+          <td>context7-mcp</td>
+          <td>Claude l'appelle automatiquement — mentionnez juste la lib</td>
+        </tr>
+        <tr>
+          <td>Vous voulez ajouter un hook pre-commit, regler un env var, ajouter une permission</td>
+          <td>update-config</td>
+          <td><em>« allow npm commands », « set PNPI_LOG_LEVEL=DEBUG »</em></td>
+        </tr>
+        <tr>
+          <td>Vous voulez ajouter <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> pour un raccord custom</td>
+          <td>keybindings-help</td>
+          <td><em>« add a chord shortcut »</em></td>
+        </tr>
+        <tr>
+          <td>Claude vous demande trop souvent confirmation sur <code>git status</code>, <code>ls</code>, <code>curl</code></td>
+          <td>fewer-permission-prompts</td>
+          <td><code>/fewer-permission-prompts</code></td>
+        </tr>
+        <tr>
+          <td>Vous voulez surveiller le build, les tests ou un deploy en continu</td>
+          <td>loop</td>
+          <td><code>/loop 2m /check-build</code></td>
+        </tr>
+        <tr>
+          <td>Backup PostgreSQL quotidien, audit de securite hebdo, verifier SLA tous les lundis</td>
+          <td>schedule</td>
+          <td><code>/schedule</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <h2 class="section">Skills de <strong>revue & qualite code</strong></h2>
+
+  <article class="skill gov" id="init">
+    <h3>init <code>/init</code></h3>
+    <p class="tagline">Genere ou met a jour <strong>CLAUDE.md</strong> en analysant la codebase. Donne le contexte a toutes les futures conversations.</p>
+
+    <h4>Quand l'utiliser sur PNPI</h4>
+    <ul>
+      <li>Une grosse refonte a change la structure (ex: nouveaux dossiers <code>core/</code>, nouveaux routers)</li>
+      <li>Vous voulez documenter les variables d'env <code>PNPI_*</code>, les commandes ou conventions</li>
+      <li>Avant d'onboard un stagiaire ou un autre dev sur le projet</li>
+    </ul>
+
+    <h4>Invocation</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> /init
+<span class="cmt"># Claude lit tout le repo et ecrit/met a jour CLAUDE.md a la racine</span></pre>
+
+    <div class="tip">
+      <strong>Astuce PNPI</strong> — le CLAUDE.md actuel contient deja la stack, les middlewares, les commandes et les conventions (commits <code>feat: lot N —</code>, migrations <code>YYYYMMDD_NN_*</code>). Ne relancez <code>/init</code> que si la structure change sensiblement.
+    </div>
+  </article>
+
+  <article class="skill code" id="review">
+    <h3>review <code>/review</code></h3>
+    <p class="tagline">Revue de PR complete : bugs, risques, tests manquants, regressions potentielles.</p>
+
+    <h4>Quand l'utiliser sur PNPI</h4>
+    <ul>
+      <li>Avant de commiter <code>feat: lot N — ...</code> — vous obtenez un rapport avant meme que la PR existe</li>
+      <li>Sur une branche feature importante avant <code>git push</code></li>
+      <li>Apres un merge complique pour verifier qu'aucun conflit mal resolu ne traine</li>
+    </ul>
+
+    <h4>Invocation</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> /review
+<span class="cmt"># Compare la branche courante vs main, analyse le diff, sort un rapport structure</span></pre>
+
+    <div class="tip">
+      <strong>Astuce PNPI</strong> — utile apres les gros lots qui touchent plusieurs routers (ex : lot 61 qui a modifie auth, SLA, webhooks, health en meme temps). La revue attrape les regressions croisees.
+    </div>
+
+    <h4>Checklist typique qu'il applique ici</h4>
+    <ul>
+      <li>Datetime <code>as_utc()</code> partout ou on compare avec <code>now_utc()</code> (piege SQLite recurrent)</li>
+      <li>Endpoints FastAPI avec <code>Depends(require_roles(...))</code> coherents</li>
+      <li>Pattern <code>Array.isArray(data)</code> cote frontend au lieu de <code>data.xxx || data || []</code></li>
+      <li>Migrations Alembic <code>upgrade()</code> + <code>downgrade()</code> reversibles</li>
+    </ul>
+  </article>
+
+  <article class="skill sec" id="security-review">
+    <h3>security-review <code>/security-review</code></h3>
+    <p class="tagline">Scan de securite OWASP sur les changements en cours : auth, injection, XSS, SSRF, path traversal, secrets.</p>
+
+    <h4>Quand l'utiliser sur PNPI <span class="pill">IMPORTANT</span></h4>
+    <ul>
+      <li>Tout changement dans <code>backend/app/core/auth.py</code>, <code>core/sanitize.py</code>, <code>core/webhooks.py</code></li>
+      <li>Ajout d'un router qui accepte <code>payload: dict</code> sans schema Pydantic (ex : <code>announcements.py</code>, <code>admin.py</code>)</li>
+      <li>Modification du CSRF, CORS ou du rate limiter</li>
+      <li>Upload de fichiers (<code>documents.py</code>, <code>upload_validation.py</code>)</li>
+      <li>Avant chaque deploiement prod</li>
+    </ul>
+
+    <h4>Invocation</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> /security-review
+<span class="cmt"># Analyse uniquement les fichiers modifies vs main, focalise sur OWASP top 10</span></pre>
+
+    <div class="warn">
+      <strong>Cas deja attrapes sur PNPI</strong> — SSRF dans les webhooks (lot 61), sanitization XSS des annonces, pagination sans borne, JWT TTL incoherent cookie/backend. Relancez ce skill a chaque changement sensible.
+    </div>
+  </article>
+
+  <article class="skill code" id="simplify">
+    <h3>simplify <code>/simplify</code></h3>
+    <p class="tagline">Trouve les duplications, abstractions prematurees, code mort et propose des refactors concrets.</p>
+
+    <h4>Quand l'utiliser sur PNPI</h4>
+    <ul>
+      <li>Apres avoir ajoute 3 ou 4 endpoints similaires (liste + detail + stats) — factorisation possible</li>
+      <li>Composants React qui repetent le pattern <code>fetch + Array.isArray + setState</code> (9+ pages sur PNPI)</li>
+      <li>Fonctions utilitaires dupliquees entre <code>core/</code> modules</li>
+    </ul>
+
+    <h4>Invocation</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> /simplify
+<span class="cmt"># Focus sur le diff courant ; pas une revue de tout le repo</span></pre>
+
+    <div class="tip">
+      <strong>Candidats evidents sur PNPI</strong> — les 10+ pages avec le meme boilerplate <code>fetchBackendProfile + redirect + Promise.all + try/catch</code> meriteraient un HOC ou un middleware Next.js.
+    </div>
+  </article>
+
+  <h2 class="section">Skills <strong>UI &amp; design</strong></h2>
+
+  <article class="skill ui" id="web-interface-guidelines">
+    <h3>web-interface-guidelines <code>/web-interface-guidelines</code></h3>
+    <p class="tagline">Revue UI basee sur les guidelines Vercel : accessibilite, responsive, performance perceived, micro-interactions.</p>
+
+    <h4>Quand l'utiliser sur PNPI</h4>
+    <ul>
+      <li>Apres avoir cree une nouvelle page <code>/pnpi/*</code></li>
+      <li>Avant de montrer une demo au ministre ou au directeur</li>
+      <li>Quand une page doit supporter operateur ET ministre (responsive + keyboard nav)</li>
+    </ul>
+
+    <h4>Invocation</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> /web-interface-guidelines</pre>
+
+    <h4>Criteres qu'il verifie (priorites PNPI)</h4>
+    <ul>
+      <li>Contraste AA/AAA (cruciale pour un site gouvernemental)</li>
+      <li><code>aria-label</code>, <code>aria-expanded</code>, <code>role</code> coherents (annuaire, kanban, mega-nav)</li>
+      <li><code>:focus-visible</code> defini — PNPI utilise deja <code>.skip-link</code> &amp; <code>data-theme</code></li>
+      <li>Pas de <code>alert()</code>/<code>confirm()</code> natifs — PNPI a <code>ConfirmDialog</code> + <code>Toast</code></li>
+      <li>Skeleton loaders au lieu de spinners vides (PNPI a <code>SkeletonLoader</code>)</li>
+    </ul>
+
+    <div class="tip">
+      <strong>Identite visuelle PNPI</strong> — il connait la palette <strong>Gabon</strong> : <span style="color:#006233;font-weight:700">#006233</span> (vert), <span style="color:#0c7eb4;font-weight:700">#0c7eb4</span> (bleu), <span style="color:#f2b800;font-weight:700">#f2b800</span> (jaune), <span style="color:#051b36;font-weight:700">#051b36</span> (ink). Rappelez-lui de verifier la coherence si vous ajoutez des composants.
+    </div>
+  </article>
+
+  <h2 class="section">Skills <strong>Claude API & documentation</strong></h2>
+
+  <article class="skill gov" id="claude-api">
+    <h3>claude-api</h3>
+    <p class="tagline">Build, debug et optimisation d'apps utilisant Claude API / Anthropic SDK. Ajoute automatiquement le prompt caching.</p>
+
+    <h4>Pertinence sur PNPI — <strong>tres forte</strong></h4>
+    <p>Le todo pending <em>« IA question-reponse (integration Claude API) »</em> rentre exactement dans ce skill. Aujourd'hui <code>ChatAssistant.tsx</code> utilise une FAQ statique. Claude peut la remplacer par un vrai appel a <code>claude-sonnet-4-6</code> avec :</p>
+    <ul>
+      <li>Prompt caching sur la FAQ PNPI (35+ Q/R) — economise ~80% des tokens</li>
+      <li>Contexte utilisateur (role, ATI en cours) injecte via system prompt</li>
+      <li>Streaming dans le widget ChatAssistant existant</li>
+    </ul>
+
+    <h4>Declenchement automatique</h4>
+<pre class="cmd"><span class="cmt"># Des que vous ecrivez ceci dans un fichier...</span>
+<span class="prompt">&gt;</span> import Anthropic from "@anthropic-ai/sdk"
+<span class="cmt"># ...Claude charge le skill claude-api et applique les bonnes pratiques.</span></pre>
+
+    <div class="warn">
+      <strong>Piege PNPI</strong> — si vous ajoutez ce skill, stockez la cle dans <code>PNPI_ANTHROPIC_API_KEY</code> (suivre la convention <code>PNPI_*</code>) et ajoutez-la dans <code>.env.example</code>. Ne JAMAIS commiter la cle reelle.
+    </div>
+  </article>
+
+  <article class="skill ui" id="context7-mcp">
+    <h3>context7-mcp</h3>
+    <p class="tagline">Recupere la documentation <strong>a jour</strong> de toute lib/framework. Contourne les hallucinations du modele sur les API recentes.</p>
+
+    <h4>Pertinence sur PNPI — <strong>tres forte</strong></h4>
+    <p>PNPI utilise enormement de libs qui evoluent vite. Le skill se declenche des qu'on mentionne une lib :</p>
+    <ul>
+      <li><strong>Next.js 14+</strong> — Server Actions, <code>cookies()</code> async, <code>params: Promise</code> en route handlers</li>
+      <li><strong>SQLAlchemy 2.x</strong> — nouveau style <code>select()</code>, <code>Mapped[]</code>, migrations typed</li>
+      <li><strong>FastAPI</strong> — <code>lifespan</code>, <code>Annotated</code>, nouveaux decorateurs</li>
+      <li><strong>Alembic</strong> — autogenerate avec types customs</li>
+      <li><strong>SWR, Recharts, Leaflet, react-pdf</strong> — breaking changes frequents</li>
+      <li><strong>Ruff</strong> — regles qui changent de version en version</li>
+    </ul>
+
+    <h4>Comment l'invoquer</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> Comment faire du prompt caching avec l'Anthropic Python SDK en 2026 ?
+<span class="cmt"># Claude appelle automatiquement context7 → docs officielles a jour.</span>
+
+<span class="prompt">&gt;</span> Comment gerer Server Actions avec revalidateTag en Next.js 14 ?</pre>
+
+    <div class="tip">
+      <strong>Regle d'or PNPI</strong> — pour toute lib, demandez <em>« verifie avec context7 »</em> si la reponse semble suspecte. Evite les reponses obsoletes sur Alembic/SQLAlchemy qui coutent des heures de debug.
+    </div>
+  </article>
+
+  <h2 class="section">Skills <strong>config &amp; productivite</strong></h2>
+
+  <article class="skill ops" id="update-config">
+    <h3>update-config</h3>
+    <p class="tagline">Modifie <code>~/.claude/settings.json</code> ou <code>.claude/settings.local.json</code> du projet. Permissions, hooks, env vars.</p>
+
+    <h4>Cas d'usage PNPI</h4>
+
+    <div class="grid">
+      <div>
+        <h4>Automatisations utiles</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> Apres chaque edit de fichier *.py, lance ruff check
+<span class="prompt">&gt;</span> Avant chaque commit, lance pytest
+<span class="prompt">&gt;</span> A la fin de chaque session, affiche git status</pre>
+      </div>
+      <div>
+        <h4>Permissions pre-approuvees</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> allow all git commands
+<span class="prompt">&gt;</span> allow npm run dev
+<span class="prompt">&gt;</span> allow uvicorn
+<span class="prompt">&gt;</span> allow ruff check/format</pre>
+      </div>
+    </div>
+
+    <h4>Env vars utiles</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> set PNPI_LOG_LEVEL=DEBUG pour ce projet uniquement
+<span class="prompt">&gt;</span> set PNPI_FF_GRAPHQL_API=1 pour activer GraphQL en dev</pre>
+
+    <div class="warn">
+      <strong>Portee</strong> — il faut preciser <em>global</em> (<code>~/.claude</code>) ou <em>projet</em> (<code>.claude</code> dans PNPI). Par defaut, permissions sensibles = projet ; hooks de lint = projet ; raccourcis = global.
+    </div>
+  </article>
+
+  <article class="skill ops" id="keybindings-help">
+    <h3>keybindings-help</h3>
+    <p class="tagline">Personnalise <code>~/.claude/keybindings.json</code>. Bindings classiques ou accords multi-touches.</p>
+
+    <h4>Idees pour PNPI</h4>
+    <ul>
+      <li>Binding pour lancer <code>pytest</code> : <code>Ctrl+Shift+T</code></li>
+      <li>Accord <code>g a</code> → afficher le diff ATI courant (interieur)</li>
+      <li>Binding pour <code>/security-review</code> car appele souvent : <code>Ctrl+Shift+S</code></li>
+    </ul>
+
+<pre class="cmd"><span class="prompt">&gt;</span> add a chord shortcut g r to run /review</pre>
+  </article>
+
+  <article class="skill ops" id="fewer-permission-prompts">
+    <h3>fewer-permission-prompts <code>/fewer-permission-prompts</code></h3>
+    <p class="tagline">Scanne les transcripts recents, identifie les outils en lecture seule qui declenchent des prompts, et propose une allowlist.</p>
+
+    <h4>Pertinence sur PNPI</h4>
+    <p>Vous faites beaucoup de <code>git status</code>, <code>git diff</code>, <code>curl localhost:8000/*</code>, <code>netstat</code>, <code>python -m pytest</code>, <code>npm run build</code>. Ce skill les detecte et les pre-approuve dans <code>.claude/settings.json</code>.</p>
+
+<pre class="cmd"><span class="prompt">&gt;</span> /fewer-permission-prompts
+<span class="cmt"># Retourne une allowlist prioritee ; vous choisissez quoi appliquer.</span></pre>
+
+    <div class="tip">
+      <strong>A relancer</strong> periodiquement (tous les 20 sessions) — les habitudes changent, l'allowlist aussi.
+    </div>
+  </article>
+
+  <h2 class="section">Skills <strong>automatisation &amp; cron</strong></h2>
+
+  <article class="skill ops" id="loop">
+    <h3>loop <code>/loop [interval] [commande]</code></h3>
+    <p class="tagline">Execute une commande (ou slash-command) a intervalle regulier dans la session courante. Sans intervalle, Claude s'auto-rythme.</p>
+
+    <h4>Cas PNPI</h4>
+    <ul>
+      <li><strong>Surveiller le build prod</strong> : <code>/loop 2m npm run build</code></li>
+      <li><strong>Surveiller les tests pendant le dev</strong> : <code>/loop 3m pytest tests -q</code></li>
+      <li><strong>Verifier l'etat du deploy</strong> : <code>/loop 5m curl -s http://localhost:8000/health</code></li>
+      <li><strong>Self-paced</strong> — <code>/loop /check-deploy</code> — Claude decide du rythme selon le contexte</li>
+    </ul>
+
+    <h4>Invocation</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> /loop 5m npm run build
+<span class="prompt">&gt;</span> /loop /review                <span class="cmt"># revue automatique apres chaque commit</span>
+<span class="prompt">&gt;</span> /loop                         <span class="cmt"># mode autonome, self-paced</span></pre>
+
+    <div class="danger">
+      <strong>Attention</strong> — arreter explicitement avec <code>Ctrl+C</code> ou une instruction claire (<em>« stop the loop »</em>). Un loop oublie peut consommer beaucoup d'API tokens.
+    </div>
+  </article>
+
+  <article class="skill ops" id="schedule">
+    <h3>schedule</h3>
+    <p class="tagline">Cree, liste, met a jour des <strong>agents distants planifies</strong> (cron-style ou one-shot). Tourne sans que votre session soit ouverte.</p>
+
+    <h4>Cas PNPI de grande valeur</h4>
+    <table class="matrix">
+      <thead>
+        <tr><th>Tache</th><th>Frequence</th><th>Benefice metier</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Lancer <code>scripts/backup_s3.py</code></td>
+          <td>Tous les jours a 2h</td>
+          <td>Sauvegarde BD automatique</td>
+        </tr>
+        <tr>
+          <td>Lancer <code>scripts/cron_tasks.py</code> (expirations, SLA)</td>
+          <td>Toutes les heures</td>
+          <td>Alertes SLA en temps reel, badges a jour</td>
+        </tr>
+        <tr>
+          <td>Lancer <code>/security-review</code></td>
+          <td>Chaque lundi matin</td>
+          <td>Audit securite hebdo avant la revue de direction</td>
+        </tr>
+        <tr>
+          <td>Envoyer le digest quotidien via <code>core/digest.py</code></td>
+          <td>Tous les jours a 7h</td>
+          <td>Email resume pour ministre/directeur</td>
+        </tr>
+        <tr>
+          <td>Generer le bilan mensuel <code>core/executive_report.py</code></td>
+          <td>1er de chaque mois</td>
+          <td>Rapport automatique pour audience ministerielle</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h4>Invocation</h4>
+<pre class="cmd"><span class="prompt">&gt;</span> /schedule
+<span class="cmt"># Assistant vous guide : cron expression, fuseau (Africa/Libreville), commande</span>
+
+<span class="prompt">&gt;</span> Schedule /security-review every Monday at 8am Africa/Libreville
+<span class="prompt">&gt;</span> Run /check-sla-overdue once tomorrow at 9am</pre>
+
+    <div class="tip">
+      <strong>Fuseau Gabon</strong> — toujours preciser <code>Africa/Libreville</code> (UTC+1, pas d'heure d'ete). Les audiences ministerielles sont en heure locale, pas UTC.
+    </div>
+  </article>
+
+  <h2 class="section">Workflow type — une session PNPI ideale</h2>
+
+  <div class="skill code" style="border-left-color: var(--gabon-green);">
+    <ol>
+      <li><strong>Debut de session</strong> — <code>git status</code> + lire CLAUDE.md (auto-charge). Si le repo a bouge, <code>/init</code>.</li>
+      <li><strong>Feature</strong> — code normalement. Mentionnez la lib (<em>« comment utiliser Recharts... »</em>) → <strong>context7-mcp</strong> se declenche.</li>
+      <li><strong>Si boucle repetitive</strong> (<code>curl health</code> pendant un deploy, <code>pytest</code> apres chaque edit) → <strong>/loop</strong>.</li>
+      <li><strong>Avant commit</strong> — <strong>/simplify</strong> puis <strong>/review</strong>. Si changement sensible → <strong>/security-review</strong>.</li>
+      <li><strong>Avant push</strong> — <strong>/web-interface-guidelines</strong> si page UI touchee.</li>
+      <li><strong>Fin de session</strong> — commit <code>feat: lot N —</code> + push.</li>
+      <li><strong>Taches recurrentes</strong> (backup, digest, audit) — <strong>/schedule</strong> une fois pour toutes.</li>
+    </ol>
+  </div>
+
+  <footer>
+    Genere pour PNPI — Plateforme Nationale de Pilotage Industriel ·
+    Ministere de l'Industrie et de la Transformation Locale, Republique Gabonaise
+  </footer>
+
+</main>
+</body>
+</html>

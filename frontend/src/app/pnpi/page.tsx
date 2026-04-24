@@ -5,263 +5,287 @@ import { redirect } from "next/navigation";
 import {
   fetchPNPIKpis,
   fetchPNPICarte,
-  fetchPNPISecteurs,
-  fetchPNPIPipeline,
-  fetchPNPITendances,
   fetchPNPIRecents,
-  fetchTransformationIndex,
   type ATIResume,
-  type TransformationIndexData,
 } from "../../lib/api";
 import { fetchBackendProfile } from "../../lib/backend";
-import { KpiCard } from "../components/KpiCard";
-import { SearchBar } from "./components/SearchBar";
-import { TransformationIndex } from "./TransformationIndex";
+import { getDefaultRouteForRoles } from "../../lib/role-routing";
+import { BriefingAudio } from "../components/BriefingAudio";
 
-const DashboardRefresh = dynamic(() => import("./components/DashboardRefresh"), { ssr: false });
 const CarteOperateurs = dynamic(() => import("./components/CarteOperateurs"), {
   ssr: false,
   loading: () => (
-    <div style={{ height: "400px", background: "#f9fafb", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", border: "1px solid #e5e7eb" }}>
-      Chargement de la carte...
-    </div>
+    <div className="pnpi-brief-map-loading">Chargement de la carte nationale...</div>
   ),
 });
-const ATIPipelineChart = dynamic(() => import("./components/ATIPipelineChart"), { ssr: false });
-const SecteurChart = dynamic(() => import("./components/SecteurChart"), { ssr: false });
-const TendanceChart = dynamic(() => import("./components/TendanceChart"), { ssr: false });
 
 const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur"]);
 
-const STATUT_LABELS: Record<string, string> = {
-  soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation",
-  approuve: "Approuve", rejete: "Rejete", expire: "Expire",
-};
-const STATUT_COLORS: Record<string, string> = {
-  soumis: "#f59e0b", en_instruction: "#3b82f6", en_validation: "#8b5cf6",
-  approuve: "#10b981", rejete: "#ef4444", expire: "#9ca3af",
-};
-const PRIORITE_COLORS: Record<string, string> = {
-  normale: "#6b7280", elevee: "#f59e0b", urgente: "#ef4444",
-};
 const SECTEUR_LABELS: Record<string, string> = {
-  bois: "Bois", mines: "Mines", agroalimentaire: "Agro",
-  btp: "BTP", petrole: "Petrole", services: "Services",
+  bois: "Bois",
+  mines: "Mines",
+  agroalimentaire: "Agro",
+  btp: "BTP",
+  petrole: "Petrole",
+  services: "Services",
 };
 
-function ATITable({ recents }: { recents: ATIResume[] }) {
-  if (!recents.length) return <p style={{ color: "#9ca3af", margin: 0 }}>Aucun ATI recent.</p>;
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
-        <thead>
-          <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
-            {["Numero ATI","Operateur","Secteur","Province","Statut","Priorite","Age (j)","SLA"].map((h) => (
-              <th key={h} style={{ padding: "0.5rem 0.75rem", textAlign: "left", color: "#6b7280", fontWeight: 600, textTransform: "uppercase", fontSize: "0.73rem", whiteSpace: "nowrap" }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {recents.map((ati) => (
-            <tr key={ati.id} style={{ borderBottom: "1px solid #f9fafb", background: ati.is_overdue ? "#fef9eb" : "transparent" }}>
-              <td style={{ padding: "0.625rem 0.75rem", fontWeight: 600, color: "#003F8F", fontFamily: "monospace", fontSize: "0.8rem" }}>{ati.numero_ati}</td>
-              <td style={{ padding: "0.625rem 0.75rem", maxWidth: "180px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ati.raison_sociale}</td>
-              <td style={{ padding: "0.625rem 0.75rem", color: "#374151" }}>{SECTEUR_LABELS[ati.secteur] ?? ati.secteur}</td>
-              <td style={{ padding: "0.625rem 0.75rem", color: "#6b7280", fontSize: "0.8rem" }}>{ati.province.replace(/_/g, " ")}</td>
-              <td style={{ padding: "0.625rem 0.75rem" }}>
-                <span style={{ padding: "0.2rem 0.6rem", borderRadius: "999px", background: `${STATUT_COLORS[ati.statut] ?? "#6b7280"}18`, color: STATUT_COLORS[ati.statut] ?? "#6b7280", fontWeight: 600, fontSize: "0.73rem" }}>
-                  {STATUT_LABELS[ati.statut] ?? ati.statut}
-                </span>
-              </td>
-              <td style={{ padding: "0.625rem 0.75rem" }}>
-                <span style={{ color: PRIORITE_COLORS[ati.priorite] ?? "#6b7280", fontWeight: ati.priorite === "urgente" ? 700 : 500, fontSize: "0.8rem", textTransform: "capitalize" }}>{ati.priorite}</span>
-              </td>
-              <td style={{ padding: "0.625rem 0.75rem", textAlign: "right", fontWeight: 600, color: ati.age_jours > 30 ? "#d97706" : "#374151" }}>{ati.age_jours}</td>
-              <td style={{ padding: "0.625rem 0.75rem", textAlign: "center" }}>
-                {ati.is_overdue
-                  ? <span style={{ padding: "0.15rem 0.5rem", borderRadius: "4px", background: "#fef3c7", color: "#d97706", fontWeight: 700, fontSize: "0.7rem" }}>RETARD</span>
-                  : <span style={{ color: "#10b981", fontSize: "0.75rem", fontWeight: 600 }}>OK</span>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+const formatDateLong = (): string => {
+  try {
+    return new Date().toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return "";
+  }
+};
+
+const pickGreeting = (hour: number): string => {
+  if (hour < 12) return "Bonjour";
+  if (hour < 18) return "Bon apres-midi";
+  return "Bonsoir";
+};
+
+const roleLabel = (roles: string[]): string => {
+  if (roles.includes("ministre")) return "Monsieur le Ministre";
+  if (roles.includes("directeur")) return "Monsieur le Directeur";
+  if (roles.includes("instructeur")) return "Madame / Monsieur l'Instructeur";
+  if (roles.includes("admin")) return "Administrateur";
+  return "Agent PNPI";
+};
 
 export default async function PNPIDashboardPage() {
+  let profile;
   try {
-    const profile = await fetchBackendProfile();
-    if (!((profile.roles ?? []) as string[]).some((r) => PNPI_ROLES.has(r))) redirect("/connexion");
-  } catch { redirect("/connexion"); }
+    profile = await fetchBackendProfile();
+    const roles = (profile.roles ?? []) as string[];
+    if (!roles.some((r) => PNPI_ROLES.has(r))) {
+      // Utilisateur authentifie mais sans acces dashboard PNPI (operateur, inspecteur).
+      // On l'envoie vers son propre espace plutot que vers /connexion.
+      const fallback = getDefaultRouteForRoles(roles);
+      redirect(fallback && fallback !== "/pnpi" ? fallback : "/connexion");
+    }
+  } catch {
+    redirect("/connexion");
+  }
 
   try {
-    const [kpis, carte, secteurs, pipeline, tendances, recents, transformationIndex] = await Promise.all([
+    const [kpis, carte, recents] = await Promise.all([
       fetchPNPIKpis().catch(() => null),
       fetchPNPICarte().catch(() => []),
-      fetchPNPISecteurs().catch(() => []),
-      fetchPNPIPipeline().catch(() => []),
-      fetchPNPITendances().catch(() => []),
       fetchPNPIRecents().catch(() => []),
-      fetchTransformationIndex().catch(() => null),
     ]);
 
-    const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    if (!kpis) throw new Error("Indicateurs indisponibles");
+
+    const greeting = pickGreeting(new Date().getHours());
+    const roleTitle = roleLabel(profile.roles ?? []);
+    const today = formatDateLong();
+
+    const overdue: ATIResume[] = (recents ?? [])
+      .filter((a: ATIResume) => a.is_overdue)
+      .sort((a: ATIResume, b: ATIResume) => b.age_jours - a.age_jours)
+      .slice(0, 3);
+
+    const slaTone =
+      kpis.taux_sla_pct >= 85 ? "good" :
+      kpis.taux_sla_pct >= 70 ? "warn" : "alert";
+
+    // Texte lu a voix haute par le BriefingAudio
+    const audioBrief = [
+      `${greeting} ${roleTitle}.`,
+      `Nous sommes le ${today}.`,
+      `Voici le briefing du jour.`,
+      `Conformite SLA nationale : ${kpis.taux_sla_pct.toFixed(0)} pour cent.`,
+      `${kpis.atis_en_retard} dossier${kpis.atis_en_retard > 1 ? "s" : ""} en retard sur ${kpis.atis_total} au total.`,
+      `${kpis.atis_en_cours} dossiers en cours de traitement.`,
+      `${kpis.atis_approuves_ce_mois} agrements delivres ce mois.`,
+      `Delai moyen de traitement : ${kpis.delai_moyen_jours.toFixed(0)} jours.`,
+      `${kpis.operateurs_actifs} operateurs industriels actifs sur les neuf provinces.`,
+      overdue.length > 0
+        ? `Attention : ${overdue.length} dossier${overdue.length > 1 ? "s" : ""} prioritaire${overdue.length > 1 ? "s" : ""} a traiter en urgence.`
+        : `Aucun dossier prioritaire en attente.`,
+    ].join(" ");
 
     return (
-      <>
-        {/* Header */}
-        <section className="section" style={{ paddingBottom: "0.5rem" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.25rem" }}>
-                <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg,#003F8F,#009440)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: "0.85rem", flexShrink: 0 }}>PN</div>
-                <h1 style={{ margin: 0, color: "#003F8F", fontSize: "1.4rem", fontWeight: 700 }}>Dashboard Ministeriel &mdash; PNPI</h1>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                <p style={{ margin: 0, color: "#6c7a8c", fontSize: "0.875rem" }}>Plateforme Nationale de Pilotage Industriel &middot; {today}</p>
-                <DashboardRefresh />
-              </div>
+      <div className="pnpi-brief">
+        {/* -------------------------------------------------- */}
+        {/* En-tete ceremoniel                                 */}
+        {/* -------------------------------------------------- */}
+        <header className="pnpi-brief-hero">
+          <div className="pnpi-brief-hero-main">
+            <div className="pnpi-brief-eyebrow">
+              <span className="pnpi-brief-dot" aria-hidden="true" />
+              <span>Briefing du jour · {today}</span>
             </div>
-            <SearchBar />
-            <div style={{ display: "flex", gap: "0.625rem", flexWrap: "wrap", alignItems: "center" }}>
-              <Link href="/pnpi/ati" style={{ padding: "0.5rem 1rem", background: "#003F8F", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Gestion ATI</Link>
-              <Link href="/pnpi/operateurs" style={{ padding: "0.5rem 1rem", background: "#009440", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Operateurs</Link>
-              <Link href="/pnpi/inspections" style={{ padding: "0.5rem 1rem", background: "#7c3aed", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Inspections</Link>
-              <Link href="/pnpi/notifications" style={{ padding: "0.5rem 1rem", background: "#ef4444", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Alertes</Link>
-              <Link href="/pnpi/historique" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Historique</Link>
-              <Link href="/pnpi/stats" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>Statistiques</Link>
-              <a href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/dashboard/export-recap.pdf`} target="_blank" rel="noopener noreferrer" style={{ padding: "0.5rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>&#8595; Recap PDF</a>
-              <a href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/exports/executive-report.pdf`} target="_blank" rel="noopener noreferrer" style={{ padding: "0.5rem 1rem", background: "#003F8F", color: "#fff", borderRadius: "6px", textDecoration: "none", fontSize: "0.875rem", fontWeight: 600 }}>&#8595; Rapport Executif</a>
+            <h1 className="pnpi-brief-greeting">
+              {greeting}, <span className="pnpi-brief-role">{roleTitle}</span>
+            </h1>
+            <p className="pnpi-brief-subtitle">
+              Vue d&apos;ensemble de la situation industrielle nationale ·
+              Plateforme Nationale de Pilotage Industriel
+            </p>
+            <div className="pnpi-brief-audio">
+              <BriefingAudio text={audioBrief} label="Ecouter le briefing (2 min)" />
             </div>
           </div>
-        </section>
-
-        {/* KPI Banner */}
-        <section className="hero-grid">
-          <KpiCard title="ATIs en cours" value={String(kpis.atis_en_cours)} detail="Dossiers actifs en traitement" />
-          <KpiCard title="Delai moyen" value={`${kpis.delai_moyen_jours.toFixed(1)} j`} detail="Objectif : 30 jours max" />
-          <KpiCard title="Taux SLA" value={`${kpis.taux_sla_pct.toFixed(0)} %`} detail="Dossiers traites dans les delais" />
-          <KpiCard title="Operateurs actifs" value={String(kpis.operateurs_actifs)} detail="Enregistres sur la plateforme" />
-          <KpiCard title="Approuves ce mois" value={String(kpis.atis_approuves_ce_mois)} detail="Agrements delivres ce mois" />
-          <KpiCard title="En retard SLA" value={String(kpis.atis_en_retard)} detail={kpis.atis_en_retard > 0 ? "Necessite attention immediate" : "Aucun retard SLA"} />
-        </section>
-
-        {/* SLA Bar */}
-        <section className="section" style={{ paddingTop: 0 }}>
-          <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-              <span style={{ fontSize: "0.875rem", color: "#374151", fontWeight: 600 }}>Conformite SLA globale</span>
-              <span style={{ fontSize: "0.875rem", fontWeight: 700, color: kpis.taux_sla_pct >= 80 ? "#10b981" : kpis.taux_sla_pct >= 60 ? "#f59e0b" : "#ef4444" }}>{kpis.taux_sla_pct.toFixed(1)} %</span>
-            </div>
-            <div style={{ background: "#f3f4f6", borderRadius: "999px", height: "10px", overflow: "hidden" }}>
-              <div style={{ height: "100%", borderRadius: "999px", width: `${Math.min(kpis.taux_sla_pct, 100)}%`, background: kpis.taux_sla_pct >= 80 ? "linear-gradient(90deg,#009440,#10b981)" : kpis.taux_sla_pct >= 60 ? "linear-gradient(90deg,#d97706,#f59e0b)" : "linear-gradient(90deg,#dc2626,#ef4444)" }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.4rem" }}>
-              <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>{kpis.atis_en_retard} en retard sur {kpis.atis_total} au total</span>
-              <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Conformite inspections : {kpis.taux_conformite_pct.toFixed(0)} %</span>
+          <div className="pnpi-brief-hero-aside">
+            <div className={`pnpi-brief-sla pnpi-brief-sla--${slaTone}`}>
+              <div className="pnpi-brief-sla-label">Conformite SLA nationale</div>
+              <div className="pnpi-brief-sla-value">{kpis.taux_sla_pct.toFixed(0)}<span>%</span></div>
+              <div className="pnpi-brief-sla-detail">
+                {kpis.atis_en_retard} dossier{kpis.atis_en_retard > 1 ? "s" : ""} en retard sur {kpis.atis_total}
+              </div>
+              <div className="pnpi-brief-sla-bar">
+                <div
+                  className={`pnpi-brief-sla-bar-fill pnpi-brief-sla-bar-fill--${slaTone}`}
+                  style={{ width: `${Math.min(kpis.taux_sla_pct, 100)}%` }}
+                />
+              </div>
             </div>
           </div>
+        </header>
+
+        {/* -------------------------------------------------- */}
+        {/* 4 KPIs essentiels                                  */}
+        {/* -------------------------------------------------- */}
+        <section className="pnpi-brief-kpis" aria-label="Indicateurs principaux">
+          <article className="pnpi-kpi pnpi-kpi--primary">
+            <div className="pnpi-kpi-label">ATIs en cours</div>
+            <div className="pnpi-kpi-value">{kpis.atis_en_cours.toLocaleString("fr-FR")}</div>
+            <div className="pnpi-kpi-detail">Dossiers actifs en traitement</div>
+          </article>
+
+          <article className="pnpi-kpi pnpi-kpi--success">
+            <div className="pnpi-kpi-label">Approuves ce mois</div>
+            <div className="pnpi-kpi-value">{kpis.atis_approuves_ce_mois.toLocaleString("fr-FR")}</div>
+            <div className="pnpi-kpi-detail">Agrements delivres</div>
+          </article>
+
+          <article className="pnpi-kpi pnpi-kpi--neutral">
+            <div className="pnpi-kpi-label">Delai moyen</div>
+            <div className="pnpi-kpi-value">
+              {kpis.delai_moyen_jours.toFixed(1)}<span className="pnpi-kpi-unit"> j</span>
+            </div>
+            <div className="pnpi-kpi-detail">Objectif : 30 jours</div>
+          </article>
+
+          <article className="pnpi-kpi pnpi-kpi--accent">
+            <div className="pnpi-kpi-label">Operateurs actifs</div>
+            <div className="pnpi-kpi-value">{kpis.operateurs_actifs.toLocaleString("fr-FR")}</div>
+            <div className="pnpi-kpi-detail">Repartis sur les 9 provinces</div>
+          </article>
         </section>
 
-        {/* Inspections summary */}
-        <section className="section" style={{ paddingTop: 0 }}>
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-            <Link href="/pnpi/inspections" style={{ flex: "1 1 200px", textDecoration: "none" }}>
-              <div className="chart-card" style={{ padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: "1rem", cursor: "pointer" }}>
-                <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#7c3aed15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>🔍</div>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#003F8F", fontSize: "0.9rem" }}>Inspections terrain</div>
-                  <div style={{ color: "#6b7280", fontSize: "0.78rem", marginTop: "0.15rem" }}>Rapports de conformite des inspecteurs</div>
-                </div>
-                <div style={{ marginLeft: "auto", color: "#7c3aed", fontWeight: 700, fontSize: "0.8rem" }}>Voir →</div>
-              </div>
+        {/* -------------------------------------------------- */}
+        {/* Alertes prioritaires                               */}
+        {/* -------------------------------------------------- */}
+        {overdue.length > 0 && (
+          <section className="pnpi-brief-alerts" aria-label="Alertes prioritaires">
+            <div className="pnpi-brief-section-head">
+              <h2 className="pnpi-brief-section-title">A decider en priorite</h2>
+              <p className="pnpi-brief-section-desc">
+                Dossiers les plus critiques ayant depasse le delai de traitement reglementaire.
+              </p>
+            </div>
+            <ul className="pnpi-brief-alerts-list">
+              {overdue.map((ati) => (
+                <li key={ati.id} className="pnpi-brief-alert">
+                  <div className="pnpi-brief-alert-rank" aria-hidden="true">!</div>
+                  <div className="pnpi-brief-alert-body">
+                    <div className="pnpi-brief-alert-head">
+                      <span className="pnpi-brief-alert-num">{ati.numero_ati}</span>
+                      <span className="pnpi-brief-alert-sector">{SECTEUR_LABELS[ati.secteur] ?? ati.secteur}</span>
+                      <span className="pnpi-brief-alert-province">{ati.province.replace(/_/g, " ")}</span>
+                    </div>
+                    <div className="pnpi-brief-alert-name">{ati.raison_sociale}</div>
+                  </div>
+                  <div className="pnpi-brief-alert-age">
+                    <div className="pnpi-brief-alert-age-value">{ati.age_jours} j</div>
+                    <div className="pnpi-brief-alert-age-label">d&apos;attente</div>
+                  </div>
+                  <Link href={`/pnpi/ati/${ati.id}`} className="pnpi-brief-alert-cta">
+                    Instruire
+                    <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <Link href="/pnpi/ati?statut=en_retard" className="pnpi-brief-see-all">
+              Voir tous les dossiers en retard &rarr;
             </Link>
-            <Link href="/pnpi/guichet" style={{ flex: "1 1 200px", textDecoration: "none" }}>
-              <div className="chart-card" style={{ padding: "1rem 1.25rem", display: "flex", alignItems: "center", gap: "1rem", cursor: "pointer" }}>
-                <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#00944015", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>📬</div>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#003F8F", fontSize: "0.9rem" }}>Guichet numerique</div>
-                  <div style={{ color: "#6b7280", fontSize: "0.78rem", marginTop: "0.15rem" }}>Depot et suivi des demandes ATI</div>
-                </div>
-                <div style={{ marginLeft: "auto", color: "#009440", fontWeight: 700, fontSize: "0.8rem" }}>Voir →</div>
-              </div>
-            </Link>
-          </div>
-        </section>
-
-        {/* Transformation Index */}
-        {transformationIndex && (
-          <section className="section" style={{ paddingTop: 0 }}>
-            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 320px", maxWidth: "420px" }}>
-                <TransformationIndex data={transformationIndex} />
-              </div>
-              <div style={{ flex: "2 1 400px", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-                  <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "1rem" }}>Pipeline ATI</h3>
-                  <p style={{ margin: "0 0 1rem", color: "#6c7a8c", fontSize: "0.8rem" }}>Distribution par statut de traitement</p>
-                  <ATIPipelineChart pipeline={pipeline} />
-                </div>
-              </div>
-            </div>
           </section>
         )}
 
-        {/* Carte + Pipeline */}
-        <section className="section" style={{ paddingTop: 0 }}>
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-            <div style={{ flex: "3 1 420px" }}>
-              <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-                <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "1rem" }}>Carte des operateurs industriels</h3>
-                <p style={{ margin: "0 0 0.75rem", color: "#6c7a8c", fontSize: "0.8rem" }}>{carte.length} operateurs geocodes sur les 9 provinces &mdash; cliquez pour le detail</p>
-                <CarteOperateurs operateurs={carte} />
-              </div>
-            </div>
-            {!transformationIndex && (
-              <div style={{ flex: "2 1 280px" }}>
-                <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-                  <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "1rem" }}>Pipeline ATI</h3>
-                  <p style={{ margin: "0 0 1rem", color: "#6c7a8c", fontSize: "0.8rem" }}>Distribution par statut de traitement</p>
-                  <ATIPipelineChart pipeline={pipeline} />
-                </div>
-              </div>
-            )}
+        {/* -------------------------------------------------- */}
+        {/* Carte nationale                                    */}
+        {/* -------------------------------------------------- */}
+        <section className="pnpi-brief-map-section" aria-label="Carte nationale">
+          <div className="pnpi-brief-section-head">
+            <h2 className="pnpi-brief-section-title">Couverture nationale</h2>
+            <p className="pnpi-brief-section-desc">
+              {carte.length} operateurs industriels geocodes sur les 9 provinces du Gabon.
+              Cliquez sur un point pour voir le detail.
+            </p>
+          </div>
+          <div className="pnpi-brief-map">
+            <CarteOperateurs operateurs={carte} />
           </div>
         </section>
 
-        {/* Charts */}
-        <section className="section" style={{ paddingTop: 0 }}>
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 300px" }}>
-              <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-                <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "1rem" }}>Activite par secteur industriel</h3>
-                <p style={{ margin: "0 0 0.75rem", color: "#6c7a8c", fontSize: "0.8rem" }}>Operateurs, ATIs actifs et approuves par secteur</p>
-                <SecteurChart secteurs={secteurs} />
-              </div>
+        {/* -------------------------------------------------- */}
+        {/* Acces rapides                                      */}
+        {/* -------------------------------------------------- */}
+        <section className="pnpi-brief-quick-grid" aria-label="Acces rapides">
+          <Link href="/pnpi/ati" className="pnpi-brief-quick">
+            <div className="pnpi-brief-quick-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9 12l2 2 4-4" />
+                <circle cx="12" cy="12" r="9" />
+              </svg>
             </div>
-            <div style={{ flex: "1 1 300px" }}>
-              <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-                <h3 style={{ margin: "0 0 0.25rem", color: "#003F8F", fontSize: "1rem" }}>Tendance mensuelle des ATIs</h3>
-                <p style={{ margin: "0 0 0.75rem", color: "#6c7a8c", fontSize: "0.8rem" }}>Soumissions, approbations et rejets par mois</p>
-                <TendanceChart tendances={tendances} />
-              </div>
+            <div className="pnpi-brief-quick-body">
+              <div className="pnpi-brief-quick-title">Gestion des ATI</div>
+              <div className="pnpi-brief-quick-desc">Instruire, valider, delivrer les agrements techniques.</div>
             </div>
-          </div>
-        </section>
+            <span className="pnpi-brief-quick-arrow" aria-hidden="true">&rarr;</span>
+          </Link>
 
-        {/* ATIs Recents */}
-        <section className="section" style={{ paddingTop: 0 }}>
-          <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-              <h3 style={{ margin: 0, color: "#003F8F", fontSize: "1rem" }}>ATIs recents</h3>
-              <Link href="/pnpi/ati" style={{ color: "#003F8F", fontSize: "0.875rem", fontWeight: 600, textDecoration: "none" }}>Voir tous &rarr;</Link>
+          <Link href="/pnpi/inspections" className="pnpi-brief-quick">
+            <div className="pnpi-brief-quick-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" />
+                <path d="M9 4v16" />
+                <path d="M15 6v16" />
+              </svg>
             </div>
-            <ATITable recents={recents} />
-          </div>
+            <div className="pnpi-brief-quick-body">
+              <div className="pnpi-brief-quick-title">Inspections terrain</div>
+              <div className="pnpi-brief-quick-desc">Rapports de conformite et couverture provinciale.</div>
+            </div>
+            <span className="pnpi-brief-quick-arrow" aria-hidden="true">&rarr;</span>
+          </Link>
+
+          <Link href="/pnpi/reports" className="pnpi-brief-quick">
+            <div className="pnpi-brief-quick-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="8" y1="13" x2="16" y2="13" />
+                <line x1="8" y1="17" x2="13" y2="17" />
+              </svg>
+            </div>
+            <div className="pnpi-brief-quick-body">
+              <div className="pnpi-brief-quick-title">Rapports strategiques</div>
+              <div className="pnpi-brief-quick-desc">Bilans, impact, predictions et aide a la decision.</div>
+            </div>
+            <span className="pnpi-brief-quick-arrow" aria-hidden="true">&rarr;</span>
+          </Link>
         </section>
-      </>
+      </div>
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erreur inconnue";
@@ -270,7 +294,7 @@ export default async function PNPIDashboardPage() {
         <div className="chart-card">
           <h2 style={{ color: "#b42318", marginTop: 0 }}>Dashboard PNPI indisponible</h2>
           <p style={{ color: "#b42318" }}>{msg}</p>
-          <p style={{ color: "#6b7280" }}>Verifiez que le backend est actif et que les tables PNPI ont ete creees (alembic upgrade head).</p>
+          <p style={{ color: "#6b7280" }}>Verifiez que le backend est actif et que les tables PNPI ont ete creees.</p>
         </div>
       </section>
     );

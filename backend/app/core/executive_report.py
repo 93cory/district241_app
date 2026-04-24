@@ -1,4 +1,4 @@
-"""PNPI — Generation automatique du rapport executif hebdomadaire."""
+"""PNPI · Generation automatique du rapport executif hebdomadaire."""
 from __future__ import annotations
 
 import io
@@ -17,6 +17,8 @@ from reportlab.platypus import (
 )
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
+
+from ..database import as_utc as _as_utc
 
 from ..database import now_utc
 from ..models.pnpi import (
@@ -42,6 +44,8 @@ def generate_executive_report(db: Session) -> bytes:
     month_ago = now - timedelta(days=30)
 
     # Fetch data
+    from ..database import as_utc as _as_utc
+
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
     all_ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
     all_inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
@@ -49,9 +53,9 @@ def generate_executive_report(db: Session) -> bytes:
     # KPIs
     total_atis = len(all_atis)
     active_atis = sum(1 for a in all_atis if a.statut not in _TERMINAL)
-    week_submissions = sum(1 for a in all_atis if a.date_soumission >= week_ago)
-    week_decisions = sum(1 for a in all_atis if a.date_decision and a.date_decision >= week_ago)
-    month_approvals = sum(1 for a in all_atis if a.statut == "approuve" and a.date_decision and a.date_decision >= month_ago)
+    week_submissions = sum(1 for a in all_atis if a.date_soumission and _as_utc(a.date_soumission) >= week_ago)
+    week_decisions = sum(1 for a in all_atis if a.date_decision and _as_utc(a.date_decision) >= week_ago)
+    month_approvals = sum(1 for a in all_atis if a.statut == "approuve" and a.date_decision and _as_utc(a.date_decision) >= month_ago)
 
     overdue = sum(
         1 for a in all_atis
@@ -71,8 +75,8 @@ def generate_executive_report(db: Session) -> bytes:
     emplois = sum(o.effectif_declare or 0 for o in all_ops)
 
     # Inspections this month
-    month_inspections = sum(1 for i in all_inspections if i.date_inspection >= month_ago)
-    conformes = sum(1 for i in all_inspections if i.date_inspection >= month_ago and i.statut_conformite == "conforme")
+    month_inspections = sum(1 for i in all_inspections if i.date_inspection and _as_utc(i.date_inspection) >= month_ago)
+    conformes = sum(1 for i in all_inspections if i.date_inspection and _as_utc(i.date_inspection) >= month_ago and i.statut_conformite == "conforme")
     taux_conf = round(conformes / month_inspections * 100, 1) if month_inspections else 0.0
 
     # Sector breakdown
@@ -113,7 +117,7 @@ def generate_executive_report(db: Session) -> bytes:
 
     # Header
     story.append(Paragraph("REPUBLIQUE GABONAISE", header_style))
-    story.append(Paragraph("Union — Travail — Justice", ParagraphStyle("motto", parent=header_style, fontSize=8, fontName="Helvetica-Oblique")))
+    story.append(Paragraph("Union · Travail · Justice", ParagraphStyle("motto", parent=header_style, fontSize=8, fontName="Helvetica-Oblique")))
     story.append(Spacer(1, 0.3*cm))
     story.append(Paragraph("Ministere de l'Industrie et de la Transformation Locale", ministry_style))
     story.append(Paragraph("Plateforme Nationale de la Politique Industrielle", ParagraphStyle("pnpi", parent=ministry_style, fontSize=9)))
@@ -123,7 +127,7 @@ def generate_executive_report(db: Session) -> bytes:
 
     story.append(Paragraph("RAPPORT EXECUTIF HEBDOMADAIRE", title_style))
     story.append(Paragraph(f"Semaine du {week_ago.strftime('%d/%m/%Y')} au {now.strftime('%d/%m/%Y')}", ParagraphStyle("date", parent=body_style, textColor=colors.gray, fontSize=9)))
-    story.append(Paragraph("CONFIDENTIEL — Document officiel PNPI", ParagraphStyle("conf", parent=body_style, textColor=ROUGE, fontSize=8, fontName="Helvetica-Bold")))
+    story.append(Paragraph("CONFIDENTIEL · Document officiel PNPI", ParagraphStyle("conf", parent=body_style, textColor=ROUGE, fontSize=8, fontName="Helvetica-Bold")))
     story.append(Spacer(1, 0.6*cm))
 
     # National Index
@@ -217,7 +221,7 @@ def generate_executive_report(db: Session) -> bytes:
     # Footer
     story.append(Spacer(1, 1*cm))
     story.append(HRFlowable(width="100%", thickness=1, color=BLEU))
-    story.append(Paragraph(f"Document genere automatiquement par la PNPI — {now.strftime('%d/%m/%Y %H:%M')} UTC", footer_style))
+    story.append(Paragraph(f"Document genere automatiquement par la PNPI · {now.strftime('%d/%m/%Y %H:%M')} UTC", footer_style))
     story.append(Paragraph("Ministere de l'Industrie et de la Transformation Locale du Gabon", footer_style))
 
     doc.build(story)
@@ -243,24 +247,24 @@ def _compute_national_index(atis, ops, inspections) -> float:
     approved = sum(1 for a in decided if a.statut == "approuve")
     approbation_score = (approved / len(decided) * 30) if decided else 0
 
-    # 2. Couverture sectorielle (20 pts max) — 7 secteurs cibles
+    # 2. Couverture sectorielle (20 pts max) · 7 secteurs cibles
     sectors_with_ops = len(set(o.secteur for o in ops if o.is_active))
     sector_score = min(sectors_with_ops / 7 * 20, 20)
 
     # 3. Taux conformite inspections (25 pts max)
-    recent_insp = [i for i in inspections if i.date_inspection >= month_ago]
+    recent_insp = [i for i in inspections if i.date_inspection and _as_utc(i.date_inspection) >= month_ago]
     if recent_insp:
         conformes = sum(1 for i in recent_insp if i.statut_conformite == "conforme")
         conformite_score = conformes / len(recent_insp) * 25
     else:
         conformite_score = 0
 
-    # 4. Densite operateurs (15 pts max) — cible 100 operateurs actifs
+    # 4. Densite operateurs (15 pts max) · cible 100 operateurs actifs
     actifs = sum(1 for o in ops if o.is_active)
     densite_score = min(actifs / 100 * 15, 15)
 
-    # 5. Dynamisme (10 pts max) — soumissions recentes
-    recent_subs = sum(1 for a in atis if a.date_soumission >= month_ago)
+    # 5. Dynamisme (10 pts max) · soumissions recentes
+    recent_subs = sum(1 for a in atis if a.date_soumission and _as_utc(a.date_soumission) >= month_ago)
     dynamisme_score = min(recent_subs / 20 * 10, 10)
 
     total = approbation_score + sector_score + conformite_score + densite_score + dynamisme_score

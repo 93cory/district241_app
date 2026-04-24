@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Endpoints d'administration (utilisateurs, notifications)."""
+"""PNPI / PNPI · Endpoints d'administration (utilisateurs, notifications)."""
 from __future__ import annotations
 
 from datetime import datetime as dt, timezone
@@ -365,3 +365,191 @@ async def admin_send_sms(
         raise HTTPException(400, "Numero et message requis.")
     result = send_sms(to, message)
     return {"sms_enabled": SMS_ENABLED, **result}
+
+
+# ---------------------------------------------------------------------------
+# Simulateur de role (impersonation)
+# ---------------------------------------------------------------------------
+
+RACI_DEFAULT = {
+    "roles": ["Operateur", "Instructeur", "Directeur", "Ministre", "Inspecteur", "Admin"],
+    "stages": [
+        {"stage": "Soumission ATI",       "raci": {"Operateur":"R","Instructeur":"I","Directeur":"I","Ministre":"","Inspecteur":"","Admin":"I"}},
+        {"stage": "Instruction dossier",  "raci": {"Operateur":"I","Instructeur":"R","Directeur":"C","Ministre":"","Inspecteur":"","Admin":""}},
+        {"stage": "Validation technique", "raci": {"Operateur":"I","Instructeur":"A","Directeur":"R","Ministre":"I","Inspecteur":"C","Admin":""}},
+        {"stage": "Decision finale",      "raci": {"Operateur":"I","Instructeur":"I","Directeur":"A","Ministre":"R","Inspecteur":"","Admin":"I"}},
+        {"stage": "Emission certificat",  "raci": {"Operateur":"I","Instructeur":"R","Directeur":"A","Ministre":"","Inspecteur":"","Admin":""}},
+        {"stage": "Inspection conformite","raci": {"Operateur":"I","Instructeur":"C","Directeur":"A","Ministre":"I","Inspecteur":"R","Admin":""}},
+        {"stage": "Rapport inspection",   "raci": {"Operateur":"I","Instructeur":"I","Directeur":"A","Ministre":"I","Inspecteur":"R","Admin":""}},
+    ],
+}
+
+
+def _raci_path():
+    from pathlib import Path
+    return Path(__file__).resolve().parents[1] / "data" / "raci.json"
+
+
+@router.get("/admin/raci", summary="Charger la matrice RACI (persistance fichier)")
+async def get_raci(_: User = Depends(require_roles(Role.admin, Role.directeur, Role.ministre))):
+    import json
+    p = _raci_path()
+    if not p.exists():
+        return RACI_DEFAULT
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return RACI_DEFAULT
+
+
+@router.put("/admin/raci", summary="Mettre a jour la matrice RACI (admin uniquement)")
+async def update_raci(
+    data: dict,
+    current_user: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    import json
+    if "roles" not in data or "stages" not in data:
+        raise HTTPException(400, "Format invalide : roles + stages requis.")
+
+    p = _raci_path()
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    write_audit_event(db, actor=current_user.username, action="admin.raci.update",
+                      target="raci_matrix", details=f"{len(data.get('stages', []))} etapes")
+    db.commit()
+    return {"status": "ok"}
+
+
+@router.get("/admin/backups", summary="Lister les sauvegardes DB disponibles")
+async def list_backups(
+    _: User = Depends(require_roles(Role.admin)),
+):
+    """Liste les fichiers de sauvegarde sur le disque local (backups/)."""
+    import os
+    from pathlib import Path
+    backup_dir = Path(os.getenv("PNPI_BACKUP_DIR", "backups"))
+    if not backup_dir.exists():
+        return {"backups": [], "dir": str(backup_dir), "s3_enabled": False}
+    files = []
+    for f in sorted(backup_dir.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+        if f.is_file():
+            files.append({
+                "name": f.name,
+                "size_bytes": f.stat().st_size,
+                "modified_at": dt.fromtimestamp(f.stat().st_mtime, tz=timezone.utc).isoformat(),
+            })
+    return {
+        "backups": files[:50],
+        "dir": str(backup_dir),
+        "s3_enabled": bool(os.getenv("PNPI_S3_ENDPOINT")),
+    }
+
+
+@router.post("/admin/backups/create", summary="Declencher une sauvegarde")
+async def create_backup(
+    current_user: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Lance une sauvegarde via le script backup_s3.py (si configure S3) ou locale."""
+    import subprocess
+    import os
+    from pathlib import Path
+
+    backup_dir = Path(os.getenv("PNPI_BACKUP_DIR", "backups"))
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = now_utc().strftime("%Y%m%d_%H%M%S")
+
+    db_url = os.getenv("PNPI_DATABASE_URL", "sqlite:///./pnpi.db")
+    # SQLite : copie simple du fichier
+    if db_url.startswith("sqlite:///"):
+        src = db_url.replace("sqlite:///", "").replace("./", "")
+        dest = backup_dir / f"pnpi_{timestamp}.db"
+        try:
+            import shutil
+            shutil.copy2(src, dest)
+            write_audit_event(db, actor=current_user.username, action="admin.backup.create",
+                              target=dest.name, details=f"Sauvegarde locale : {dest.name}")
+            db.commit()
+            return {
+                "status": "ok",
+                "filename": dest.name,
+                "size_bytes": dest.stat().st_size,
+                "path": str(dest),
+            }
+        except Exception as exc:
+            raise HTTPException(500, f"Erreur sauvegarde : {exc}")
+
+    # PostgreSQL : delegue au script backup_s3
+    if os.getenv("PNPI_S3_ENDPOINT"):
+        try:
+            result = subprocess.run(
+                ["python", "scripts/backup_s3.py", "backup"],
+                capture_output=True, text=True, timeout=300,
+            )
+            write_audit_event(db, actor=current_user.username, action="admin.backup.create",
+                              target="s3", details=f"Sauvegarde S3 : {result.returncode}")
+            db.commit()
+            return {
+                "status": "ok" if result.returncode == 0 else "error",
+                "output": result.stdout[-500:],
+                "error": result.stderr[-500:] if result.returncode != 0 else None,
+            }
+        except Exception as exc:
+            raise HTTPException(500, f"Erreur backup S3 : {exc}")
+
+    raise HTTPException(400, "Aucun backend de sauvegarde configure (ni SQLite local, ni S3).")
+
+
+@router.post("/admin/impersonate/{username}", summary="Simuler un autre utilisateur (admin uniquement)")
+async def impersonate_user(
+    username: str,
+    current_user: User = Depends(require_roles(Role.admin)),
+    db: Session = Depends(get_db),
+):
+    """Genere un access_token temporaire (30 min) pour se connecter comme {username}.
+    Action integralement tracee dans l'audit pour conformite.
+    """
+    from datetime import timedelta
+    from ..core.auth import create_access_token, user_from_row
+
+    target = db.get(UserAccountORM, username)
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Utilisateur {username} introuvable.")
+    if not target.is_active:
+        raise HTTPException(status_code=400, detail=f"Utilisateur {username} inactif.")
+    if username == current_user.username:
+        raise HTTPException(status_code=400, detail="Impossible de se simuler soi-meme.")
+
+    write_audit_event(
+        db,
+        actor=current_user.username,
+        action="admin.impersonate.start",
+        target=username,
+        details=f"Admin {current_user.username} commence une simulation du compte {username}",
+    )
+    db.commit()
+
+    target_user = user_from_row(target)
+    token = create_access_token(
+        data={
+            "sub": target_user.username,
+            "roles": [r.value for r in target_user.roles],
+            "impersonated_by": current_user.username,
+        },
+        expires_delta=timedelta(minutes=30),
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "expires_in": 30 * 60,
+        "impersonated_by": current_user.username,
+        "impersonated_user": {
+            "username": target_user.username,
+            "full_name": target_user.full_name,
+            "roles": [r.value for r in target_user.roles],
+        },
+    }

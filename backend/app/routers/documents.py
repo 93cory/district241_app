@@ -1,4 +1,4 @@
-"""PNPI — Gestion des documents joints aux dossiers ATI."""
+"""PNPI · Gestion des documents joints aux dossiers ATI."""
 from __future__ import annotations
 
 import os
@@ -59,12 +59,16 @@ def _to_doc_read(doc: DocumentDossierORM) -> DocumentRead:
 @router.get("/ati/{ati_id}/documents", response_model=List[DocumentRead])
 async def list_ati_documents(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> List[DocumentRead]:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
+    role_values = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    is_privileged = bool(role_values & {"admin", "ministre", "directeur", "instructeur", "inspecteur"})
+    if not is_privileged and "operateur" in role_values and ati.created_by != current_user.username:
+        raise HTTPException(status_code=403, detail="Acces restreint a vos propres dossiers.")
     docs = db.execute(
         select(DocumentDossierORM)
         .where(DocumentDossierORM.ati_id == ati_id)

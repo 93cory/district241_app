@@ -64,17 +64,21 @@ export default function AnnualReportPage() {
           </div>
 
           {/* Monthly chart */}
-          <div className="chart-card" style={{ padding: 20, marginBottom: 16 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 14px" }}>Evolution mensuelle</h3>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120 }}>
-              {(data.monthly || []).map((m: any, i: number) => {
-                const max = Math.max(...(data.monthly || []).map((x: any) => x.soumissions || 0));
-                const h = max ? (m.soumissions / max) * 100 : 0;
+          <div className="chart-card pnpi-bar-chart" style={{ marginBottom: 16 }}>
+            <h3 className="pnpi-card-subtitle">Evolution mensuelle</h3>
+            <div className="pnpi-bars pnpi-bars--tall">
+              {(data.monthly || []).map((m: any) => {
+                const max = Math.max(...(data.monthly || []).map((x: any) => x.soumissions || 0), 1);
+                const h = (m.soumissions / max) * 100;
                 return (
-                  <div key={m.month} style={{ flex: 1, textAlign: "center" }}>
-                    <div style={{ fontSize: 9, fontWeight: 700 }}>{m.soumissions}</div>
-                    <div style={{ height: h, background: "#006233", borderRadius: "3px 3px 0 0", minHeight: 2 }} />
-                    <div style={{ fontSize: 9, color: "var(--text-soft)", marginTop: 2 }}>{m.month}</div>
+                  <div key={m.month} className="pnpi-bar">
+                    <span className="pnpi-bar-value">{m.soumissions}</span>
+                    <div className="pnpi-bar-fill" style={{ height: h, minHeight: 2 }} />
+                    <span className="pnpi-bar-label">{m.month}</span>
+                    <div className="pnpi-bar-tooltip" role="tooltip">
+                      <strong>{m.month}</strong>
+                      <span>{m.soumissions} soumissions{m.approuves != null ? ` · ${m.approuves} approuves` : ""}{m.rejetes != null ? ` · ${m.rejetes} rejetes` : ""}</span>
+                    </div>
                   </div>
                 );
               })}

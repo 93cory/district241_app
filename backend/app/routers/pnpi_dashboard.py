@@ -1,4 +1,4 @@
-"""PNPI — Endpoints du tableau de bord de pilotage industriel gabonais."""
+"""PNPI · Endpoints du tableau de bord de pilotage industriel gabonais."""
 from __future__ import annotations
 
 from collections import defaultdict
@@ -67,7 +67,7 @@ async def pnpi_dashboard_kpis(
     # Fetch ATIs, filtered by province if user is province-scoped
     ati_query = select(AgrementTechniqueIndustrielORM)
     if not tenant.is_global:
-        # Filter ATIs via their operateur's province — join through operateur
+        # Filter ATIs via their operateur's province · join through operateur
         ati_query = ati_query.join(OperateurIndustrielORM, AgrementTechniqueIndustrielORM.operateur_id == OperateurIndustrielORM.id).where(
             OperateurIndustrielORM.province == tenant.province
         )
@@ -521,10 +521,11 @@ async def national_transformation_index(
     decided = [a for a in all_atis if a.statut in {"approuve", "rejete"}]
     approved = sum(1 for a in decided if a.statut == "approuve")
     sectors = len(set(o.secteur for o in all_ops if o.is_active))
-    recent_insp = [i for i in all_inspections if i.date_inspection >= month_ago]
+    from ..database import as_utc as _as_utc_loc
+    recent_insp = [i for i in all_inspections if i.date_inspection and _as_utc_loc(i.date_inspection) >= month_ago]
     conformes = sum(1 for i in recent_insp if i.statut_conformite == "conforme") if recent_insp else 0
     actifs = sum(1 for o in all_ops if o.is_active)
-    recent_subs = sum(1 for a in all_atis if a.date_soumission >= month_ago)
+    recent_subs = sum(1 for a in all_atis if a.date_soumission and _as_utc_loc(a.date_soumission) >= month_ago)
 
     return {
         "index": index,
@@ -773,7 +774,7 @@ async def export_recap_pdf(
 
     story = []
     story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray)))
-    story.append(Paragraph("Ministere de l'Industrie — PNPI", ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu)))
+    story.append(Paragraph("Ministere de l'Industrie · PNPI", ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu)))
     story.append(Spacer(1, 0.3*cm))
     story.append(HRFlowable(width="100%", thickness=2, color=bleu))
     story.append(Spacer(1, 0.3*cm))
@@ -834,7 +835,7 @@ async def export_recap_pdf(
 
     story.append(HRFlowable(width="100%", thickness=1, color=bleu))
     story.append(Paragraph(
-        f"Document genere par la PNPI — {now.strftime('%d/%m/%Y %H:%M')} UTC",
+        f"Document genere par la PNPI · {now.strftime('%d/%m/%Y %H:%M')} UTC",
         ParagraphStyle("footer", parent=styles["Normal"], alignment=TA_CENTER, fontSize=7, textColor=colors.gray)
     ))
 
@@ -867,11 +868,13 @@ async def period_comparison(
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
     all_inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
 
+    from ..database import as_utc as _as_utc
+
     def period_stats(start, end):
-        atis = [a for a in all_atis if start <= a.date_soumission <= end]
+        atis = [a for a in all_atis if a.date_soumission and start <= _as_utc(a.date_soumission) <= end]
         approved = sum(1 for a in atis if a.statut == "approuve")
         rejected = sum(1 for a in atis if a.statut == "rejete")
-        inspections = [i for i in all_inspections if start <= i.date_inspection <= end]
+        inspections = [i for i in all_inspections if i.date_inspection and start <= _as_utc(i.date_inspection) <= end]
         conformes = sum(1 for i in inspections if i.statut_conformite == "conforme")
 
         decided = [a for a in atis if a.statut in {"approuve", "rejete"} and a.date_decision]
@@ -952,7 +955,7 @@ async def advanced_search(
                     "type": "ati",
                     "id": ati.id,
                     "title": f"ATI {ati.numero_ati}",
-                    "subtitle": f"{op.raison_sociale if op else 'Inconnu'} — {ati.secteur}",
+                    "subtitle": f"{op.raison_sociale if op else 'Inconnu'} · {ati.secteur}",
                     "statut": ati.statut,
                     "date": ati.date_soumission.isoformat(),
                     "link": f"/pnpi/ati/{ati.id}",
@@ -974,7 +977,7 @@ async def advanced_search(
                     "type": "operateur",
                     "id": op.id,
                     "title": op.raison_sociale,
-                    "subtitle": f"{op.secteur} — {op.province or ''}".replace("_", " ").title(),
+                    "subtitle": f"{op.secteur} · {op.province or ''}".replace("_", " ").title(),
                     "statut": "actif" if op.is_active else "inactif",
                     "date": None,
                     "link": f"/pnpi/operateurs/{op.id}",
@@ -996,8 +999,8 @@ async def advanced_search(
                 results.append({
                     "type": "inspection",
                     "id": insp.id,
-                    "title": f"Inspection — {insp.statut_conformite}",
-                    "subtitle": f"{op.raison_sociale if op else 'Inconnu'} — {insp.inspecteur_username}",
+                    "title": f"Inspection · {insp.statut_conformite}",
+                    "subtitle": f"{op.raison_sociale if op else 'Inconnu'} · {insp.inspecteur_username}",
                     "statut": insp.statut_conformite,
                     "date": insp.date_inspection.isoformat(),
                     "link": f"/pnpi/inspections/{insp.id}",
@@ -1279,13 +1282,14 @@ async def annual_report(
 
     start = dt(year, 1, 1, tzinfo=timezone.utc)
     end = dt(year, 12, 31, 23, 59, 59, tzinfo=timezone.utc)
+    from ..database import as_utc as _as_utc
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    year_atis = [a for a in all_atis if start <= a.date_soumission <= end]
+    year_atis = [a for a in all_atis if a.date_soumission and start <= _as_utc(a.date_soumission) <= end]
 
     all_ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
     all_insp = db.execute(select(InspectionConformiteORM)).scalars().all()
-    year_insp = [i for i in all_insp if start <= i.date_inspection <= end]
+    year_insp = [i for i in all_insp if i.date_inspection and start <= _as_utc(i.date_inspection) <= end]
 
     # Monthly breakdown
     monthly = defaultdict(lambda: {"soumissions": 0, "approuves": 0, "rejetes": 0, "inspections": 0})

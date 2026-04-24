@@ -25,9 +25,14 @@ export function MonEspace() {
 
   useEffect(() => {
     fetch("/api/pnpi/ati?limit=100")
-      .then((r) => r.json())
-      .then((data) => setAtis(data.atis || data || []))
-      .catch(() => {})
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => {
+        // Ne set que si c'est un array (sinon c'est une reponse d'erreur JSON)
+        if (Array.isArray(data)) setAtis(data);
+        else if (Array.isArray(data?.atis)) setAtis(data.atis);
+        else setAtis([]);
+      })
+      .catch(() => setAtis([]))
       .finally(() => setLoading(false));
   }, []);
 

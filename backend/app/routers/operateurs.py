@@ -1,4 +1,4 @@
-"""PNPI — Endpoints de gestion des operateurs industriels."""
+"""PNPI · Endpoints de gestion des operateurs industriels."""
 from __future__ import annotations
 
 import csv
@@ -177,7 +177,7 @@ async def list_operateurs(
     is_active: Optional[bool] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> List[OperateurBrief]:
     query = select(OperateurIndustrielORM)
@@ -270,7 +270,7 @@ async def create_operateur(
 @router.get("/operateurs/{operateur_id}", response_model=OperateurRead, summary="Detail d'un operateur")
 async def get_operateur(
     operateur_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> OperateurRead:
     op = db.get(OperateurIndustrielORM, operateur_id)
@@ -349,7 +349,7 @@ async def operateur_risk_profile(
 @router.get("/operateurs/{operateur_id}/ati", response_model=List[ATIBrief], summary="ATI d'un operateur")
 async def list_operateur_atis(
     operateur_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> List[ATIBrief]:
     op = db.get(OperateurIndustrielORM, operateur_id)
@@ -455,7 +455,7 @@ async def get_operator_timeline(
             "date": insp.date_inspection.isoformat(),
             "type": "inspection",
             "icon": icons.get(insp.statut_conformite, "\U0001f50d"),
-            "title": f"Inspection — {insp.statut_conformite.replace('_', ' ')}",
+            "title": f"Inspection · {insp.statut_conformite.replace('_', ' ')}",
             "detail": f"Inspecteur: {insp.inspecteur_username}",
             "color": colors.get(insp.statut_conformite, "#526175"),
         })

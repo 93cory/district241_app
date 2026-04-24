@@ -15,7 +15,9 @@ export default async function InspecteurDashboard() {
     if (kpiRes.ok) kpis = await kpiRes.json();
     if (inspRes.ok) {
       const data = await inspRes.json();
-      recentInspections = data.inspections || data || [];
+      if (Array.isArray(data)) recentInspections = data;
+      else if (Array.isArray(data?.inspections)) recentInspections = data.inspections;
+      else recentInspections = [];
     }
   } catch {}
 
@@ -40,7 +42,7 @@ export default async function InspecteurDashboard() {
           ].map((kpi) => (
             <div key={kpi.label} style={{
               padding: "10px 18px", borderRadius: 12,
-              background: "rgba(255,255,255,0.12)", minWidth: 120,
+              background: "rgba(255, 255, 255, 0.72)", minWidth: 120,
             }}>
               <div style={{ fontSize: 11, opacity: 0.8 }}>{kpi.label}</div>
               <div style={{ fontSize: 24, fontWeight: 800 }}>{kpi.value}</div>
@@ -90,7 +92,7 @@ export default async function InspecteurDashboard() {
                   return (
                     <tr key={insp.id}>
                       <td style={{ fontSize: 13 }}>
-                        {insp.date_inspection ? new Date(insp.date_inspection).toLocaleDateString("fr-FR") : "—"}
+                        {insp.date_inspection ? new Date(insp.date_inspection).toLocaleDateString("fr-FR") : "·"}
                       </td>
                       <td style={{ fontWeight: 600 }}>{insp.operateur_nom || insp.operateur_id?.slice(0, 8)}</td>
                       <td>
@@ -98,7 +100,7 @@ export default async function InspecteurDashboard() {
                           padding: "2px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700,
                           background: `${confColor}15`, color: confColor,
                         }}>
-                          {insp.statut_conformite?.replace(/_/g, " ") || "—"}
+                          {insp.statut_conformite?.replace(/_/g, " ") || "·"}
                         </span>
                       </td>
                       <td>

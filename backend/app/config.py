@@ -1,4 +1,4 @@
-"""PNPI — Configuration centralisee via une classe Settings simple."""
+"""PNPI · Configuration centralisee via une classe Settings simple."""
 from __future__ import annotations
 
 import os
@@ -7,7 +7,7 @@ import os
 class Settings:
     secret_key: str = os.getenv("PNPI_SECRET_KEY", os.getenv("PNPI_SECRET_KEY", "change-me-in-production"))
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = int(os.getenv("PNPI_ACCESS_TOKEN_EXPIRE_MINUTES", "480"))  # 8h par defaut
     refresh_token_expire_days: int = int(os.getenv("PNPI_REFRESH_TOKEN_EXPIRE_DAYS", os.getenv("PNPI_REFRESH_TOKEN_EXPIRE_DAYS", "14")))
     database_url: str = os.getenv("PNPI_DATABASE_URL", os.getenv("PNPI_DATABASE_URL", "sqlite:///./pnpi.db"))
     env: str = os.getenv("PNPI_ENV", os.getenv("PNPI_ENV", "development")).strip().lower()
@@ -27,7 +27,7 @@ class Settings:
         # Re-evaluate at instantiation time so env vars are read dynamically
         self.secret_key = os.getenv("PNPI_SECRET_KEY", os.getenv("PNPI_SECRET_KEY", "change-me-in-production"))
         self.algorithm = "HS256"
-        self.access_token_expire_minutes = 60
+        self.access_token_expire_minutes = int(os.getenv("PNPI_ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
         self.refresh_token_expire_days = int(os.getenv("PNPI_REFRESH_TOKEN_EXPIRE_DAYS", os.getenv("PNPI_REFRESH_TOKEN_EXPIRE_DAYS", "14")))
         self.database_url = os.getenv("PNPI_DATABASE_URL", os.getenv("PNPI_DATABASE_URL", "sqlite:///./pnpi.db"))
         self.env = os.getenv("PNPI_ENV", os.getenv("PNPI_ENV", "development")).strip().lower()

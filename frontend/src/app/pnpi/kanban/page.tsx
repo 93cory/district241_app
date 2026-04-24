@@ -36,9 +36,9 @@ export default function KanbanPage() {
 
   useEffect(() => {
     fetch("/api/pnpi/ati?limit=200")
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : []))
       .then((data) => {
-        const atis = data.atis || data || [];
+        const atis = Array.isArray(data) ? data : Array.isArray(data?.atis) ? data.atis : [];
         const cols: Column[] = COLUMNS_DEF.map((def) => ({
           ...def,
           items: atis
@@ -92,7 +92,7 @@ export default function KanbanPage() {
         showToast("Statut mis a jour", "success");
       } else {
         showToast("Transition non autorisee", "error");
-        // Revert — reload
+        // Revert · reload
         window.location.reload();
       }
     } catch {
@@ -113,7 +113,7 @@ export default function KanbanPage() {
   return (
     <div style={{ padding: "24px 20px" }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 16px", paddingLeft: 12 }}>
-        Pipeline ATI — Vue Kanban
+        Pipeline ATI · Vue Kanban
       </h1>
 
       <div style={{

@@ -1,4 +1,4 @@
-"""PNPI — Generation du digest email quotidien."""
+"""PNPI · Generation du digest email quotidien."""
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
@@ -7,7 +7,7 @@ from collections import defaultdict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..database import now_utc
+from ..database import now_utc, as_utc
 from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM
 from ..models.core import AuditEventORM
 
@@ -19,8 +19,8 @@ def generate_daily_digest(db: Session, username: str, roles: list[str]) -> dict:
 
     # Recent ATI activity
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
-    new_atis = [a for a in all_atis if a.date_soumission >= yesterday]
-    decided_today = [a for a in all_atis if a.date_decision and a.date_decision >= yesterday]
+    new_atis = [a for a in all_atis if a.date_soumission and as_utc(a.date_soumission) >= yesterday]
+    decided_today = [a for a in all_atis if a.date_decision and as_utc(a.date_decision) >= yesterday]
 
     # Pending for user (if instructeur)
     pending = []
@@ -53,7 +53,7 @@ def generate_daily_digest(db: Session, username: str, roles: list[str]) -> dict:
         sections.append({
             "title": f"{len(new_atis)} nouveau(x) ATI soumis",
             "icon": "\U0001f4cb",
-            "items": [f"{a.numero_ati} — {a.operateur.raison_sociale if a.operateur else '?'}" for a in new_atis[:5]],
+            "items": [f"{a.numero_ati} · {a.operateur.raison_sociale if a.operateur else '?'}" for a in new_atis[:5]],
         })
 
     if decided_today:
@@ -76,14 +76,14 @@ def generate_daily_digest(db: Session, username: str, roles: list[str]) -> dict:
         sections.append({
             "title": f"\u26a0\ufe0f {len(overdue)} ATI en depassement SLA",
             "icon": "\U0001f6a8",
-            "items": [f"{a.numero_ati} — {(now.date() - a.date_soumission.date()).days}j / {a.sla_jours}j SLA" for a in overdue[:5]],
+            "items": [f"{a.numero_ati} · {(now.date() - a.date_soumission.date()).days}j / {a.sla_jours}j SLA" for a in overdue[:5]],
         })
 
     if recent_insp:
         sections.append({
             "title": f"{len(recent_insp)} inspection(s) realisee(s)",
             "icon": "\U0001f50d",
-            "items": [f"{i.statut_conformite} — {i.inspecteur_username}" for i in recent_insp[:3]],
+            "items": [f"{i.statut_conformite} · {i.inspecteur_username}" for i in recent_insp[:3]],
         })
 
     return {

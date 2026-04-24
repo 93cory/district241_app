@@ -16,7 +16,7 @@ export interface NavLink {
 }
 
 // ---------------------------------------------------------------------------
-// Navigation config — define once, filter by role
+// Navigation config · define once, filter by role
 // ---------------------------------------------------------------------------
 
 interface NavEntry {
@@ -63,6 +63,8 @@ const NAV_ENTRIES: NavEntry[] = [
 
   // Operations
   { href: "/pnpi/mes-dossiers", label: "Mes Dossiers", roles: ["directeur", "instructeur"] },
+  { href: "/pnpi/mes-stats", label: "Mes Statistiques", roles: ["directeur", "instructeur", "inspecteur"] },
+  { href: "/pnpi/equipe", label: "Tableau d'equipe", roles: ["admin", "directeur"] },
   { href: "/pnpi/delegations", label: "Delegations", roles: ["admin", "directeur", "instructeur", "inspecteur"] },
   { href: "/pnpi/objectives", label: "Objectifs", roles: ["admin", "directeur", "instructeur", "inspecteur"] },
   { href: "/pnpi/renewals", label: "Renouvellements", roles: ["admin", "directeur", "instructeur", "operateur"] },
@@ -94,6 +96,8 @@ const NAV_ENTRIES: NavEntry[] = [
 
   // Admin
   { href: "/admin", label: "Administration", roles: ["admin"] },
+  { href: "/admin/simulateur", label: "Simulateur de role", roles: ["admin"] },
+  { href: "/admin/backups", label: "Sauvegardes BD", roles: ["admin"] },
   { href: "/pnpi/dashboard-config", label: "Config Dashboard", roles: ALL_DECISION },
   { href: "/admin/audit-log", label: "Audit", roles: ["admin"] },
   { href: "/admin/workflows", label: "Workflows", roles: ["admin"] },
@@ -161,4 +165,286 @@ export const getNavLinksForRoles = (roles: string[]): NavLink[] => {
   }
 
   return links;
+};
+
+// ---------------------------------------------------------------------------
+// Mega-nav · Navigation hierarchisee en 5 sections
+// Les liens sont filtres par role grace a l'index des liens visibles
+// ---------------------------------------------------------------------------
+
+export interface MegaGroup {
+  title: string;
+  items: NavLink[];
+}
+
+export interface MegaSection {
+  key: string;
+  label: string;
+  href: string; // lien d'entree par defaut (clic sur le label)
+  description: string;
+  icon: string; // cle d'icone SVG (resolue dans MegaNav)
+  groups: MegaGroup[];
+}
+
+export interface MegaNavData {
+  sections: MegaSection[];
+  tools: NavLink[];           // outils transversaux (recherche, annuaire...)
+  quickAccess: NavLink[];     // "Mon espace" selon role
+}
+
+/**
+ * Construit la navigation mega-menu pour les roles donnes.
+ * Chaque section est conservee si au moins un lien reste visible apres filtrage.
+ */
+export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
+  if (!roles.length) {
+    return {
+      sections: [],
+      tools: [],
+      quickAccess: [{ href: "/connexion", label: "Connexion" }],
+    };
+  }
+
+  // Index des hrefs autorises pour ce role
+  const permitted = new Set<string>();
+  for (const entry of NAV_ENTRIES) {
+    if (entry.roles.some((r) => roles.includes(r))) {
+      permitted.add(entry.href);
+    }
+  }
+  for (const entry of COMMON_LINKS) {
+    permitted.add(entry.href);
+  }
+
+  // Helper : filtre une liste de hrefs selon les permissions
+  const pick = (refs: Array<[string, string]>): NavLink[] =>
+    refs
+      .filter(([href]) => permitted.has(href))
+      .map(([href, label]) => ({ href, label }));
+
+  const filterGroups = (groups: MegaGroup[]): MegaGroup[] =>
+    groups
+      .map((g) => ({ ...g, items: g.items.filter((it) => permitted.has(it.href)) }))
+      .filter((g) => g.items.length > 0);
+
+  const sections: MegaSection[] = [
+    {
+      key: "dashboard",
+      label: "Tableau de bord",
+      href: "/pnpi",
+      description: "Pilotage ministeriel, indicateurs temps reel et synthese executive.",
+      icon: "dashboard",
+      groups: filterGroups([
+        {
+          title: "Vues d'ensemble",
+          items: pick([
+            ["/pnpi", "Dashboard PNPI"],
+            ["/pnpi/executive", "Synthese executive"],
+            ["/pnpi/live", "Temps reel"],
+            ["/pnpi/realtime-stats", "Statistiques live"],
+          ]),
+        },
+        {
+          title: "Briefing & Pilotage",
+          items: pick([
+            ["/briefing", "Briefing PNPI"],
+            ["/pilotage", "Salle de pilotage"],
+            ["/pnpi/presentation", "Mode presentation"],
+            ["/kiosk", "Mode kiosque"],
+          ]),
+        },
+        {
+          title: "Personnalisation",
+          items: pick([
+            ["/pnpi/builder", "Mon dashboard"],
+            ["/pnpi/dashboard-config", "Configuration"],
+            ["/pnpi/favorites", "Favoris"],
+          ]),
+        },
+      ]),
+    },
+    {
+      key: "agrements",
+      label: "Agrements",
+      href: "/pnpi/ati",
+      description: "Instruction des ATI, suivi des operateurs et gestion des dossiers.",
+      icon: "seal",
+      groups: filterGroups([
+        {
+          title: "Dossiers",
+          items: pick([
+            ["/pnpi/ati", "Agrements techniques"],
+            ["/pnpi/operateurs", "Operateurs"],
+            ["/pnpi/mes-dossiers", "Mes dossiers"],
+            ["/pnpi/mes-stats", "Mes statistiques"],
+            ["/pnpi/triage", "Triage"],
+            ["/pnpi/kanban", "Kanban"],
+          ]),
+        },
+        {
+          title: "Gestion du cycle",
+          items: pick([
+            ["/pnpi/equipe", "Tableau d'equipe"],
+            ["/pnpi/delegations", "Delegations"],
+            ["/pnpi/renewals", "Renouvellements"],
+            ["/pnpi/certifications", "Certifications"],
+            ["/pnpi/workflow-timing", "Timing workflow"],
+            ["/pnpi/email-alerts", "Alertes email"],
+            ["/pnpi/objectives", "Objectifs"],
+          ]),
+        },
+        {
+          title: "Cadre & Qualite",
+          items: pick([
+            ["/pnpi/conventions", "Conventions"],
+            ["/pnpi/reglementation", "Reglementation"],
+            ["/pnpi/data-quality", "Qualite donnees"],
+          ]),
+        },
+      ]),
+    },
+    {
+      key: "terrain",
+      label: "Terrain",
+      href: "/pnpi/inspections",
+      description: "Inspections, cartographie, couverture provinciale et mobilite.",
+      icon: "map",
+      groups: filterGroups([
+        {
+          title: "Inspections",
+          items: pick([
+            ["/pnpi/inspections", "Inspections"],
+            ["/pnpi/calendar", "Calendrier"],
+          ]),
+        },
+        {
+          title: "Geographie",
+          items: pick([
+            ["/pnpi/map", "Carte nationale"],
+            ["/pnpi/heatmap", "Heatmap"],
+            ["/pnpi/governor", "Par province"],
+          ]),
+        },
+        {
+          title: "Mobilite",
+          items: pick([
+            ["/pnpi/mobile", "Terrain mobile"],
+          ]),
+        },
+      ]),
+    },
+    {
+      key: "analyses",
+      label: "Analyses",
+      href: "/pnpi/stats",
+      description: "Rapports, indicateurs d'impact et aide a la decision strategique.",
+      icon: "chart",
+      groups: filterGroups([
+        {
+          title: "Rapports & Statistiques",
+          items: pick([
+            ["/pnpi/stats", "Statistiques"],
+            ["/pnpi/advanced-stats", "Statistiques avancees"],
+            ["/pnpi/pivot", "Tableau croise"],
+            ["/pnpi/reports", "Rapports"],
+            ["/pnpi/annual-report", "Bilan annuel"],
+            ["/pnpi/performance", "Performance"],
+          ]),
+        },
+        {
+          title: "Comparaisons & Predictions",
+          items: pick([
+            ["/pnpi/comparison", "Comparaisons"],
+            ["/pnpi/multi-year", "Multi-annees"],
+            ["/pnpi/before-after", "Avant / Apres"],
+            ["/pnpi/benchmark", "Benchmark"],
+            ["/pnpi/predictions", "Predictions"],
+            ["/pnpi/smart-alerts", "Alertes IA"],
+          ]),
+        },
+        {
+          title: "Impact & Strategie",
+          items: pick([
+            ["/pnpi/impact", "Impact global"],
+            ["/pnpi/economic-impact", "Impact economique"],
+            ["/pnpi/social-impact", "Impact social"],
+            ["/pnpi/carbon", "Empreinte carbone"],
+            ["/pnpi/odd", "Objectifs ODD"],
+            ["/pnpi/cemac", "CEMAC"],
+            ["/pnpi/budget", "Budget"],
+            ["/pnpi/roi-simulator", "Simulateur ROI"],
+            ["/pnpi/roadmap", "Feuille de route"],
+          ]),
+        },
+      ]),
+    },
+    {
+      key: "admin",
+      label: "Administration",
+      href: "/admin",
+      description: "Gouvernance, securite, integrations et supervision technique.",
+      icon: "gear",
+      groups: filterGroups([
+        {
+          title: "Gouvernance",
+          items: pick([
+            ["/admin", "Tableau admin"],
+            ["/admin/simulateur", "Simulateur de role"],
+            ["/admin/orgchart", "Organigramme"],
+            ["/admin/raci", "Matrice RACI"],
+            ["/admin/workflows", "Workflows"],
+            ["/pnpi/activity", "Activite"],
+          ]),
+        },
+        {
+          title: "Securite & Audit",
+          items: pick([
+            ["/admin/security", "Securite"],
+            ["/admin/audit-log", "Journal d'audit"],
+            ["/admin/backups", "Sauvegardes BD"],
+          ]),
+        },
+        {
+          title: "Integrations & Technique",
+          items: pick([
+            ["/admin/integrations", "Integrations"],
+            ["/admin/api-usage", "Usage API"],
+            ["/api-docs", "Documentation API"],
+            ["/embed", "Widgets"],
+            ["/changelog", "Historique versions"],
+          ]),
+        },
+        {
+          title: "Communication",
+          items: pick([
+            ["/admin/announcements", "Annonces"],
+            ["/admin/newsletter", "Newsletter"],
+            ["/admin/scheduled-reports", "Rapports planifies"],
+          ]),
+        },
+      ]),
+    },
+  ].filter((s) => s.groups.length > 0);
+
+  const tools: NavLink[] = pick([
+    ["/pnpi/search", "Recherche"],
+    ["/pnpi/annuaire", "Annuaire"],
+    ["/pnpi/messages", "Messages"],
+    ["/pnpi/notes", "Notes"],
+    ["/pnpi/success-stories", "Reussites"],
+    ["/pnpi/formation", "Formation"],
+    ["/pnpi/marketplace", "Marketplace"],
+    ["/pnpi/mentoring", "Parrainage"],
+    ["/pnpi/polls", "Sondages"],
+    ["/pnpi/feedback", "Feedback"],
+    ["/aide", "Aide"],
+  ]);
+
+  const quickAccess: NavLink[] = pick([
+    ["/pnpi/guichet", "Mon guichet"],
+    ["/inspecteur", "Mes inspections"],
+    ["/profil", "Mon profil"],
+  ]);
+
+  return { sections, tools, quickAccess };
 };

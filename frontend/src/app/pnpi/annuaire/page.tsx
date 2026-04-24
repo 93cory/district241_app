@@ -17,14 +17,26 @@ export default async function AnnuairePage() {
     const res = await backendRequest("/admin/users");
     if (res.ok) {
       const data = await res.json();
-      users = (data.users || data || []).filter((u: any) => u.is_active);
+      const list = Array.isArray(data) ? data : Array.isArray(data?.users) ? data.users : [];
+      users = list.filter((u: any) => u.is_active);
     }
   } catch {}
 
-  // Group by role
+  // Group by role · /admin/users retourne un array de roles, /auth/me aussi.
+  // Anciennement : roles_csv string separee par virgules. On supporte les deux.
   const byRole: Record<string, any[]> = {};
   for (const user of users) {
-    const roles = (user.roles || user.roles_csv || "").split(",").map((r: string) => r.trim()).filter(Boolean);
+    const rawRoles = user.roles;
+    let roles: string[];
+    if (Array.isArray(rawRoles)) {
+      roles = rawRoles.filter(Boolean);
+    } else if (typeof rawRoles === "string") {
+      roles = rawRoles.split(",").map((r: string) => r.trim()).filter(Boolean);
+    } else if (typeof user.roles_csv === "string") {
+      roles = user.roles_csv.split(",").map((r: string) => r.trim()).filter(Boolean);
+    } else {
+      roles = [];
+    }
     const primaryRole = roles[0] || "autre";
     if (!byRole[primaryRole]) byRole[primaryRole] = [];
     byRole[primaryRole].push({ ...user, roles });
@@ -84,7 +96,7 @@ export default async function AnnuairePage() {
                     </div>
                     <div style={{ fontSize: 11, color: "var(--text-soft, #526175)" }}>
                       @{user.username}
-                      {user.province && <span> — {user.province.replace("_", " ")}</span>}
+                      {user.province && <span> · {user.province.replace("_", " ")}</span>}
                     </div>
                   </div>
                   <a href={`/pnpi/messages/new?to=${user.username}`} style={{

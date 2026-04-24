@@ -1,4 +1,4 @@
-"""PNPI — Endpoints de gestion des ATI (Agrements Techniques Industriels)."""
+"""PNPI · Endpoints de gestion des ATI (Agrements Techniques Industriels)."""
 from __future__ import annotations
 
 import io
@@ -142,10 +142,15 @@ async def list_atis(
     assigned_to_me: bool = Query(default=False),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=500),
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> List[ATIRead]:
     query = select(AgrementTechniqueIndustrielORM)
+    # Les operateurs ne voient que leurs propres dossiers.
+    role_values = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    is_privileged = bool(role_values & {"admin", "ministre", "directeur", "instructeur", "inspecteur"})
+    if not is_privileged and "operateur" in role_values:
+        query = query.where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
     if assigned_to_me:
         query = query.where(AgrementTechniqueIndustrielORM.instructeur_username == current_user.username)
     if statut:
@@ -202,7 +207,7 @@ async def list_atis_paginated(
              description="Cree un agrement technique industriel et genere son numero unique.")
 async def create_ati(
     payload: ATICreate,
-    current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre)),
+    current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> ATIRead:
     operateur = db.get(OperateurIndustrielORM, payload.operateur_id)
@@ -441,12 +446,17 @@ async def get_triage_queue(
 @router.get("/ati/{ati_id}", response_model=ATIRead, summary="Detail d'un ATI")
 async def get_ati(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> ATIRead:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
+    # Les operateurs ne peuvent voir que leurs propres dossiers.
+    role_values = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    is_privileged = bool(role_values & {"admin", "ministre", "directeur", "instructeur", "inspecteur"})
+    if not is_privileged and "operateur" in role_values and ati.created_by != current_user.username:
+        raise HTTPException(status_code=403, detail="Acces restreint a vos propres dossiers.")
     return _to_ati_read(ati)
 
 
@@ -653,12 +663,16 @@ async def ati_sla_status(
             summary="Historique des transitions ATI")
 async def ati_historique(
     ati_id: str,
-    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> List[ATITransitionRead]:
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
+    role_values = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    is_privileged = bool(role_values & {"admin", "ministre", "directeur", "instructeur", "inspecteur"})
+    if not is_privileged and "operateur" in role_values and ati.created_by != current_user.username:
+        raise HTTPException(status_code=403, detail="Acces restreint a vos propres dossiers.")
 
     transitions = db.execute(
         select(ATITransitionORM)
@@ -705,7 +719,7 @@ async def ati_changelog(
             "type": "transition",
             "timestamp": t.changed_at.isoformat(),
             "actor": t.changed_by,
-            "summary": f"{t.previous_statut or '—'} → {t.new_statut or '—'}",
+            "summary": f"{t.previous_statut or '·'} → {t.new_statut or '·'}",
             "detail": t.note or "",
         })
 
@@ -717,7 +731,7 @@ async def ati_changelog(
                 "type": "field_change",
                 "timestamp": fc.get("changed_at", ""),
                 "actor": fc.get("changed_by", ""),
-                "summary": f"Champ '{fc.get('field', '')}': {fc.get('old_value', '—')} → {fc.get('new_value', '—')}",
+                "summary": f"Champ '{fc.get('field', '')}': {fc.get('old_value', '·')} → {fc.get('new_value', '·')}",
                 "detail": "",
             })
     except Exception:
@@ -822,10 +836,10 @@ async def download_ati_pdf(
         data = [
             ["Statut", ati.statut.upper().replace("_", " "), "Priorite", ati.priorite.capitalize()],
             ["Secteur", ati.secteur.capitalize(), "Etape", ati.etape.replace("_", " ").capitalize()],
-            ["Date soumission", ati.date_soumission.strftime("%d/%m/%Y") if ati.date_soumission else "—", "SLA (jours)", str(ati.sla_jours)],
+            ["Date soumission", ati.date_soumission.strftime("%d/%m/%Y") if ati.date_soumission else "·", "SLA (jours)", str(ati.sla_jours)],
         ]
         if ati.date_decision:
-            data.append(["Date decision", ati.date_decision.strftime("%d/%m/%Y"), "Ref. decision", ati.numero_reference_decision or "—"])
+            data.append(["Date decision", ati.date_decision.strftime("%d/%m/%Y"), "Ref. decision", ati.numero_reference_decision or "·"])
 
         t = Table(data, colWidths=[4*cm, 6*cm, 4*cm, 3*cm])
         t.setStyle(TableStyle([
@@ -845,8 +859,8 @@ async def download_ati_pdf(
             story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb")))
             op_data = [
                 ["Raison sociale", op.raison_sociale, "NIF", op.nif_gabon],
-                ["Province", op.province.replace("_", " ").capitalize(), "Ville", op.ville or "—"],
-                ["Secteur", op.secteur.capitalize(), "Effectif", str(op.effectif_declare or "—")],
+                ["Province", op.province.replace("_", " ").capitalize(), "Ville", op.ville or "·"],
+                ["Secteur", op.secteur.capitalize(), "Effectif", str(op.effectif_declare or "·")],
             ]
             ot = Table(op_data, colWidths=[4*cm, 6*cm, 4*cm, 3*cm])
             ot.setStyle(TableStyle([
@@ -877,7 +891,7 @@ async def download_ati_pdf(
         story.append(Spacer(1, 1*cm))
         story.append(HRFlowable(width="100%", thickness=1, color=bleu))
         story.append(Paragraph(
-            f"Document genere par la PNPI — {now_utc().strftime('%d/%m/%Y %H:%M')} UTC",
+            f"Document genere par la PNPI · {now_utc().strftime('%d/%m/%Y %H:%M')} UTC",
             ParagraphStyle("footer", parent=styles["Normal"], alignment=TA_CENTER, fontSize=7, textColor=colors.gray)
         ))
 
@@ -1005,18 +1019,41 @@ async def list_pnpi_alerts(
     alerts = []
     now = now_utc()
 
-    # 1. ATIs en retard SLA
+    # 1. ATIs en retard SLA (+ predictives : va depasser dans 3j / 7j)
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
     for a in all_atis:
         if a.statut in _TERMINAL_STATUTS:
             continue
         age = max((now.date() - a.date_soumission.date()).days, 0)
-        if age > a.sla_jours:
+        days_to_sla = a.sla_jours - age  # positif = reste du temps, negatif = en retard
+
+        if days_to_sla < 0:
+            # En retard confirme
             alerts.append({
                 "type": "sla_overdue",
                 "severity": "high" if age > a.sla_jours * 1.5 else "medium",
                 "title": f"ATI {a.numero_ati} en retard SLA",
-                "message": f"Age: {age}j / SLA: {a.sla_jours}j — {a.type_activite}",
+                "message": f"Age : {age}j / SLA : {a.sla_jours}j · {a.type_activite}",
+                "target_id": a.id,
+                "created_at": now.isoformat(),
+            })
+        elif 0 < days_to_sla <= 3:
+            # Predictif : va depasser dans <= 3j
+            alerts.append({
+                "type": "sla_predictive",
+                "severity": "medium",
+                "title": f"ATI {a.numero_ati} · SLA dans {days_to_sla}j",
+                "message": f"Va depasser le SLA dans {days_to_sla} jour(s). Traiter maintenant.",
+                "target_id": a.id,
+                "created_at": now.isoformat(),
+            })
+        elif 3 < days_to_sla <= 7:
+            # Predictif moins urgent : SLA approche dans la semaine
+            alerts.append({
+                "type": "sla_predictive_week",
+                "severity": "info",
+                "title": f"ATI {a.numero_ati} · SLA dans {days_to_sla}j",
+                "message": f"Echeance SLA dans {days_to_sla}j. A planifier.",
                 "target_id": a.id,
                 "created_at": now.isoformat(),
             })
@@ -1033,7 +1070,7 @@ async def list_pnpi_alerts(
         alerts.append({
             "type": "non_conforme",
             "severity": "high",
-            "title": f"Inspection non conforme — {insp.operateur_id}",
+            "title": f"Inspection non conforme · {insp.operateur_id}",
             "message": insp.observations[:120] if insp.observations else "",
             "target_id": insp.id,
             "created_at": insp.date_inspection.isoformat(),
@@ -1050,7 +1087,7 @@ async def list_pnpi_alerts(
                     "type": "expiring_soon",
                     "severity": sev,
                     "title": f"ATI {a.numero_ati} expire dans {days_left}j",
-                    "message": f"Expiration: {a.date_expiration.date().isoformat()} — {a.type_activite}",
+                    "message": f"Expiration: {a.date_expiration.date().isoformat()} · {a.type_activite}",
                     "target_id": a.id,
                     "created_at": now.isoformat(),
                 })
@@ -1060,6 +1097,448 @@ async def list_pnpi_alerts(
     alerts.sort(key=lambda x: severity_order.get(x["severity"], 9))
 
     return alerts
+
+
+@router.get("/courriers/templates", summary="Liste des templates de courriers administratifs")
+async def list_courrier_templates(
+    _: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+):
+    from ..core.courriers import COURRIER_TEMPLATES
+    return {
+        "templates": [
+            {"id": t["id"], "category": t["category"], "title": t["title"]}
+            for t in COURRIER_TEMPLATES
+        ]
+    }
+
+
+@router.get("/ati/{ati_id}/courriers/{template_id}", summary="Genere un courrier pre-redige pour un ATI")
+async def render_courrier(
+    ati_id: str,
+    template_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    from ..core.courriers import render
+    from ..models.pnpi import OperateurIndustrielORM
+
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+    op = db.get(OperateurIndustrielORM, ati.operateur_id)
+
+    age_jours = (now_utc().date() - ati.date_soumission.date()).days
+    try:
+        result = render(template_id, {
+            "numero_ati": ati.numero_ati,
+            "operateur_nom": op.raison_sociale if op else "(operateur)",
+            "instructeur_nom": current_user.full_name or current_user.username,
+            "date_decision": ati.date_decision.strftime("%d/%m/%Y") if ati.date_decision else "(date)",
+            "date_expiration": ati.date_expiration.strftime("%d/%m/%Y") if ati.date_expiration else "(expiration)",
+            "numero_reference_decision": ati.numero_reference_decision or "(ref)",
+            "age_jours": age_jours,
+            "ville": op.ville if op else "Libreville",
+        })
+    except KeyError:
+        raise HTTPException(404, f"Template {template_id} introuvable.")
+
+    return result
+
+
+@router.post("/ati/{ati_id}/sign-decision", summary="Signer electroniquement la decision finale d'un ATI")
+async def sign_decision(
+    ati_id: str,
+    data: dict,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.ministre)),
+    db: Session = Depends(get_db),
+):
+    """Associe une signature manuscrite (data URL base64) a la decision finale de l'ATI.
+    Stocke le PNG dans uploads/signatures/{ati_id}/{user}_{timestamp}.png
+    et trace dans l'audit.
+    """
+    import base64
+    import re
+    from pathlib import Path
+
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+    if ati.statut not in ("approuve", "rejete"):
+        raise HTTPException(400, "La decision doit etre approuve ou rejete avant signature.")
+
+    data_url = (data.get("signature_dataurl") or "").strip()
+    m = re.match(r"^data:image/png;base64,(.+)$", data_url)
+    if not m:
+        raise HTTPException(400, "Format de signature invalide (attend data:image/png;base64,...).")
+
+    try:
+        png_bytes = base64.b64decode(m.group(1))
+    except Exception:
+        raise HTTPException(400, "Signature base64 illisible.")
+
+    sig_dir = Path("uploads/signatures") / ati_id
+    sig_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{current_user.username}_{now_utc().strftime('%Y%m%d_%H%M%S')}.png"
+    sig_path = sig_dir / filename
+    sig_path.write_bytes(png_bytes)
+
+    write_audit_event(
+        db, actor=current_user.username, action="ati.sign_decision",
+        target=ati.numero_ati,
+        details=f"Signature {current_user.username} apposee sur decision {ati.statut} (fichier: {filename}, {len(png_bytes)} octets)",
+    )
+    db.commit()
+
+    return {
+        "status": "ok",
+        "filename": filename,
+        "path": str(sig_path),
+        "signed_by": current_user.username,
+        "signed_at": now_utc().isoformat(),
+        "ati_statut": ati.statut,
+    }
+
+
+@router.get("/ati/{ati_id}/assign-suggestion", summary="Suggere le meilleur instructeur pour un ATI (regles auto)")
+async def suggest_assignment(
+    ati_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Scoring : match de nom d'utilisateur sur secteur (instructeur_bois pour bois...)
+    + charge actuelle (moins charge = prioritaire) + taux d'approbation.
+    """
+    from ..models.core import UserAccountORM
+
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+
+    users = db.execute(
+        select(UserAccountORM).where(UserAccountORM.is_active.is_(True))
+    ).scalars().all()
+    instructeurs = [u for u in users if "instructeur" in (u.roles_csv or "").split(",")]
+
+    candidates = []
+    for u in instructeurs:
+        # Charge actuelle : ATI non-terminaux assignes
+        charge = db.execute(
+            select(func.count()).select_from(AgrementTechniqueIndustrielORM).where(
+                AgrementTechniqueIndustrielORM.instructeur_username == u.username,
+                AgrementTechniqueIndustrielORM.statut.not_in(list(_TERMINAL_STATUTS)),
+            )
+        ).scalar() or 0
+
+        # Specialisation par username (instructeur_bois, instructeur_mines)
+        sector_match = ati.secteur in u.username.lower()
+
+        # Score : sector_match × 100 - charge × 5
+        score = (100 if sector_match else 0) - charge * 5
+
+        candidates.append({
+            "username": u.username,
+            "full_name": u.full_name,
+            "charge_actuelle": charge,
+            "sector_match": sector_match,
+            "score": score,
+        })
+
+    candidates.sort(key=lambda x: x["score"], reverse=True)
+
+    return {
+        "ati_id": ati_id,
+        "numero_ati": ati.numero_ati,
+        "secteur": ati.secteur,
+        "best_match": candidates[0] if candidates else None,
+        "all_candidates": candidates,
+    }
+
+
+@router.post("/ati/{ati_id}/peer-review/request", summary="Demander une relecture par un pair avant decision")
+async def request_peer_review(
+    ati_id: str,
+    data: dict,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    """Marque un ATI comme necessitant une double signature.
+    Ajoute un commentaire interne 'peer-review requested'.
+    """
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+
+    reviewer = (data.get("reviewer_username") or "").strip()
+    if not reviewer:
+        raise HTTPException(400, "Identifiant du relecteur requis.")
+    note = (data.get("note") or "").strip() or f"Relecture demandee a {reviewer}"
+
+    from ..models.pnpi import ATICommentORM
+    import uuid as _uuid
+    db.add(ATICommentORM(
+        id=str(_uuid.uuid4()),
+        ati_id=ati_id,
+        author_username=current_user.username,
+        body=f"[PEER-REVIEW] {note}",
+        is_internal=True,
+    ))
+    write_audit_event(
+        db, actor=current_user.username, action="ati.peer_review.request",
+        target=ati.numero_ati, details=f"Reviewer demande : {reviewer}",
+    )
+    db.commit()
+    return {"status": "ok", "ati_id": ati_id, "reviewer": reviewer}
+
+
+@router.post("/ati/{ati_id}/peer-review/approve", summary="Approuver une relecture par un pair")
+async def approve_peer_review(
+    ati_id: str,
+    data: dict,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    """Signe la double validation. Le reviewer doit etre different de l'instructeur d'origine."""
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+
+    if ati.instructeur_username == current_user.username:
+        raise HTTPException(400, "Vous ne pouvez pas relire un dossier que vous avez instruit.")
+
+    decision = (data.get("decision") or "approuve").lower()
+    if decision not in {"approuve", "demande_revision"}:
+        raise HTTPException(400, "Decision invalide (approuve | demande_revision).")
+
+    note = (data.get("note") or "").strip() or f"Peer review {decision}"
+
+    from ..models.pnpi import ATICommentORM
+    import uuid as _uuid
+    db.add(ATICommentORM(
+        id=str(_uuid.uuid4()),
+        ati_id=ati_id,
+        author_username=current_user.username,
+        body=f"[PEER-REVIEW · {decision.upper()}] {note}",
+        is_internal=True,
+    ))
+    write_audit_event(
+        db, actor=current_user.username, action=f"ati.peer_review.{decision}",
+        target=ati.numero_ati, details=note,
+    )
+    db.commit()
+    return {"status": "ok", "decision": decision}
+
+
+@router.get("/team/workload", summary="Charge de travail par instructeur (pour directeur)")
+async def team_workload(
+    _: User = Depends(require_roles(Role.admin, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Liste des instructeurs avec leur charge : ATI actifs, en retard, decides ce mois,
+    taux approbation. Permet au directeur de reequilibrer les affectations.
+    """
+    from ..models.core import UserAccountORM
+
+    # Instructeurs + directeurs
+    users = db.execute(
+        select(UserAccountORM).where(UserAccountORM.is_active.is_(True))
+    ).scalars().all()
+    instructeurs = [u for u in users if "instructeur" in (u.roles_csv or "").split(",")]
+
+    now = now_utc()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    out = []
+    for user in instructeurs:
+        # ATI assignes
+        my_atis = db.execute(
+            select(AgrementTechniqueIndustrielORM).where(
+                AgrementTechniqueIndustrielORM.instructeur_username == user.username
+            )
+        ).scalars().all()
+
+        actifs = [a for a in my_atis if a.statut not in _TERMINAL_STATUTS]
+        en_retard = sum(1 for a in actifs if (now.date() - a.date_soumission.date()).days > a.sla_jours)
+
+        # Transitions faites ce mois
+        month_transitions = db.execute(
+            select(ATITransitionORM).where(
+                ATITransitionORM.changed_by == user.username,
+                ATITransitionORM.changed_at >= month_start,
+            )
+        ).scalars().all()
+
+        decisions_mois = [t for t in month_transitions if t.new_statut in ("approuve", "rejete")]
+        approuves_mois = sum(1 for t in decisions_mois if t.new_statut == "approuve")
+
+        taux_approb = (approuves_mois / len(decisions_mois) * 100) if decisions_mois else None
+
+        # Niveau de charge : vert < 10, orange 10-20, rouge > 20
+        if len(actifs) > 20: charge_level = "critical"
+        elif len(actifs) > 10: charge_level = "warning"
+        else: charge_level = "ok"
+        if en_retard >= 3: charge_level = "critical"
+
+        out.append({
+            "username": user.username,
+            "full_name": user.full_name,
+            "nb_actifs": len(actifs),
+            "nb_en_retard": en_retard,
+            "decisions_mois": len(decisions_mois),
+            "approuves_mois": approuves_mois,
+            "taux_approbation_pct": round(taux_approb, 1) if taux_approb is not None else None,
+            "charge_level": charge_level,
+        })
+
+    # Trier par charge decroissante
+    out.sort(key=lambda x: (x["nb_en_retard"], x["nb_actifs"]), reverse=True)
+    return out
+
+
+@router.get("/ati/{ati_id}/reglementation", summary="Articles reglementaires applicables a un ATI")
+async def ati_regulations(
+    ati_id: str,
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    from ..core.reglementation import get_regulations_for_sector
+    return {
+        "secteur": ati.secteur,
+        "references": get_regulations_for_sector(ati.secteur),
+    }
+
+
+@router.get("/delays-by-sector", summary="Estimation delai traitement par secteur (mediane + moyenne)")
+async def delays_by_sector(
+    _: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Retourne pour chaque secteur le delai mediane/moyen des ATI approuves,
+    pour permettre a un operateur d'estimer le delai de son prochain dossier.
+    """
+    decided = db.execute(
+        select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.statut == "approuve",
+            AgrementTechniqueIndustrielORM.date_decision.isnot(None),
+        )
+    ).scalars().all()
+
+    by_sector: dict[str, list[int]] = {}
+    for a in decided:
+        if not a.date_decision:
+            continue
+        delay = (a.date_decision.date() - a.date_soumission.date()).days
+        by_sector.setdefault(a.secteur, []).append(delay)
+
+    out = []
+    for sector, delays in by_sector.items():
+        s = sorted(delays)
+        median = s[len(s) // 2] if s else 0
+        avg = sum(s) / len(s) if s else 0
+        out.append({
+            "secteur": sector,
+            "nb_dossiers": len(s),
+            "delai_min": s[0] if s else 0,
+            "delai_median": median,
+            "delai_moyen": round(avg, 1),
+            "delai_max": s[-1] if s else 0,
+        })
+
+    # Ajouter "all sectors"
+    all_delays = [d for dlist in by_sector.values() for d in dlist]
+    if all_delays:
+        s = sorted(all_delays)
+        out.append({
+            "secteur": "TOUS",
+            "nb_dossiers": len(s),
+            "delai_min": s[0],
+            "delai_median": s[len(s) // 2],
+            "delai_moyen": round(sum(s) / len(s), 1),
+            "delai_max": s[-1],
+        })
+
+    return sorted(out, key=lambda x: x["secteur"])
+
+
+@router.get("/me/stats", summary="Statistiques personnelles de l'utilisateur courant")
+async def get_my_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Stats perso : volume traite, taux approbation, delai moyen, SLA, activite recente."""
+    now = now_utc()
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    thirty_days_ago = now - timedelta(days=30)
+
+    # Transitions faites par cet utilisateur
+    transitions = db.execute(
+        select(ATITransitionORM).where(ATITransitionORM.changed_by == current_user.username)
+    ).scalars().all()
+
+    total_transitions = len(transitions)
+    this_month_transitions = sum(1 for t in transitions if t.changed_at >= month_start)
+    last_30d_transitions = sum(1 for t in transitions if t.changed_at >= thirty_days_ago)
+
+    # Decisions (transitions vers approuve/rejete)
+    decisions = [t for t in transitions if t.new_statut in ("approuve", "rejete")]
+    approuves = sum(1 for t in decisions if t.new_statut == "approuve")
+    rejetes = sum(1 for t in decisions if t.new_statut == "rejete")
+    taux_approbation = (approuves / len(decisions) * 100) if decisions else 0
+
+    # ATIs actuellement assignes
+    my_atis = db.execute(
+        select(AgrementTechniqueIndustrielORM)
+        .where(AgrementTechniqueIndustrielORM.instructeur_username == current_user.username)
+    ).scalars().all()
+
+    actifs = [a for a in my_atis if a.statut not in ("approuve", "rejete", "expire")]
+    en_retard = sum(1 for a in actifs if (now.date() - a.date_soumission.date()).days > a.sla_jours)
+
+    # Delai moyen de decision (sur ATI decides par cet utilisateur)
+    decided_atis = []
+    for t in decisions:
+        ati = db.get(AgrementTechniqueIndustrielORM, t.ati_id)
+        if ati and ati.date_decision:
+            delay = (ati.date_decision.date() - ati.date_soumission.date()).days
+            decided_atis.append({"ati": ati, "delay": delay})
+
+    delai_moyen = sum(d["delay"] for d in decided_atis) / len(decided_atis) if decided_atis else 0
+
+    # Respect SLA personnel
+    sla_respecte = sum(1 for d in decided_atis if d["delay"] <= d["ati"].sla_jours)
+    taux_sla_perso = (sla_respecte / len(decided_atis) * 100) if decided_atis else 0
+
+    # 5 dernieres actions
+    recent = sorted(transitions, key=lambda t: t.changed_at, reverse=True)[:5]
+    recent_list = []
+    for t in recent:
+        ati = db.get(AgrementTechniqueIndustrielORM, t.ati_id)
+        recent_list.append({
+            "ati_id": t.ati_id,
+            "numero_ati": ati.numero_ati if ati else "?",
+            "action": f"{t.previous_statut or '?'} -> {t.new_statut}",
+            "note": t.note,
+            "changed_at": t.changed_at.isoformat(),
+        })
+
+    return {
+        "username": current_user.username,
+        "roles": [r.value for r in current_user.roles],
+        "total_transitions": total_transitions,
+        "this_month_transitions": this_month_transitions,
+        "last_30d_transitions": last_30d_transitions,
+        "decisions": len(decisions),
+        "approuves": approuves,
+        "rejetes": rejetes,
+        "taux_approbation_pct": round(taux_approbation, 1),
+        "delai_moyen_jours": round(delai_moyen, 1),
+        "taux_sla_perso_pct": round(taux_sla_perso, 1),
+        "atis_assignes_actifs": len(actifs),
+        "atis_assignes_en_retard": en_retard,
+        "activite_recente": recent_list,
+    }
 
 
 @router.get("/historique", summary="Historique global des transitions ATI")
@@ -1277,13 +1756,13 @@ async def bulk_transition(
     return results
 
 
-# ─── Public verification (no auth — used by QR code scanning) ─────────────
+# ─── Public verification (no auth · used by QR code scanning) ─────────────
 
 
 @router.get("/ati/verify/{numero_ati}", summary="Verification publique d'un ATI",
             description="Endpoint public sans authentification. Utilise par le scan du QR code sur le certificat ATI.")
 async def verify_ati_public(numero_ati: str, db: Session = Depends(get_db)):
-    """Public endpoint — no authentication required. Used by QR code scanning."""
+    """Public endpoint · no authentication required. Used by QR code scanning."""
     ati = db.execute(
         select(AgrementTechniqueIndustrielORM).where(
             AgrementTechniqueIndustrielORM.numero_ati == numero_ati

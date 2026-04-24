@@ -49,6 +49,13 @@ export async function POST(request: Request) {
       });
     }
 
+    if (!tokenBody.access_token || !tokenBody.refresh_token) {
+      return new NextResponse(
+        JSON.stringify({ error: "Reponse d'authentification incomplete (token manquant)." }),
+        { status: 502, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const meResponse = await fetch(`${backendBaseUrl}/auth/me`, {
       method: "GET",
       headers: { Authorization: `Bearer ${tokenBody.access_token}` },
@@ -78,7 +85,7 @@ export async function POST(request: Request) {
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60,
+      maxAge: 8 * 60 * 60, // 8h, aligne sur le JWT backend
     });
     response.cookies.set(REFRESH_TOKEN_COOKIE, tokenBody.refresh_token, {
       httpOnly: true,

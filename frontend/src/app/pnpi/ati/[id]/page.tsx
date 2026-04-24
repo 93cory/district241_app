@@ -16,7 +16,7 @@ import { FieldHistory } from "./FieldHistory";
 import { DocumentVersions } from "./DocumentVersions";
 import { Recommendation } from "./Recommendation";
 
-const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
+const PNPI_ROLES = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur", "operateur"]);
 const STATUT_LABELS: Record<string, string> = { soumis: "Soumis", en_instruction: "En instruction", en_validation: "En validation", approuve: "Approuve", rejete: "Rejete", expire: "Expire" };
 const STATUT_COLORS: Record<string, string> = { soumis: "#f59e0b", en_instruction: "#3b82f6", en_validation: "#8b5cf6", approuve: "#10b981", rejete: "#ef4444", expire: "#9ca3af" };
 const ETAPES = ["reception", "instruction", "validation", "decision"];
@@ -44,9 +44,9 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
       {/* Breadcrumb */}
       <div style={{ marginBottom: "1rem", fontSize: "0.875rem" }}>
         <Link href="/pnpi" style={{ color: "#6b7280", textDecoration: "none" }}>Dashboard</Link>
-        <span style={{ color: "#9ca3af", margin: "0 0.5rem" }}>/</span>
+        <span style={{ color: "#6b7280", margin: "0 0.5rem" }}>/</span>
         <Link href="/pnpi/ati" style={{ color: "#6b7280", textDecoration: "none" }}>ATI</Link>
-        <span style={{ color: "#9ca3af", margin: "0 0.5rem" }}>/</span>
+        <span style={{ color: "#6b7280", margin: "0 0.5rem" }}>/</span>
         <span style={{ color: "#003F8F", fontWeight: 600 }}>{ati.numero_ati}</span>
       </div>
 
@@ -71,7 +71,7 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
             <WorkflowButtons atiId={ati.id} currentStatut={ati.statut} />
             <a
-              href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/ati/${ati.id}/pdf`}
+              href={`/api/pnpi/ati/${ati.id}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ display: "inline-block", padding: "0.45rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "6px", color: "#374151", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}
@@ -127,12 +127,12 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
                 ["SLA contractuel", `${ati.sla_jours} jours`],
                 ["Instructeur", ati.instructeur_username ?? "Non assigne"],
                 ["Date decision", ati.date_decision ? new Date(ati.date_decision).toLocaleDateString("fr-FR") : "En attente"],
-                ["Date expiration", ati.date_expiration ? new Date(ati.date_expiration).toLocaleDateString("fr-FR") : "—"],
-                ["Cree par", ati.created_by ?? "—"],
-                ["Reference decision", ati.numero_reference_decision ?? "—"],
+                ["Date expiration", ati.date_expiration ? new Date(ati.date_expiration).toLocaleDateString("fr-FR") : "·"],
+                ["Cree par", ati.created_by ?? "·"],
+                ["Reference decision", ati.numero_reference_decision ?? "·"],
               ].map(([label, value]) => (
                 <div key={label as string}>
-                  <dt style={{ fontSize: "0.72rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.1rem" }}>{label}</dt>
+                  <dt style={{ fontSize: "0.72rem", color: "#6b7280", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.1rem" }}>{label}</dt>
                   <dd style={{ margin: 0, fontWeight: 500, color: "#1f2937", fontSize: "0.875rem" }}>{value}</dd>
                 </div>
               ))}
@@ -144,7 +144,7 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
 
             {ati.observations && (
               <div style={{ marginTop: "1rem", padding: "0.75rem", background: "#f9fafb", borderRadius: "6px", borderLeft: "3px solid #003F8F" }}>
-                <div style={{ fontSize: "0.72rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.25rem" }}>Observations</div>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.25rem" }}>Observations</div>
                 <p style={{ margin: 0, fontSize: "0.875rem", color: "#374151" }}>{ati.observations}</p>
               </div>
             )}
@@ -160,10 +160,10 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
           {/* QR code if approved */}
           {ati.qr_code_data && (
             <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem", background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-              <h3 style={{ margin: "0 0 0.75rem", color: "#10b981", fontSize: "0.95rem" }}>✓ Agrement approuve — QR Code officiel</h3>
+              <h3 style={{ margin: "0 0 0.75rem", color: "#10b981", fontSize: "0.95rem" }}>✓ Agrement approuve · QR Code officiel</h3>
               <div style={{ display: "flex", gap: "1.25rem", alignItems: "flex-start", flexWrap: "wrap" }}>
                 <img
-                  src={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/ati/${ati.id}/qrcode`}
+                  src={`/api/pnpi/ati/${ati.id}/qrcode`}
                   alt={`QR Code ${ati.numero_ati}`}
                   width={140}
                   height={140}
@@ -172,21 +172,21 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: "0 0 0.5rem", fontSize: "0.82rem", color: "#15803d", fontWeight: 600 }}>Numero : {ati.numero_ati}</p>
                   <p style={{ margin: "0 0 0.5rem", fontSize: "0.8rem", color: "#374151" }}>
-                    Valide jusqu&apos;au <strong>{ati.date_expiration ? new Date(ati.date_expiration).toLocaleDateString("fr-FR") : "—"}</strong>
+                    Valide jusqu&apos;au <strong>{ati.date_expiration ? new Date(ati.date_expiration).toLocaleDateString("fr-FR") : "·"}</strong>
                   </p>
                   <p style={{ margin: "0 0 0.75rem", fontSize: "0.75rem", color: "#6b7280" }}>
                     Ce QR code certifie l&apos;authenticite de l&apos;agrement. Il peut etre scanne pour verification par les autorites competentes.
                   </p>
                   <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                     <a
-                      href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/ati/${ati.id}/qrcode`}
+                      href={`/api/pnpi/ati/${ati.id}/qrcode`}
                       download={`QR_${ati.numero_ati}.png`}
                       style={{ padding: "0.35rem 0.75rem", background: "#10b981", color: "white", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 700, textDecoration: "none" }}
                     >
                       ↓ Telecharger QR
                     </a>
                     <a
-                      href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/ati/${ati.id}/pdf`}
+                      href={`/api/pnpi/ati/${ati.id}/pdf`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ padding: "0.35rem 0.75rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 700, textDecoration: "none" }}
@@ -205,7 +205,7 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
           <div className="chart-card" style={{ padding: "1.25rem" }}>
             <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Historique ({historique.length})</h3>
             {historique.length === 0 ? (
-              <p style={{ color: "#9ca3af", margin: 0 }}>Aucune transition enregistree.</p>
+              <p style={{ color: "#6b7280", margin: 0 }}>Aucune transition enregistree.</p>
             ) : (
               <div style={{ position: "relative" }}>
                 {historique.map((t, i) => (
@@ -219,7 +219,7 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
                         {t.previous_statut ? `${STATUT_LABELS[t.previous_statut] ?? t.previous_statut} → ` : ""}{STATUT_LABELS[t.new_statut ?? ""] ?? t.new_statut}
                       </div>
                       <div style={{ fontSize: "0.72rem", color: "#6b7280", marginTop: "0.1rem" }}>Par {t.changed_by} &middot; {new Date(t.changed_at).toLocaleDateString("fr-FR")}</div>
-                      {t.note && <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginTop: "0.15rem", fontStyle: "italic" }}>{t.note}</div>}
+                      {t.note && <div style={{ fontSize: "0.72rem", color: "#6b7280", marginTop: "0.15rem", fontStyle: "italic" }}>{t.note}</div>}
                     </div>
                   </div>
                 ))}

@@ -59,17 +59,24 @@ export default async function BudgetPage() {
       </div>
 
       {/* Monthly trend */}
-      <div className="chart-card" style={{ padding: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 12px" }}>Evolution mensuelle</h3>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100 }}>
+      <div className="chart-card pnpi-bar-chart">
+        <h3 className="pnpi-card-subtitle">Evolution mensuelle</h3>
+        <div className="pnpi-bars">
           {data.monthly.map((m: any) => {
             const max = Math.max(...data.monthly.map((x: any) => x.cost_fcfa), 1);
             const h = (m.cost_fcfa / max) * 80;
+            const monthLabels = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"];
+            const mm = parseInt(m.month.slice(5), 10) - 1;
+            const monthFull = monthLabels[mm] ?? m.month;
             return (
-              <div key={m.month} style={{ flex: 1, textAlign: "center" }}>
-                <div style={{ fontSize: 8, fontWeight: 700 }}>{fmt(Math.round(m.cost_fcfa / 1000))}k</div>
-                <div style={{ height: h, background: "#006233", borderRadius: "3px 3px 0 0", minHeight: 2 }} />
-                <div style={{ fontSize: 8, color: "var(--text-soft)", marginTop: 2 }}>{m.month.slice(5)}</div>
+              <div key={m.month} className="pnpi-bar">
+                <span className="pnpi-bar-value">{fmt(Math.round(m.cost_fcfa / 1000))}k</span>
+                <div className="pnpi-bar-fill" style={{ height: h, minHeight: 2 }} />
+                <span className="pnpi-bar-label">{m.month.slice(5)}</span>
+                <div className="pnpi-bar-tooltip" role="tooltip">
+                  <strong>{monthFull} {m.month.slice(0, 4)}</strong>
+                  <span>{fmt(m.cost_fcfa)} FCFA</span>
+                </div>
               </div>
             );
           })}

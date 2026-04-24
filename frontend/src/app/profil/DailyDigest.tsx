@@ -3,24 +3,42 @@
 import { useState, useEffect } from "react";
 
 interface DigestSection { title: string; icon: string; items: string[]; }
+interface Digest {
+  date?: string;
+  total_events?: number;
+  sections?: DigestSection[];
+  error?: boolean;
+  detail?: string;
+}
 
 export function DailyDigest() {
-  const [digest, setDigest] = useState<any>(null);
+  const [digest, setDigest] = useState<Digest | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/auth/me/digest").then(r => r.json()).then(setDigest).catch(() => {});
+    fetch("/api/auth/me/digest")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((d: Digest) => {
+        if (d && !d.error && Array.isArray(d.sections)) setDigest(d);
+        else setDigest(null);
+      })
+      .catch(() => setDigest(null))
+      .finally(() => setLoading(false));
   }, []);
 
-  if (!digest) return null;
+  if (loading) return null;
+  if (!digest || !Array.isArray(digest.sections)) return null;
+
+  const sections = digest.sections;
 
   return (
     <div>
       <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 4px" }}>Resume quotidien</h3>
       <p style={{ fontSize: 12, color: "var(--text-soft)", margin: "0 0 12px" }}>
-        {digest.date} — {digest.total_events} evenements
+        {digest.date ?? ""} · {digest.total_events ?? 0} evenements
       </p>
 
-      {digest.sections.length === 0 ? (
+      {sections.length === 0 ? (
         <p style={{ fontSize: 13, color: "var(--text-soft)" }}>Aucune activite dans les 24 dernieres heures.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

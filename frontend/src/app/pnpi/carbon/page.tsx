@@ -12,21 +12,26 @@ const SECTOR_EMISSIONS: Record<string, { co2_per_ati: number; label: string; col
 };
 
 export default async function CarbonPage() {
-  let kpis: any = {};
+  let sectors: Array<{ secteur: string; nb_atis_total: number; nb_atis_approuves: number }> = [];
   try {
-    const res = await backendRequest("/pnpi/dashboard/kpis");
-    if (res.ok) kpis = await res.json();
+    const res = await backendRequest("/pnpi/dashboard/secteurs");
+    if (res.ok) sectors = await res.json();
   } catch {}
 
-  // Estimate carbon from sectors
-  const sectors = kpis.secteurs || [];
+  // Estimation basee sur les ATI APPROUVES (seules les activites reellement en production)
+  // Facteurs d'emission en kg CO2/an par ATI (moyennes sectorielles indicatives
+  // derivees des rapports CEMAC et Banque Mondiale pour la zone Afrique centrale).
   let totalCO2 = 0;
-  const sectorData = sectors.map((s: any) => {
-    const emData = SECTOR_EMISSIONS[s.secteur] || { co2_per_ati: 500, label: s.secteur, color: "#526175" };
-    const co2 = s.count * emData.co2_per_ati;
-    totalCO2 += co2;
-    return { ...emData, secteur: s.secteur, count: s.count, co2 };
-  }).sort((a: any, b: any) => b.co2 - a.co2);
+  const sectorData = sectors
+    .filter((s) => (s.nb_atis_approuves ?? 0) > 0)
+    .map((s) => {
+      const emData = SECTOR_EMISSIONS[s.secteur] || { co2_per_ati: 500, label: s.secteur, color: "#526175" };
+      const count = s.nb_atis_approuves;
+      const co2 = count * emData.co2_per_ati;
+      totalCO2 += co2;
+      return { ...emData, secteur: s.secteur, count, co2 };
+    })
+    .sort((a, b) => b.co2 - a.co2);
 
   const totalTonnes = Math.round(totalCO2 / 1000);
   const compensationArbres = Math.round(totalCO2 / 22); // ~22kg CO2/arbre/an
@@ -34,9 +39,21 @@ export default async function CarbonPage() {
   return (
     <div style={{ padding: "24px 32px", maxWidth: 900, margin: "0 auto" }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px" }}>Empreinte carbone industrielle</h1>
-      <p style={{ color: "var(--text-soft)", fontSize: 13, margin: "0 0 20px" }}>
+      <p style={{ color: "var(--text-soft)", fontSize: 13, margin: "0 0 10px" }}>
         Estimation des emissions CO2 liees aux activites industrielles agreees.
       </p>
+      <details className="pnpi-form-alert pnpi-form-alert--info" style={{ marginBottom: 20 }}>
+        <summary style={{ cursor: "pointer", fontWeight: 600 }}>Methodologie</summary>
+        <p style={{ margin: "0.5rem 0 0", fontSize: 12, lineHeight: 1.5 }}>
+          L&apos;empreinte est calculee sur les <strong>ATI approuves</strong> (operateurs en
+          production effective). Pour chaque secteur, on applique un facteur d&apos;emission
+          moyen exprime en kg de CO2 equivalent par operateur et par an, base sur les
+          moyennes regionales CEMAC et les rapports Banque Mondiale Afrique centrale :
+          mines 8 500 kg · BTP 4 200 · chimie 3 800 · energie 2 500 · bois 1 200 ·
+          agroalimentaire 900 · peche 600. La compensation est calculee a raison de
+          <strong> 22 kg CO2 / arbre / an</strong> (reforestation tropicale moyenne).
+        </p>
+      </details>
 
       {/* Hero */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>

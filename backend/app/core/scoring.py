@@ -1,4 +1,4 @@
-"""PNPI — Scoring de conformite par operateur industriel."""
+"""PNPI · Scoring de conformite par operateur industriel."""
 from __future__ import annotations
 
 from datetime import timedelta
@@ -7,7 +7,7 @@ from typing import Dict, List
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from ..database import now_utc
+from ..database import now_utc, as_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
     InspectionConformiteORM,
@@ -92,7 +92,7 @@ def compute_operator_score(db: Session, operateur_id: str) -> Dict:
         sla_score = 7.5  # neutral
 
     # 5. Activity (10 pts)
-    recent = sum(1 for a in atis if a.date_soumission >= year_ago)
+    recent = sum(1 for a in atis if a.date_soumission and as_utc(a.date_soumission) >= year_ago)
     activity_score = min(recent / 3 * 10, 10)  # Target: 3 submissions/year
 
     total = round(ati_score + insp_score + doc_score + sla_score + activity_score, 1)

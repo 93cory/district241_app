@@ -16,8 +16,8 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
 const markRead = async (id: string) => {
   try {
-    await fetch(`${BACKEND}/admin/notifications/${id}/read`, {
-      method: "PATCH", credentials: "include",
+    await fetch(`/api/admin/notifications/${id}/read`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ is_read: true }),
     });
@@ -32,9 +32,12 @@ export function NotificationsBell() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch(`${BACKEND}/admin/notifications`, { credentials: "include" });
-        if (res.ok) setNotifs(await res.json());
-      } catch { /* ignore — non-admin roles get 403 */ }
+        const res = await fetch(`/api/admin/notifications`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data)) setNotifs(data);
+        else if (Array.isArray(data?.notifications)) setNotifs(data.notifications);
+      } catch { /* ignore */ }
     };
     load();
     const id = setInterval(load, 60_000);
@@ -86,10 +89,10 @@ export function NotificationsBell() {
         }}>
           <div style={{ padding: "0.875rem 1rem", borderBottom: "1px solid #f3f4f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: 700, fontSize: "0.875rem", color: "#1f2937" }}>Notifications {unread > 0 && <span style={{ color: "#ef4444" }}>({unread} non lues)</span>}</span>
-            {notifs.length === 0 && <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>Aucune</span>}
+            {notifs.length === 0 && <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>Aucune</span>}
           </div>
           {notifs.length === 0 ? (
-            <div style={{ padding: "1.5rem", textAlign: "center", color: "#9ca3af", fontSize: "0.82rem" }}>
+            <div style={{ padding: "1.5rem", textAlign: "center", color: "#6b7280", fontSize: "0.82rem" }}>
               Aucune notification
             </div>
           ) : (
@@ -113,7 +116,7 @@ export function NotificationsBell() {
                     </div>
                   </div>
                   <p style={{ margin: 0, fontSize: "0.78rem", color: "#6b7280" }}>{n.message.slice(0, 90)}{n.message.length > 90 ? "..." : ""}</p>
-                  <div style={{ marginTop: "0.25rem", fontSize: "0.7rem", color: "#9ca3af" }}>
+                  <div style={{ marginTop: "0.25rem", fontSize: "0.7rem", color: "#6b7280" }}>
                     {new Date(n.created_at).toLocaleDateString("fr-FR")}
                     {n.target_role && <span> &middot; @{n.target_role}</span>}
                     {!n.is_read && <span style={{ color: "#3b82f6", marginLeft: "0.4rem" }}>· cliquer pour marquer lu</span>}
