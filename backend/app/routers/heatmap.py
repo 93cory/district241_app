@@ -1,4 +1,4 @@
-"""PNPI — Heatmap des non-conformites par province."""
+"""PNPI · Heatmap des non-conformites par province."""
 from __future__ import annotations
 
 from collections import defaultdict

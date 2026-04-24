@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Modeles ORM de base (unites, declarations, utilisateurs, notifications, audit)."""
+"""PNPI / PNPI · Modeles ORM de base (unites, declarations, utilisateurs, notifications, audit)."""
 from __future__ import annotations
 
 from datetime import date, datetime

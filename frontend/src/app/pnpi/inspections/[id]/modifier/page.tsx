@@ -97,7 +97,7 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
 
   if (loading) return (
     <section className="section">
-      <div className="chart-card" style={{ padding: "2rem", textAlign: "center", color: "#9ca3af" }}>Chargement...</div>
+      <div className="chart-card" style={{ padding: "2rem", textAlign: "center", color: "#6b7280" }}>Chargement...</div>
     </section>
   );
 
@@ -114,9 +114,9 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
     <section className="section">
       <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem" }}>
         <Link href="/pnpi/inspections" style={{ color: "#6b7280", textDecoration: "none" }}>Inspections</Link>
-        <span style={{ color: "#9ca3af", margin: "0 0.5rem" }}>/</span>
+        <span style={{ color: "#6b7280", margin: "0 0.5rem" }}>/</span>
         <Link href={`/pnpi/inspections/${params.id}`} style={{ color: "#6b7280", textDecoration: "none", fontFamily: "monospace" }}>{params.id}</Link>
-        <span style={{ color: "#9ca3af", margin: "0 0.5rem" }}>/</span>
+        <span style={{ color: "#6b7280", margin: "0 0.5rem" }}>/</span>
         <span style={{ color: "#003F8F", fontWeight: 600 }}>Modifier</span>
       </div>
 
@@ -173,7 +173,7 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
 
           {/* Mesures correctives */}
           <div style={{ marginBottom: "1rem" }}>
-            <label style={labelStyle}>Mesures correctives <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optionnel)</span></label>
+            <label style={labelStyle}>Mesures correctives <span style={{ fontWeight: 400, color: "#6b7280" }}>(optionnel)</span></label>
             <textarea
               value={mesures}
               onChange={e => setMesures(e.target.value)}
@@ -185,14 +185,14 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
 
           {/* GPS */}
           <div style={{ marginBottom: "1.25rem" }}>
-            <label style={labelStyle}>Coordonnées GPS <span style={{ fontWeight: 400, color: "#9ca3af" }}>(optionnel)</span></label>
+            <label style={labelStyle}>Coordonnées GPS <span style={{ fontWeight: 400, color: "#6b7280" }}>(optionnel)</span></label>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
               <div>
-                <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: "0.25rem" }}>Latitude</div>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", marginBottom: "0.25rem" }}>Latitude</div>
                 <input value={lat} onChange={e => setLat(e.target.value)} placeholder="ex: -0.72345" type="number" step="0.00001" style={inputStyle} />
               </div>
               <div>
-                <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: "0.25rem" }}>Longitude</div>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", marginBottom: "0.25rem" }}>Longitude</div>
                 <input value={lng} onChange={e => setLng(e.target.value)} placeholder="ex: 9.45678" type="number" step="0.00001" style={inputStyle} />
               </div>
             </div>

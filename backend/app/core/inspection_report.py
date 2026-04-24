@@ -1,4 +1,4 @@
-"""PNPI — Generation du rapport d'inspection de conformite PDF."""
+"""PNPI · Generation du rapport d'inspection de conformite PDF."""
 from __future__ import annotations
 
 import io

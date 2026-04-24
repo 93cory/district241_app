@@ -100,7 +100,7 @@ export default function ReportsPage() {
             <span style={{ fontWeight: 700 }}>Resultats ({data.total} elements)</span>
             {data.period && (
               <span style={{ fontSize: 12, color: "var(--text-soft, #526175)" }}>
-                {new Date(data.period.start).toLocaleDateString("fr-FR")} — {new Date(data.period.end).toLocaleDateString("fr-FR")}
+                {new Date(data.period.start).toLocaleDateString("fr-FR")} · {new Date(data.period.end).toLocaleDateString("fr-FR")}
               </span>
             )}
           </div>

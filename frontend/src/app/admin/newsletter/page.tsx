@@ -20,9 +20,9 @@ export default function NewsletterPage() {
   };
 
   const templates = [
-    { name: "Rapport mensuel", subject: "PNPI — Rapport d'activite mensuel", body: "Chers utilisateurs,\n\nVoici le resume des activites PNPI du mois ecoul\u00e9 :\n\n- [X] nouveaux ATI soumis\n- [X] ATI approuves\n- [X] inspections realisees\n\nCordialement,\nL'equipe PNPI" },
-    { name: "Maintenance", subject: "PNPI — Maintenance planifiee", body: "Chers utilisateurs,\n\nUne maintenance est prevue le [DATE] de [HEURE] a [HEURE].\nLa plateforme sera temporairement indisponible.\n\nNous vous remercions de votre comprehension.\n\nL'equipe PNPI" },
-    { name: "Nouvelle fonctionnalite", subject: "PNPI — Nouvelle fonctionnalite disponible", body: "Chers utilisateurs,\n\nNous avons le plaisir de vous annoncer la disponibilite de [FONCTIONNALITE].\n\n[DESCRIPTION]\n\nDecouvrez-la des maintenant sur pnpi-gabon.ga.\n\nL'equipe PNPI" },
+    { name: "Rapport mensuel", subject: "PNPI · Rapport d'activite mensuel", body: "Chers utilisateurs,\n\nVoici le resume des activites PNPI du mois ecoul\u00e9 :\n\n- [X] nouveaux ATI soumis\n- [X] ATI approuves\n- [X] inspections realisees\n\nCordialement,\nL'equipe PNPI" },
+    { name: "Maintenance", subject: "PNPI · Maintenance planifiee", body: "Chers utilisateurs,\n\nUne maintenance est prevue le [DATE] de [HEURE] a [HEURE].\nLa plateforme sera temporairement indisponible.\n\nNous vous remercions de votre comprehension.\n\nL'equipe PNPI" },
+    { name: "Nouvelle fonctionnalite", subject: "PNPI · Nouvelle fonctionnalite disponible", body: "Chers utilisateurs,\n\nNous avons le plaisir de vous annoncer la disponibilite de [FONCTIONNALITE].\n\n[DESCRIPTION]\n\nDecouvrez-la des maintenant sur pnpi-gabon.ga.\n\nL'equipe PNPI" },
   ];
 
   return (

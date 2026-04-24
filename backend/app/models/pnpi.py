@@ -1,4 +1,4 @@
-"""PNPI — Modeles de donnees specifiques a la plateforme industrielle gabonaise."""
+"""PNPI · Modeles de donnees specifiques a la plateforme industrielle gabonaise."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -125,6 +125,9 @@ class InspectionPhotoORM(Base):
     chemin_stockage: Mapped[str] = mapped_column(String(512), nullable=False)
     taille_octets: Mapped[int] = mapped_column(nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    captured_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     uploaded_by: Mapped[str] = mapped_column(String(80), nullable=False)
 

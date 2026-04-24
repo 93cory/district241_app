@@ -51,7 +51,7 @@ class FeatureFlags:
         enabled = [k for k, v in self._flags.items() if v]
         disabled = [k for k, v in self._flags.items() if not v]
         if disabled:
-            logger.info("Feature flags — enabled: %s | disabled: %s", enabled, disabled)
+            logger.info("Feature flags · enabled: %s | disabled: %s", enabled, disabled)
 
     def is_enabled(self, name: str) -> bool:
         """Check if a feature flag is enabled."""

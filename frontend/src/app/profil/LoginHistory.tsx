@@ -59,7 +59,7 @@ export function LoginHistory() {
               }} />
               <span style={{ flex: 1 }}>
                 <strong>{r.method === "biometric" ? "Biometrie" : "Mot de passe"}</strong>
-                {" — "}
+                {" · "}
                 {parseUA(r.user_agent)}
                 {r.ip_address && <span style={{ color: "var(--text-soft, #526175)" }}> ({r.ip_address})</span>}
               </span>

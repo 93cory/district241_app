@@ -11,7 +11,7 @@ os.environ["PNPI_SKIP_DB_INIT"] = "1"
 # Import Base from the new modular structure; this also registers all ORM models
 # (including PNPI tables) with the metadata.
 from app.database import Base  # noqa: E402
-import app.models  # noqa: E402,F401  — ensures all ORM classes are registered
+import app.models  # noqa: E402,F401  · ensures all ORM classes are registered
 
 config = context.config
 

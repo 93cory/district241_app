@@ -1,4 +1,4 @@
-"""PNPI — Moteur de regles de workflow personnalisables.
+"""PNPI · Moteur de regles de workflow personnalisables.
 
 Permet aux admins de definir des regles declenchees automatiquement
 lors des transitions ATI. Exemples :

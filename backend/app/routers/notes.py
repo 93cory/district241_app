@@ -1,4 +1,4 @@
-"""PNPI — Notes epinglees sur le dashboard."""
+"""PNPI · Notes epinglees sur le dashboard."""
 from __future__ import annotations
 
 import uuid

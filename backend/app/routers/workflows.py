@@ -1,4 +1,4 @@
-"""PNPI — Endpoints pour la gestion des regles de workflow."""
+"""PNPI · Endpoints pour la gestion des regles de workflow."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends

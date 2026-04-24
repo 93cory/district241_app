@@ -14,7 +14,7 @@ export default function UptimeHistoryPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg-base, #f4f8fb)", padding: "40px 24px" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 4px" }}>Historique de disponibilite</h1>
-        <p style={{ color: "var(--text-soft)", fontSize: 13, margin: "0 0 4px" }}>90 derniers jours — PNPI</p>
+        <p style={{ color: "var(--text-soft)", fontSize: 13, margin: "0 0 4px" }}>90 derniers jours · PNPI</p>
         <div style={{ fontSize: 28, fontWeight: 800, color: "#006233", marginBottom: 20 }}>{avgUptime}% disponibilite moyenne</div>
 
         <div style={{ display: "flex", gap: 2, flexWrap: "wrap", marginBottom: 20 }}>

@@ -36,9 +36,9 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
       {/* Breadcrumb */}
       <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem" }}>
         <Link href="/pnpi" style={{ color: "#6b7280", textDecoration: "none" }}>Dashboard</Link>
-        <span style={{ color: "#9ca3af", margin: "0 0.5rem" }}>/</span>
+        <span style={{ color: "#6b7280", margin: "0 0.5rem" }}>/</span>
         <Link href="/pnpi/inspections" style={{ color: "#6b7280", textDecoration: "none" }}>Inspections</Link>
-        <span style={{ color: "#9ca3af", margin: "0 0.5rem" }}>/</span>
+        <span style={{ color: "#6b7280", margin: "0 0.5rem" }}>/</span>
         <span style={{ color: "#003F8F", fontWeight: 600, fontFamily: "monospace" }}>{insp.id}</span>
       </div>
 
@@ -56,7 +56,7 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
               </span>
             </div>
             <p style={{ margin: 0, fontWeight: 600, fontSize: "0.95rem", color: "#1f2937" }}>
-              Inspection de conformite — {opName}
+              Inspection de conformite · {opName}
             </p>
             <p style={{ margin: "0.25rem 0 0", color: "#6b7280", fontSize: "0.875rem" }}>
               Effectuee le {new Date(insp.date_inspection).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
@@ -73,7 +73,7 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
               </Link>
             )}
             <a
-              href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/inspections/${insp.id}/pdf`}
+              href={`/api/pnpi/inspections/${insp.id}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
               style={{ padding: "0.45rem 0.875rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", textDecoration: "none", fontSize: "0.8rem", fontWeight: 600, flexShrink: 0 }}
@@ -85,7 +85,7 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
       </div>
 
       <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
-        {/* Left — Info */}
+        {/* Left · Info */}
         <div style={{ flex: "1 1 260px" }}>
           <div className="chart-card" style={{ padding: "1.25rem", marginBottom: "1.25rem" }}>
             <h3 style={{ margin: "0 0 0.875rem", color: "#003F8F", fontSize: "0.95rem" }}>Informations</h3>
@@ -94,14 +94,14 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
                 ["Date d'inspection", new Date(insp.date_inspection).toLocaleDateString("fr-FR")],
                 ["Inspecteur", insp.inspecteur_nom || insp.inspecteur_username],
                 ["Operateur", opName],
-                ["Dossier ATI", insp.ati_numero ?? insp.ati_id ?? "—"],
-                ["Province", insp.province || "—"],
-                ["Secteur", insp.secteur || "—"],
+                ["Dossier ATI", insp.ati_numero ?? insp.ati_id ?? "·"],
+                ["Province", insp.province || "·"],
+                ["Secteur", insp.secteur || "·"],
                 ["Resultat", CONF_LABELS[insp.statut_conformite] ?? insp.statut_conformite],
                 ["Enregistre le", new Date(insp.created_at).toLocaleDateString("fr-FR")],
               ] as [string, string][]).map(([label, value]) => (
                 <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", borderBottom: "1px solid #f3f4f6", paddingBottom: "0.5rem" }}>
-                  <dt style={{ fontSize: "0.78rem", color: "#9ca3af", flexShrink: 0 }}>{label}</dt>
+                  <dt style={{ fontSize: "0.78rem", color: "#6b7280", flexShrink: 0 }}>{label}</dt>
                   <dd style={{ margin: 0, fontSize: "0.8rem", fontWeight: 500, color: "#1f2937", textAlign: "right" }}>
                     {label === "Dossier ATI" && insp.ati_id ? (
                       <Link href={`/pnpi/ati/${insp.ati_id}`} style={{ color: "#003F8F", fontWeight: 700, textDecoration: "none" }}>{value}</Link>
@@ -119,8 +119,8 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
             <div className="chart-card" style={{ padding: "1.25rem" }}>
               <h3 style={{ margin: "0 0 0.75rem", color: "#003F8F", fontSize: "0.95rem" }}>Localisation GPS</h3>
               <div style={{ padding: "0.75rem", background: "#f9fafb", borderRadius: "8px", fontSize: "0.8rem", color: "#374151", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
-                <div><span style={{ color: "#9ca3af" }}>Latitude :</span> {insp.latitude.toFixed(6)}°</div>
-                <div><span style={{ color: "#9ca3af" }}>Longitude :</span> {insp.longitude.toFixed(6)}°</div>
+                <div><span style={{ color: "#6b7280" }}>Latitude :</span> {insp.latitude.toFixed(6)}°</div>
+                <div><span style={{ color: "#6b7280" }}>Longitude :</span> {insp.longitude.toFixed(6)}°</div>
               </div>
               <a
                 href={`https://www.openstreetmap.org/?mlat=${insp.latitude}&mlon=${insp.longitude}&zoom=14`}
@@ -134,13 +134,13 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
           )}
         </div>
 
-        {/* Right — Observations & Mesures */}
+        {/* Right · Observations & Mesures */}
         <div style={{ flex: "2 1 360px", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           {/* Observations */}
           <div className="chart-card" style={{ padding: "1.25rem" }}>
             <h3 style={{ margin: "0 0 0.75rem", color: "#003F8F", fontSize: "0.95rem" }}>Observations de l&apos;inspecteur</h3>
             <div style={{ padding: "1rem", background: "#f9fafb", borderRadius: "8px", borderLeft: `4px solid ${color}`, lineHeight: "1.6", fontSize: "0.875rem", color: "#374151", whiteSpace: "pre-wrap" }}>
-              {insp.observations || <span style={{ color: "#9ca3af", fontStyle: "italic" }}>Aucune observation enregistree.</span>}
+              {insp.observations || <span style={{ color: "#6b7280", fontStyle: "italic" }}>Aucune observation enregistree.</span>}
             </div>
           </div>
 
@@ -155,9 +155,9 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
           ) : (
             <div className="chart-card" style={{ padding: "1.25rem" }}>
               <h3 style={{ margin: "0 0 0.5rem", color: "#10b981", fontSize: "0.95rem" }}>Mesures correctives</h3>
-              <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.875rem", fontStyle: "italic" }}>
+              <p style={{ margin: 0, color: "#6b7280", fontSize: "0.875rem", fontStyle: "italic" }}>
                 {insp.statut_conformite === "conforme"
-                  ? "Aucune mesure corrective requise — operateur conforme."
+                  ? "Aucune mesure corrective requise · operateur conforme."
                   : "Aucune mesure corrective specifiee."}
               </p>
             </div>

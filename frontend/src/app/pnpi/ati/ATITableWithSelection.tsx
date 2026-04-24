@@ -39,7 +39,7 @@ export function ATITableWithSelection({ atis }: { atis: ATI[] }) {
   return (
     <>
       {atis.length === 0 ? (
-        <p style={{ color: "#9ca3af", textAlign: "center", padding: "2rem 0" }}>Aucun ATI trouve avec ces filtres.</p>
+        <p style={{ color: "#6b7280", textAlign: "center", padding: "2rem 0" }}>Aucun ATI trouve avec ces filtres.</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
@@ -71,7 +71,7 @@ export function ATITableWithSelection({ atis }: { atis: ATI[] }) {
                   </td>
                   <td style={{ padding: "0.625rem 0.75rem" }}>
                     <Link href={`/pnpi/ati/${ati.id}`} style={{ fontWeight: 700, color: "#003F8F", fontFamily: "monospace", fontSize: "0.78rem", textDecoration: "none" }}>{ati.numero_ati}</Link>
-                    <div style={{ color: "#9ca3af", fontSize: "0.72rem", marginTop: "0.1rem" }}>{ati.type_activite.slice(0, 40)}{ati.type_activite.length > 40 ? "..." : ""}</div>
+                    <div style={{ color: "#6b7280", fontSize: "0.72rem", marginTop: "0.1rem" }}>{ati.type_activite.slice(0, 40)}{ati.type_activite.length > 40 ? "..." : ""}</div>
                   </td>
                   <td style={{ padding: "0.625rem 0.75rem", color: "#374151" }}>{SECTEUR_LABELS[ati.secteur] ?? ati.secteur}</td>
                   <td style={{ padding: "0.625rem 0.75rem" }}>
@@ -82,7 +82,7 @@ export function ATITableWithSelection({ atis }: { atis: ATI[] }) {
                   <td style={{ padding: "0.625rem 0.75rem" }}>
                     <span style={{ color: PRIORITE_COLORS[ati.priorite] ?? "#6b7280", fontWeight: ati.priorite === "urgente" ? 700 : 500, textTransform: "capitalize", fontSize: "0.8rem" }}>{ati.priorite}</span>
                   </td>
-                  <td style={{ padding: "0.625rem 0.75rem", color: "#6b7280", fontSize: "0.78rem" }}>{ati.instructeur_username ?? "—"}</td>
+                  <td style={{ padding: "0.625rem 0.75rem", color: "#6b7280", fontSize: "0.78rem" }}>{ati.instructeur_username ?? "·"}</td>
                   <td style={{ padding: "0.625rem 0.75rem", fontWeight: 600, color: ati.age_jours > 30 ? "#d97706" : "#374151", textAlign: "right" }}>{ati.age_jours}</td>
                   <td style={{ padding: "0.625rem 0.75rem", textAlign: "center" }}>
                     {ati.is_overdue ? <span style={{ padding: "0.15rem 0.4rem", borderRadius: "4px", background: "#fef3c7", color: "#d97706", fontWeight: 700, fontSize: "0.68rem" }}>RETARD</span> : <span style={{ color: "#10b981", fontSize: "0.72rem", fontWeight: 600 }}>OK</span>}

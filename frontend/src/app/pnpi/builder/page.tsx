@@ -51,7 +51,7 @@ export default function BuilderPage() {
     if (!data) return <div style={{ padding: 20, textAlign: "center", color: "var(--text-soft)", fontSize: 12 }}>Chargement...</div>;
 
     if (w.type === "kpi" || w.type === "stat") {
-      const val = data.atis_total || data.global_score || "—";
+      const val = data.atis_total || data.global_score || "·";
       return <div style={{ textAlign: "center" }}><div style={{ fontSize: 32, fontWeight: 800, color: "#006233" }}>{val}</div></div>;
     }
     if (w.type === "alerts") {
@@ -65,14 +65,14 @@ export default function BuilderPage() {
           {rows.slice(0, 5).map((r: any, i: number) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", borderBottom: "1px solid var(--line, #eee)" }}>
               <span>{r.group || r._row || `#${i}`}</span>
-              <span style={{ fontWeight: 700 }}>{r.total || r.count || "—"}</span>
+              <span style={{ fontWeight: 700 }}>{r.total || r.count || "·"}</span>
             </div>
           ))}
         </div>
       );
     }
     if (w.type === "quality") {
-      return <div style={{ textAlign: "center" }}><div style={{ fontSize: 32, fontWeight: 800, color: "#006233" }}>{data.grade || "—"}</div><div style={{ fontSize: 11 }}>{data.global_score}%</div></div>;
+      return <div style={{ textAlign: "center" }}><div style={{ fontSize: 32, fontWeight: 800, color: "#006233" }}>{data.grade || "·"}</div><div style={{ fontSize: 11 }}>{data.global_score}%</div></div>;
     }
     return <pre style={{ fontSize: 9, overflow: "auto" }}>{JSON.stringify(data, null, 2).slice(0, 200)}</pre>;
   };

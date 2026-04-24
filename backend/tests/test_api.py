@@ -580,7 +580,7 @@ def test_ops_alerts_check_endpoint() -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PNPI — Dashboard KPIs
+# PNPI · Dashboard KPIs
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestPNPIDashboard:
@@ -697,7 +697,7 @@ class TestPNPIDashboard:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PNPI — Opérateurs industriels
+# PNPI · Opérateurs industriels
 # ─────────────────────────────────────────────────────────────────────────────
 
 _created_operateur_id: str = ""
@@ -789,7 +789,7 @@ class TestOperateurs:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PNPI — Agréments Techniques Industriels (ATI) + workflow
+# PNPI · Agréments Techniques Industriels (ATI) + workflow
 # ─────────────────────────────────────────────────────────────────────────────
 
 _created_ati_id: str = ""
@@ -926,7 +926,7 @@ class TestATI:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PNPI — Inspections de conformité
+# PNPI · Inspections de conformité
 # ─────────────────────────────────────────────────────────────────────────────
 
 _created_inspection_id: str = ""
@@ -997,7 +997,7 @@ class TestInspections:
     def test_create_inspection_requires_inspecteur_role(self) -> None:
         if not _created_operateur_id:
             return
-        # admin can also create inspections per role config — use industriel which shouldn't
+        # admin can also create inspections per role config · use industriel which shouldn't
         headers = auth_headers("ministre", "ministre-dev-password")
         # ministere role should be allowed, but let's test an unauthorized role won't work
         # Testing without auth is sufficient to cover the 401 path
@@ -1014,7 +1014,7 @@ class TestInspections:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PNPI — Alertes et historique (lot 5-6)
+# PNPI · Alertes et historique (lot 5-6)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestPNPIAlerts:
@@ -1091,7 +1091,7 @@ class TestSearchInspections:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PNPI — Toggle active + Recap PDF + E2E workflow (lot 7)
+# PNPI · Toggle active + Recap PDF + E2E workflow (lot 7)
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestOperateurToggleActive:

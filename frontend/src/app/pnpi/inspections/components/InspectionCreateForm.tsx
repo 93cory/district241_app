@@ -2,11 +2,12 @@
 import { useState, useTransition } from "react";
 import { createInspection } from "../actions";
 import type { OperateurBrief } from "../../../../lib/api";
+import { VoiceInput } from "../../../components/VoiceInput";
 
 const STATUTS = [
-  { value: "conforme", label: "Conforme", color: "#10b981" },
-  { value: "non_conforme", label: "Non conforme", color: "#ef4444" },
-  { value: "partiel", label: "Partiel", color: "#f59e0b" },
+  { value: "conforme", label: "Conforme" },
+  { value: "non_conforme", label: "Non conforme" },
+  { value: "partiel", label: "Partiel" },
 ];
 
 export function InspectionCreateForm({ operateurs }: { operateurs: OperateurBrief[] }) {
@@ -37,52 +38,127 @@ export function InspectionCreateForm({ operateurs }: { operateurs: OperateurBrie
           mesures_correctives: form.mesures_correctives || undefined,
         });
         setSuccess(true);
-        setForm({ operateur_id: "", ati_id: "", date_inspection: new Date().toISOString().slice(0, 16), statut_conformite: "conforme", observations: "", mesures_correctives: "" });
+        setForm({
+          operateur_id: "",
+          ati_id: "",
+          date_inspection: new Date().toISOString().slice(0, 16),
+          statut_conformite: "conforme",
+          observations: "",
+          mesures_correctives: "",
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
       }
     });
   };
 
-  const field = (label: string, node: React.ReactNode) => (
-    <div style={{ marginBottom: "1rem" }}>
-      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#374151", marginBottom: "0.3rem" }}>{label}</label>
-      {node}
-    </div>
-  );
-
-  const inputStyle: React.CSSProperties = { width: "100%", padding: "0.45rem 0.65rem", border: "1px solid #e5e7eb", borderRadius: "6px", fontSize: "0.875rem", boxSizing: "border-box" };
-
   return (
-    <form onSubmit={handleSubmit}>
-      {field("Operateur *", (
-        <select required value={form.operateur_id} onChange={e => setForm(f => ({ ...f, operateur_id: e.target.value }))} style={inputStyle}>
-          <option value="">-- Selectionner --</option>
-          {operateurs.map(op => <option key={op.id} value={op.id}>{op.raison_sociale}</option>)}
+    <form onSubmit={handleSubmit} className="pnpi-form-stack">
+      <div className="pnpi-form-field">
+        <label htmlFor="insp-operateur" className="pnpi-form-label pnpi-form-label-req">Operateur</label>
+        <select
+          id="insp-operateur"
+          className="pnpi-form-select"
+          required
+          value={form.operateur_id}
+          onChange={(e) => setForm((f) => ({ ...f, operateur_id: e.target.value }))}
+        >
+          <option value="">Selectionner un operateur</option>
+          {operateurs.map((op) => (
+            <option key={op.id} value={op.id}>{op.raison_sociale}</option>
+          ))}
         </select>
-      ))}
-      {field("Ref. ATI (optionnel)", (
-        <input value={form.ati_id} onChange={e => setForm(f => ({ ...f, ati_id: e.target.value }))} placeholder="ATI-2026-XXXX" style={inputStyle} />
-      ))}
-      {field("Date d'inspection *", (
-        <input type="datetime-local" required value={form.date_inspection} onChange={e => setForm(f => ({ ...f, date_inspection: e.target.value }))} style={inputStyle} />
-      ))}
-      {field("Statut de conformite *", (
-        <select required value={form.statut_conformite} onChange={e => setForm(f => ({ ...f, statut_conformite: e.target.value }))} style={inputStyle}>
-          {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+      </div>
+
+      <div className="pnpi-form-field">
+        <label htmlFor="insp-ati" className="pnpi-form-label">Reference ATI</label>
+        <input
+          id="insp-ati"
+          className="pnpi-form-input"
+          value={form.ati_id}
+          onChange={(e) => setForm((f) => ({ ...f, ati_id: e.target.value }))}
+          placeholder="ATI-2026-XXXX (optionnel)"
+        />
+      </div>
+
+      <div className="pnpi-form-field">
+        <label htmlFor="insp-date" className="pnpi-form-label pnpi-form-label-req">Date d&apos;inspection</label>
+        <input
+          id="insp-date"
+          type="datetime-local"
+          className="pnpi-form-input"
+          required
+          value={form.date_inspection}
+          onChange={(e) => setForm((f) => ({ ...f, date_inspection: e.target.value }))}
+        />
+      </div>
+
+      <div className="pnpi-form-field">
+        <label htmlFor="insp-statut" className="pnpi-form-label pnpi-form-label-req">Statut de conformite</label>
+        <select
+          id="insp-statut"
+          className="pnpi-form-select"
+          required
+          value={form.statut_conformite}
+          onChange={(e) => setForm((f) => ({ ...f, statut_conformite: e.target.value }))}
+        >
+          {STATUTS.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
         </select>
-      ))}
-      {field("Observations *", (
-        <textarea required value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))} rows={4} placeholder="Constats de l'inspection..." style={{ ...inputStyle, resize: "vertical" }} />
-      ))}
-      {field("Mesures correctives", (
-        <textarea value={form.mesures_correctives} onChange={e => setForm(f => ({ ...f, mesures_correctives: e.target.value }))} rows={3} placeholder="Actions requises (si non conforme)..." style={{ ...inputStyle, resize: "vertical" }} />
-      ))}
+      </div>
 
-      {success && <div style={{ padding: "0.6rem 1rem", background: "#f0fdf4", border: "1px solid #10b981", borderRadius: "6px", color: "#16a34a", fontSize: "0.875rem", marginBottom: "0.75rem" }}>Inspection enregistree avec succes.</div>}
-      {error && <div style={{ padding: "0.6rem 1rem", background: "#fef2f2", border: "1px solid #ef4444", borderRadius: "6px", color: "#b42318", fontSize: "0.875rem", marginBottom: "0.75rem" }}>{error}</div>}
+      <div className="pnpi-form-field">
+        <div className="pnpi-form-label-row">
+          <label htmlFor="insp-observations" className="pnpi-form-label pnpi-form-label-req">Observations</label>
+          <VoiceInput
+            value={form.observations}
+            onChange={(v) => setForm((f) => ({ ...f, observations: v }))}
+            ariaLabel="Dicter les observations"
+          />
+        </div>
+        <textarea
+          id="insp-observations"
+          className="pnpi-form-textarea"
+          required
+          value={form.observations}
+          onChange={(e) => setForm((f) => ({ ...f, observations: e.target.value }))}
+          rows={4}
+          placeholder="Constats detailles de l'inspection... (utilisez le microphone pour dicter)"
+        />
+      </div>
 
-      <button type="submit" disabled={isPending} style={{ width: "100%", padding: "0.6rem", background: isPending ? "#9ca3af" : "#003F8F", color: "white", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.9rem", cursor: isPending ? "not-allowed" : "pointer" }}>
+      <div className="pnpi-form-field">
+        <div className="pnpi-form-label-row">
+          <label htmlFor="insp-mesures" className="pnpi-form-label">Mesures correctives</label>
+          <VoiceInput
+            value={form.mesures_correctives}
+            onChange={(v) => setForm((f) => ({ ...f, mesures_correctives: v }))}
+            ariaLabel="Dicter les mesures correctives"
+          />
+        </div>
+        <textarea
+          id="insp-mesures"
+          className="pnpi-form-textarea"
+          value={form.mesures_correctives}
+          onChange={(e) => setForm((f) => ({ ...f, mesures_correctives: e.target.value }))}
+          rows={3}
+          placeholder="Actions requises (si non conforme ou partiel)"
+        />
+      </div>
+
+      {success && (
+        <div className="pnpi-form-alert pnpi-form-alert--success" role="status">
+          Inspection enregistree avec succes.
+        </div>
+      )}
+      {error && (
+        <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">
+          {error}
+        </div>
+      )}
+
+      <button type="submit" disabled={isPending} className="btn-primary pnpi-form-submit">
         {isPending ? "Enregistrement..." : "Soumettre le rapport"}
       </button>
     </form>

@@ -1,4 +1,4 @@
-"""API v1 — All routers mounted under /api/v1 prefix."""
+"""API v1 · All routers mounted under /api/v1 prefix."""
 from __future__ import annotations
 
 from fastapi import APIRouter

@@ -1,4 +1,4 @@
-"""PNPI — Table documents_dossier (fichiers joints aux ATI)
+"""PNPI · Table documents_dossier (fichiers joints aux ATI)
 
 Revision ID: 20260304_06
 Revises: 20260304_05

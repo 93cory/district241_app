@@ -42,11 +42,11 @@ const BTN_COLORS: Record<string, string> = {
 interface WorkflowButtonsProps {
   atiId: string;
   currentStatut: string;
-  currentEtape: string;
-  userRoles: string[];
+  currentEtape?: string;
+  userRoles?: string[];
 }
 
-export function WorkflowButtons({ atiId, currentStatut, currentEtape, userRoles }: WorkflowButtonsProps) {
+export function WorkflowButtons({ atiId, currentStatut, currentEtape = "", userRoles = [] }: WorkflowButtonsProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<string | null>(null);

@@ -9,7 +9,39 @@ export default async function PredictionsPage() {
     if (res.ok) data = await res.json();
   } catch {}
 
-  if (!data) return <div style={{ padding: 32 }}>Erreur de chargement.</div>;
+  if (!data) {
+    return (
+      <section className="section">
+        <div className="chart-card">
+          <h2 style={{ marginTop: 0 }}>Analyse predictive</h2>
+          <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">
+            Impossible de charger les predictions. Votre session est peut-etre expiree &mdash;
+            reconnectez-vous depuis <a href="/connexion">/connexion</a>.
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const hasAnyData =
+    (data.monthly_trend?.length ?? 0) > 0 ||
+    (data.forecasts?.length ?? 0) > 0 ||
+    (data.sector_growth?.length ?? 0) > 0 ||
+    (data.backlog?.in_progress ?? 0) > 0;
+
+  if (!hasAnyData) {
+    return (
+      <section className="section">
+        <div className="chart-card">
+          <h2 style={{ marginTop: 0 }}>Analyse predictive</h2>
+          <p style={{ color: "var(--text-soft, #526175)" }}>
+            Les previsions s'activent automatiquement des que 12 mois d'historique sont disponibles.
+            Pour l'instant, la base n'a pas assez de donnees pour generer des tendances fiables.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   const trendColor = data.approval_rate.trend === "hausse" ? "#006233" : data.approval_rate.trend === "baisse" ? "#b42318" : "#d97706";
 

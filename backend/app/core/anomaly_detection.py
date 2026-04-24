@@ -1,4 +1,4 @@
-"""PNPI — Detection d'anomalies et alertes intelligentes.
+"""PNPI · Detection d'anomalies et alertes intelligentes.
 
 Detecte les situations anormales basees sur les ecarts statistiques:
 - Pic de soumissions (>2x la moyenne)

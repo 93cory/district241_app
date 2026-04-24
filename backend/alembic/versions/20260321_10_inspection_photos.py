@@ -1,4 +1,4 @@
-"""PNPI — Table inspection_photos (photos jointes aux inspections)
+"""PNPI · Table inspection_photos (photos jointes aux inspections)
 
 Revision ID: 20260321_10
 Revises: 20260321_09

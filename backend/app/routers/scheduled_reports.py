@@ -1,4 +1,4 @@
-"""PNPI — Planification de rapports automatiques."""
+"""PNPI · Planification de rapports automatiques."""
 from __future__ import annotations
 
 import uuid

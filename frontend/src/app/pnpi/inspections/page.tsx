@@ -2,12 +2,17 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { fetchPNPIInspections, fetchPNPIOperateurs } from "../../../lib/api";
 import { fetchBackendProfile } from "../../../lib/backend";
+import { KpiCard } from "../../components/KpiCard";
 import { InspectionCreateForm } from "./components/InspectionCreateForm";
 import { InspectionsFiltersClient } from "./components/InspectionsFiltersClient";
 
 const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
-const STATUT_LABELS: Record<string, string> = { conforme: "Conforme", non_conforme: "Non conforme", partiel: "Partiel" };
-const STATUT_COLORS: Record<string, string> = { conforme: "#10b981", non_conforme: "#ef4444", partiel: "#f59e0b" };
+
+const STATUT_LABELS: Record<string, string> = {
+  conforme: "Conforme",
+  non_conforme: "Non conforme",
+  partiel: "Partiel",
+};
 
 type SearchParams = { statut_conformite?: string; inspecteur?: string };
 
@@ -15,122 +20,152 @@ export default async function InspectionsPage({ searchParams }: { searchParams: 
   let userRoles: string[] = [];
   try {
     const profile = await fetchBackendProfile();
-    if (!((profile.roles ?? []) as string[]).some(r => ALLOWED.has(r))) redirect("/connexion");
+    if (!((profile.roles ?? []) as string[]).some((r) => ALLOWED.has(r))) redirect("/connexion");
     userRoles = profile.roles ?? [];
   } catch { redirect("/connexion"); }
 
   const statut_conformite = searchParams.statut_conformite ?? "";
   const inspecteur = searchParams.inspecteur ?? "";
-  const canCreate = userRoles.some(r => ["admin", "inspecteur", "directeur"].includes(r));
+  const canCreate = userRoles.some((r) => ["admin", "inspecteur", "directeur"].includes(r));
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
   try {
     const [inspections, operateurs] = await Promise.all([
-      fetchPNPIInspections({ statut_conformite: statut_conformite || undefined, inspecteur_username: inspecteur || undefined, limit: 100 }),
+      fetchPNPIInspections({
+        statut_conformite: statut_conformite || undefined,
+        inspecteur_username: inspecteur || undefined,
+        limit: 100,
+      }),
       canCreate ? fetchPNPIOperateurs() : Promise.resolve([]),
     ]);
 
-    const conformeCount = inspections.filter(i => i.statut_conformite === "conforme").length;
-    const nonConformeCount = inspections.filter(i => i.statut_conformite === "non_conforme").length;
-    const partielCount = inspections.filter(i => i.statut_conformite === "partiel").length;
-    const tauxConformite = inspections.length > 0 ? Math.round((conformeCount / inspections.length) * 100) : 0;
+    const conformeCount = inspections.filter((i) => i.statut_conformite === "conforme").length;
+    const nonConformeCount = inspections.filter((i) => i.statut_conformite === "non_conforme").length;
+    const partielCount = inspections.filter((i) => i.statut_conformite === "partiel").length;
+    const tauxConformite = inspections.length > 0
+      ? Math.round((conformeCount / inspections.length) * 100)
+      : 0;
 
     return (
       <section className="section">
-        <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Link href="/pnpi" style={{ color: "#6b7280", textDecoration: "none" }}>← Dashboard</Link>
-          <a
-            href={`${process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000"}/pnpi/exports/inspections.csv`}
-            style={{ padding: "0.35rem 0.7rem", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "6px", color: "#374151", fontSize: "0.75rem", fontWeight: 600, textDecoration: "none" }}
-          >
-            ↓ CSV
-          </a>
-        </div>
+        <div className="chart-card">
+          {/* Header */}
+          <div className="pnpi-page-head">
+            <div>
+              <Link href="/pnpi" className="pnpi-back-link">&larr; Tableau de bord</Link>
+              <h2>Inspections de conformite</h2>
+              <p className="pnpi-page-sub">
+                {inspections.length} rapport(s) &middot;{" "}
+                <span className="pnpi-text-conforme">{conformeCount} conformes</span>{" "}
+                &middot;{" "}
+                <span className="pnpi-text-non-conforme">{nonConformeCount} non conformes</span>
+              </p>
+            </div>
+            <div className="pnpi-page-actions">
+              <a href="/api/pnpi/exports/inspections.csv" className="export-link">
+                <span aria-hidden="true">&darr;</span> Export CSV
+              </a>
+            </div>
+          </div>
 
-        {/* KPIs */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem", marginBottom: "1.25rem" }}>
-          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#003F8F" }}>{inspections.length}</div>
-            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Total inspections</div>
+          {/* KPIs */}
+          <div className="hero-grid" style={{ marginBottom: "1.5rem" }}>
+            <KpiCard tone="primary" label="Total inspections" value={inspections.length} sublabel="Rapports enregistres" />
+            <KpiCard tone="success" label="Taux conformite" value={`${tauxConformite}%`} sublabel="Objectif national : 90%" />
+            <KpiCard tone="success" label="Conformes" value={conformeCount} sublabel="Operateurs en regle" />
+            <KpiCard tone="accent"  label="Partiels" value={partielCount} sublabel="Conformite partielle" />
+            <KpiCard tone="neutral" label="Non conformes" value={nonConformeCount} sublabel="Mesures correctives requises" />
           </div>
-          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#10b981" }}>{tauxConformite}%</div>
-            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Taux conformite</div>
-          </div>
-          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#10b981" }}>{conformeCount}</div>
-            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Conformes</div>
-          </div>
-          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#ef4444" }}>{nonConformeCount}</div>
-            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Non conformes</div>
-          </div>
-          <div className="chart-card" style={{ padding: "0.875rem 1rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#f59e0b" }}>{partielCount}</div>
-            <div style={{ fontSize: "0.72rem", color: "#6b7280" }}>Partiels</div>
-          </div>
-        </div>
 
-        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-          {/* Liste */}
-          <div style={{ flex: "2 1 500px" }}>
-            <div className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-              <div style={{ marginBottom: "1rem" }}>
-                <h2 style={{ margin: "0 0 0.25rem", color: "#003F8F" }}>Inspections de conformite</h2>
-                <p style={{ margin: "0 0 0.75rem", color: "#6b7280", fontSize: "0.875rem" }}>
-                  {inspections.length} rapport(s) &middot; <span style={{ color: "#10b981", fontWeight: 600 }}>{conformeCount} conformes</span> &middot; <span style={{ color: "#ef4444", fontWeight: 600 }}>{nonConformeCount} non conformes</span>
-                </p>
-                <InspectionsFiltersClient statut_conformite={statut_conformite} inspecteur={inspecteur} />
+          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+            {/* Liste principale */}
+            <div style={{ flex: "2 1 540px", minWidth: 0 }}>
+              <div className="pnpi-filters-row">
+                <InspectionsFiltersClient
+                  statut_conformite={statut_conformite}
+                  inspecteur={inspecteur}
+                />
               </div>
+
               {inspections.length === 0 ? (
-                <p style={{ color: "#9ca3af", textAlign: "center", padding: "2rem 0" }}>Aucune inspection avec ces filtres.</p>
+                <div className="pnpi-empty">
+                  <div className="pnpi-empty-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M9 12l2 2 4-4" />
+                      <circle cx="12" cy="12" r="9" />
+                    </svg>
+                  </div>
+                  <div>Aucune inspection avec ces filtres.</div>
+                </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                  {inspections.map(insp => (
-                    <Link key={insp.id} href={`/pnpi/inspections/${insp.id}`} style={{ textDecoration: "none", display: "block" }}>
-                    <div style={{ padding: "0.875rem 1rem", background: "#f9fafb", borderRadius: "8px", border: "1px solid #f3f4f6", cursor: "pointer" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem", flexWrap: "wrap" }}>
+                <div className="pnpi-inspection-list">
+                  {inspections.map((insp) => (
+                    <Link
+                      key={insp.id}
+                      href={`/pnpi/inspections/${insp.id}`}
+                      className={`pnpi-inspection-card pnpi-inspection-card--${insp.statut_conformite}`}
+                    >
+                      <div className="pnpi-inspection-head">
                         <div>
-                          <span style={{ fontFamily: "monospace", fontWeight: 700, color: "#003F8F", fontSize: "0.78rem" }}>{insp.id}</span>
-                          <div style={{ fontSize: "0.8rem", color: "#374151", marginTop: "0.2rem" }}>{insp.operateur_nom || insp.operateur_id}</div>
-                          {insp.ati_numero && <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>ATI : {insp.ati_numero}</div>}
+                          <span className="pnpi-mono">{insp.id}</span>
+                          <div className="pnpi-inspection-title">
+                            {insp.operateur_nom || insp.operateur_id}
+                          </div>
+                          {insp.ati_numero && (
+                            <div className="pnpi-inspection-ati">ATI : {insp.ati_numero}</div>
+                          )}
                         </div>
-                        <span style={{ padding: "0.2rem 0.6rem", borderRadius: "999px", background: `${STATUT_COLORS[insp.statut_conformite] ?? "#6b7280"}18`, color: STATUT_COLORS[insp.statut_conformite] ?? "#6b7280", fontWeight: 700, fontSize: "0.72rem", whiteSpace: "nowrap" }}>
+                        <span className={`pnpi-pill pnpi-pill--${insp.statut_conformite}`}>
                           {STATUT_LABELS[insp.statut_conformite] ?? insp.statut_conformite}
                         </span>
                       </div>
-                      <div style={{ marginTop: "0.5rem", fontSize: "0.8rem", color: "#6b7280" }}>
+
+                      <div className="pnpi-inspection-meta">
                         <span>{new Date(insp.date_inspection).toLocaleDateString("fr-FR")}</span>
-                        <span style={{ margin: "0 0.4rem" }}>&middot;</span>
+                        <span className="pnpi-inspection-meta-sep">&middot;</span>
                         <span>{insp.inspecteur_nom || insp.inspecteur_username}</span>
                       </div>
-                      <p style={{ margin: "0.5rem 0 0", fontSize: "0.8rem", color: "#374151" }}>{insp.observations.slice(0, 120)}{insp.observations.length > 120 ? "..." : ""}</p>
+
+                      <p className="pnpi-inspection-obs">
+                        {insp.observations.slice(0, 140)}
+                        {insp.observations.length > 140 ? "..." : ""}
+                      </p>
+
                       {insp.mesures_correctives && (
-                        <div style={{ marginTop: "0.4rem", padding: "0.4rem 0.65rem", background: "#fef9eb", borderRadius: "4px", fontSize: "0.75rem", color: "#92400e" }}>
-                          <strong>Mesures : </strong>{insp.mesures_correctives.slice(0, 100)}{insp.mesures_correctives.length > 100 ? "..." : ""}
+                        <div className="pnpi-inspection-mesures">
+                          <strong>Mesures correctives : </strong>
+                          {insp.mesures_correctives.slice(0, 120)}
+                          {insp.mesures_correctives.length > 120 ? "..." : ""}
                         </div>
                       )}
-                    </div>
                     </Link>
                   ))}
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Formulaire */}
-          {canCreate && (
-            <div style={{ flex: "1 1 320px" }}>
-              <div className="chart-card" style={{ padding: "1.25rem" }}>
-                <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Nouveau rapport d&apos;inspection</h3>
-                <InspectionCreateForm operateurs={operateurs} />
+            {/* Formulaire de creation (aside) */}
+            {canCreate && (
+              <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+                <div className="chart-card">
+                  <h3 className="pnpi-card-subtitle">Nouveau rapport d&apos;inspection</h3>
+                  <InspectionCreateForm operateurs={operateurs} />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </section>
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Erreur inconnue";
-    return <section className="section"><div className="chart-card"><h2 style={{ color: "#b42318", marginTop: 0 }}>Erreur</h2><p style={{ color: "#b42318" }}>{msg}</p></div></section>;
+    return (
+      <section className="section">
+        <div className="chart-card">
+          <h2 className="pnpi-error-title">Erreur</h2>
+          <p className="pnpi-error-text">{msg}</p>
+        </div>
+      </section>
+    );
   }
 }

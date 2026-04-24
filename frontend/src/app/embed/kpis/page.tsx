@@ -30,8 +30,8 @@ export default async function EmbedKpisPage() {
             </div>
           ))}
         </div>
-        <div style={{ textAlign: "center", fontSize: 9, color: "#9ca3af", padding: "4px 0" }}>
-          PNPI — pnpi-gabon.ga
+        <div style={{ textAlign: "center", fontSize: 9, color: "#6b7280", padding: "4px 0" }}>
+          PNPI · pnpi-gabon.ga
         </div>
       </body>
     </html>

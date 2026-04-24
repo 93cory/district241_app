@@ -82,7 +82,7 @@ export default async function ProfilPage() {
 
             {/* Roles */}
             <div style={{ marginBottom: "1.25rem" }}>
-              <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", marginBottom: "0.5rem" }}>Roles habilites</div>
+              <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", marginBottom: "0.5rem" }}>Roles habilites</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
                 {(profile.roles ?? []).map(r => {
                   const meta = ROLE_LABELS[r] ?? { label: r, color: "#6b7280", bg: "#f3f4f6" };
@@ -125,7 +125,7 @@ export default async function ProfilPage() {
 
             {/* Actions */}
             <div style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "1px solid #f3f4f6" }}>
-              <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", marginBottom: "0.75rem" }}>Acces rapide</div>
+              <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", marginBottom: "0.75rem" }}>Acces rapide</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {(profile.roles ?? []).some(r => ["admin","ministre","directeur","instructeur","inspecteur"].includes(r)) && (
                   <Link href="/pnpi" style={{ padding: "0.5rem 0.875rem", background: "#003F8F", color: "white", borderRadius: "6px", textDecoration: "none", fontSize: "0.82rem", fontWeight: 600, textAlign: "center" }}>Dashboard PNPI</Link>
@@ -141,11 +141,11 @@ export default async function ProfilPage() {
           </div>
         </div>
 
-        {/* Securite — Authentification a deux facteurs */}
+        {/* Securite · Authentification a deux facteurs */}
         <div style={{ flex: "1 1 280px" }}>
           <div className="chart-card" style={{ padding: "1.5rem" }}>
             <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>
-              Securite — Authentification a deux facteurs
+              Securite · Authentification a deux facteurs
             </h3>
             <TwoFactorSetup />
           </div>
@@ -181,7 +181,7 @@ export default async function ProfilPage() {
             <div className="chart-card" style={{ padding: "1.25rem" }}>
               <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>Mes dossiers ATI recents</h3>
               {createdATIs.length === 0 ? (
-                <p style={{ color: "#9ca3af", margin: 0, fontSize: "0.82rem" }}>Aucun dossier ATI associe.</p>
+                <p style={{ color: "#6b7280", margin: 0, fontSize: "0.82rem" }}>Aucun dossier ATI associe.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
                   {createdATIs.slice(0, 6).map(a => (
@@ -217,7 +217,7 @@ export default async function ProfilPage() {
                       </span>
                     </div>
                     <div style={{ fontSize: "0.78rem", color: "#374151" }}>{insp.observations.slice(0, 80)}{insp.observations.length > 80 ? "..." : ""}</div>
-                    <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginTop: "0.2rem" }}>{new Date(insp.date_inspection).toLocaleDateString("fr-FR")}</div>
+                    <div style={{ fontSize: "0.72rem", color: "#6b7280", marginTop: "0.2rem" }}>{new Date(insp.date_inspection).toLocaleDateString("fr-FR")}</div>
                   </div>
                 ))}
               </div>

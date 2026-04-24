@@ -7,33 +7,51 @@ import { ConfirmDialog } from "../../../components/ConfirmDialog";
 import { TemplateSelector } from "../TemplateSelector";
 
 const SECTEURS = ["bois", "mines", "agroalimentaire", "btp", "petrole", "services"];
-const SECTEUR_LABELS: Record<string, string> = { bois: "Bois & Foret", mines: "Mines", agroalimentaire: "Agro-alimentaire", btp: "BTP", petrole: "Petrole", services: "Services" };
+const SECTEUR_LABELS: Record<string, string> = {
+  bois: "Bois & Foret",
+  mines: "Mines",
+  agroalimentaire: "Agro-alimentaire",
+  btp: "BTP",
+  petrole: "Petrole",
+  services: "Services",
+};
 
-const inputStyle = { width: "100%", padding: "0.5rem 0.75rem", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "0.875rem", fontFamily: "inherit", boxSizing: "border-box" as const };
-const labelStyle = { display: "block", fontSize: "0.8rem", fontWeight: 600, color: "#374151", marginBottom: "0.25rem" };
+interface ATIFormData {
+  operateur_id: string;
+  type_activite: string;
+  secteur: string;
+  priorite: string;
+  observations?: string;
+}
+
+interface Template {
+  nom: string;
+  secteur?: string;
+  type_activite?: string;
+}
 
 export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) {
   const [isPending, startTransition] = useTransition();
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingData, setPendingData] = useState<{ operateur_id: string; type_activite: string; secteur: string; priorite: string; observations?: string } | null>(null);
+  const [pendingData, setPendingData] = useState<ATIFormData | null>(null);
   const [pendingForm, setPendingForm] = useState<HTMLFormElement | null>(null);
   const { showToast } = useToast();
 
-  const handleTemplate = (tpl: any) => {
-    // Pre-fill form fields from template
+  const handleTemplate = (tpl: Template) => {
     const form = document.querySelector<HTMLFormElement>("form");
     if (!form) return;
     const secteurSelect = form.querySelector<HTMLSelectElement>("[name=secteur]");
     const typeInput = form.querySelector<HTMLInputElement>("[name=type_activite]");
     if (secteurSelect && tpl.secteur) {
-      // Map template secteur to form secteur options
-      const mapping: Record<string, string> = { bois: "bois", mines: "mines", agroalimentaire: "agroalimentaire", peche: "services", chimie: "services", btp: "btp", energie: "services" };
+      const mapping: Record<string, string> = {
+        bois: "bois", mines: "mines", agroalimentaire: "agroalimentaire",
+        peche: "services", chimie: "services", btp: "btp", energie: "services",
+      };
       secteurSelect.value = mapping[tpl.secteur] || tpl.secteur;
     }
     if (typeInput && tpl.type_activite) {
-      // Trigger React state update via native input setter
       const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
       if (nativeInputValueSetter) {
         nativeInputValueSetter.call(typeInput, tpl.type_activite);
@@ -48,12 +66,12 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const data = {
+    const data: ATIFormData = {
       operateur_id: fd.get("operateur_id") as string,
       type_activite: fd.get("type_activite") as string,
       secteur: fd.get("secteur") as string,
       priorite: fd.get("priorite") as string,
-      observations: fd.get("observations") as string || undefined,
+      observations: (fd.get("observations") as string) || undefined,
     };
     if (!data.operateur_id || !data.type_activite || !data.secteur) {
       setError("Veuillez remplir tous les champs obligatoires.");
@@ -73,7 +91,7 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
     const form = pendingForm;
     startTransition(async () => {
       try {
-        const result = await createATI(data) as { numero_ati: string };
+        const result = (await createATI(data)) as { numero_ati: string };
         setSuccess(`ATI ${result.numero_ati} soumis avec succes !`);
         showToast(`ATI ${result.numero_ati} soumis avec succes !`, "success");
         form.reset();
@@ -96,60 +114,94 @@ export function ATICreateForm({ operateurs }: { operateurs: OperateurBrief[] }) 
 
   return (
     <>
-    <ConfirmDialog
-      open={confirmOpen}
-      title="Soumettre cet ATI ?"
-      message="Cette action va enregistrer la demande d'agrement. Voulez-vous continuer ?"
-      confirmLabel="Soumettre"
-      onConfirm={handleConfirm}
-      onCancel={handleCancel}
-    />
-    <TemplateSelector onSelect={handleTemplate} />
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-      <div>
-        <label style={labelStyle}>Operateur industriel *</label>
-        <select name="operateur_id" required style={inputStyle}>
-          <option value="">Selectionner un operateur...</option>
-          {operateurs.map((op) => (
-            <option key={op.id} value={op.id}>{op.raison_sociale} — {op.province.replace(/_/g, " ")}</option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label style={labelStyle}>Type d&apos;activite *</label>
-        <input name="type_activite" type="text" required placeholder="Ex: Transformation du bois en planches sciees" style={inputStyle} />
-      </div>
-      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 200px" }}>
-          <label style={labelStyle}>Secteur *</label>
-          <select name="secteur" required style={inputStyle}>
-            <option value="">Selectionner...</option>
-            {SECTEURS.map((s) => <option key={s} value={s}>{SECTEUR_LABELS[s]}</option>)}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Soumettre cet ATI ?"
+        message="Cette action va enregistrer la demande d'agrement. Voulez-vous continuer ?"
+        confirmLabel="Soumettre"
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+      <TemplateSelector onSelect={handleTemplate} />
+
+      <form onSubmit={handleSubmit} className="pnpi-form-stack">
+        <div className="pnpi-form-field">
+          <label htmlFor="ati-operateur" className="pnpi-form-label pnpi-form-label-req">
+            Operateur industriel
+          </label>
+          <select id="ati-operateur" name="operateur_id" required className="pnpi-form-select">
+            <option value="">Selectionner un operateur</option>
+            {operateurs.map((op) => (
+              <option key={op.id} value={op.id}>
+                {op.raison_sociale} · {op.province.replace(/_/g, " ")}
+              </option>
+            ))}
           </select>
         </div>
-        <div style={{ flex: "1 1 160px" }}>
-          <label style={labelStyle}>Priorite</label>
-          <select name="priorite" style={inputStyle} defaultValue="normale">
-            <option value="normale">Normale</option>
-            <option value="elevee">Elevee</option>
-            <option value="urgente">Urgente</option>
-          </select>
+
+        <div className="pnpi-form-field">
+          <label htmlFor="ati-type" className="pnpi-form-label pnpi-form-label-req">
+            Type d&apos;activite
+          </label>
+          <input
+            id="ati-type"
+            name="type_activite"
+            type="text"
+            required
+            className="pnpi-form-input"
+            placeholder="Ex : Transformation du bois en planches sciees"
+          />
         </div>
-      </div>
-      <div>
-        <label style={labelStyle}>Observations / Justification</label>
-        <textarea name="observations" rows={3} placeholder="Informations complementaires sur la demande..." style={{ ...inputStyle, resize: "vertical" }} />
-      </div>
-      {error && <div style={{ padding: "0.625rem 0.875rem", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "6px", color: "#dc2626", fontSize: "0.875rem" }}>{error}</div>}
-      {success && <div style={{ padding: "0.625rem 0.875rem", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "6px", color: "#16a34a", fontWeight: 600, fontSize: "0.875rem" }}>{success}</div>}
-      <button
-        type="submit"
-        disabled={isPending}
-        style={{ padding: "0.625rem 1.5rem", background: isPending ? "#9ca3af" : "#003F8F", color: "#fff", border: "none", borderRadius: "6px", fontSize: "0.875rem", fontWeight: 700, cursor: isPending ? "not-allowed" : "pointer", alignSelf: "flex-start" }}
-      >
-        {isPending ? "Soumission en cours..." : "Soumettre la demande ATI"}
-      </button>
-    </form>
+
+        <div className="pnpi-form-grid">
+          <div className="pnpi-form-field">
+            <label htmlFor="ati-secteur" className="pnpi-form-label pnpi-form-label-req">Secteur</label>
+            <select id="ati-secteur" name="secteur" required className="pnpi-form-select">
+              <option value="">Selectionner</option>
+              {SECTEURS.map((s) => (
+                <option key={s} value={s}>{SECTEUR_LABELS[s]}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="pnpi-form-field">
+            <label htmlFor="ati-priorite" className="pnpi-form-label">Priorite</label>
+            <select id="ati-priorite" name="priorite" className="pnpi-form-select" defaultValue="normale">
+              <option value="normale">Normale</option>
+              <option value="elevee">Elevee</option>
+              <option value="urgente">Urgente</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="pnpi-form-field">
+          <label htmlFor="ati-observations" className="pnpi-form-label">Observations / Justification</label>
+          <textarea
+            id="ati-observations"
+            name="observations"
+            rows={3}
+            className="pnpi-form-textarea"
+            placeholder="Informations complementaires sur la demande..."
+          />
+        </div>
+
+        {error && (
+          <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="pnpi-form-alert pnpi-form-alert--success" role="status">
+            {success}
+          </div>
+        )}
+
+        <div className="pnpi-form-actions pnpi-form-actions--start">
+          <button type="submit" disabled={isPending} className="btn-primary">
+            {isPending ? "Soumission en cours..." : "Soumettre la demande ATI"}
+          </button>
+        </div>
+      </form>
     </>
   );
 }

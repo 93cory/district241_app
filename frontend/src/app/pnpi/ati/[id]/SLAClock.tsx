@@ -50,7 +50,7 @@ export function SLAClock({ dateSoumission, slaJours, statut }: Props) {
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color }}>
-          {isTerminal ? "SLA — Termine" : isOverdue ? "SLA — DEPASSE" : "SLA — Compte a rebours"}
+          {isTerminal ? "SLA · Termine" : isOverdue ? "SLA · DEPASSE" : "SLA · Compte a rebours"}
         </span>
         <span style={{ fontSize: 12, color: "var(--text-soft, #526175)" }}>
           {slaJours} jours alloues

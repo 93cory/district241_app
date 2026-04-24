@@ -107,7 +107,7 @@ export default function KioskPage() {
         {slides.map((_, i) => (
           <div key={i} style={{
             width: i === slideIdx ? 24 : 8, height: 8, borderRadius: 4,
-            background: i === slideIdx ? "#fff" : "rgba(255,255,255,0.3)",
+            background: i === slideIdx ? "#fff" : "rgba(255, 255, 255, 0.72)",
             transition: "all 300ms ease",
           }} />
         ))}

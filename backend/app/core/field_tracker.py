@@ -1,4 +1,4 @@
-"""PNPI — Suivi des modifications champ par champ."""
+"""PNPI · Suivi des modifications champ par champ."""
 from __future__ import annotations
 
 from datetime import datetime, timezone

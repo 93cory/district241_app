@@ -1,4 +1,4 @@
-"""PNPI — Sauvegarde automatisee PostgreSQL vers S3/MinIO.
+"""PNPI · Sauvegarde automatisee PostgreSQL vers S3/MinIO.
 
 Usage:
   python scripts/backup_s3.py backup
@@ -6,13 +6,13 @@ Usage:
   python scripts/backup_s3.py restore <filename>
 
 Environment variables:
-  PNPI_DATABASE_URL  — PostgreSQL connection string
-  PNPI_S3_ENDPOINT   — S3/MinIO endpoint (e.g., https://minio.pnpi-gabon.ga)
-  PNPI_S3_BUCKET     — Bucket name (default: pnpi-backups)
-  PNPI_S3_ACCESS_KEY — S3 access key
-  PNPI_S3_SECRET_KEY — S3 secret key
-  PNPI_S3_REGION     — S3 region (default: us-east-1)
-  PNPI_BACKUP_RETAIN_DAYS — Days to retain backups (default: 30)
+  PNPI_DATABASE_URL  · PostgreSQL connection string
+  PNPI_S3_ENDPOINT   · S3/MinIO endpoint (e.g., https://minio.pnpi-gabon.ga)
+  PNPI_S3_BUCKET     · Bucket name (default: pnpi-backups)
+  PNPI_S3_ACCESS_KEY · S3 access key
+  PNPI_S3_SECRET_KEY · S3 secret key
+  PNPI_S3_REGION     · S3 region (default: us-east-1)
+  PNPI_BACKUP_RETAIN_DAYS · Days to retain backups (default: 30)
 """
 import sys
 import os

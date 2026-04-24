@@ -1,4 +1,4 @@
-"""PNPI — Generation du certificat officiel ATI avec QR code."""
+"""PNPI · Generation du certificat officiel ATI avec QR code."""
 from __future__ import annotations
 
 import io
@@ -56,7 +56,7 @@ def generate_ati_certificate(
 
     # Header
     story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=center_style, fontSize=11, textColor=colors.gray)))
-    story.append(Paragraph("Union — Travail — Justice", ParagraphStyle("motto", parent=center_style, fontSize=9, textColor=colors.gray, fontName="Helvetica-Oblique")))
+    story.append(Paragraph("Union · Travail · Justice", ParagraphStyle("motto", parent=center_style, fontSize=9, textColor=colors.gray, fontName="Helvetica-Oblique")))
     story.append(Spacer(1, 0.3*cm))
     story.append(Paragraph("MINISTERE DE L'INDUSTRIE ET DE LA TRANSFORMATION LOCALE", ParagraphStyle("ministry", parent=center_style, fontSize=10, textColor=BLEU, fontName="Helvetica-Bold")))
     story.append(Paragraph("Direction Generale de l'Industrie", ParagraphStyle("dgi", parent=center_style, fontSize=9, textColor=BLEU)))

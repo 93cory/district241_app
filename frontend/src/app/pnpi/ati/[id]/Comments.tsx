@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useToast } from "../../../components/Toast";
 
 interface Comment {
@@ -11,124 +11,120 @@ interface Comment {
   created_at: string;
 }
 
-export function ATIComments({ atiId }: { atiId: string }) {
+interface Props {
+  atiId: string;
+  currentUsername?: string;
+  canPostInternal?: boolean;
+}
+
+export function ATIComments({ atiId, currentUsername = "", canPostInternal = true }: Props) {
   const { showToast } = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
   const [body, setBody] = useState("");
   const [isInternal, setIsInternal] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const load = () => {
-    fetch(`/api/pnpi/ati/${atiId}/comments`)
-      .then((r) => r.ok ? r.json() : { comments: [] })
-      .then((data) => setComments(data.comments || []))
-      .catch(() => {});
+  const load = async () => {
+    try {
+      const res = await fetch(`/api/pnpi/ati/${atiId}/comments`, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        setComments(data.comments ?? []);
+      }
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, [atiId]);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [atiId]);
 
-  const send = async () => {
+  const send = async (e: FormEvent) => {
+    e.preventDefault();
     if (!body.trim()) return;
-    setSending(true);
+    setBusy(true);
     try {
       const res = await fetch(`/api/pnpi/ati/${atiId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body, is_internal: isInternal }),
+        body: JSON.stringify({ body: body.trim(), is_internal: isInternal && canPostInternal }),
       });
       if (res.ok) {
         setBody("");
-        load();
-        showToast("Commentaire ajoute", "success");
+        await load();
+        showToast("Commentaire publie", "success");
       } else {
-        showToast("Erreur", "error");
+        showToast("Erreur lors de la publication", "error");
       }
     } catch {
       showToast("Erreur de connexion", "error");
+    } finally {
+      setBusy(false);
     }
-    setSending(false);
   };
 
   return (
-    <div>
-      <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 12px" }}>
-        Commentaires ({comments.length})
-      </h3>
+    <div className="ati-comments">
+      <div className="ati-comments-head">
+        <h3 className="pnpi-card-subtitle">
+          Commentaires &amp; discussion {comments.length > 0 && <span className="ati-comments-count">({comments.length})</span>}
+        </h3>
+      </div>
 
-      {comments.length === 0 && (
-        <p style={{ fontSize: 13, color: "var(--text-soft, #526175)", marginBottom: 14 }}>
-          Aucun commentaire sur ce dossier.
-        </p>
+      {loading ? (
+        <div className="ati-comments-loading">Chargement des commentaires...</div>
+      ) : comments.length === 0 ? (
+        <div className="ati-comments-empty">
+          Aucun commentaire pour l&apos;instant.
+        </div>
+      ) : (
+        <ul className="ati-comments-list">
+          {comments.map((c) => {
+            const isMe = currentUsername && c.author === currentUsername;
+            return (
+              <li key={c.id} className={`ati-comment ${c.is_internal ? "is-internal" : ""} ${isMe ? "is-me" : ""}`}>
+                <div className="ati-comment-head">
+                  <span className="ati-comment-author">{c.author}</span>
+                  {c.is_internal && <span className="ati-comment-badge" title="Visible uniquement du personnel">interne</span>}
+                  <span className="ati-comment-date">
+                    {new Date(c.created_at).toLocaleString("fr-FR", {
+                      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+                <div className="ati-comment-body">{c.body}</div>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-        {comments.map((c) => (
-          <div
-            key={c.id}
-            style={{
-              padding: "10px 14px", borderRadius: 12,
-              background: c.is_internal ? "rgba(124, 58, 237, 0.06)" : "var(--bg-base, #f4f8fb)",
-              borderLeft: `3px solid ${c.is_internal ? "#7c3aed" : "var(--accent, #006233)"}`,
-            }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>
-                {c.author}
-                {c.is_internal && (
-                  <span style={{
-                    marginLeft: 6, padding: "1px 6px", borderRadius: 4,
-                    fontSize: 10, fontWeight: 700, background: "#f3e8ff", color: "#7c3aed",
-                  }}>
-                    Interne
-                  </span>
-                )}
-              </span>
-              <span style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)" }}>
-                {new Date(c.created_at).toLocaleString("fr-FR")}
-              </span>
-            </div>
-            <div style={{ fontSize: 13, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{c.body}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* New comment form */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <form onSubmit={send} className="ati-comments-form">
         <textarea
+          className="pnpi-form-textarea"
+          rows={3}
+          placeholder={canPostInternal ? "Ecrire un commentaire ou une note interne..." : "Poser une question a l'instructeur..."}
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Ajouter un commentaire..."
-          rows={3}
-          style={{
-            padding: "10px 14px", borderRadius: 10,
-            border: "1.5px solid var(--line, #dce4ef)",
-            fontSize: 13, resize: "vertical",
-          }}
+          disabled={busy}
         />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer" }}>
-            <input
-              type="checkbox"
-              checked={isInternal}
-              onChange={(e) => setIsInternal(e.target.checked)}
-              style={{ accentColor: "#7c3aed" }}
-            />
-            Note interne (invisible pour l&apos;operateur)
-          </label>
-          <button
-            onClick={send}
-            disabled={sending || !body.trim()}
-            style={{
-              padding: "8px 18px", borderRadius: 10, border: "none",
-              background: "#006233", color: "#fff", fontWeight: 600,
-              fontSize: 13, cursor: "pointer",
-              opacity: sending || !body.trim() ? 0.5 : 1,
-            }}
-          >
-            {sending ? "Envoi..." : "Envoyer"}
+        <div className="pnpi-form-actions pnpi-form-actions--between">
+          {canPostInternal ? (
+            <label className="pnpi-checkbox">
+              <input
+                type="checkbox"
+                checked={isInternal}
+                onChange={(e) => setIsInternal(e.target.checked)}
+              />
+              <span>Note interne (invisible pour l&apos;operateur)</span>
+            </label>
+          ) : (
+            <span className="ati-comments-hint">Ce commentaire sera visible de l&apos;instructeur.</span>
+          )}
+          <button type="submit" disabled={busy || !body.trim()} className="btn-primary">
+            {busy ? "Envoi..." : "Publier"}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

@@ -35,10 +35,10 @@ export default async function ExecutivePage() {
           </div>
           <div style={{
             padding: "8px 16px", borderRadius: 12,
-            background: quality.grade ? `rgba(255,255,255,0.15)` : "transparent",
+            background: quality.grade ? `rgba(255, 255, 255, 0.72)` : "transparent",
           }}>
             <div style={{ fontSize: 10, opacity: 0.7 }}>Qualite donnees</div>
-            <div style={{ fontSize: 24, fontWeight: 800 }}>{quality.grade || "—"}</div>
+            <div style={{ fontSize: 24, fontWeight: 800 }}>{quality.grade || "·"}</div>
           </div>
         </div>
       </div>
@@ -80,7 +80,7 @@ export default async function ExecutivePage() {
                 {predictions.approval_rate.trend === "hausse" ? "\u2191" : "\u2193"} {predictions.approval_rate.trend}
               </span>
             </div>
-          ) : <div style={{ color: "var(--text-soft)" }}>—</div>}
+          ) : <div style={{ color: "var(--text-soft)" }}>·</div>}
         </div>
 
         {/* Backlog */}
@@ -97,7 +97,7 @@ export default async function ExecutivePage() {
                 <div style={{ fontSize: 11, color: "var(--text-soft)" }}>Pour tout traiter</div>
               </div>
             </div>
-          ) : <div style={{ color: "var(--text-soft)" }}>—</div>}
+          ) : <div style={{ color: "var(--text-soft)" }}>·</div>}
         </div>
       </div>
 

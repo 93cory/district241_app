@@ -140,7 +140,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
           />
 
           {filteredAlerts.length === 0 ? (
-            <p style={{ color: "#9ca3af", textAlign: "center", padding: "2rem 0" }}>Aucune alerte.</p>
+            <p style={{ color: "#6b7280", textAlign: "center", padding: "2rem 0" }}>Aucune alerte.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {filteredAlerts.map((alert, idx) => {
@@ -214,7 +214,7 @@ export default async function NotificationsPage({ searchParams }: { searchParams
                       <div
                         style={{
                           fontSize: "0.72rem",
-                          color: "#9ca3af",
+                          color: "#6b7280",
                           whiteSpace: "nowrap",
                           marginTop: "0.15rem",
                         }}

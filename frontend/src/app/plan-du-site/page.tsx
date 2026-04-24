@@ -140,7 +140,7 @@ export default function PlanDuSitePage() {
   return (
     <div style={{ padding: "40px 32px", maxWidth: 1000, margin: "0 auto" }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>Plan du site</h1>
-      <p style={{ color: "#526175", fontSize: 13, marginBottom: 24 }}>PNPI — Toutes les pages de la plateforme</p>
+      <p style={{ color: "#526175", fontSize: 13, marginBottom: 24 }}>PNPI · Toutes les pages de la plateforme</p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
         {sections.map(s => (
@@ -157,8 +157,8 @@ export default function PlanDuSitePage() {
         ))}
       </div>
 
-      <div style={{ textAlign: "center", marginTop: 32, fontSize: 11, color: "#9ca3af" }}>
-        {sections.reduce((s, sec) => s + sec.links.length, 0)} pages repertoriees — PNPI {new Date().getFullYear()}
+      <div style={{ textAlign: "center", marginTop: 32, fontSize: 11, color: "#6b7280" }}>
+        {sections.reduce((s, sec) => s + sec.links.length, 0)} pages repertoriees · PNPI {new Date().getFullYear()}
       </div>
     </div>
   );

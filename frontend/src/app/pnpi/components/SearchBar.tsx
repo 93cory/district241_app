@@ -61,7 +61,7 @@ export function SearchBar() {
   return (
     <div ref={containerRef} style={{ position: "relative", flex: "1 1 280px", maxWidth: "360px" }}>
       <div style={{ position: "relative" }}>
-        <span style={{ position: "absolute", left: "0.7rem", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "0.9rem", pointerEvents: "none" }}>🔍</span>
+        <span style={{ position: "absolute", left: "0.7rem", top: "50%", transform: "translateY(-50%)", color: "#6b7280", fontSize: "0.9rem", pointerEvents: "none" }}>🔍</span>
         <input
           value={query}
           onChange={handleChange}
@@ -73,7 +73,7 @@ export function SearchBar() {
             background: "white", boxSizing: "border-box", outline: "none",
           }}
         />
-        {loading && <span style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", fontSize: "0.75rem", color: "#9ca3af" }}>...</span>}
+        {loading && <span style={{ position: "absolute", right: "0.75rem", top: "50%", transform: "translateY(-50%)", fontSize: "0.75rem", color: "#6b7280" }}>...</span>}
       </div>
 
       {open && results.length > 0 && (
@@ -111,7 +111,7 @@ export function SearchBar() {
         </div>
       )}
       {open && results.length === 0 && query.length >= 2 && !loading && (
-        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "0.875rem 1rem", color: "#9ca3af", fontSize: "0.82rem", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 1000 }}>
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "white", borderRadius: "10px", border: "1px solid #e5e7eb", padding: "0.875rem 1rem", color: "#6b7280", fontSize: "0.82rem", boxShadow: "0 8px 24px rgba(0,0,0,0.12)", zIndex: 1000 }}>
           Aucun resultat pour &ldquo;{query}&rdquo;
         </div>
       )}

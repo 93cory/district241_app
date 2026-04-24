@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Configuration de la base de donnees SQLAlchemy."""
+"""PNPI / PNPI · Configuration de la base de donnees SQLAlchemy."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -77,7 +77,7 @@ def _create_engine_with_retry(url: str, max_retries: int = 5, delay: float = 2.0
             if attempt == max_retries:
                 _db_logger.error("Database connection failed after %d attempts: %s", max_retries, e)
                 return eng  # Return engine anyway, let the app handle errors
-            _db_logger.warning("Database not ready (attempt %d/%d): %s — retrying in %ss", attempt, max_retries, str(e)[:100], delay)
+            _db_logger.warning("Database not ready (attempt %d/%d): %s · retrying in %ss", attempt, max_retries, str(e)[:100], delay)
             time.sleep(delay)
             delay = min(delay * 1.5, 10)
 

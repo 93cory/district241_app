@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Endpoints d'exports (CSV, PDF)."""
+"""PNPI / PNPI · Endpoints d'exports (CSV, PDF)."""
 from __future__ import annotations
 
 import csv
@@ -116,7 +116,7 @@ async def export_dashboard_pdf(
     lines = [
         "REPUBLIQUE GABONAISE",
         "Ministere de l'Industrie et de la Transformation Locale",
-        "CONFIDENTIEL — Document officiel PNPI",
+        "CONFIDENTIEL · Document officiel PNPI",
         "",
         "PNPI - Resume Strategique",
         f"Date: {now_utc().isoformat()}",
@@ -158,7 +158,7 @@ async def export_inspectors_briefing_pdf(
     lines = [
         "REPUBLIQUE GABONAISE",
         "Ministere de l'Industrie et de la Transformation Locale",
-        "CONFIDENTIEL — Document officiel PNPI",
+        "CONFIDENTIEL · Document officiel PNPI",
         "",
         "PNPI - Briefing Inspecteurs",
         f"Date: {now_utc().isoformat()}",
@@ -282,7 +282,7 @@ async def export_pilotage_transitions_pdf(
     lines = [
         "REPUBLIQUE GABONAISE",
         "Ministere de l'Industrie et de la Transformation Locale",
-        "CONFIDENTIEL — Document officiel PNPI",
+        "CONFIDENTIEL · Document officiel PNPI",
         "",
         "PNPI - Journal des transitions workflow",
         f"Date: {now_utc().isoformat()}",
@@ -480,9 +480,9 @@ async def export_pnpi_briefing_pdf(
     lines = [
         "REPUBLIQUE GABONAISE",
         "Ministere de l'Industrie et de la Transformation Locale",
-        "CONFIDENTIEL — Document officiel PNPI",
+        "CONFIDENTIEL · Document officiel PNPI",
         "",
-        f"BRIEFING MINISTERIEL PNPI — {ts}",
+        f"BRIEFING MINISTERIEL PNPI · {ts}",
         "=" * 60,
         "",
         "INDICATEURS CLES",
@@ -1054,8 +1054,8 @@ async def export_batch_qr_pdf(
     center = ParagraphStyle("center", parent=styles["Normal"], alignment=TA_CENTER, fontSize=10)
 
     story = []
-    story.append(Paragraph("PNPI — QR Codes de Verification", ParagraphStyle("title", parent=center, fontSize=16, fontName="Helvetica-Bold", textColor=colors.HexColor("#006233"))))
-    story.append(Paragraph(f"Statut: {statut} — {len(atis)} ATI(s)", ParagraphStyle("sub", parent=center, fontSize=10, textColor=colors.gray)))
+    story.append(Paragraph("PNPI · QR Codes de Verification", ParagraphStyle("title", parent=center, fontSize=16, fontName="Helvetica-Bold", textColor=colors.HexColor("#006233"))))
+    story.append(Paragraph(f"Statut: {statut} · {len(atis)} ATI(s)", ParagraphStyle("sub", parent=center, fontSize=10, textColor=colors.gray)))
     story.append(Spacer(1, 0.5*cm))
 
     # Build rows of 3 QR codes
@@ -1072,7 +1072,7 @@ async def export_batch_qr_pdf(
         qr_img.save(qr_buf, format="PNG")
         qr_buf.seek(0)
 
-        op_name = ati.operateur.raison_sociale[:25] if ati.operateur else "—"
+        op_name = ati.operateur.raison_sociale[:25] if ati.operateur else "·"
 
         cell_content = [
             RLImage(qr_buf, width=3.5*cm, height=3.5*cm),
@@ -1330,7 +1330,7 @@ async def export_province_report(
     story.append(Spacer(1, 0.3*cm))
     story.append(HRFlowable(width="100%", thickness=3, color=VERT))
     story.append(Spacer(1, 0.5*cm))
-    story.append(Paragraph(f"RAPPORT PROVINCIAL — {prov_label.upper()}", ParagraphStyle("title", parent=center, fontSize=18, textColor=BLEU, fontName="Helvetica-Bold")))
+    story.append(Paragraph(f"RAPPORT PROVINCIAL · {prov_label.upper()}", ParagraphStyle("title", parent=center, fontSize=18, textColor=BLEU, fontName="Helvetica-Bold")))
     story.append(Paragraph(f"Genere le {now.strftime('%d/%m/%Y')}", ParagraphStyle("date", parent=center, fontSize=10, textColor=colors.gray)))
     story.append(Spacer(1, 0.6*cm))
 

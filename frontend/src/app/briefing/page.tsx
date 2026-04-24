@@ -35,7 +35,7 @@ export default async function BriefingPage() {
   }
 
   const [snapshot, alerts, forecast, units, fieldReports] = await Promise.all([
-    fetchDashboard().catch(() => ({ total_units: 0, active_units: 0, total_volume_tons: 0, total_jobs: 0, avg_capacity_utilization: 0, national_index: 0, import_gap_tons: 0, jobs_created: 0 })),
+    fetchDashboard().catch(() => ({ total_units: 0, active_units: 0, total_volume_tons: 0, total_jobs: 0, avg_capacity_utilization: 0, national_index: 0, import_gap_tons: 0, jobs_created: 0, traced_batches: 0, indicators: [] as Array<{ sector: string; local_volume_tons: number; import_volume_tons: number; jobs: number }> })),
     fetchDashboardAlerts().catch(() => []),
     fetchForecast().catch(() => []),
     fetchUnits().catch(() => []),

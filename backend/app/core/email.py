@@ -1,4 +1,4 @@
-"""PNPI — Service d'envoi d'emails."""
+"""PNPI · Service d'envoi d'emails."""
 from __future__ import annotations
 
 import logging
@@ -58,7 +58,7 @@ def email_ati_approved(to: List[str], ati_numero: str, operateur: str) -> bool:
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: #006233; color: white; padding: 20px; border-radius: 12px 12px 0 0;">
-        <h1 style="margin: 0; font-size: 20px;">PNPI — Agrement Technique Industriel</h1>
+        <h1 style="margin: 0; font-size: 20px;">PNPI · Agrement Technique Industriel</h1>
       </div>
       <div style="padding: 24px; background: #f6f8fb; border-radius: 0 0 12px 12px;">
         <h2 style="color: #006233; margin-top: 0;">ATI Approuve</h2>
@@ -82,7 +82,7 @@ def email_ati_rejected(to: List[str], ati_numero: str, operateur: str, motif: st
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: #b42318; color: white; padding: 20px; border-radius: 12px 12px 0 0;">
-        <h1 style="margin: 0; font-size: 20px;">PNPI — Agrement Technique Industriel</h1>
+        <h1 style="margin: 0; font-size: 20px;">PNPI · Agrement Technique Industriel</h1>
       </div>
       <div style="padding: 24px; background: #f6f8fb; border-radius: 0 0 12px 12px;">
         <h2 style="color: #b42318; margin-top: 0;">ATI Rejete</h2>
@@ -103,15 +103,15 @@ def email_ati_rejected(to: List[str], ati_numero: str, operateur: str, motif: st
 
 
 def email_sla_alert(to: List[str], ati_numero: str, days_overdue: int, severity: str) -> bool:
-    subject = f"Alerte SLA — ATI {ati_numero} en retard de {days_overdue} jours"
+    subject = f"Alerte SLA · ATI {ati_numero} en retard de {days_overdue} jours"
     color = "#b42318" if severity == "critical" else "#f2b800"
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: {color}; color: white; padding: 20px; border-radius: 12px 12px 0 0;">
-        <h1 style="margin: 0; font-size: 20px;">PNPI — Alerte SLA</h1>
+        <h1 style="margin: 0; font-size: 20px;">PNPI · Alerte SLA</h1>
       </div>
       <div style="padding: 24px; background: #f6f8fb; border-radius: 0 0 12px 12px;">
-        <h2 style="color: {color}; margin-top: 0;">Depassement SLA — {severity.upper()}</h2>
+        <h2 style="color: {color}; margin-top: 0;">Depassement SLA · {severity.upper()}</h2>
         <p>L'ATI <strong>{ati_numero}</strong> est en retard de <strong>{days_overdue} jours</strong>
         par rapport au delai SLA.</p>
         <p>Action requise de votre part.</p>
@@ -128,12 +128,12 @@ def email_sla_alert(to: List[str], ati_numero: str, days_overdue: int, severity:
 
 
 def email_inspection_complete(to: List[str], inspection_id: str, operateur: str, statut: str) -> bool:
-    subject = f"Inspection {inspection_id} terminee — {statut}"
+    subject = f"Inspection {inspection_id} terminee · {statut}"
     color = "#006233" if statut == "conforme" else "#b42318"
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <div style="background: #0d3f78; color: white; padding: 20px; border-radius: 12px 12px 0 0;">
-        <h1 style="margin: 0; font-size: 20px;">PNPI — Inspection de Conformite</h1>
+        <h1 style="margin: 0; font-size: 20px;">PNPI · Inspection de Conformite</h1>
       </div>
       <div style="padding: 24px; background: #f6f8fb; border-radius: 0 0 12px 12px;">
         <h2 style="margin-top: 0;">Inspection Terminee</h2>

@@ -1,4 +1,4 @@
-"""File upload validation — size limits and MIME type checking."""
+"""File upload validation · size limits and MIME type checking."""
 from __future__ import annotations
 
 import logging

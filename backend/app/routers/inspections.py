@@ -1,4 +1,4 @@
-"""PNPI — Endpoints de gestion des inspections de conformité."""
+"""PNPI · Endpoints de gestion des inspections de conformité."""
 from __future__ import annotations
 
 import math
@@ -38,6 +38,9 @@ class PhotoRead(BaseModel):
     nom_fichier: str
     taille_octets: int
     description: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    captured_at: Optional[str] = None
     uploaded_at: str
     uploaded_by: str
 
@@ -52,6 +55,9 @@ def _to_photo_read(photo: InspectionPhotoORM) -> PhotoRead:
         nom_fichier=photo.nom_fichier,
         taille_octets=photo.taille_octets,
         description=photo.description,
+        latitude=photo.latitude,
+        longitude=photo.longitude,
+        captured_at=photo.captured_at.isoformat() if photo.captured_at else None,
         uploaded_at=photo.uploaded_at.isoformat(),
         uploaded_by=photo.uploaded_by,
     )
@@ -139,6 +145,128 @@ async def create_inspection(
     db.commit()
     db.refresh(insp)
     return _to_inspection_read(insp, db)
+
+
+@router.post("/inspections/tournee/optimize", summary="Optimisation de tournee (nearest-neighbor TSP)")
+async def optimize_tournee(
+    data: dict,
+    current_user: User = Depends(require_roles(Role.admin, Role.inspecteur, Role.directeur)),
+    db: Session = Depends(get_db),
+):
+    """Prend une liste d'operateurs a visiter + point de depart, renvoie l'ordre
+    optimal via l'algorithme nearest-neighbor (O(n^2), suffisant pour ~20 points).
+    Input : { start: {lat, lng}, operateur_ids: [...] }
+    """
+    import math
+    start = data.get("start") or {}
+    start_lat = start.get("lat")
+    start_lng = start.get("lng")
+    operateur_ids = data.get("operateur_ids") or []
+
+    if start_lat is None or start_lng is None:
+        raise HTTPException(400, "Coordonnees de depart manquantes (start.lat, start.lng).")
+    if not operateur_ids or not isinstance(operateur_ids, list):
+        raise HTTPException(400, "Liste operateur_ids requise.")
+
+    ops = db.execute(
+        select(OperateurIndustrielORM).where(OperateurIndustrielORM.id.in_(operateur_ids))
+    ).scalars().all()
+
+    # Ne garder que ceux qui ont une geoloc
+    geo_ops = [(op, op.latitude, op.longitude) for op in ops if op.latitude and op.longitude]
+    if not geo_ops:
+        raise HTTPException(400, "Aucun operateur geocode dans la liste fournie.")
+
+    def haversine(lat1, lng1, lat2, lng2):
+        R = 6371  # km
+        dlat = math.radians(lat2 - lat1)
+        dlng = math.radians(lng2 - lng1)
+        a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlng / 2) ** 2
+        return 2 * R * math.asin(math.sqrt(a))
+
+    # Nearest neighbor depuis le point de depart
+    route = []
+    current_lat, current_lng = start_lat, start_lng
+    remaining = list(geo_ops)
+    total_km = 0.0
+    while remaining:
+        best_idx = 0
+        best_dist = float("inf")
+        for i, (_, lat, lng) in enumerate(remaining):
+            d = haversine(current_lat, current_lng, lat, lng)
+            if d < best_dist:
+                best_dist = d
+                best_idx = i
+        op, lat, lng = remaining.pop(best_idx)
+        total_km += best_dist
+        route.append({
+            "operateur_id": op.id,
+            "raison_sociale": op.raison_sociale,
+            "secteur": op.secteur,
+            "latitude": lat,
+            "longitude": lng,
+            "distance_km_from_prev": round(best_dist, 2),
+        })
+        current_lat, current_lng = lat, lng
+
+    return {
+        "start": {"lat": start_lat, "lng": start_lng},
+        "route": route,
+        "total_km": round(total_km, 2),
+        "nb_stops": len(route),
+        "skipped_no_geo": len(ops) - len(geo_ops),
+    }
+
+
+@router.get("/inspections/{inspection_id}/comparison", summary="Comparaison avec l'inspection precedente de l'operateur")
+async def inspection_comparison(
+    inspection_id: str,
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+):
+    current = db.get(InspectionConformiteORM, inspection_id)
+    if not current:
+        raise HTTPException(status_code=404, detail="Inspection introuvable.")
+
+    # Derniere inspection du MEME operateur anterieure a celle-ci
+    previous = db.execute(
+        select(InspectionConformiteORM)
+        .where(
+            InspectionConformiteORM.operateur_id == current.operateur_id,
+            InspectionConformiteORM.id != inspection_id,
+            InspectionConformiteORM.date_inspection < current.date_inspection,
+        )
+        .order_by(InspectionConformiteORM.date_inspection.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    def serialize(i: InspectionConformiteORM | None):
+        if not i: return None
+        return {
+            "id": i.id,
+            "date_inspection": i.date_inspection.isoformat(),
+            "statut_conformite": i.statut_conformite,
+            "inspecteur": i.inspecteur_username,
+            "observations": i.observations,
+            "mesures_correctives": i.mesures_correctives,
+        }
+
+    # Evolution de conformite
+    evolution = None
+    if previous:
+        rank = {"conforme": 2, "partiel": 1, "non_conforme": 0}
+        prev_rank = rank.get(previous.statut_conformite, 0)
+        curr_rank = rank.get(current.statut_conformite, 0)
+        if curr_rank > prev_rank: evolution = "amelioration"
+        elif curr_rank < prev_rank: evolution = "degradation"
+        else: evolution = "stable"
+
+    return {
+        "current": serialize(current),
+        "previous": serialize(previous),
+        "evolution": evolution,
+        "days_between": (current.date_inspection.date() - previous.date_inspection.date()).days if previous else None,
+    }
 
 
 @router.get("/inspections/{inspection_id}", response_model=InspectionRead, summary="Detail d'une inspection")
@@ -241,7 +369,7 @@ async def download_inspection_pdf(
 
     story = []
     story.append(Paragraph("REPUBLIQUE GABONAISE", ParagraphStyle("rg", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=colors.gray)))
-    story.append(Paragraph("Ministere de l'Industrie — PNPI", ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu)))
+    story.append(Paragraph("Ministere de l'Industrie · PNPI", ParagraphStyle("mi", parent=styles["Normal"], alignment=TA_CENTER, fontSize=9, textColor=bleu)))
     story.append(Spacer(1, 0.3*cm))
     story.append(HRFlowable(width="100%", thickness=2, color=bleu))
     story.append(Spacer(1, 0.3*cm))
@@ -254,7 +382,7 @@ async def download_inspection_pdf(
     data = [
         ["Resultat", conf_label, "Date inspection", insp.date_inspection.strftime("%d/%m/%Y")],
         ["Inspecteur", insp.inspecteur_username, "Operateur", op.raison_sociale if op else insp.operateur_id],
-        ["ATI lie", insp.ati_id or "—", "Province", op.province.replace("_", " ").capitalize() if op else "—"],
+        ["ATI lie", insp.ati_id or "·", "Province", op.province.replace("_", " ").capitalize() if op else "·"],
     ]
     t = Table(data, colWidths=[4*cm, 5*cm, 4*cm, 4*cm])
     t.setStyle(TableStyle([
@@ -282,7 +410,7 @@ async def download_inspection_pdf(
     story.append(HRFlowable(width="100%", thickness=1, color=bleu))
     from ..database import now_utc as _now
     story.append(Paragraph(
-        f"Document genere par la PNPI — {_now().strftime('%d/%m/%Y %H:%M')} UTC",
+        f"Document genere par la PNPI · {_now().strftime('%d/%m/%Y %H:%M')} UTC",
         ParagraphStyle("footer", parent=styles["Normal"], alignment=TA_CENTER, fontSize=7, textColor=colors.gray)
     ))
     doc.build(story)
@@ -320,6 +448,9 @@ async def upload_inspection_photo(
     inspection_id: str,
     file: UploadFile = File(...),
     description: Optional[str] = Form(default=None),
+    latitude: Optional[float] = Form(default=None),
+    longitude: Optional[float] = Form(default=None),
+    captured_at: Optional[str] = Form(default=None),
     current_user: User = Depends(require_roles(Role.admin, Role.inspecteur, Role.directeur)),
     db: Session = Depends(get_db),
 ) -> PhotoRead:
@@ -356,6 +487,15 @@ async def upload_inspection_photo(
     file_path = inspection_dir / stored_name
     file_path.write_bytes(content)
 
+    # Parse captured_at si ISO fourni
+    captured_dt = None
+    if captured_at:
+        try:
+            from datetime import datetime as _dt
+            captured_dt = _dt.fromisoformat(captured_at.replace("Z", "+00:00"))
+        except Exception:
+            captured_dt = None
+
     photo = InspectionPhotoORM(
         id=photo_id,
         inspection_id=inspection_id,
@@ -363,6 +503,9 @@ async def upload_inspection_photo(
         chemin_stockage=str(file_path),
         taille_octets=len(content),
         description=description,
+        latitude=latitude,
+        longitude=longitude,
+        captured_at=captured_dt,
         uploaded_at=now_utc(),
         uploaded_by=current_user.username,
     )

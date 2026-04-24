@@ -1,4 +1,4 @@
-import { fetchWithAuth } from "@/lib/backend";
+import { backendRequest } from "../../../lib/backend";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +11,10 @@ export default async function ImpactPage() {
 
   try {
     const [kpiRes, sectRes, provRes, idxRes] = await Promise.all([
-      fetchWithAuth("/pnpi/dashboard/kpis"),
-      fetchWithAuth("/pnpi/dashboard/secteurs"),
-      fetchWithAuth("/pnpi/dashboard/provinces"),
-      fetchWithAuth("/pnpi/dashboard/transformation-index"),
+      backendRequest("/pnpi/dashboard/kpis"),
+      backendRequest("/pnpi/dashboard/secteurs"),
+      backendRequest("/pnpi/dashboard/provinces"),
+      backendRequest("/pnpi/dashboard/transformation-index"),
     ]);
     if (kpiRes.ok) kpis = await kpiRes.json();
     if (sectRes.ok) secteurs = await sectRes.json();
@@ -34,7 +34,7 @@ export default async function ImpactPage() {
         Rapport d&apos;Impact Socio-Economique
       </h1>
       <p style={{ color: "var(--text-soft, #526175)", fontSize: 14, margin: "0 0 28px" }}>
-        Ministere de l&apos;Industrie et de la Transformation Locale — Gabon
+        Ministere de l&apos;Industrie et de la Transformation Locale · Gabon
       </p>
 
       {error && <div style={{ padding: 14, borderRadius: 12, background: "#fff5f5", color: "#b42318", marginBottom: 16 }}>{error}</div>}
@@ -124,7 +124,9 @@ export default async function ImpactPage() {
       {/* Export button */}
       <div style={{ textAlign: "center", marginTop: 20 }}>
         <a
-          href="/api/exports/executive-report-pdf"
+          href="/api/exports/executive-report.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
             display: "inline-block", padding: "12px 28px", borderRadius: 12,
             background: "#006233", color: "#fff", fontWeight: 700,

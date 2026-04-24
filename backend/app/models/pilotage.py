@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Modeles ORM pour les dossiers de pilotage industriel."""
+"""PNPI / PNPI · Modeles ORM pour les dossiers de pilotage industriel."""
 from __future__ import annotations
 
 from datetime import datetime

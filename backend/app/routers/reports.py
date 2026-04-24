@@ -1,4 +1,4 @@
-"""PNPI — Constructeur de rapports personnalises."""
+"""PNPI · Constructeur de rapports personnalises."""
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
@@ -30,7 +30,7 @@ async def build_report(
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
     db: Session = Depends(get_db),
 ):
-    """Dynamic report builder — aggregate any metric by any dimension."""
+    """Dynamic report builder · aggregate any metric by any dimension."""
 
     now = datetime.now(timezone.utc)
     start = datetime.fromisoformat(date_start).replace(tzinfo=timezone.utc) if date_start else now - timedelta(days=365)

@@ -1,4 +1,4 @@
-"""PNPI — WebSocket pour notifications temps reel."""
+"""PNPI · WebSocket pour notifications temps reel."""
 from __future__ import annotations
 
 import asyncio

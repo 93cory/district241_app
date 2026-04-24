@@ -1,4 +1,4 @@
-"""PNPI — Endpoint pour declencher les notifications SLA manuellement."""
+"""PNPI · Endpoint pour declencher les notifications SLA manuellement."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends

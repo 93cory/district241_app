@@ -56,14 +56,14 @@ export default async function FavoritesPage() {
                     {fav.numero_ati || fav.ati_id.slice(0, 12)}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--text-soft, #526175)" }}>
-                    {fav.operateur || "—"}
+                    {fav.operateur || "·"}
                   </div>
                 </div>
                 <span style={{
                   padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 700,
                   background: `${color}12`, color,
                 }}>
-                  {fav.statut?.replace(/_/g, " ") || "—"}
+                  {fav.statut?.replace(/_/g, " ") || "·"}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)" }}>
                   {new Date(fav.created_at).toLocaleDateString("fr-FR")}

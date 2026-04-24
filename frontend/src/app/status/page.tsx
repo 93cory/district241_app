@@ -43,7 +43,7 @@ export default async function StatusPage() {
           </div>
           {data && (
             <div style={{ fontSize: 12, color: "var(--text-soft, #526175)", marginTop: 4 }}>
-              Uptime: {data.uptime_hours}h — Version {data.version}
+              Uptime: {data.uptime_hours}h · Version {data.version}
             </div>
           )}
         </div>
@@ -97,7 +97,7 @@ export default async function StatusPage() {
           color: "var(--text-soft, #9ca3af)",
         }}>
           {data && <>Derniere verification : {new Date(data.timestamp).toLocaleString("fr-FR")}<br /></>}
-          Ministere de l&apos;Industrie et de la Transformation Locale — PNPI
+          Ministere de l&apos;Industrie et de la Transformation Locale · PNPI
         </div>
       </div>
     </div>

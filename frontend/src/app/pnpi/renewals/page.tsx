@@ -48,7 +48,7 @@ export default async function RenewalsPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700 }}>{ati.numero_ati}</div>
                   <div style={{ fontSize: 12, color: "var(--text-soft, #526175)" }}>
-                    {ati.operateur} — {ati.secteur}
+                    {ati.operateur} · {ati.secteur}
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>

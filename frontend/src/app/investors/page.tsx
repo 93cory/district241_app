@@ -135,7 +135,7 @@ export default async function InvestorsPage() {
         background: "#051B36", color: "rgba(255,255,255,0.6)", padding: "20px 24px",
         textAlign: "center", fontSize: 11,
       }}>
-        Ministere de l&apos;Industrie et de la Transformation Locale — Republique Gabonaise — PNPI {new Date().getFullYear()}
+        Ministere de l&apos;Industrie et de la Transformation Locale · Republique Gabonaise · PNPI {new Date().getFullYear()}
       </div>
     </div>
   );

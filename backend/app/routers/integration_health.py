@@ -1,4 +1,4 @@
-"""PNPI — Monitoring de sante des integrations externes."""
+"""PNPI · Monitoring de sante des integrations externes."""
 from __future__ import annotations
 
 import time

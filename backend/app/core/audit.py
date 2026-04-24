@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Audit, notifications systeme et alertes SLA."""
+"""PNPI / PNPI · Audit, notifications systeme et alertes SLA."""
 from __future__ import annotations
 
 import uuid

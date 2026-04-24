@@ -77,7 +77,7 @@ export default async function ActivityPage() {
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
                 <span>
                   <strong>{ev.actor}</strong>
-                  {" — "}
+                  {" · "}
                   <span style={{ color: "var(--accent, #006233)", fontWeight: 600 }}>
                     {ACTION_LABELS[ev.action] || ev.action}
                   </span>

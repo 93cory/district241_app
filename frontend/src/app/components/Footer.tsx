@@ -1,59 +1,108 @@
+import Link from "next/link";
+import Image from "next/image";
+
+interface FooterLink {
+  href: string;
+  label: string;
+}
+
+interface FooterColumn {
+  title: string;
+  links: FooterLink[];
+}
+
+const COLUMNS: FooterColumn[] = [
+  {
+    title: "Plateforme",
+    links: [
+      { href: "/about", label: "A propos" },
+      { href: "/contact", label: "Contact" },
+      { href: "/investors", label: "Investisseurs" },
+      { href: "/open-data", label: "Open Data" },
+    ],
+  },
+  {
+    title: "Cadre legal",
+    links: [
+      { href: "/legal/cgu", label: "Conditions d'utilisation" },
+      { href: "/legal/confidentialite", label: "Confidentialite" },
+      { href: "/legal/accessibilite", label: "Accessibilite" },
+      { href: "/plan-du-site", label: "Plan du site" },
+    ],
+  },
+  {
+    title: "Technique",
+    links: [
+      { href: "/api-docs", label: "API Docs" },
+      { href: "/status", label: "Statut de la plateforme" },
+      { href: "/changelog", label: "Historique des versions" },
+      { href: "/embed", label: "Widgets a integrer" },
+    ],
+  },
+];
+
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer style={{
-      background: "var(--bg-base, #f4f8fb)",
-      borderTop: "1px solid var(--line, #dce4ef)",
-      padding: "20px 24px",
-      marginTop: 40,
-    }} className="no-print">
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-main, #0c2a4a)", marginBottom: 4 }}>PNPI</div>
-          <div style={{ fontSize: 11, color: "var(--text-soft, #526175)", lineHeight: 1.5 }}>
-            Plateforme Nationale de la<br />Politique Industrielle<br />
-            Republique Gabonaise
+    <footer className="pnpi-footer no-print" role="contentinfo">
+      <div className="pnpi-footer-flag" aria-hidden="true">
+        <span className="flag-green" />
+        <span className="flag-yellow" />
+        <span className="flag-blue" />
+      </div>
+
+      <div className="pnpi-footer-inner">
+        <div className="pnpi-footer-brand">
+          <div className="pnpi-footer-logo">
+            <Image
+              src="/pnpi_logo.png"
+              alt="Logo PNPI"
+              width={44}
+              height={44}
+              style={{ borderRadius: 10 }}
+            />
+            <div>
+              <div className="pnpi-footer-brand-name">PNPI</div>
+              <div className="pnpi-footer-brand-tagline">
+                Plateforme Nationale de Pilotage Industriel
+              </div>
+            </div>
+          </div>
+          <p className="pnpi-footer-mission">
+            L&apos;outil souverain de pilotage industriel de la Republique Gabonaise.
+            Agrements techniques, inspections de conformite, cartographie et indicateurs ministeriels.
+          </p>
+          <div className="pnpi-footer-ministry">
+            <span className="pnpi-footer-ministry-label">Maitre d&apos;ouvrage</span>
+            <span className="pnpi-footer-ministry-name">
+              Ministere de l&apos;Industrie et de la Transformation Locale
+            </span>
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 24 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6, color: "var(--text-main)" }}>Plateforme</div>
-            {[
-              { href: "/about", label: "A propos" },
-              { href: "/contact", label: "Contact" },
-              { href: "/investors", label: "Investisseurs" },
-              { href: "/open-data", label: "Open Data" },
-            ].map(l => (
-              <a key={l.href} href={l.href} style={{ display: "block", fontSize: 11, color: "var(--text-soft, #526175)", textDecoration: "none", marginBottom: 3 }}>{l.label}</a>
-            ))}
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6, color: "var(--text-main)" }}>Legal</div>
-            {[
-              { href: "/legal/cgu", label: "CGU" },
-              { href: "/legal/confidentialite", label: "Confidentialite" },
-              { href: "/legal/accessibilite", label: "Accessibilite" },
-              { href: "/plan-du-site", label: "Plan du site" },
-            ].map(l => (
-              <a key={l.href} href={l.href} style={{ display: "block", fontSize: 11, color: "var(--text-soft, #526175)", textDecoration: "none", marginBottom: 3 }}>{l.label}</a>
-            ))}
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 6, color: "var(--text-main)" }}>Technique</div>
-            {[
-              { href: "/api-docs", label: "API Docs" },
-              { href: "/status", label: "Statut" },
-              { href: "/changelog", label: "Changelog" },
-              { href: "/embed", label: "Widgets" },
-            ].map(l => (
-              <a key={l.href} href={l.href} style={{ display: "block", fontSize: 11, color: "var(--text-soft, #526175)", textDecoration: "none", marginBottom: 3 }}>{l.label}</a>
-            ))}
-          </div>
+        <div className="pnpi-footer-columns">
+          {COLUMNS.map((col) => (
+            <div key={col.title} className="pnpi-footer-col">
+              <div className="pnpi-footer-col-title">{col.title}</div>
+              <ul>
+                {col.links.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href}>{link.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
-      <div style={{ maxWidth: 1100, margin: "12px auto 0", paddingTop: 12, borderTop: "1px solid var(--line, #dce4ef)", textAlign: "center", fontSize: 10, color: "var(--text-soft, #9ca3af)" }}>
-        © {year} Ministere de l&apos;Industrie et de la Transformation Locale — Republique Gabonaise — PNPI v1.43
+
+      <div className="pnpi-footer-baseline">
+        <div>
+          © {year} Republique Gabonaise · Ministere de l&apos;Industrie et de la Transformation Locale
+        </div>
+        <div className="pnpi-footer-version">
+          PNPI v1.43 · Souverainete numerique au service du developpement industriel
+        </div>
       </div>
     </footer>
   );

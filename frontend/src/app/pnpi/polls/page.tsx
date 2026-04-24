@@ -64,7 +64,7 @@ export default function PollsPage() {
                 );
               })}
             </div>
-            <div style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)", marginTop: 6 }}>{poll.total_votes} vote(s) — par {poll.created_by}</div>
+            <div style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)", marginTop: 6 }}>{poll.total_votes} vote(s) · par {poll.created_by}</div>
           </div>
         );
       })}

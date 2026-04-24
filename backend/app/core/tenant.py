@@ -1,4 +1,4 @@
-"""PNPI — Multi-tenant par province.
+"""PNPI · Multi-tenant par province.
 
 Permet de filtrer automatiquement les donnees par province pour les
 utilisateurs assignes a une province specifique. Les admins et ministres

@@ -1,4 +1,4 @@
-"""PNPI — Evaluation automatique des risques par ATI.
+"""PNPI · Evaluation automatique des risques par ATI.
 
 Score de risque composite base sur :
 - Historique de l'operateur (rejets precedents, non-conformites)
@@ -42,7 +42,7 @@ def assess_risk(db: Session, ati_id: str) -> dict:
     complexity = SECTOR_COMPLEXITY.get(ati.secteur, 0.5)
     sector_risk = round(complexity * 20)
     factors.append({"name": "Complexite sectorielle", "score": sector_risk, "max": 20,
-                    "detail": f"Secteur {ati.secteur} — complexite {complexity:.0%}"})
+                    "detail": f"Secteur {ati.secteur} · complexite {complexity:.0%}"})
 
     # 2. Operator history (0-25)
     if op:
@@ -121,13 +121,13 @@ def assess_risk(db: Session, ati_id: str) -> dict:
     pipeline_load = len(in_progress)
     if pipeline_load > 30:
         pipeline_risk = 10
-        detail = f"{pipeline_load} dossiers en cours — charge tres elevee"
+        detail = f"{pipeline_load} dossiers en cours · charge tres elevee"
     elif pipeline_load > 15:
         pipeline_risk = 6
-        detail = f"{pipeline_load} dossiers en cours — charge elevee"
+        detail = f"{pipeline_load} dossiers en cours · charge elevee"
     else:
         pipeline_risk = 2
-        detail = f"{pipeline_load} dossiers en cours — charge normale"
+        detail = f"{pipeline_load} dossiers en cours · charge normale"
     factors.append({"name": "Charge pipeline", "score": pipeline_risk, "max": 10, "detail": detail})
 
     # 6. SLA pressure (0-10)

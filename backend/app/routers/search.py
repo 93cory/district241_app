@@ -1,4 +1,4 @@
-"""PNPI — Endpoint de recherche full-text sur ATI et operateurs."""
+"""PNPI · Endpoint de recherche full-text sur ATI et operateurs."""
 from __future__ import annotations
 
 from typing import List, Optional
@@ -54,7 +54,7 @@ async def search_global(
             results.append({
                 "type": "ati",
                 "id": a.id,
-                "title": f"{a.numero_ati} — {a.type_activite}",
+                "title": f"{a.numero_ati} · {a.type_activite}",
                 "subtitle": f"{a.secteur} | {a.statut}",
                 "url": f"/pnpi/ati/{a.id}",
             })

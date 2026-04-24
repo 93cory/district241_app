@@ -1,7 +1,7 @@
-"""PNPI — Moteur de recommandation de decision ATI.
+"""PNPI · Moteur de recommandation de decision ATI.
 
 Analyse l'historique des decisions similaires pour recommander
-approuver ou rejeter un ATI. Pas de ML lourd — approche statistique
+approuver ou rejeter un ATI. Pas de ML lourd · approche statistique
 basee sur des features simples.
 """
 from __future__ import annotations

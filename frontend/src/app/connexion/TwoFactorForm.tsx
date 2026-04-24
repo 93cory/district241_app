@@ -41,7 +41,7 @@ export const TwoFactorForm = ({ username, onBack }: TwoFactorFormProps) => {
         return;
       }
 
-      // 2FA verified, cookies set by API route — complete login
+      // 2FA verified, cookies set by API route · complete login
       router.replace(payload.redirect_to ?? "/");
       router.refresh();
     } catch (err) {
@@ -237,7 +237,7 @@ export const TwoFactorForm = ({ username, onBack }: TwoFactorFormProps) => {
         <p
           style={{
             textAlign: "center",
-            color: "rgba(255,255,255,0.4)",
+            color: "rgba(255, 255, 255, 0.72)",
             fontSize: "0.7rem",
             marginTop: "1.5rem",
           }}

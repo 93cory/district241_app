@@ -1,4 +1,4 @@
-"""PNPI — Taches planifiees (a executer via cron).
+"""PNPI · Taches planifiees (a executer via cron).
 
 Usage:
   python scripts/cron_tasks.py weekly-report
@@ -160,10 +160,100 @@ def task_cleanup():
     logger.info("Cleanup complete.")
 
 
+def task_generate_reminders():
+    """Generer rappels SLA + renouvellement (90/60/30j avant expiration)."""
+    logger.info("Generating SLA + renewal reminders...")
+    db = SessionLocal()
+    try:
+        from app.models.pnpi import AgrementTechniqueIndustrielORM, ATIReminderORM
+        import uuid
+
+        now = now_utc()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        terminal_active = {"approuve", "rejete", "expire"}
+
+        all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+        created = 0
+
+        for ati in all_atis:
+            # --- SLA (ATI en cours) ---
+            if ati.statut not in terminal_active:
+                age = (now.date() - ati.date_soumission.date()).days
+                sla_pct = (age / ati.sla_jours * 100) if ati.sla_jours else 0
+
+                rtype = msg = None
+                if sla_pct >= 100:
+                    rtype, msg = "sla_breach", f"URGENT : ATI {ati.numero_ati} depasse SLA ({age}j/{ati.sla_jours}j)."
+                elif sla_pct >= 80:
+                    rtype, msg = "sla_warning", f"Rappel : ATI {ati.numero_ati} approche SLA ({age}j/{ati.sla_jours}j)."
+
+                if rtype:
+                    existing = db.execute(
+                        select(ATIReminderORM).where(
+                            ATIReminderORM.ati_id == ati.id,
+                            ATIReminderORM.type == rtype,
+                            ATIReminderORM.scheduled_at >= today_start,
+                        )
+                    ).scalar_one_or_none()
+                    if not existing:
+                        recipient = getattr(ati, "instructeur_username", None) or "admin"
+                        db.add(ATIReminderORM(
+                            id=str(uuid.uuid4()),
+                            ati_id=ati.id,
+                            type=rtype,
+                            recipient_username=recipient,
+                            message=msg,
+                            scheduled_at=now,
+                        ))
+                        created += 1
+
+            # --- Renouvellement (ATI approuve) ---
+            if ati.statut == "approuve" and ati.date_expiration:
+                days_left = (ati.date_expiration.date() - now.date()).days
+                rtype = msg = None
+                if days_left < 0:
+                    rtype, msg = "renewal_expired", f"EXPIRE : ATI {ati.numero_ati} depuis {abs(days_left)}j."
+                elif days_left <= 30:
+                    rtype, msg = "renewal_30", f"A renouveler : ATI {ati.numero_ati} expire dans {days_left}j."
+                elif days_left <= 60:
+                    rtype, msg = "renewal_60", f"Preparer renouvellement : ATI {ati.numero_ati} expire dans {days_left}j."
+                elif days_left <= 90:
+                    rtype, msg = "renewal_90", f"A anticiper : ATI {ati.numero_ati} expire dans {days_left}j."
+
+                if rtype:
+                    existing = db.execute(
+                        select(ATIReminderORM).where(
+                            ATIReminderORM.ati_id == ati.id,
+                            ATIReminderORM.type == rtype,
+                        )
+                    ).scalar_one_or_none()
+                    if not existing:
+                        recipients = set()
+                        if ati.instructeur_username: recipients.add(ati.instructeur_username)
+                        if ati.created_by: recipients.add(ati.created_by)
+                        if not recipients: recipients.add("admin")
+                        for r in recipients:
+                            db.add(ATIReminderORM(
+                                id=str(uuid.uuid4()),
+                                ati_id=ati.id,
+                                type=rtype,
+                                recipient_username=r,
+                                message=msg,
+                                scheduled_at=now,
+                            ))
+                            created += 1
+
+        db.commit()
+        logger.info(f"Reminders: {created} nouveaux rappels crees.")
+    finally:
+        db.close()
+
+
 TASKS = {
     "weekly-report": task_weekly_report,
     "sla-check": task_sla_check,
     "cleanup": task_cleanup,
+    "reminders": task_generate_reminders,
 }
 
 

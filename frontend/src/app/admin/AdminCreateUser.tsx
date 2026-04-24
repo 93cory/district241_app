@@ -79,7 +79,7 @@ export function AdminCreateUser({ onCreated }: { onCreated?: () => void }) {
     <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.25rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
         <h3 style={{ margin: 0, color: "#003F8F", fontSize: "1rem" }}>Creer un utilisateur PNPI</h3>
-        <button onClick={() => { setOpen(false); reset(); }} style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
+        <button onClick={() => { setOpen(false); reset(); }} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
       </div>
 
       {error && (
@@ -107,7 +107,7 @@ export function AdminCreateUser({ onCreated }: { onCreated?: () => void }) {
         <div style={{ marginBottom: "0.875rem" }}>
           <label style={labelStyle}>Mot de passe *</label>
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="Min. 8 caracteres" style={inputStyle} autoComplete="new-password" />
-          <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginTop: "0.25rem" }}>Doit contenir majuscule, minuscule et chiffre.</div>
+          <div style={{ fontSize: "0.72rem", color: "#6b7280", marginTop: "0.25rem" }}>Doit contenir majuscule, minuscule et chiffre.</div>
         </div>
         <div style={{ marginBottom: "1rem" }}>
           <label style={labelStyle}>Roles habilites *</label>

@@ -72,7 +72,7 @@ export default function AnnouncementsPage() {
               <div style={{ fontSize: 13, fontWeight: 700 }}>{ann.title}</div>
               <div style={{ fontSize: 11, color: "var(--text-soft)" }}>{ann.body.slice(0, 100)}</div>
               <div style={{ fontSize: 10, color: "var(--text-soft, #9ca3af)", marginTop: 2 }}>
-                {ann.created_by} — {new Date(ann.created_at).toLocaleDateString("fr-FR")}
+                {ann.created_by} · {new Date(ann.created_at).toLocaleDateString("fr-FR")}
               </div>
             </div>
             <span style={{

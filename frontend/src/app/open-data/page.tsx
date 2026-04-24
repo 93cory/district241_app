@@ -82,7 +82,7 @@ export default async function OpenDataPage() {
       </div>
 
       <div style={{ background: "#051B36", color: "rgba(255,255,255,0.6)", padding: "16px", textAlign: "center", fontSize: 10 }}>
-        Ministere de l&apos;Industrie et de la Transformation Locale — Republique Gabonaise — PNPI {new Date().getFullYear()}
+        Ministere de l&apos;Industrie et de la Transformation Locale · Republique Gabonaise · PNPI {new Date().getFullYear()}
       </div>
     </div>
   );

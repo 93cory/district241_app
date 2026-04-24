@@ -1,4 +1,4 @@
-"""PNPI — Service de notifications email pour les alertes SLA."""
+"""PNPI · Service de notifications email pour les alertes SLA."""
 from __future__ import annotations
 
 import os
@@ -22,7 +22,7 @@ SMTP_ENABLED = bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD)
 def send_email(to: List[str], subject: str, html_body: str) -> bool:
     """Envoie un email HTML. Retourne True si succès, False sinon."""
     if not SMTP_ENABLED:
-        logger.info(f"[NOTIFICATIONS] Email non configure — simuler envoi vers {to}: {subject}")
+        logger.info(f"[NOTIFICATIONS] Email non configure · simuler envoi vers {to}: {subject}")
         return False
 
     try:
@@ -88,18 +88,18 @@ def notify_sla_overdue(overdue_atis: List[dict], to_emails: List[str]) -> bool:
     """overdue_atis: list of {numero_ati, type_activite, age_jours, sla_jours, instructeur}"""
     if not overdue_atis:
         return False
-    subject = f"[PNPI] ALERTE SLA — {len(overdue_atis)} ATI(s) en retard"
+    subject = f"[PNPI] ALERTE SLA · {len(overdue_atis)} ATI(s) en retard"
     rows_html = "".join(
         f"<tr><td style='padding:6px 12px;border-bottom:1px solid #f3f4f6;font-family:monospace'>{a['numero_ati']}</td>"
         f"<td style='padding:6px 12px;border-bottom:1px solid #f3f4f6'>{a['type_activite'][:40]}</td>"
         f"<td style='padding:6px 12px;border-bottom:1px solid #f3f4f6;color:#d97706;font-weight:bold'>{a['age_jours']}j / {a['sla_jours']}j</td>"
-        f"<td style='padding:6px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280'>{a.get('instructeur') or '—'}</td></tr>"
+        f"<td style='padding:6px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280'>{a.get('instructeur') or '·'}</td></tr>"
         for a in overdue_atis
     )
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 700px; margin: 0 auto;">
       <div style="background: #d97706; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
-        <h2 style="margin: 0;">Alerte SLA — ATIs en retard</h2>
+        <h2 style="margin: 0;">Alerte SLA · ATIs en retard</h2>
         <p style="margin: 4px 0 0; opacity: 0.8;">{len(overdue_atis)} dossier(s) depassent le delai reglementaire</p>
       </div>
       <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">

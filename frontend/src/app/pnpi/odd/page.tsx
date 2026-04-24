@@ -54,7 +54,7 @@ export default async function OddPage() {
                 fontSize: 24, fontWeight: 800, flexShrink: 0,
               }}>{odd.num}</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>ODD {odd.num} — {odd.title}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>ODD {odd.num} · {odd.title}</div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: odd.color }}>{odd.format(val)}</div>
               </div>
             </div>
@@ -64,7 +64,7 @@ export default async function OddPage() {
 
       <div style={{ textAlign: "center", marginTop: 24, padding: 16, fontSize: 11, color: "var(--text-soft, #9ca3af)" }}>
         Donnees calculees automatiquement a partir des indicateurs de la plateforme PNPI.
-        <br />Agenda 2030 des Nations Unies — Republique Gabonaise
+        <br />Agenda 2030 des Nations Unies · Republique Gabonaise
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Endpoints de sante, metriques et alertes operationnelles."""
+"""PNPI / PNPI · Endpoints de sante, metriques et alertes operationnelles."""
 from __future__ import annotations
 
 import os
@@ -45,13 +45,13 @@ async def health_score(
 
 @router.get("/health/live")
 async def liveness() -> Dict[str, str]:
-    """Liveness probe — always returns 200 if the process is running."""
+    """Liveness probe · always returns 200 if the process is running."""
     return {"status": "alive"}
 
 
 @router.get("/health/ready")
 async def readiness(db: Session = Depends(get_db)) -> Dict[str, object]:
-    """Readiness probe — checks that DB and cache are reachable."""
+    """Readiness probe · checks that DB and cache are reachable."""
     checks = {}
     ready = True
 
@@ -90,7 +90,7 @@ async def feature_flags_status(
 
 @router.get("/health/status")
 async def system_status(db: Session = Depends(get_db)):
-    """Public system status page — no auth required."""
+    """Public system status page · no auth required."""
     checks = []
     overall = "operational"
 

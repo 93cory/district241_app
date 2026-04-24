@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Endpoints de pilotage des dossiers industriels."""
+"""PNPI / PNPI · Endpoints de pilotage des dossiers industriels."""
 from __future__ import annotations
 
 import uuid
@@ -21,7 +21,7 @@ from ..models.pilotage import ProjectDossierORM, ProjectDossierTransitionORM
 router = APIRouter(tags=["Pilotage"])
 
 # ---------------------------------------------------------------------------
-# SLA policy (shared mutable state — in production should be DB-backed)
+# SLA policy (shared mutable state · in production should be DB-backed)
 # ---------------------------------------------------------------------------
 _sla_policy_days: Dict[str, int] = {
     "low": 45,

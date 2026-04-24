@@ -1,4 +1,4 @@
-"""PNPI — Templates ATI pre-remplis par secteur."""
+"""PNPI · Templates ATI pre-remplis par secteur."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -18,7 +18,7 @@ BUILTIN_TEMPLATES = [
         "id": "tpl-bois-scierie",
         "secteur": "bois",
         "nom": "Scierie industrielle",
-        "description": "Transformation primaire du bois — sciage, sechage, rabotage",
+        "description": "Transformation primaire du bois · sciage, sechage, rabotage",
         "type_activite": "Exploitation et transformation du bois : sciage, sechage en four, rabotage, traitement anti-termites. Production de planches, chevrons, madriers.",
         "documents_requis": ["Permis forestier (CPAET)", "Etude d'impact environnemental", "Plan d'amenagement durable", "Certificat FSC/PEFC (si applicable)"],
     },
@@ -26,7 +26,7 @@ BUILTIN_TEMPLATES = [
         "id": "tpl-bois-contreplaque",
         "secteur": "bois",
         "nom": "Usine de contreplaque",
-        "description": "Transformation secondaire — deroulage, collage, pressage",
+        "description": "Transformation secondaire · deroulage, collage, pressage",
         "type_activite": "Fabrication de contreplaque et panneaux : deroulage de grumes, collage, pressage a chaud, calibrage. Capacite de production a preciser.",
         "documents_requis": ["Permis forestier", "Norme de qualite panneaux", "Certificat d'origine des bois"],
     },

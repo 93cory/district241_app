@@ -1,4 +1,4 @@
-"""PNPI — Checklists de conformite pour ATI."""
+"""PNPI · Checklists de conformite pour ATI."""
 from __future__ import annotations
 
 import uuid
@@ -41,6 +41,26 @@ DEFAULT_ITEMS = {
         ("Specifique", "Agrement sanitaire"),
         ("Specifique", "Certificat HACCP"),
         ("Specifique", "Contrat d'approvisionnement matieres premieres"),
+    ],
+    "btp": [
+        ("Specifique", "Plan de prevention des risques professionnels (PPRP)"),
+        ("Specifique", "Qualification BTP et references de chantiers"),
+        ("Specifique", "Assurance responsabilite decennale"),
+    ],
+    "petrole": [
+        ("Specifique", "Convention petroliere signee"),
+        ("Specifique", "Plan HSE (Health Safety Environment)"),
+        ("Specifique", "Plan de prevention pollution maritime (MARPOL)"),
+        ("Specifique", "Cautionnement environnemental"),
+    ],
+    "services": [
+        ("Specifique", "Agrement prestataire industriel"),
+        ("Specifique", "Liste des equipements / personnel qualifie"),
+    ],
+    "peche": [
+        ("Specifique", "Licence de peche industrielle"),
+        ("Specifique", "Plan de gestion des captures"),
+        ("Specifique", "Certificat sanitaire des produits halieutiques"),
     ],
 }
 

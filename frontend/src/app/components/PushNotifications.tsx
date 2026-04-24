@@ -46,7 +46,7 @@ export function PushNotifications() {
 
       const reg = await navigator.serviceWorker.ready;
 
-      // VAPID public key — in production, fetch from /api/push/vapid-key
+      // VAPID public key · in production, fetch from /api/push/vapid-key
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY || "";
 
       if (!vapidKey) {
@@ -109,7 +109,7 @@ export function PushNotifications() {
         <div>
           <div style={{ fontWeight: 600 }}>Notifications push</div>
           <div style={{ fontSize: 11, color: "var(--text-soft, #526175)" }}>
-            {subscribed ? "Activees — vous recevrez des alertes en temps reel" : "Desactivees"}
+            {subscribed ? "Activees · vous recevrez des alertes en temps reel" : "Desactivees"}
           </div>
         </div>
       </div>

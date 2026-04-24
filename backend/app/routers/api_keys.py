@@ -1,4 +1,4 @@
-"""PNPI — Gestion des cles API pour les integrations externes."""
+"""PNPI · Gestion des cles API pour les integrations externes."""
 from __future__ import annotations
 
 import hashlib

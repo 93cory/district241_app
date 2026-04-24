@@ -4,10 +4,10 @@ export default function ReglementationPage() {
     { ref: "Decret 0234/2024", titre: "Conditions d'obtention de l'agrement technique industriel", date: "2024-03-01", type: "decret", statut: "en_vigueur", resume: "Fixe les criteres, delais et procedures pour l'obtention d'un ATI. Definit les SLA a 45 jours." },
     { ref: "Arrete 0089/2024", titre: "Normes de conformite environnementale industrielle", date: "2024-06-20", type: "arrete", statut: "en_vigueur", resume: "Impose une etude d'impact environnemental pour tout projet industriel. Seuils d'emission par secteur." },
     { ref: "Loi 008/2022", titre: "Code des investissements du Gabon", date: "2022-07-10", type: "loi", statut: "en_vigueur", resume: "Regime fiscal preferentiel pour les nouveaux investissements industriels. Exonerations douanieres sur les equipements." },
-    { ref: "Decret 0156/2025", titre: "Zone economique speciale de Nkok — Phase III", date: "2025-01-15", type: "decret", statut: "en_vigueur", resume: "Extension de la ZERP de Nkok. Nouveaux lots industriels disponibles. Regime fiscal: 0% impot pendant 10 ans." },
+    { ref: "Decret 0156/2025", titre: "Zone economique speciale de Nkok · Phase III", date: "2025-01-15", type: "decret", statut: "en_vigueur", resume: "Extension de la ZERP de Nkok. Nouveaux lots industriels disponibles. Regime fiscal: 0% impot pendant 10 ans." },
     { ref: "Arrete 0045/2025", titre: "Reglementation des inspections de conformite", date: "2025-04-01", type: "arrete", statut: "en_vigueur", resume: "Frequence des inspections par categorie de risque. Formation obligatoire des inspecteurs." },
     { ref: "Loi 012/2024", titre: "Protection des donnees industrielles", date: "2024-09-30", type: "loi", statut: "en_vigueur", resume: "Cadre juridique pour le traitement des donnees des operateurs industriels. Obligations de confidentialite." },
-    { ref: "Projet de loi", titre: "Reforme du code minier — Transformation locale", date: "2026-01-01", type: "projet", statut: "en_preparation", resume: "Augmentation du taux de transformation locale du manganese a 50%. Nouvelles redevances environnementales." },
+    { ref: "Projet de loi", titre: "Reforme du code minier · Transformation locale", date: "2026-01-01", type: "projet", statut: "en_preparation", resume: "Augmentation du taux de transformation locale du manganese a 50%. Nouvelles redevances environnementales." },
   ];
 
   const TYPE_COLORS: Record<string, { color: string; label: string }> = {
@@ -43,7 +43,7 @@ export default function ReglementationPage() {
                     <span style={{ padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700, background: `${statut.color}12`, color: statut.color }}>{statut.label}</span>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>{t.titre}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 2 }}>{t.ref} — {new Date(t.date).toLocaleDateString("fr-FR")}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 2 }}>{t.ref} · {new Date(t.date).toLocaleDateString("fr-FR")}</div>
                 </div>
               </div>
               <p style={{ fontSize: 13, color: "var(--text-main)", lineHeight: 1.5, margin: "8px 0 0" }}>{t.resume}</p>

@@ -1,4 +1,4 @@
-"""PNPI — Service d'envoi de SMS via Africa's Talking ou Twilio.
+"""PNPI · Service d'envoi de SMS via Africa's Talking ou Twilio.
 
 Configure via variables d'environnement :
   PNPI_SMS_PROVIDER=africastalking|twilio
@@ -19,7 +19,7 @@ SMS_ENABLED = SMS_PROVIDER in ("africastalking", "twilio")
 def send_sms(to: str, message: str) -> dict:
     """Send an SMS to a phone number. Returns status dict."""
     if not SMS_ENABLED:
-        logger.info(f"SMS (dry-run): {to} — {message[:50]}...")
+        logger.info(f"SMS (dry-run): {to} · {message[:50]}...")
         return {"status": "dry_run", "to": to, "message": message}
 
     if not to or not message:
@@ -67,7 +67,7 @@ def _send_twilio(to: str, message: str) -> dict:
 
 # Pre-built SMS templates
 def sms_ati_approved(operator_name: str, numero_ati: str) -> str:
-    return f"PNPI: Votre ATI {numero_ati} a ete approuve. Telechargez votre certificat sur pnpi-gabon.ga. — Ministere de l'Industrie"
+    return f"PNPI: Votre ATI {numero_ati} a ete approuve. Telechargez votre certificat sur pnpi-gabon.ga. · Ministere de l'Industrie"
 
 
 def sms_ati_rejected(operator_name: str, numero_ati: str) -> str:
@@ -75,7 +75,7 @@ def sms_ati_rejected(operator_name: str, numero_ati: str) -> str:
 
 
 def sms_sla_warning(numero_ati: str, days_left: int) -> str:
-    return f"PNPI: ATI {numero_ati} — {days_left} jours restants avant echeance SLA. Action requise."
+    return f"PNPI: ATI {numero_ati} · {days_left} jours restants avant echeance SLA. Action requise."
 
 
 def sms_inspection_scheduled(operator_name: str, date: str) -> str:

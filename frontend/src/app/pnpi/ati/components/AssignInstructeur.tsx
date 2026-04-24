@@ -40,7 +40,7 @@ export function AssignInstructeur({ atiId, currentInstructeur }: { atiId: string
 
   return (
     <div style={{ padding: "1rem 1.25rem", background: "#f9fafb", borderRadius: "8px", border: "1px solid #e5e7eb" }}>
-      <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", marginBottom: "0.5rem" }}>
+      <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#6b7280", textTransform: "uppercase", marginBottom: "0.5rem" }}>
         Instructeur assigne
       </div>
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>

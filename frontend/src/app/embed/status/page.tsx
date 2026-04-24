@@ -28,7 +28,7 @@ export default async function EmbedStatusPage() {
             PNPI {labels[status] || "Inconnu"}
           </span>
           {data?.uptime_hours && (
-            <span style={{ fontSize: 10, color: "#9ca3af" }}>
+            <span style={{ fontSize: 10, color: "#6b7280" }}>
               Uptime {data.uptime_hours}h
             </span>
           )}

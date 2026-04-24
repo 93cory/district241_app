@@ -1,4 +1,4 @@
-"""PNPI — Ajout colonnes GPS et photo aux rapports terrain
+"""PNPI · Ajout colonnes GPS et photo aux rapports terrain
 
 Revision ID: 20260322_11
 Revises: 20260321_10

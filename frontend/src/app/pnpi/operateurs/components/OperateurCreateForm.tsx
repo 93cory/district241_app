@@ -5,19 +5,29 @@ import { useRouter } from "next/navigation";
 const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
 const SECTEURS = ["bois", "mines", "agroalimentaire", "btp", "petrole", "services"];
-const PROVINCES = ["estuaire", "haut_ogooue", "ogooue_maritime", "woleu_ntem", "moyen_ogooue", "ngounie", "nyanga", "ogooue_ivindo", "ogooue_lolo"];
-const SECTEUR_LABELS: Record<string, string> = { bois: "Bois & Forêt", mines: "Mines", agroalimentaire: "Agro-alimentaire", btp: "BTP", petrole: "Pétrole", services: "Services" };
-const PROVINCE_LABELS: Record<string, string> = { estuaire: "Estuaire", haut_ogooue: "Haut-Ogooué", ogooue_maritime: "Ogooué-Maritime", woleu_ntem: "Woleu-Ntem", moyen_ogooue: "Moyen-Ogooué", ngounie: "Ngounié", nyanga: "Nyanga", ogooue_ivindo: "Ogooué-Ivindo", ogooue_lolo: "Ogooué-Lolo" };
-
-const inputStyle: React.CSSProperties = {
-  width: "100%", border: "1px solid #d1d5db", borderRadius: "6px",
-  padding: "0.5rem 0.75rem", fontSize: "0.875rem", boxSizing: "border-box",
-  background: "#fafafa", outline: "none",
+const PROVINCES = [
+  "estuaire", "haut_ogooue", "ogooue_maritime", "woleu_ntem", "moyen_ogooue",
+  "ngounie", "nyanga", "ogooue_ivindo", "ogooue_lolo",
+];
+const SECTEUR_LABELS: Record<string, string> = {
+  bois: "Bois & Foret",
+  mines: "Mines",
+  agroalimentaire: "Agro-alimentaire",
+  btp: "BTP",
+  petrole: "Petrole",
+  services: "Services",
 };
-const labelStyle: React.CSSProperties = {
-  display: "block", fontSize: "0.78rem", fontWeight: 600, color: "#374151", marginBottom: "0.25rem",
+const PROVINCE_LABELS: Record<string, string> = {
+  estuaire: "Estuaire",
+  haut_ogooue: "Haut-Ogooue",
+  ogooue_maritime: "Ogooue-Maritime",
+  woleu_ntem: "Woleu-Ntem",
+  moyen_ogooue: "Moyen-Ogooue",
+  ngounie: "Ngounie",
+  nyanga: "Nyanga",
+  ogooue_ivindo: "Ogooue-Ivindo",
+  ogooue_lolo: "Ogooue-Lolo",
 };
-const selectStyle: React.CSSProperties = { ...inputStyle, background: "white" };
 
 export function OperateurCreateForm({ onCreated }: { onCreated?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -43,6 +53,8 @@ export function OperateurCreateForm({ onCreated }: { onCreated?: () => void }) {
     setError(null); setSuccess(null);
   };
 
+  const close = () => { setOpen(false); reset(); };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true); setError(null); setSuccess(null);
@@ -52,21 +64,30 @@ export function OperateurCreateForm({ onCreated }: { onCreated?: () => void }) {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nif_gabon: nif, raison_sociale: raison, secteur, province, ville,
-          effectif_declare: effectif ? parseInt(effectif) : null,
-          contact_email: email || null, contact_telephone: tel || null,
-          latitude: lat ? parseFloat(lat) : null, longitude: lng ? parseFloat(lng) : null,
+          nif_gabon: nif,
+          raison_sociale: raison,
+          secteur,
+          province,
+          ville,
+          effectif_declare: effectif ? parseInt(effectif, 10) : null,
+          contact_email: email || null,
+          contact_telephone: tel || null,
+          latitude: lat ? parseFloat(lat) : null,
+          longitude: lng ? parseFloat(lng) : null,
           is_active: true,
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.detail ?? `Erreur ${res.status}`); return; }
-      setSuccess(`Opérateur "${raison}" enregistré (${data.id}).`);
+      if (!res.ok) {
+        setError(data.detail ?? `Erreur ${res.status}`);
+        return;
+      }
+      setSuccess(`Operateur "${raison}" enregistre (${data.id}).`);
       reset();
       onCreated?.();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur réseau");
+      setError(err instanceof Error ? err.message : "Erreur reseau");
     } finally {
       setBusy(false);
     }
@@ -74,80 +95,95 @@ export function OperateurCreateForm({ onCreated }: { onCreated?: () => void }) {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        style={{ padding: "0.4rem 0.875rem", background: "#009440", color: "white", border: "none", borderRadius: "6px", fontWeight: 600, fontSize: "0.82rem", cursor: "pointer" }}
-      >
-        + Nouvel opérateur
+      <button type="button" onClick={() => setOpen(true)} className="btn-primary">
+        <span aria-hidden="true">+</span> Nouvel operateur
       </button>
     );
   }
 
   return (
-    <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: "12px", padding: "1.25rem", marginBottom: "1.25rem" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-        <h3 style={{ margin: 0, color: "#009440", fontSize: "1rem" }}>Enregistrer un opérateur industriel</h3>
-        <button onClick={() => { setOpen(false); reset(); }} style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "1.1rem" }}>✕</button>
+    <div className="pnpi-form-panel">
+      <div className="pnpi-form-panel-head">
+        <h3 className="pnpi-card-subtitle">Enregistrer un operateur industriel</h3>
+        <button
+          type="button"
+          onClick={close}
+          className="pnpi-form-close"
+          aria-label="Fermer le formulaire"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
       </div>
 
-      {error && <div style={{ padding: "0.625rem", background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: "6px", color: "#b42318", fontSize: "0.82rem", marginBottom: "1rem" }}>{error}</div>}
-      {success && <div style={{ padding: "0.625rem", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "6px", color: "#166534", fontSize: "0.82rem", marginBottom: "1rem" }}>{success}</div>}
+      {error && <div className="pnpi-form-alert pnpi-form-alert--error" role="alert">{error}</div>}
+      {success && <div className="pnpi-form-alert pnpi-form-alert--success" role="status">{success}</div>}
 
       <form onSubmit={handleSubmit}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
-          <div>
-            <label style={labelStyle}>NIF Gabon *</label>
-            <input value={nif} onChange={e => setNif(e.target.value)} required placeholder="ex: TF-2024-01234" style={inputStyle} />
+        <div className="pnpi-form-grid">
+          <div className="pnpi-form-field">
+            <label htmlFor="op-nif" className="pnpi-form-label pnpi-form-label-req">NIF Gabon</label>
+            <input id="op-nif" className="pnpi-form-input" value={nif} onChange={(e) => setNif(e.target.value)} required placeholder="ex : TF-2024-01234" />
           </div>
-          <div>
-            <label style={labelStyle}>Raison sociale *</label>
-            <input value={raison} onChange={e => setRaison(e.target.value)} required placeholder="Nom de l'entreprise" style={inputStyle} />
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-raison" className="pnpi-form-label pnpi-form-label-req">Raison sociale</label>
+            <input id="op-raison" className="pnpi-form-input" value={raison} onChange={(e) => setRaison(e.target.value)} required placeholder="Nom de l'entreprise" />
           </div>
-          <div>
-            <label style={labelStyle}>Secteur *</label>
-            <select value={secteur} onChange={e => setSecteur(e.target.value)} required style={selectStyle}>
-              <option value="">— Choisir —</option>
-              {SECTEURS.map(s => <option key={s} value={s}>{SECTEUR_LABELS[s]}</option>)}
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-secteur" className="pnpi-form-label pnpi-form-label-req">Secteur</label>
+            <select id="op-secteur" className="pnpi-form-select" value={secteur} onChange={(e) => setSecteur(e.target.value)} required>
+              <option value="">Choisir un secteur</option>
+              {SECTEURS.map((s) => <option key={s} value={s}>{SECTEUR_LABELS[s]}</option>)}
             </select>
           </div>
-          <div>
-            <label style={labelStyle}>Province *</label>
-            <select value={province} onChange={e => setProvince(e.target.value)} required style={selectStyle}>
-              <option value="">— Choisir —</option>
-              {PROVINCES.map(p => <option key={p} value={p}>{PROVINCE_LABELS[p]}</option>)}
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-province" className="pnpi-form-label pnpi-form-label-req">Province</label>
+            <select id="op-province" className="pnpi-form-select" value={province} onChange={(e) => setProvince(e.target.value)} required>
+              <option value="">Choisir une province</option>
+              {PROVINCES.map((p) => <option key={p} value={p}>{PROVINCE_LABELS[p]}</option>)}
             </select>
           </div>
-          <div>
-            <label style={labelStyle}>Ville *</label>
-            <input value={ville} onChange={e => setVille(e.target.value)} required placeholder="ex: Libreville" style={inputStyle} />
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-ville" className="pnpi-form-label pnpi-form-label-req">Ville</label>
+            <input id="op-ville" className="pnpi-form-input" value={ville} onChange={(e) => setVille(e.target.value)} required placeholder="ex : Libreville" />
           </div>
-          <div>
-            <label style={labelStyle}>Effectif déclaré</label>
-            <input value={effectif} onChange={e => setEffectif(e.target.value)} type="number" min="0" placeholder="Nombre d'employés" style={inputStyle} />
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-effectif" className="pnpi-form-label">Effectif declare</label>
+            <input id="op-effectif" className="pnpi-form-input" value={effectif} onChange={(e) => setEffectif(e.target.value)} type="number" min="0" placeholder="Nombre d'employes" />
           </div>
-          <div>
-            <label style={labelStyle}>Email de contact</label>
-            <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="contact@entreprise.ga" style={inputStyle} />
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-email" className="pnpi-form-label">Email de contact</label>
+            <input id="op-email" className="pnpi-form-input" value={email} onChange={(e) => setEmail(e.target.value)} type="email" placeholder="contact@entreprise.ga" />
           </div>
-          <div>
-            <label style={labelStyle}>Téléphone</label>
-            <input value={tel} onChange={e => setTel(e.target.value)} placeholder="+241 01 XX XX XX" style={inputStyle} />
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-tel" className="pnpi-form-label">Telephone</label>
+            <input id="op-tel" className="pnpi-form-input" value={tel} onChange={(e) => setTel(e.target.value)} placeholder="+241 01 XX XX XX" />
           </div>
-          <div>
-            <label style={labelStyle}>Latitude GPS</label>
-            <input value={lat} onChange={e => setLat(e.target.value)} type="number" step="0.00001" placeholder="ex: -0.72345" style={inputStyle} />
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-lat" className="pnpi-form-label">Latitude GPS</label>
+            <input id="op-lat" className="pnpi-form-input" value={lat} onChange={(e) => setLat(e.target.value)} type="number" step="0.00001" placeholder="ex : -0.72345" />
           </div>
-          <div>
-            <label style={labelStyle}>Longitude GPS</label>
-            <input value={lng} onChange={e => setLng(e.target.value)} type="number" step="0.00001" placeholder="ex: 9.45678" style={inputStyle} />
+
+          <div className="pnpi-form-field">
+            <label htmlFor="op-lng" className="pnpi-form-label">Longitude GPS</label>
+            <input id="op-lng" className="pnpi-form-input" value={lng} onChange={(e) => setLng(e.target.value)} type="number" step="0.00001" placeholder="ex : 9.45678" />
           </div>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button type="submit" disabled={busy} style={{ flex: 1, padding: "0.6rem", background: busy ? "#9ca3af" : "#009440", color: "white", border: "none", borderRadius: "6px", fontWeight: 700, fontSize: "0.875rem", cursor: busy ? "not-allowed" : "pointer" }}>
-            {busy ? "Enregistrement..." : "Enregistrer l'opérateur"}
-          </button>
-          <button type="button" onClick={() => { setOpen(false); reset(); }} style={{ padding: "0.6rem 1rem", background: "#f9fafb", border: "1px solid #e5e7eb", color: "#374151", borderRadius: "6px", fontWeight: 600, fontSize: "0.875rem", cursor: "pointer" }}>
-            Annuler
+
+        <div className="pnpi-form-actions">
+          <button type="button" onClick={close} className="btn-secondary">Annuler</button>
+          <button type="submit" disabled={busy} className="btn-primary">
+            {busy ? "Enregistrement..." : "Enregistrer l'operateur"}
           </button>
         </div>
       </form>

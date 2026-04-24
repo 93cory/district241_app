@@ -2,7 +2,7 @@ export default function AccessibilitePage() {
   return (
     <div style={{ padding: "40px 32px", maxWidth: 800, margin: "0 auto" }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>Declaration d'Accessibilite</h1>
-      <p style={{ color: "#526175", fontSize: 13, marginBottom: 24 }}>PNPI — Plateforme Nationale de la Politique Industrielle</p>
+      <p style={{ color: "#526175", fontSize: 13, marginBottom: 24 }}>PNPI · Plateforme Nationale de la Politique Industrielle</p>
 
       {[
         { title: "Engagement", content: "Le Ministere de l'Industrie s'engage a rendre la PNPI accessible conformement aux standards WCAG 2.1 niveau AA. Cette declaration decrit les mesures prises et les limitations connues." },

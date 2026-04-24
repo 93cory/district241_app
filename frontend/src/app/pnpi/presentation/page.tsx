@@ -33,7 +33,7 @@ export default function PresentationPage() {
           </div>
           <div style={{ fontSize: 48, fontWeight: 800, margin: "24px 0 8px" }}>PNPI</div>
           <div style={{ fontSize: 16, opacity: 0.8 }}>
-            Rapport d&apos;activite — {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
+            Rapport d&apos;activite · {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
           </div>
         </div>
       ),
@@ -109,7 +109,7 @@ export default function PresentationPage() {
             Questions ?
           </div>
           <div style={{ fontSize: 16, opacity: 0.7 }}>
-            pnpi-gabon.ga — Plateforme Nationale de la Politique Industrielle
+            pnpi-gabon.ga · Plateforme Nationale de la Politique Industrielle
           </div>
         </div>
       ),
@@ -178,7 +178,7 @@ export default function PresentationPage() {
               onClick={() => setCurrentSlide(i)}
               style={{
                 width: 10, height: 10, borderRadius: "50%", border: "none",
-                background: i === currentSlide ? "#fff" : "rgba(255,255,255,0.3)",
+                background: i === currentSlide ? "#fff" : "rgba(255, 255, 255, 0.72)",
                 cursor: "pointer",
               }}
             />

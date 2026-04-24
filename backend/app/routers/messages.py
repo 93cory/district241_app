@@ -1,4 +1,4 @@
-"""PNPI — Messagerie interne entre utilisateurs."""
+"""PNPI · Messagerie interne entre utilisateurs."""
 from __future__ import annotations
 
 import uuid

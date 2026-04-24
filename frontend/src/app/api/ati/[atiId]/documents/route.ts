@@ -1,4 +1,4 @@
-import { backendRequest, getBackendAuthHeaders, backendBaseUrl } from "../../../../../../lib/backend";
+import { backendRequest, getBackendAuthHeaders, backendBaseUrl } from "../../../../../lib/backend";
 
 export async function GET(
   _request: Request,

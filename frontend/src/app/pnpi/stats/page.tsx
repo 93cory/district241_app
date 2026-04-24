@@ -66,7 +66,7 @@ export default async function StatsPage() {
               { label: "En validation", value: pipeline.en_validation, color: "#8b5cf6" },
               { label: "Approuves", value: pipeline.approuve, color: "#10b981" },
               { label: "Rejetes", value: pipeline.rejete, color: "#ef4444" },
-              { label: "Expires", value: pipeline.expire, color: "#9ca3af" },
+              { label: "Expires", value: pipeline.expire, color: "#6b7280" },
             ].map(s => (
               <div key={s.label} style={{ marginBottom: "0.6rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", marginBottom: "0.2rem" }}>

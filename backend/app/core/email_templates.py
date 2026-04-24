@@ -1,4 +1,4 @@
-"""PNPI — Templates d'emails de notification."""
+"""PNPI · Templates d'emails de notification."""
 from __future__ import annotations
 
 from typing import Optional
@@ -40,7 +40,7 @@ def email_ati_approved(
     verify_url: str,
 ) -> tuple[str, str]:
     """Email sent when an ATI is approved."""
-    subject = f"ATI {numero_ati} — Agrement approuve"
+    subject = f"ATI {numero_ati} · Agrement approuve"
     content = f"""
     <h2 style="color:#006233;margin:0 0 8px;font-size:18px;">Agrement approuve</h2>
     <p style="color:#526175;font-size:14px;line-height:1.6;">
@@ -68,7 +68,7 @@ def email_ati_rejected(
     resubmit_url: str,
 ) -> tuple[str, str]:
     """Email sent when an ATI is rejected."""
-    subject = f"ATI {numero_ati} — Demande rejetee"
+    subject = f"ATI {numero_ati} · Demande rejetee"
     content = f"""
     <h2 style="color:#b42318;margin:0 0 8px;font-size:18px;">Demande rejetee</h2>
     <p style="color:#526175;font-size:14px;line-height:1.6;">
@@ -99,7 +99,7 @@ def email_sla_warning(
     ati_url: str,
 ) -> tuple[str, str]:
     """Email sent when an ATI approaches SLA deadline."""
-    subject = f"SLA — ATI {numero_ati} approche de l'echeance"
+    subject = f"SLA · ATI {numero_ati} approche de l'echeance"
     pct = round(jours_ecoules / sla_jours * 100)
     content = f"""
     <h2 style="color:#d97706;margin:0 0 8px;font-size:18px;">Alerte SLA</h2>
@@ -131,7 +131,7 @@ def email_inspection_scheduled(
     lieu: str,
 ) -> tuple[str, str]:
     """Email sent when an inspection is scheduled."""
-    subject = f"Inspection de conformite planifiee — {date_inspection}"
+    subject = f"Inspection de conformite planifiee · {date_inspection}"
     content = f"""
     <h2 style="color:#0c7eb4;margin:0 0 8px;font-size:18px;">Inspection planifiee</h2>
     <p style="color:#526175;font-size:14px;line-height:1.6;">
@@ -171,7 +171,7 @@ def email_weekly_briefing(
     dashboard_url: str,
 ) -> tuple[str, str]:
     """Weekly executive briefing email."""
-    subject = "PNPI — Briefing hebdomadaire"
+    subject = "PNPI · Briefing hebdomadaire"
     content = f"""
     <h2 style="color:#051B36;margin:0 0 8px;font-size:18px;">Briefing de la semaine</h2>
     <p style="color:#526175;font-size:14px;">Bonjour {recipient},</p>

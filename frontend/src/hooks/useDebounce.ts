@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 /**
- * Debounce a value — useful for search inputs to avoid firing API calls on every keystroke.
+ * Debounce a value · useful for search inputs to avoid firing API calls on every keystroke.
  *
  * Usage:
  *   const [query, setQuery] = useState("");

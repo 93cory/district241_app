@@ -1,4 +1,4 @@
-"""PNPI — API d'integration pour systemes externes.
+"""PNPI · API d'integration pour systemes externes.
 
 Endpoints pour:
 - Douanes (DGDI): Verification statut ATI d'un operateur

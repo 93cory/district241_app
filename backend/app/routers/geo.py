@@ -1,4 +1,4 @@
-"""PNPI — Endpoints geospatiaux (PostGIS)."""
+"""PNPI · Endpoints geospatiaux (PostGIS)."""
 from __future__ import annotations
 
 from typing import List, Optional
@@ -278,7 +278,7 @@ async def export_operateurs_geojson(
         "properties": {
             "generated_at": now_utc().isoformat(),
             "count": len(features),
-            "source": "PNPI — Ministere de l'Industrie du Gabon",
+            "source": "PNPI · Ministere de l'Industrie du Gabon",
         },
     }
 
@@ -400,7 +400,7 @@ async def export_geojson(
         "type": "FeatureCollection",
         "features": features,
         "metadata": {
-            "source": "PNPI — Plateforme Nationale de la Politique Industrielle",
+            "source": "PNPI · Plateforme Nationale de la Politique Industrielle",
             "generated_at": now_utc().isoformat(),
             "filters": {"secteur": secteur, "province": province},
             "count": len(features),

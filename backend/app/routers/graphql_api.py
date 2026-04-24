@@ -1,4 +1,4 @@
-"""PNPI — API GraphQL (lecture seule, complement du REST).
+"""PNPI · API GraphQL (lecture seule, complement du REST).
 
 Utilise une approche legere sans bibliotheque GraphQL lourde.
 Parse les requetes simples et retourne les donnees demandees.

@@ -1,7 +1,7 @@
 export default function RoadmapPage() {
   const phases = [
     {
-      phase: "Phase 1 — Fondation", period: "2024-2025", statut: "complete", color: "#006233",
+      phase: "Phase 1 · Fondation", period: "2024-2025", statut: "complete", color: "#006233",
       items: [
         { text: "Plateforme PNPI operationnelle", done: true },
         { text: "Workflow ATI complet (soumission → decision)", done: true },
@@ -11,7 +11,7 @@ export default function RoadmapPage() {
       ],
     },
     {
-      phase: "Phase 2 — Intelligence", period: "2025-2026", statut: "en_cours", color: "#0c7eb4",
+      phase: "Phase 2 · Intelligence", period: "2025-2026", statut: "en_cours", color: "#0c7eb4",
       items: [
         { text: "Recommandation IA pour decisions ATI", done: true },
         { text: "Scoring de risque automatise", done: true },
@@ -22,7 +22,7 @@ export default function RoadmapPage() {
       ],
     },
     {
-      phase: "Phase 3 — Ecosysteme", period: "2026-2027", statut: "planifie", color: "#7c3aed",
+      phase: "Phase 3 · Ecosysteme", period: "2026-2027", statut: "planifie", color: "#7c3aed",
       items: [
         { text: "Integration douanes (DGDI) via API", done: false },
         { text: "Integration impots (DGI) via API", done: false },
@@ -33,7 +33,7 @@ export default function RoadmapPage() {
       ],
     },
     {
-      phase: "Phase 4 — Regional", period: "2027-2028", statut: "vision", color: "#d97706",
+      phase: "Phase 4 · Regional", period: "2027-2028", statut: "vision", color: "#d97706",
       items: [
         { text: "Extension aux pays CEMAC partenaires", done: false },
         { text: "Harmonisation des normes industrielles", done: false },

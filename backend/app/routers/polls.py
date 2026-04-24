@@ -1,4 +1,4 @@
-"""PNPI — Sondages internes."""
+"""PNPI · Sondages internes."""
 from __future__ import annotations
 import uuid, json
 from fastapi import APIRouter, Depends, HTTPException

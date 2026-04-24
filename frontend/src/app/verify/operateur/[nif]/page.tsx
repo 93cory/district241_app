@@ -25,7 +25,7 @@ export default async function VerifyOperateurPage({ params }: Props) {
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ display: "inline-block", padding: "4px 14px", borderRadius: 16, background: "linear-gradient(90deg, #009E60, #FCD116, #003DA5)", color: "#fff", fontSize: 10, fontWeight: 700, letterSpacing: 1 }}>REPUBLIQUE GABONAISE</div>
           <h1 style={{ fontSize: 18, fontWeight: 800, margin: "10px 0 2px", color: "#051B36" }}>Carte d'identite industrielle</h1>
-          <p style={{ fontSize: 12, color: "#526175", margin: 0 }}>Verification d'operateur — PNPI</p>
+          <p style={{ fontSize: 12, color: "#526175", margin: 0 }}>Verification d'operateur · PNPI</p>
         </div>
 
         {error ? (
@@ -67,8 +67,8 @@ export default async function VerifyOperateurPage({ params }: Props) {
           </>
         )}
 
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 10, color: "#9ca3af" }}>
-          Ministere de l'Industrie — PNPI — Verifie le {new Date().toLocaleDateString("fr-FR")}
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 10, color: "#6b7280" }}>
+          Ministere de l'Industrie · PNPI · Verifie le {new Date().toLocaleDateString("fr-FR")}
         </div>
       </div>
     </div>

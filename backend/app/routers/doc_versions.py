@@ -1,4 +1,4 @@
-"""PNPI — Versioning des documents ATI."""
+"""PNPI · Versioning des documents ATI."""
 from __future__ import annotations
 
 import uuid

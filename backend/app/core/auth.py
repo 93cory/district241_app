@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Authentification, autorisation et gestion des tokens."""
+"""PNPI / PNPI · Authentification, autorisation et gestion des tokens."""
 from __future__ import annotations
 
 import hashlib

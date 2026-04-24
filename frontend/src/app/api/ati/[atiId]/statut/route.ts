@@ -1,4 +1,4 @@
-import { backendRequest } from "../../../../../../lib/backend";
+import { backendRequest } from "../../../../../lib/backend";
 
 export async function PATCH(
   request: Request,

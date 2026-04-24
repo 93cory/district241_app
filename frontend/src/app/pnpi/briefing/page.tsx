@@ -79,7 +79,7 @@ export default async function PNPIBriefingPage() {
           { label: "Taux de conformite inspections", value: `${kpis.taux_conformite_pct.toFixed(0)} %`, color: "#7c3aed", detail: "Derniere periode" },
         ].map(({ label, value, color, detail }) => (
           <div key={label} className="chart-card" style={{ padding: "1rem 1.25rem" }}>
-            <div style={{ fontSize: "0.72rem", color: "#9ca3af", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.3rem" }}>{label}</div>
+            <div style={{ fontSize: "0.72rem", color: "#6b7280", textTransform: "uppercase", fontWeight: 600, marginBottom: "0.3rem" }}>{label}</div>
             <div style={{ fontSize: "1.6rem", fontWeight: 800, color, lineHeight: 1.1 }}>{value}</div>
             <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: "0.25rem" }}>{detail}</div>
           </div>
@@ -120,14 +120,14 @@ export default async function PNPIBriefingPage() {
           <h2 style={{ margin: "0 0 0.875rem", color: "#003F8F", fontSize: "1rem" }}>Activite par secteur industriel</h2>
           {topSecteur && (
             <div style={{ padding: "0.625rem 0.875rem", background: "#eff6ff", borderRadius: "6px", marginBottom: "0.875rem", fontSize: "0.82rem", color: "#1d4ed8" }}>
-              <strong>Secteur dominant :</strong> {topSecteur.secteur} — {topSecteur.nb_atis_total} ATIs, {topSecteur.nb_operateurs} operateurs
+              <strong>Secteur dominant :</strong> {topSecteur.secteur} · {topSecteur.nb_atis_total} ATIs, {topSecteur.nb_operateurs} operateurs
             </div>
           )}
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
                 {["Secteur", "Operateurs", "ATIs", "Approuves", "Emplois"].map(h => (
-                  <th key={h} style={{ padding: "0.4rem 0.5rem", textAlign: "left", color: "#9ca3af", fontWeight: 600, fontSize: "0.7rem", textTransform: "uppercase" }}>{h}</th>
+                  <th key={h} style={{ padding: "0.4rem 0.5rem", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "0.7rem", textTransform: "uppercase" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -139,7 +139,7 @@ export default async function PNPIBriefingPage() {
                   <td style={{ padding: "0.5rem", color: "#374151" }}>{s.nb_atis_total}</td>
                   <td style={{ padding: "0.5rem" }}>
                     <span style={{ color: "#10b981", fontWeight: 600 }}>{s.nb_atis_approuves}</span>
-                    <span style={{ color: "#9ca3af", fontSize: "0.72rem" }}> ({s.taux_approbation_pct.toFixed(0)}%)</span>
+                    <span style={{ color: "#6b7280", fontSize: "0.72rem" }}> ({s.taux_approbation_pct.toFixed(0)}%)</span>
                   </td>
                   <td style={{ padding: "0.5rem", color: "#374151" }}>{s.emplois_declares.toLocaleString("fr-FR")}</td>
                 </tr>
@@ -153,7 +153,7 @@ export default async function PNPIBriefingPage() {
           <h2 style={{ margin: "0 0 0.875rem", color: "#003F8F", fontSize: "1rem" }}>Distribution geographique</h2>
           {topProvince && (
             <div style={{ padding: "0.625rem 0.875rem", background: "#f0fdf4", borderRadius: "6px", marginBottom: "0.875rem", fontSize: "0.82rem", color: "#166534" }}>
-              <strong>Province la plus active :</strong> {topProvince.province.replace(/_/g, " ")} — {topProvince.nb_atis_actifs} ATIs actifs
+              <strong>Province la plus active :</strong> {topProvince.province.replace(/_/g, " ")} · {topProvince.nb_atis_actifs} ATIs actifs
             </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -186,7 +186,7 @@ export default async function PNPIBriefingPage() {
           <thead>
             <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
               {["Mois", "Soumis", "Approuves", "Rejetes", "Taux approbation"].map(h => (
-                <th key={h} style={{ padding: "0.5rem 0.75rem", textAlign: "left", color: "#9ca3af", fontWeight: 600, fontSize: "0.7rem", textTransform: "uppercase" }}>{h}</th>
+                <th key={h} style={{ padding: "0.5rem 0.75rem", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "0.7rem", textTransform: "uppercase" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -226,7 +226,7 @@ export default async function PNPIBriefingPage() {
           <thead>
             <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
               {["Numero ATI", "Operateur", "Secteur", "Province", "Statut", "Priorite", "Age (j)", "SLA"].map(h => (
-                <th key={h} style={{ padding: "0.4rem 0.6rem", textAlign: "left", color: "#9ca3af", fontWeight: 600, fontSize: "0.7rem", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} style={{ padding: "0.4rem 0.6rem", textAlign: "left", color: "#6b7280", fontWeight: 600, fontSize: "0.7rem", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -256,8 +256,8 @@ export default async function PNPIBriefingPage() {
       </div>
 
       {/* Footer officiel */}
-      <div style={{ textAlign: "center", padding: "1rem", borderTop: "2px solid #e5e7eb", marginTop: "1rem", fontSize: "0.75rem", color: "#9ca3af" }}>
-        <strong style={{ color: "#003F8F" }}>PNPI — Plateforme Nationale de Pilotage Industriel</strong>
+      <div style={{ textAlign: "center", padding: "1rem", borderTop: "2px solid #e5e7eb", marginTop: "1rem", fontSize: "0.75rem", color: "#6b7280" }}>
+        <strong style={{ color: "#003F8F" }}>PNPI · Plateforme Nationale de Pilotage Industriel</strong>
         <br />Ministere de l&apos;Industrie de la Republique Gabonaise &middot; Document confidentiel &middot; {today}
       </div>
     </section>

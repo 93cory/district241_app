@@ -1,4 +1,4 @@
-"""PNPI core tables — operateurs, ATI, transitions, inspections
+"""PNPI core tables · operateurs, ATI, transitions, inspections
 
 Revision ID: 20260304_05
 Revises: 20260223_04

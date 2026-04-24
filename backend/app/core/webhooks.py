@@ -1,4 +1,4 @@
-"""PNPI — Webhooks pour integration avec systemes externes (douanes, emploi, fiscalite)."""
+"""PNPI · Webhooks pour integration avec systemes externes (douanes, emploi, fiscalite)."""
 from __future__ import annotations
 
 import ipaddress
@@ -32,7 +32,7 @@ def _is_safe_url(url: str) -> bool:
             if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
                 return False
         except ValueError:
-            pass  # hostname is a domain name, not an IP — OK
+            pass  # hostname is a domain name, not an IP · OK
         # Block metadata endpoints (cloud)
         if hostname in ("169.254.169.254", "metadata.google.internal"):
             return False

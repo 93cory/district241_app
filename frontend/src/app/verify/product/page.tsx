@@ -41,7 +41,7 @@ export default async function VerifyProductPage({ searchParams }: Props) {
           <h1 style={{ fontSize: 18, fontWeight: 800, margin: "10px 0 2px", color: "#051B36" }}>
             Verification produit
           </h1>
-          <p style={{ fontSize: 12, color: "#526175", margin: 0 }}>PNPI — Tracabilite industrielle</p>
+          <p style={{ fontSize: 12, color: "#526175", margin: 0 }}>PNPI · Tracabilite industrielle</p>
         </div>
 
         {error && (
@@ -88,8 +88,8 @@ export default async function VerifyProductPage({ searchParams }: Props) {
           </div>
         )}
 
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 10, color: "#9ca3af" }}>
-          Ministere de l'Industrie et de la Transformation Locale — PNPI
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 10, color: "#6b7280" }}>
+          Ministere de l'Industrie et de la Transformation Locale · PNPI
         </div>
       </div>
     </div>

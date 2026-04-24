@@ -17,7 +17,7 @@ export default async function TriagePage() {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>File de triage ATI</h1>
           <p style={{ color: "var(--text-soft)", fontSize: 13, margin: 0 }}>
-            {queue.length} dossiers en attente — {critique} critiques, {urgent} urgents
+            {queue.length} dossiers en attente · {critique} critiques, {urgent} urgents
           </p>
         </div>
       </div>
@@ -37,7 +37,7 @@ export default async function TriagePage() {
             }}>{i + 1}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{ati.numero_ati}</div>
-              <div style={{ fontSize: 11, color: "var(--text-soft)" }}>{ati.operateur} — {ati.secteur}</div>
+              <div style={{ fontSize: 11, color: "var(--text-soft)" }}>{ati.operateur} · {ati.secteur}</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <span style={{ padding: "2px 10px", borderRadius: 8, fontSize: 10, fontWeight: 700, background: `${ati.color}12`, color: ati.color, textTransform: "capitalize" }}>{ati.priority_level}</span>

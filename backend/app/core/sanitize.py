@@ -65,5 +65,5 @@ def _validate_sanitized(value: str) -> str:
     return sanitize_html(value)
 
 
-# Annotated type for Pydantic models — auto-sanitizes on input
+# Annotated type for Pydantic models · auto-sanitizes on input
 SanitizedStr = Annotated[str, AfterValidator(_validate_sanitized)]

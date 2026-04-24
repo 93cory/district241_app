@@ -6,7 +6,7 @@ import L from "leaflet";
 
 import type { FieldReport, IndustrialUnit } from "../../lib/api";
 
-import "leaflet/dist/leaflet.css";
+// leaflet.css is imported at root level in app/layout.tsx (required by Next.js App Router)
 
 const defaultIcon = L.icon({
   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.10.0/images/marker-icon.png",

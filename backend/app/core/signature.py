@@ -1,4 +1,4 @@
-"""PNPI — Signature electronique simplifiee pour documents officiels.
+"""PNPI · Signature electronique simplifiee pour documents officiels.
 
 Genere un hash SHA-256 du contenu + metadata pour garantir l'integrite.
 """

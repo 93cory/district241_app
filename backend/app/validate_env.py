@@ -1,4 +1,4 @@
-"""PNPI — Validation des variables d'environnement au demarrage."""
+"""PNPI · Validation des variables d'environnement au demarrage."""
 import os
 import sys
 import logging
@@ -52,16 +52,16 @@ def validate_environment() -> bool:
         value = os.getenv(var, "").strip()
         if not value:
             if is_prod:
-                errors.append(f"MANQUANTE: {var} — {desc}")
+                errors.append(f"MANQUANTE: {var} · {desc}")
             else:
-                warnings.append(f"Non definie: {var} — {desc} (utilise valeur par defaut)")
+                warnings.append(f"Non definie: {var} · {desc} (utilise valeur par defaut)")
 
     # Check production-required vars
     if is_prod:
         for var, desc in REQUIRED_IN_PRODUCTION.items():
             value = os.getenv(var, "").strip()
             if not value:
-                errors.append(f"MANQUANTE EN PRODUCTION: {var} — {desc}")
+                errors.append(f"MANQUANTE EN PRODUCTION: {var} · {desc}")
             elif value in INSECURE_DEFAULTS:
                 errors.append(f"VALEUR PAR DEFAUT INTERDITE EN PRODUCTION: {var}")
 
@@ -71,7 +71,7 @@ def validate_environment() -> bool:
         if is_prod:
             errors.append("PNPI_SECRET_KEY doit contenir au moins 32 caracteres en production")
         else:
-            warnings.append("PNPI_SECRET_KEY courte (< 32 chars) — acceptable en dev uniquement")
+            warnings.append("PNPI_SECRET_KEY courte (< 32 chars) · acceptable en dev uniquement")
 
     # Report
     if warnings:
@@ -100,6 +100,6 @@ def validate_environment() -> bool:
     for var, desc in integration_keys.items():
         value = os.getenv(var, "").strip()
         if value:
-            logger.info(f"[ENV] Integration API key configured: {var} — {desc}")
+            logger.info(f"[ENV] Integration API key configured: {var} · {desc}")
 
     return True

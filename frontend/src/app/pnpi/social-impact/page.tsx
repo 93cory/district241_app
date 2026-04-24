@@ -19,10 +19,10 @@ export default async function SocialImpactPage() {
       {/* Hero KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
         {[
-          { label: "Emplois total", value: data.emplois_total.toLocaleString("fr-FR"), color: "#006233", icon: "\u{1F477}" },
-          { label: "Emplois femmes", value: `${data.emplois_femmes.toLocaleString("fr-FR")} (${data.pct_femmes}%)`, color: "#ec4899", icon: "\u{1F469}" },
-          { label: "Emplois jeunes", value: `${data.emplois_jeunes.toLocaleString("fr-FR")} (${data.pct_jeunes}%)`, color: "#0c7eb4", icon: "\u{1F9D1}" },
-          { label: "Provinces couvertes", value: `${data.provinces_couvertes}/9`, color: "#7c3aed", icon: "\u{1F5FA}\uFE0F" },
+          { label: "Emplois total", value: (data.emplois_total ?? 0).toLocaleString("fr-FR"), color: "#006233", icon: "\u{1F477}" },
+          { label: "Emplois femmes", value: `${(data.emplois_femmes ?? 0).toLocaleString("fr-FR")} (${data.pct_femmes ?? 0}%)`, color: "#ec4899", icon: "\u{1F469}" },
+          { label: "Emplois jeunes", value: `${(data.emplois_jeunes ?? 0).toLocaleString("fr-FR")} (${data.pct_jeunes ?? 0}%)`, color: "#0c7eb4", icon: "\u{1F9D1}" },
+          { label: "Provinces couvertes", value: `${data.provinces_couvertes ?? 0}/9`, color: "#7c3aed", icon: "\u{1F5FA}\uFE0F" },
         ].map(k => (
           <div key={k.label} className="chart-card" style={{ padding: "16px 18px", textAlign: "center" }}>
             <div style={{ fontSize: 22 }}>{k.icon}</div>

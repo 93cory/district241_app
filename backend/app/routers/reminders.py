@@ -1,4 +1,4 @@
-"""PNPI — Systeme de rappels/relances automatiques."""
+"""PNPI · Systeme de rappels/relances automatiques."""
 from __future__ import annotations
 
 import uuid
@@ -61,55 +61,99 @@ async def generate_auto_reminders(
     current_user: User = Depends(require_roles(Role.admin)),
     db: Session = Depends(get_db),
 ):
-    """Generate automatic reminders for ATIs approaching SLA deadlines."""
+    """Generate automatic reminders :
+    - SLA deadlines for in-progress ATIs (50%, 80%, 100%+)
+    - Renewal reminders for approved ATIs (90j, 60j, 30j, expired)
+    Idempotent : ne cree pas de doublon si un reminder meme type existe deja pour l'ATI aujourd'hui.
+    """
     now = now_utc()
-    terminal = {"approuve", "rejete", "expire"}
+    terminal_active = {"approuve", "rejete", "expire"}
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
 
     all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
     created = 0
 
     for ati in all_atis:
-        if ati.statut in terminal:
-            continue
+        # --- 1. Rappels SLA (ATI en cours) ---
+        if ati.statut not in terminal_active:
+            age = (now.date() - ati.date_soumission.date()).days
+            sla_pct = (age / ati.sla_jours * 100) if ati.sla_jours else 0
 
-        age = (now.date() - ati.date_soumission.date()).days
-        sla_pct = age / ati.sla_jours * 100
+            rtype = None
+            msg = None
+            if sla_pct >= 100:
+                rtype = "sla_breach"
+                msg = f"URGENT : ATI {ati.numero_ati} a depasse le SLA ({age}j / {ati.sla_jours}j). Action immediate requise."
+            elif sla_pct >= 80:
+                rtype = "sla_warning"
+                msg = f"Rappel : ATI {ati.numero_ati} approche de l'echeance SLA ({age}j / {ati.sla_jours}j). Veuillez traiter rapidement."
+            elif sla_pct >= 50:
+                rtype = "sla_info"
+                msg = f"Info : ATI {ati.numero_ati} en cours de traitement ({age}j / {ati.sla_jours}j)."
 
-        # Check if reminder already exists for this ATI today
-        existing = db.execute(
-            select(ATIReminderORM).where(
-                ATIReminderORM.ati_id == ati.id,
-                ATIReminderORM.scheduled_at >= now.replace(hour=0, minute=0, second=0),
-            )
-        ).scalar_one_or_none()
+            if rtype:
+                existing = db.execute(
+                    select(ATIReminderORM).where(
+                        ATIReminderORM.ati_id == ati.id,
+                        ATIReminderORM.type == rtype,
+                        ATIReminderORM.scheduled_at >= today_start,
+                    )
+                ).scalar_one_or_none()
+                if not existing:
+                    recipient = getattr(ati, "instructeur_username", None) or "admin"
+                    db.add(ATIReminderORM(
+                        id=str(uuid.uuid4()),
+                        ati_id=ati.id,
+                        type=rtype,
+                        recipient_username=recipient,
+                        message=msg,
+                        scheduled_at=now,
+                    ))
+                    created += 1
 
-        if existing:
-            continue
+        # --- 2. Rappels renouvellement (ATI approuve, expiration proche) ---
+        if ati.statut == "approuve" and ati.date_expiration:
+            days_left = (ati.date_expiration.date() - now.date()).days
 
-        recipient = getattr(ati, 'instructeur_username', None) or "admin"
+            # Seuils : 90j, 60j, 30j, expired
+            rtype = None
+            msg = None
+            if days_left < 0:
+                rtype = "renewal_expired"
+                msg = f"EXPIRE : l'ATI {ati.numero_ati} est expire depuis {abs(days_left)}j. Demandez le renouvellement immediatement."
+            elif days_left <= 30:
+                rtype = "renewal_30"
+                msg = f"A renouveler : l'ATI {ati.numero_ati} expire dans {days_left}j. Engagez la demande de renouvellement."
+            elif days_left <= 60:
+                rtype = "renewal_60"
+                msg = f"Preparation renouvellement : l'ATI {ati.numero_ati} expire dans {days_left}j (dans 2 mois)."
+            elif days_left <= 90:
+                rtype = "renewal_90"
+                msg = f"A anticiper : l'ATI {ati.numero_ati} expire dans {days_left}j (dans 3 mois)."
 
-        if sla_pct >= 100:
-            msg = f"URGENT: ATI {ati.numero_ati} a depasse le SLA ({age}j / {ati.sla_jours}j). Action immediate requise."
-            rtype = "sla_breach"
-        elif sla_pct >= 80:
-            msg = f"Rappel: ATI {ati.numero_ati} approche de l'echeance SLA ({age}j / {ati.sla_jours}j). Veuillez traiter rapidement."
-            rtype = "sla_warning"
-        elif sla_pct >= 50:
-            msg = f"Info: ATI {ati.numero_ati} en cours de traitement ({age}j / {ati.sla_jours}j)."
-            rtype = "sla_info"
-        else:
-            continue
-
-        reminder = ATIReminderORM(
-            id=str(uuid.uuid4()),
-            ati_id=ati.id,
-            type=rtype,
-            recipient_username=recipient,
-            message=msg,
-            scheduled_at=now,
-        )
-        db.add(reminder)
-        created += 1
+            if rtype:
+                existing = db.execute(
+                    select(ATIReminderORM).where(
+                        ATIReminderORM.ati_id == ati.id,
+                        ATIReminderORM.type == rtype,
+                    )
+                ).scalar_one_or_none()
+                if not existing:
+                    # Destinataires : instructeur + operateur (via created_by)
+                    recipients = set()
+                    if ati.instructeur_username: recipients.add(ati.instructeur_username)
+                    if ati.created_by: recipients.add(ati.created_by)
+                    if not recipients: recipients.add("admin")
+                    for r in recipients:
+                        db.add(ATIReminderORM(
+                            id=str(uuid.uuid4()),
+                            ati_id=ati.id,
+                            type=rtype,
+                            recipient_username=r,
+                            message=msg,
+                            scheduled_at=now,
+                        ))
+                        created += 1
 
     db.commit()
     return {"status": "ok", "created": created}

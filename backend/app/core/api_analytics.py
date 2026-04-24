@@ -1,4 +1,4 @@
-"""Lightweight API analytics — tracks endpoint usage patterns in memory.
+"""Lightweight API analytics · tracks endpoint usage patterns in memory.
 
 Exposes aggregated stats via /admin/api-analytics endpoint.
 For production, consider flushing to DB or Redis periodically.

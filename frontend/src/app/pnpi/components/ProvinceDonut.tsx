@@ -10,7 +10,7 @@ interface ProvinceData {
 
 export default function ProvinceDonut({ provinces }: { provinces: ProvinceData[] }) {
   const total = provinces.reduce((s, p) => s + p.nb_atis_actifs, 0);
-  if (total === 0) return <p style={{ color: "#9ca3af", fontSize: "0.82rem" }}>Aucun ATI actif.</p>;
+  if (total === 0) return <p style={{ color: "#6b7280", fontSize: "0.82rem" }}>Aucun ATI actif.</p>;
 
   const size = 200;
   const cx = size / 2;
@@ -62,7 +62,7 @@ export default function ProvinceDonut({ provinces }: { provinces: ProvinceData[]
           <div key={arc.province} style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
             <span style={{ width: 10, height: 10, borderRadius: 2, background: arc.color, flexShrink: 0 }} />
             <span style={{ color: "#374151" }}>{arc.province.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</span>
-            <span style={{ color: "#9ca3af", marginLeft: "auto", fontWeight: 600 }}>{arc.count} ({arc.pct}%)</span>
+            <span style={{ color: "#6b7280", marginLeft: "auto", fontWeight: 600 }}>{arc.count} ({arc.pct}%)</span>
           </div>
         ))}
       </div>

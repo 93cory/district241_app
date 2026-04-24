@@ -32,7 +32,7 @@ export function DashboardRenderer({ widgetMap }: Props) {
   }, []);
 
   if (!config) {
-    // No custom config — render all widgets in default order
+    // No custom config · render all widgets in default order
     return <>{Object.values(widgetMap)}</>;
   }
 

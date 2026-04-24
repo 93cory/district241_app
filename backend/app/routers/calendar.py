@@ -1,4 +1,4 @@
-"""PNPI — Endpoints for calendar view."""
+"""PNPI · Endpoints for calendar view."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -106,7 +106,7 @@ async def get_calendar_events(
             events.append({
                 "id": f"insp-{insp.id}",
                 "type": "inspection",
-                "title": f"Inspection — {insp.statut_conformite}",
+                "title": f"Inspection · {insp.statut_conformite}",
                 "date": insp.date_inspection.isoformat(),
                 "color": conf_color,
                 "link": f"/pnpi/inspections/{insp.id}",

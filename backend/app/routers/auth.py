@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Endpoints d'authentification."""
+"""PNPI / PNPI · Endpoints d'authentification."""
 from __future__ import annotations
 
 import uuid
@@ -76,7 +76,7 @@ async def login(
             detail=error_detail or "Identifiants invalides.",
         )
 
-    # Check if user has 2FA enabled — if so, require TOTP verification
+    # Check if user has 2FA enabled · if so, require TOTP verification
     row = db.get(UserAccountORM, user.username)
     if row and row.totp_enabled:
         return {"requires_2fa": True, "username": user.username, "message": "Code 2FA requis."}

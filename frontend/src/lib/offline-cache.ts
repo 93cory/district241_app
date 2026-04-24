@@ -1,5 +1,5 @@
 /**
- * PNPI — Cache IndexedDB pour mode hors-ligne.
+ * PNPI · Cache IndexedDB pour mode hors-ligne.
  * Stocke les reponses API localement pour un acces offline.
  */
 

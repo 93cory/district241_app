@@ -121,7 +121,7 @@ export default function ChangelogPage() {
                 {release.tag === "latest" && (
                   <span style={{
                     padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-                    background: "rgba(255,255,255,0.2)", color: "#fff",
+                    background: "rgba(255, 255, 255, 0.72)", color: "#fff",
                   }}>
                     LATEST
                   </span>

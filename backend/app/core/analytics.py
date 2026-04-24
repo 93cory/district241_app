@@ -1,4 +1,4 @@
-"""PNPI — Analytics et tracking des actions utilisateur."""
+"""PNPI · Analytics et tracking des actions utilisateur."""
 from __future__ import annotations
 
 from collections import defaultdict

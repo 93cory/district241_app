@@ -1,4 +1,4 @@
-"""PNPI — Systeme de delegation de dossiers."""
+"""PNPI · Systeme de delegation de dossiers."""
 from __future__ import annotations
 
 import uuid

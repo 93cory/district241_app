@@ -34,7 +34,7 @@ type SearchParams = {
 };
 
 function statutBadge(statut: string | null) {
-  if (!statut) return <span style={{ color: "#9ca3af", fontSize: "0.75rem" }}>--</span>;
+  if (!statut) return <span style={{ color: "#6b7280", fontSize: "0.75rem" }}>--</span>;
   const color = STATUT_COLORS[statut] ?? "#6b7280";
   return (
     <span
@@ -178,7 +178,7 @@ export default async function HistoriquePage({ searchParams }: { searchParams: S
           </div>
 
           {paginatedEntries.length === 0 ? (
-            <p style={{ color: "#9ca3af", textAlign: "center", padding: "2rem 0" }}>Aucune transition avec ces filtres.</p>
+            <p style={{ color: "#6b7280", textAlign: "center", padding: "2rem 0" }}>Aucune transition avec ces filtres.</p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
               {paginatedEntries.map((entry, idx) => {
@@ -239,7 +239,7 @@ export default async function HistoriquePage({ searchParams }: { searchParams: S
                       {/* Status change */}
                       <div style={{ marginTop: "0.4rem", display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
                         {statutBadge(entry.previous_statut)}
-                        <span style={{ color: "#9ca3af", fontSize: "0.8rem", fontWeight: 700 }}>&rarr;</span>
+                        <span style={{ color: "#6b7280", fontSize: "0.8rem", fontWeight: 700 }}>&rarr;</span>
                         {statutBadge(entry.new_statut)}
                       </div>
 

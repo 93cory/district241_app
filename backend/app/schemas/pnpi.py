@@ -1,4 +1,4 @@
-"""PNPI — Schemas Pydantic pour la plateforme industrielle gabonaise."""
+"""PNPI · Schemas Pydantic pour la plateforme industrielle gabonaise."""
 from __future__ import annotations
 
 from datetime import datetime

@@ -1,4 +1,4 @@
-"""PNPI — Feedback et satisfaction operateur."""
+"""PNPI · Feedback et satisfaction operateur."""
 from __future__ import annotations
 
 import uuid

@@ -1,4 +1,4 @@
-"""PNPI — Systeme de badges et gamification."""
+"""PNPI · Systeme de badges et gamification."""
 from __future__ import annotations
 
 from sqlalchemy import select, func

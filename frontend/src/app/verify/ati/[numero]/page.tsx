@@ -116,7 +116,7 @@ export default async function VerifyATIPage({ params }: Props) {
             {/* Timestamp */}
             <div style={{
               textAlign: "center", marginTop: 20,
-              fontSize: 11, color: "#9ca3af",
+              fontSize: 11, color: "#6b7280",
             }}>
               Verifie le {new Date(data.verified_at).toLocaleString("fr-FR")}
             </div>
@@ -127,7 +127,7 @@ export default async function VerifyATIPage({ params }: Props) {
         <div style={{
           textAlign: "center", marginTop: 24, paddingTop: 16,
           borderTop: "1px solid #f0f0f0",
-          fontSize: 11, color: "#9ca3af",
+          fontSize: 11, color: "#6b7280",
         }}>
           Ministere de l&apos;Industrie et de la Transformation Locale &mdash; PNPI
         </div>

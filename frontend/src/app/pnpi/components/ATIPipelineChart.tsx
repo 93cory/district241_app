@@ -8,7 +8,7 @@ const STATUTS: { key: keyof ATIPipelineStats; label: string; color: string }[] =
   { key: "en_validation", label: "En validation", color: "#8b5cf6" },
   { key: "approuve", label: "Approuve", color: "#10b981" },
   { key: "rejete", label: "Rejete", color: "#ef4444" },
-  { key: "expire", label: "Expire", color: "#9ca3af" },
+  { key: "expire", label: "Expire", color: "#6b7280" },
 ];
 
 interface Props {
@@ -57,7 +57,7 @@ const ATIPipelineChart = ({ pipeline }: Props) => {
                   <span style={{ fontSize: "0.875rem", color: "#374151" }}>{s.label}</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                  <span style={{ fontSize: "0.75rem", color: "#9ca3af" }}>{pct}%</span>
+                  <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>{pct}%</span>
                   <span style={{ fontWeight: 700, color: "#111827", minWidth: "24px", textAlign: "right" }}>{count}</span>
                 </div>
               </div>

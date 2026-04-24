@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Application FastAPI principale (architecture modulaire)."""
+"""PNPI / PNPI · Application FastAPI principale (architecture modulaire)."""
 from __future__ import annotations
 
 import asyncio
@@ -1467,7 +1467,7 @@ async def _sla_background_loop() -> None:
                     if ratio > 2:
                         create_system_notification(
                             db,
-                            title=f"CRITIQUE — ATI {a.numero_ati} depasse 2x le SLA",
+                            title=f"CRITIQUE · ATI {a.numero_ati} depasse 2x le SLA",
                             message=(
                                 f"L'ATI {a.numero_ati} ({a.type_activite[:60]}) est en retard "
                                 f"de {age}j pour un SLA de {a.sla_jours}j (ratio {ratio:.1f}x). "
@@ -1479,7 +1479,7 @@ async def _sla_background_loop() -> None:
                             notification_key=f"sla-critical-ministre:{a.id}:{today_iso}",
                         )
                         _sla_logger.warning(
-                            f"[SLA CRITICAL] {a.numero_ati} — {age}j/{a.sla_jours}j "
+                            f"[SLA CRITICAL] {a.numero_ati} · {age}j/{a.sla_jours}j "
                             f"(ratio {ratio:.1f}x) -> escalade ministre"
                         )
 
@@ -1487,7 +1487,7 @@ async def _sla_background_loop() -> None:
                     elif ratio > 1.5:
                         create_system_notification(
                             db,
-                            title=f"Escalade — ATI {a.numero_ati} depasse 1.5x le SLA",
+                            title=f"Escalade · ATI {a.numero_ati} depasse 1.5x le SLA",
                             message=(
                                 f"L'ATI {a.numero_ati} ({a.type_activite[:60]}) est en retard "
                                 f"de {age}j pour un SLA de {a.sla_jours}j (ratio {ratio:.1f}x). "
@@ -1499,7 +1499,7 @@ async def _sla_background_loop() -> None:
                             notification_key=f"sla-escalade-directeur:{a.id}:{today_iso}",
                         )
                         _sla_logger.warning(
-                            f"[SLA ESCALADE] {a.numero_ati} — {age}j/{a.sla_jours}j "
+                            f"[SLA ESCALADE] {a.numero_ati} · {age}j/{a.sla_jours}j "
                             f"(ratio {ratio:.1f}x) -> escalade directeur"
                         )
 
@@ -1510,7 +1510,7 @@ async def _sla_background_loop() -> None:
                         + ", ".join(a.numero_ati for a in overdue[:10])
                     )
                 else:
-                    _sla_logger.info(f"[SLA CHECK] OK — {len(atis)} ATIs actifs, aucun retard")
+                    _sla_logger.info(f"[SLA CHECK] OK · {len(atis)} ATIs actifs, aucun retard")
         except Exception as exc:
             _sla_logger.error(f"[SLA CHECK ERROR] {exc}")
         await asyncio.sleep(3600)  # toutes les heures
@@ -1551,7 +1551,7 @@ _openapi_tags = [
 ]
 
 app = FastAPI(
-    title="PNPI — Plateforme Nationale de la Politique Industrielle",
+    title="PNPI · Plateforme Nationale de la Politique Industrielle",
     description="API du Ministere de l'Industrie et de la Transformation Locale du Gabon. "
                 "Gestion des Agrements Techniques Industriels, inspections de conformite, "
                 "pilotage ministeriel et tracabilite des lots.",
@@ -1568,7 +1568,7 @@ app = FastAPI(
         "syntaxHighlight.theme": "monokai",
     },
     license_info={
-        "name": "Ministere de l'Industrie — Gabon",
+        "name": "Ministere de l'Industrie · Gabon",
     },
     contact={
         "name": "PNPI Support",

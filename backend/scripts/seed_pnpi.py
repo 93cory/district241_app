@@ -1,5 +1,5 @@
 """
-PNPI — Script de donnees de demonstration (version complete et realiste)
+PNPI · Script de donnees de demonstration (version complete et realiste)
 ==========================================================================
 Genere:
   - 6 utilisateurs PNPI avec roles varies
@@ -36,6 +36,7 @@ from app.models.pnpi import (
     AgrementTechniqueIndustrielORM,
     ATITransitionORM,
     InspectionConformiteORM,
+    AnnouncementORM,
 )
 
 # ---------------------------------------------------------------------------
@@ -66,12 +67,17 @@ def nif_gabon(digits: str, letter: str) -> str:
 # ---------------------------------------------------------------------------
 
 USERS_DATA = [
-    {"username": "admin",       "full_name": "Jean-Baptiste MOUSSAVOU",    "roles_csv": "admin",       "password": "Admin@PNPI2026!",       "email_hint": "admin@pnpi-gabon.ga"},
-    {"username": "ministre",    "full_name": "Dr. Euloge NKOGHE BEKALE",   "roles_csv": "ministre",    "password": "Ministre@PNPI2026!",    "email_hint": "ministre@industrie.ga"},
-    {"username": "directeur",   "full_name": "Pierre NGUEMA ONDO",         "roles_csv": "directeur",   "password": "Directeur@PNPI2026!",   "email_hint": "directeur@pnpi-gabon.ga"},
-    {"username": "instructeur", "full_name": "Sylvie BONGO ONDO",          "roles_csv": "instructeur", "password": "Instructeur@PNPI2026!", "email_hint": "instructeur@pnpi-gabon.ga"},
-    {"username": "inspecteur",  "full_name": "Marie OBAME MVOME",          "roles_csv": "inspecteur",  "password": "Inspecteur@PNPI2026!",  "email_hint": "inspecteur@pnpi-gabon.ga"},
-    {"username": "operateur",   "full_name": "Jean-Claude MOUSSAVOU",      "roles_csv": "operateur",   "password": "Operateur@PNPI2026!",   "email_hint": "operateur@pnpi-gabon.ga"},
+    {"username": "admin",            "full_name": "Jean-Baptiste MOUSSAVOU",    "roles_csv": "admin",       "password": "Admin@PNPI2026!",       "email_hint": "admin@pnpi-gabon.ga"},
+    {"username": "ministre",         "full_name": "Dr. Euloge NKOGHE BEKALE",   "roles_csv": "ministre",    "password": "Ministre@PNPI2026!",    "email_hint": "ministre@industrie.ga"},
+    {"username": "directeur",        "full_name": "Pierre NGUEMA ONDO",         "roles_csv": "directeur",   "password": "Directeur@PNPI2026!",   "email_hint": "directeur@pnpi-gabon.ga"},
+    {"username": "instructeur",      "full_name": "Sylvie BONGO ONDO",          "roles_csv": "instructeur", "password": "Instructeur@PNPI2026!", "email_hint": "instructeur@pnpi-gabon.ga"},
+    {"username": "instructeur_bois", "full_name": "Anselme NGUEMA MBA",         "roles_csv": "instructeur", "password": "Bois@PNPI2026!",        "email_hint": "a.nguema@pnpi-gabon.ga"},
+    {"username": "instructeur_mines","full_name": "Pauline NZENG ONDO",         "roles_csv": "instructeur", "password": "Mines@PNPI2026!",       "email_hint": "p.nzeng@pnpi-gabon.ga"},
+    {"username": "inspecteur",       "full_name": "Marie OBAME MVOME",          "roles_csv": "inspecteur",  "password": "Inspecteur@PNPI2026!",  "email_hint": "inspecteur@pnpi-gabon.ga"},
+    {"username": "inspecteur_nord",  "full_name": "Fernand EYOGO NGUEMA",       "roles_csv": "inspecteur",  "password": "Nord@PNPI2026!",        "email_hint": "f.eyogo@pnpi-gabon.ga"},
+    {"username": "inspecteur_sud",   "full_name": "Josephine NDONG OKOUE",      "roles_csv": "inspecteur",  "password": "Sud@PNPI2026!",         "email_hint": "j.ndong@pnpi-gabon.ga"},
+    {"username": "operateur",        "full_name": "Jean-Claude MOUSSAVOU",      "roles_csv": "operateur",   "password": "Operateur@PNPI2026!",   "email_hint": "operateur@pnpi-gabon.ga"},
+    {"username": "operateur_bois",   "full_name": "Raymond OYANE ENGOUANG",     "roles_csv": "operateur",   "password": "BoisOp@PNPI2026!",      "email_hint": "r.oyane@entreprise-bois.ga"},
 ]
 
 # ---------------------------------------------------------------------------
@@ -104,7 +110,7 @@ OPERATEURS_DATA = [
     {"raison_sociale": "COMILOG SA (ERAMET GROUP)",                "nif": nif_gabon("20010000", "M"), "secteur": "mines",            "province": "haut_ogooue",     "ville": "Moanda",       "effectif": 3200, "email": "contact@comilog.ga",               "tel": "+241 01 61 50 00", "lat_off": (-0.180,  0.020)},
     {"raison_sociale": "GABON MANGANESE SA",                       "nif": nif_gabon("20180023", "V"), "secteur": "mines",            "province": "haut_ogooue",     "ville": "Franceville",  "effectif": 420,  "email": "info@gabon-manganese.ga",          "tel": "+241 01 67 34 56", "lat_off": ( 0.008,  0.012)},
     {"raison_sociale": "COMPAGNIE MINIERE DE L'OGOOUE (CMO)",      "nif": nif_gabon("20161122", "O"), "secteur": "mines",            "province": "haut_ogooue",     "ville": "Lastoursville","effectif": 280,  "email": "cmo@cmo-gabon.ga",                 "tel": "+241 01 63 44 21", "lat_off": ( 0.350, -0.950)},
-    {"raison_sociale": "PERENCO GABON — BLOC HAUT-OGOOUE",         "nif": nif_gabon("20010001", "H"), "secteur": "petrole",          "province": "haut_ogooue",     "ville": "Franceville",  "effectif": 95,   "email": "hog@perenco-gabon.com",            "tel": "+241 01 67 55 10", "lat_off": ( 0.022,  0.030)},
+    {"raison_sociale": "PERENCO GABON · BLOC HAUT-OGOOUE",         "nif": nif_gabon("20010001", "H"), "secteur": "petrole",          "province": "haut_ogooue",     "ville": "Franceville",  "effectif": 95,   "email": "hog@perenco-gabon.com",            "tel": "+241 01 67 55 10", "lat_off": ( 0.022,  0.030)},
     {"raison_sociale": "GABON PREFAB INDUSTRIES",                  "nif": nif_gabon("20220044", "P"), "secteur": "btp",              "province": "haut_ogooue",     "ville": "Franceville",  "effectif": 85,   "email": "gpi@prefab-gabon.ga",              "tel": "+241 01 67 88 22", "lat_off": (-0.015,  0.025)},
     # OGOOUE-MARITIME (5)
     {"raison_sociale": "GABON OIL COMPANY (GOC)",                  "nif": nif_gabon("20120000", "G"), "secteur": "petrole",          "province": "ogooue_maritime", "ville": "Port-Gentil",  "effectif": 420,  "email": "contact@goc.ga",                   "tel": "+241 01 56 30 00", "lat_off": ( 0.025, -0.020)},
@@ -157,13 +163,18 @@ TYPES_ACTIVITE = {
 # ---------------------------------------------------------------------------
 
 ATI_DEFINITIONS = [
-    # soumis (10)
+    # ------------------------------------------------------------
+    # SOUMIS (11) — dossiers frais, la plupart dans SLA
+    # ------------------------------------------------------------
     ( 0, 0, "soumis",         "normale",   3), ( 3, 2, "soumis", "elevee",    1),
     ( 8, 0, "soumis",         "urgente",   2), (13, 1, "soumis", "normale",   5),
     (16, 0, "soumis",         "elevee",    4), (20, 2, "soumis", "normale",   7),
     (24, 0, "soumis",         "normale",   6), (28, 3, "soumis", "elevee",    2),
     (31, 0, "soumis",         "normale",   3), (34, 1, "soumis", "urgente",   1),
-    # en_instruction (15)
+    ( 6, 1, "soumis",         "urgente",   0),  # depose aujourd'hui meme
+    # ------------------------------------------------------------
+    # EN_INSTRUCTION (17) — y compris quelques OVERDUE visibles
+    # ------------------------------------------------------------
     ( 1, 1, "en_instruction", "normale",  12), ( 2, 2, "en_instruction", "elevee",  18),
     ( 5, 0, "en_instruction", "normale",  22), ( 7, 3, "en_instruction", "urgente",  9),
     ( 9, 1, "en_instruction", "normale",  15), (11, 0, "en_instruction", "elevee",  20),
@@ -172,13 +183,36 @@ ATI_DEFINITIONS = [
     (23, 1, "en_instruction", "normale",  35), (26, 0, "en_instruction", "elevee",  14),
     (29, 2, "en_instruction", "urgente",   6), (32, 0, "en_instruction", "normale", 28),
     (33, 1, "en_instruction", "elevee",   17),
-    # en_validation (10)
+    # dramatique : urgente LARGEMENT OVERDUE (45j / SLA 14j)
+    ( 4, 2, "en_instruction", "urgente",  45),
+    # normale au bord du SLA (28j / SLA 30j) — alerte proche
+    (10, 1, "en_instruction", "normale",  28),
+    # ------------------------------------------------------------
+    # EN_VALIDATION (11) — plusieurs hors SLA
+    # ------------------------------------------------------------
     ( 4, 0, "en_validation",  "normale",  40), ( 6, 2, "en_validation", "elevee",  35),
     (10, 1, "en_validation",  "normale",  50), (12, 0, "en_validation", "urgente", 28),
     (15, 3, "en_validation",  "normale",  45), (18, 2, "en_validation", "elevee",  38),
     (22, 0, "en_validation",  "normale",  55), (25, 1, "en_validation", "elevee",  33),
     (27, 0, "en_validation",  "normale",  42), (30, 2, "en_validation", "urgente", 25),
-    # approuve (20)
+    # urgente extreme : 60 jours, SLA 14
+    ( 9, 3, "en_validation",  "urgente",  60),
+    # ------------------------------------------------------------
+    # APPROUVE CE MOIS (9) — decisions dans les 30 derniers jours
+    # soum_days entre 31 et 55 -> decision_at = 1 a 25 jours -> this month
+    # ------------------------------------------------------------
+    ( 1, 0, "approuve", "normale",  31),  # decision il y a 1 jour (hier)
+    ( 5, 2, "approuve", "elevee",   35),  # decision il y a 5 jours
+    (11, 0, "approuve", "normale",  38),  # decision il y a 8 jours
+    (14, 2, "approuve", "elevee",   42),  # decision il y a 12 jours
+    (17, 3, "approuve", "normale",  45),  # decision il y a 15 jours
+    (21, 0, "approuve", "elevee",   48),  # decision il y a 18 jours
+    (24, 1, "approuve", "normale",  50),  # decision il y a 20 jours
+    (27, 2, "approuve", "elevee",   52),  # decision il y a 22 jours
+    (30, 0, "approuve", "normale",  55),  # decision il y a 25 jours
+    # ------------------------------------------------------------
+    # APPROUVE (20) — historique plus ancien
+    # ------------------------------------------------------------
     ( 0, 1, "approuve", "normale",  90), ( 2, 0, "approuve", "elevee",  120),
     ( 3, 3, "approuve", "normale", 200), ( 5, 1, "approuve", "normale", 180),
     ( 6, 0, "approuve", "elevee",  150), ( 8, 2, "approuve", "normale", 365),
@@ -189,7 +223,18 @@ ATI_DEFINITIONS = [
     (19, 2, "approuve", "normale", 190), (20, 0, "approuve", "elevee",  210),
     (23, 1, "approuve", "normale", 155), (24, 2, "approuve", "normale", 340),
     (26, 0, "approuve", "elevee",  420), (31, 3, "approuve", "normale", 260),
-    # rejete (5)
+    # ------------------------------------------------------------
+    # APPROUVE · EXPIRATION PROCHE (4) — expire dans < 60 jours
+    # Duree ATI = 3 ans (1095j). decision = soum_days - 30.
+    # Pour expirer dans X jours : soum_days = 1095 + 30 - X = 1125 - X
+    # ------------------------------------------------------------
+    (22, 1, "approuve", "normale", 1080),  # expire dans ~45j
+    (25, 2, "approuve", "elevee",  1095),  # expire dans ~30j
+    (28, 0, "approuve", "normale", 1110),  # expire dans ~15j
+    (32, 3, "approuve", "elevee",  1125),  # expire aujourd'hui
+    # ------------------------------------------------------------
+    # REJETE (5)
+    # ------------------------------------------------------------
     ( 1, 2, "rejete", "normale",  80), ( 7, 1, "rejete", "elevee",  110),
     (15, 0, "rejete", "normale", 140), (21, 2, "rejete", "elevee",   95),
     (28, 1, "rejete", "normale", 160),
@@ -201,6 +246,50 @@ MOTIFS_REJET = [
     "Non-respect des normes securite incendie NFPA-10 dans le plan de prevention des risques.",
     "Absence de certificat de conformite electrique des installations industrielles.",
     "Etude d'impact environnemental insuffisante : risques de contamination des sols non analyses.",
+]
+
+# ---------------------------------------------------------------------------
+# 5. ANNONCES OFFICIELLES (visibles en banner)
+# ---------------------------------------------------------------------------
+
+ANNOUNCEMENTS_DATA = [
+    {
+        "title": "Nouvelle reglementation ATI secteur bois en vigueur 1er mai",
+        "body": "Le decret 2026-127 instituant le nouveau cahier des charges pour le secteur bois entre en vigueur le 1er mai 2026. Toutes les nouvelles demandes d'agrement devront respecter les nouvelles exigences de tracabilite FSC.",
+        "severity": "info",
+        "target_roles": "instructeur,directeur,operateur",
+        "days_ago_created": 4,
+        "days_ago_expires": -30,  # expire dans 30 jours
+    },
+    {
+        "title": "Formation instructeurs · 15 mai 2026 a Libreville",
+        "body": "Session de formation continue sur les nouveaux outils d'instruction numerique. Inscription obligatoire avant le 5 mai. Priorite aux instructeurs secteurs bois et mines.",
+        "severity": "info",
+        "target_roles": "instructeur",
+        "days_ago_created": 2,
+        "days_ago_expires": -20,
+    },
+    {
+        "title": "Maintenance programmee · dimanche 4 mai 4h-6h",
+        "body": "La plateforme PNPI sera indisponible pour maintenance technique. Operations planifiees : migration base de donnees, mise a jour securite. Aucune perte de donnees anticipee.",
+        "severity": "warning",
+        "target_roles": None,
+        "days_ago_created": 1,
+        "days_ago_expires": -10,
+    },
+]
+
+# ---------------------------------------------------------------------------
+# 6. NOTIFICATIONS VARIEES (ministre et directeur)
+# ---------------------------------------------------------------------------
+
+NOTIFICATIONS_DATA = [
+    {"target": "ministre", "title": "ROUGIER GABON · renouvellement ATI approuve",      "severity": "info",     "days_ago":  1, "key": "seed_notif_1"},
+    {"target": "ministre", "title": "4 ATI expirent dans les 60 prochains jours",       "severity": "medium",   "days_ago":  2, "key": "seed_notif_2"},
+    {"target": "ministre", "title": "Inspection CMO Lastoursville · non-conformite critique", "severity": "high", "days_ago":  2, "key": "seed_notif_3"},
+    {"target": "directeur","title": "9 ATI approuves ce mois · rapport mensuel pret",   "severity": "info",     "days_ago":  0, "key": "seed_notif_4"},
+    {"target": "directeur","title": "GABON MANGANESE · mesures correctives en retard",  "severity": "high",     "days_ago":  5, "key": "seed_notif_5"},
+    {"target": "instructeur","title":"Nouveau dossier ATI secteur bois a instruire",    "severity": "info",     "days_ago":  0, "key": "seed_notif_6"},
 ]
 
 NUMEROS_REFERENCE = [
@@ -219,18 +308,26 @@ NUMEROS_REFERENCE = [
 
 INSPECTIONS_DATA = [
     # conforme (4)
-    {"op_idx":  0, "inspecteur": "inspecteur", "statut": "conforme",     "days_ago": 45,  "lat_off":  0.012, "lng_off":  0.034, "observations": "ROUGIER GABON SA (Libreville) : equipements de sciage conformes ATI. Systeme gestion dechets forestiers conforme. Registres, certification FSC et licences a jour. Personnel en EPI. Aucun ecart.", "mesures": None},
-    {"op_idx":  8, "inspecteur": "inspecteur", "statut": "conforme",     "days_ago": 20,  "lat_off": -0.018, "lng_off":  0.022, "observations": "COMILOG SA (Moanda) : extraction manganese dans les normes ISO 14001. EPI utilises par 100% des operateurs. Bassins de decantation operationnels. Plan HSE a jour.", "mesures": None},
-    {"op_idx": 13, "inspecteur": "inspecteur", "statut": "conforme",     "days_ago": 55,  "lat_off":  0.025, "lng_off": -0.020, "observations": "GABON OIL COMPANY (Port-Gentil) : unite de production conforme standards API et reglementations PNPI. Plan HSE 2025 a jour. Systeme anti-pollution maritime operationnel.", "mesures": None},
-    {"op_idx":  4, "inspecteur": "inspecteur", "statut": "conforme",     "days_ago": 25,  "lat_off": -0.005, "lng_off":  0.018, "observations": "SOGEA-SATOM GABON (Libreville) : equipements certifies et controles periodiquement. Plan PPRP a jour. Zero accident grave sur 12 mois.", "mesures": None},
+    {"op_idx":  0, "inspecteur": "inspecteur",      "statut": "conforme",     "days_ago": 45,  "lat_off":  0.012, "lng_off":  0.034, "observations": "ROUGIER GABON SA (Libreville) : equipements de sciage conformes ATI. Systeme gestion dechets forestiers conforme. Registres, certification FSC et licences a jour. Personnel en EPI. Aucun ecart.", "mesures": None},
+    {"op_idx":  8, "inspecteur": "inspecteur_nord", "statut": "conforme",     "days_ago": 20,  "lat_off": -0.018, "lng_off":  0.022, "observations": "COMILOG SA (Moanda) : extraction manganese dans les normes ISO 14001. EPI utilises par 100% des operateurs. Bassins de decantation operationnels. Plan HSE a jour.", "mesures": None},
+    {"op_idx": 13, "inspecteur": "inspecteur",      "statut": "conforme",     "days_ago": 55,  "lat_off":  0.025, "lng_off": -0.020, "observations": "GABON OIL COMPANY (Port-Gentil) : unite de production conforme standards API et reglementations PNPI. Plan HSE 2025 a jour. Systeme anti-pollution maritime operationnel.", "mesures": None},
+    {"op_idx":  4, "inspecteur": "inspecteur",      "statut": "conforme",     "days_ago": 25,  "lat_off": -0.005, "lng_off":  0.018, "observations": "SOGEA-SATOM GABON (Libreville) : equipements certifies et controles periodiquement. Plan PPRP a jour. Zero accident grave sur 12 mois.", "mesures": None},
     # non_conforme (3)
-    {"op_idx":  7, "inspecteur": "inspecteur", "statut": "non_conforme", "days_ago": 120, "lat_off": -0.010, "lng_off": -0.015, "observations": "SETRAG troncon Libreville-Ndjole : maintenance preventive insuffisante. 14 km de rails depassent le seuil reglementaire. 3 passages a niveau sans barriere fonctionnelle. Registre de maintenance non tenu depuis 4 mois.", "mesures": "Maintenance corrective immediate. Remplacement rails sous 60 jours. Remise en etat passages a niveau sous 15 jours. Inspection de controle dans 30 jours."},
-    {"op_idx":  9, "inspecteur": "inspecteur", "statut": "non_conforme", "days_ago": 90,  "lat_off":  0.008, "lng_off":  0.012, "observations": "GABON MANGANESE SA (Franceville) : depassement seuil metaux lourds (Mn > 0,5 mg/L vs 0,1 autorise). Absence bassin decantation secondaire. Stock minerais en zone inondable.", "mesures": "Installation bassin decantation sous 90 jours. Relocalisation stock sous 30 jours. Audit environnemental sous 45 jours."},
-    {"op_idx": 16, "inspecteur": "inspecteur", "statut": "non_conforme", "days_ago": 100, "lat_off": -0.012, "lng_off":  0.018, "observations": "PERENCO GABON (Port-Gentil offshore) : concentration hydrocarbures dans rejets > norme MARPOL (35 ppm). Absence registre incidents environnementaux Q4.", "mesures": "Audit environnemental sous 30 jours. Mise a niveau systeme effluents bloc 7 sous 60 jours. Formation HSE obligatoire."},
+    {"op_idx":  7, "inspecteur": "inspecteur",      "statut": "non_conforme", "days_ago": 120, "lat_off": -0.010, "lng_off": -0.015, "observations": "SETRAG troncon Libreville-Ndjole : maintenance preventive insuffisante. 14 km de rails depassent le seuil reglementaire. 3 passages a niveau sans barriere fonctionnelle. Registre de maintenance non tenu depuis 4 mois.", "mesures": "Maintenance corrective immediate. Remplacement rails sous 60 jours. Remise en etat passages a niveau sous 15 jours. Inspection de controle dans 30 jours."},
+    {"op_idx":  9, "inspecteur": "inspecteur_nord", "statut": "non_conforme", "days_ago": 90,  "lat_off":  0.008, "lng_off":  0.012, "observations": "GABON MANGANESE SA (Franceville) : depassement seuil metaux lourds (Mn > 0,5 mg/L vs 0,1 autorise). Absence bassin decantation secondaire. Stock minerais en zone inondable.", "mesures": "Installation bassin decantation sous 90 jours. Relocalisation stock sous 30 jours. Audit environnemental sous 45 jours."},
+    {"op_idx": 16, "inspecteur": "inspecteur",      "statut": "non_conforme", "days_ago": 100, "lat_off": -0.012, "lng_off":  0.018, "observations": "PERENCO GABON (Port-Gentil offshore) : concentration hydrocarbures dans rejets > norme MARPOL (35 ppm). Absence registre incidents environnementaux Q4.", "mesures": "Audit environnemental sous 30 jours. Mise a niveau systeme effluents bloc 7 sous 60 jours. Formation HSE obligatoire."},
     # partiel (3)
-    {"op_idx":  1, "inspecteur": "inspecteur", "statut": "partiel",      "days_ago": 30,  "lat_off": -0.030, "lng_off":  0.055, "observations": "TRANSGABONAISE BOIS (Owendo) : chaine de transformation conforme. Ecarts : gestion dechets forestiers inadequate, absence filiere valorisation. 2 extincteurs non a jour.", "mesures": "Plan gestion dechets sous 45 jours. Verification extincteurs sous 15 jours. Rapport conformite dans 60 jours."},
-    {"op_idx":  2, "inspecteur": "inspecteur", "statut": "partiel",      "days_ago": 10,  "lat_off":  0.021, "lng_off":  0.012, "observations": "OLAM PALM GABON (Libreville) : conforme ISO 22000 dans l'ensemble. Ecart : 3 lots janvier 2026 sans fiche tracabilite numerique complete. Systeme effluents palmeraie a ameliorer.", "mesures": "Regularisation fiches tracabilite sous 7 jours. Mise a niveau systeme effluents sous 60 jours."},
-    {"op_idx": 20, "inspecteur": "inspecteur", "statut": "partiel",      "days_ago": 35,  "lat_off": -0.010, "lng_off":  0.015, "observations": "SUCAF GABON (Mouila) : production sucre dans les normes qualite. Ecarts : stockage non conforme (humidite > 75%). Absence HACCP a jour. Maintenance centrifugeuses en retard.", "mesures": "Renovation entrepots sous 60 jours. Formation HACCP avant 30/04/2026. Plan maintenance sous 30 jours."},
+    {"op_idx":  1, "inspecteur": "inspecteur",      "statut": "partiel",      "days_ago": 30,  "lat_off": -0.030, "lng_off":  0.055, "observations": "TRANSGABONAISE BOIS (Owendo) : chaine de transformation conforme. Ecarts : gestion dechets forestiers inadequate, absence filiere valorisation. 2 extincteurs non a jour.", "mesures": "Plan gestion dechets sous 45 jours. Verification extincteurs sous 15 jours. Rapport conformite dans 60 jours."},
+    {"op_idx":  2, "inspecteur": "inspecteur",      "statut": "partiel",      "days_ago": 10,  "lat_off":  0.021, "lng_off":  0.012, "observations": "OLAM PALM GABON (Libreville) : conforme ISO 22000 dans l'ensemble. Ecart : 3 lots janvier 2026 sans fiche tracabilite numerique complete. Systeme effluents palmeraie a ameliorer.", "mesures": "Regularisation fiches tracabilite sous 7 jours. Mise a niveau systeme effluents sous 60 jours."},
+    {"op_idx": 20, "inspecteur": "inspecteur_sud",  "statut": "partiel",      "days_ago": 35,  "lat_off": -0.010, "lng_off":  0.015, "observations": "SUCAF GABON (Mouila) : production sucre dans les normes qualite. Ecarts : stockage non conforme (humidite > 75%). Absence HACCP a jour. Maintenance centrifugeuses en retard.", "mesures": "Renovation entrepots sous 60 jours. Formation HACCP avant 30/04/2026. Plan maintenance sous 30 jours."},
+
+    # --- Nouvelles inspections recentes (10-15 jours) pour que la liste ait de la vie ---
+    {"op_idx":  3, "inspecteur": "inspecteur",      "statut": "conforme",     "days_ago":  3,  "lat_off":  0.018, "lng_off": -0.020, "observations": "BRASSERIES DU GABON (Libreville) : lignes d'embouteillage a l'aplomb des normes CEMAC. Traitement eaux usees operationnel. Plan HACCP a jour. Tracabilite lots parfaite.", "mesures": None},
+    {"op_idx": 22, "inspecteur": "inspecteur",      "statut": "conforme",     "days_ago":  7,  "lat_off":  0.012, "lng_off": -0.018, "observations": "CFG Lambarene : grumes traitees respectant le plan d'amenagement forestier. Certification FSC renouvelee en janvier. Zone de decoupe conforme.", "mesures": None},
+    {"op_idx": 25, "inspecteur": "inspecteur_sud",  "statut": "partiel",      "days_ago":  5,  "lat_off":  0.015, "lng_off":  0.022, "observations": "SILVEX NYANGA (Tchibanga) : exploitation globalement conforme. Ecarts : absence registre retrocession aux communautes locales, 2 scieries sans protection acoustique reglementaire.", "mesures": "Regularisation registre sous 15 jours. Protection acoustique avant 30 mai. Rapport sous 30 jours."},
+    {"op_idx": 10, "inspecteur": "inspecteur_nord", "statut": "non_conforme", "days_ago":  2,  "lat_off":  0.350, "lng_off": -0.950, "observations": "CMO Lastoursville : exploitation artisanale non declaree sur perimetre agree. Acces zone contaminee non securisee. Absence plan reprise vegetalisation apres exploitation.", "mesures": "Arret immediat exploitation non declaree. Securisation perimetres sous 7 jours. Plan reprise vegetalisation sous 30 jours. Convocation directeur."},
+    {"op_idx": 18, "inspecteur": "inspecteur",      "statut": "conforme",     "days_ago": 12,  "lat_off":  0.005, "lng_off":  0.008, "observations": "MAUREL & PROM GABON (Port-Gentil) : puits Ezanga conformes. Systeme anti-pollution testue dernier trimestre. Registre incidents a jour.", "mesures": None},
+    {"op_idx": 23, "inspecteur": "inspecteur_nord", "statut": "conforme",     "days_ago": 15,  "lat_off":  0.010, "lng_off":  0.015, "observations": "GBI Oyem : traitement bois a l'adrex conforme. Sciage respectant normes. Certification FSC renouvelee, aucun ecart.", "mesures": None},
 ]
 
 # ---------------------------------------------------------------------------
@@ -239,7 +336,7 @@ INSPECTIONS_DATA = [
 
 def main() -> None:
     print("=" * 60)
-    print("  PNPI — Seed de donnees de demonstration")
+    print("  PNPI · Seed de donnees de demonstration")
     print("=" * 60)
 
     Base.metadata.create_all(bind=engine)
@@ -247,12 +344,13 @@ def main() -> None:
 
     try:
         # Nettoyage
+        nb_an = db.query(AnnouncementORM).delete()
         nb_i = db.query(InspectionConformiteORM).delete()
         nb_t = db.query(ATITransitionORM).delete()
         nb_a = db.query(AgrementTechniqueIndustrielORM).delete()
         nb_o = db.query(OperateurIndustrielORM).delete()
         db.commit()
-        print(f"  [nettoyage] {nb_o} operateurs, {nb_a} ATIs, {nb_t} transitions, {nb_i} inspections")
+        print(f"  [nettoyage] {nb_o} operateurs, {nb_a} ATIs, {nb_t} transitions, {nb_i} inspections, {nb_an} annonces")
 
         # 1. Utilisateurs
         print("  [1/5] Utilisateurs PNPI...")
@@ -425,7 +523,44 @@ def main() -> None:
         insp_ctr = Counter(i["statut"] for i in INSPECTIONS_DATA)
         print(f"       OK : {nb_inspections} inspections")
 
-        # Notification SLA
+        # 6. Annonces officielles
+        print("  [6/7] Annonces officielles...")
+        nb_annonces = 0
+        for a in ANNOUNCEMENTS_DATA:
+            db.add(AnnouncementORM(
+                id           = uid("ANN"),
+                title        = a["title"],
+                body         = a["body"],
+                severity     = a["severity"],
+                target_roles = a["target_roles"],
+                is_active    = True,
+                created_by   = "admin",
+                created_at   = days_ago(a["days_ago_created"]),
+                expires_at   = days_ago(a["days_ago_expires"]),
+            ))
+            nb_annonces += 1
+        db.flush()
+        print(f"       OK : {nb_annonces} annonces")
+
+        # 7. Notifications variees
+        print("  [7/7] Notifications (dashboard)...")
+        nb_notifs = 0
+        for n in NOTIFICATIONS_DATA:
+            if not db.query(NotificationORM).filter(NotificationORM.notification_key == n["key"]).first():
+                db.add(NotificationORM(
+                    id               = uid("N"),
+                    target_role      = n["target"],
+                    title            = n["title"],
+                    message          = n["title"],
+                    severity         = n["severity"],
+                    notification_key = n["key"],
+                    created_at       = days_ago(n["days_ago"]),
+                    is_read          = False,
+                ))
+                nb_notifs += 1
+        db.flush()
+
+        # Notification SLA automatique
         hors_sla = [a for a in atis if a.statut not in ("approuve", "rejete", "expire")
                     and (now_utc() - a.date_soumission).days > a.sla_jours]
         if hors_sla:
@@ -441,14 +576,15 @@ def main() -> None:
                     created_at       = now_utc(),
                     is_read          = False,
                 ))
-                print(f"  [notif] Alerte SLA : {len(hors_sla)} ATI(s) hors delai")
+                nb_notifs += 1
+        print(f"       OK : {nb_notifs} notifications")
 
         db.commit()
 
         # Resume
         print()
         print("=" * 60)
-        print("  PNPI — Seed termine avec succes")
+        print("  PNPI · Seed termine avec succes")
         print("=" * 60)
         print(f"  Operateurs  : {len(operateurs)} | ATIs : {len(atis)} | Transitions : {nb_transitions} | Inspections : {nb_inspections}")
         print()
@@ -462,7 +598,7 @@ def main() -> None:
         print()
         print("  Comptes utilisateurs :")
         for u in USERS_DATA:
-            print(f"    {u['username']:15s} ({u['roles_csv']:12s}) — pwd: {u['password']}")
+            print(f"    {u['username']:15s} ({u['roles_csv']:12s}) · pwd: {u['password']}")
         print("=" * 60)
 
     except Exception as exc:

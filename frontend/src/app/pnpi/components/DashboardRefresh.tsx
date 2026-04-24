@@ -41,7 +41,7 @@ export default function DashboardRefresh() {
           animation: "pulse 2s ease-in-out infinite",
         }}
       />
-      <span style={{ fontSize: "0.72rem", color: "#9ca3af" }}>
+      <span style={{ fontSize: "0.72rem", color: "#6b7280" }}>
         MAJ {ago}
       </span>
       <button

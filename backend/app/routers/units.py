@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Endpoints pour unites industrielles, declarations, lots et logs."""
+"""PNPI / PNPI · Endpoints pour unites industrielles, declarations, lots et logs."""
 from __future__ import annotations
 
 import uuid

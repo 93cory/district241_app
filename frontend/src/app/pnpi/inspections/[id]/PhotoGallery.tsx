@@ -155,7 +155,7 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
       )}
 
       {loading ? (
-        <p style={{ color: "#9ca3af", fontSize: "0.875rem", fontStyle: "italic" }}>Chargement des photos...</p>
+        <p style={{ color: "#6b7280", fontSize: "0.875rem", fontStyle: "italic" }}>Chargement des photos...</p>
       ) : photos.length === 0 ? (
         <div
           style={{
@@ -166,10 +166,10 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
             border: "2px dashed #e5e7eb",
           }}
         >
-          <p style={{ margin: 0, color: "#9ca3af", fontSize: "0.875rem" }}>
+          <p style={{ margin: 0, color: "#6b7280", fontSize: "0.875rem" }}>
             Aucune photo pour cette inspection.
           </p>
-          <p style={{ margin: "0.25rem 0 0", color: "#d1d5db", fontSize: "0.78rem" }}>
+          <p style={{ margin: "0.25rem 0 0", color: "#4a5568", fontSize: "0.78rem" }}>
             Cliquez sur &quot;Ajouter des photos&quot; pour commencer.
           </p>
         </div>
@@ -219,7 +219,7 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
                 >
                   {photo.nom_fichier}
                 </p>
-                <p style={{ margin: "0.15rem 0 0", fontSize: "0.68rem", color: "#9ca3af" }}>
+                <p style={{ margin: "0.15rem 0 0", fontSize: "0.68rem", color: "#6b7280" }}>
                   {(photo.taille_octets / 1024).toFixed(0)} Ko &middot;{" "}
                   {new Date(photo.uploaded_at).toLocaleDateString("fr-FR")}
                 </p>
@@ -356,9 +356,9 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
               }}
             >
               <strong>{enlargedPhoto.nom_fichier}</strong>
-              <span style={{ margin: "0 0.5rem", color: "#9ca3af" }}>&middot;</span>
+              <span style={{ margin: "0 0.5rem", color: "#6b7280" }}>&middot;</span>
               {(enlargedPhoto.taille_octets / 1024).toFixed(0)} Ko
-              <span style={{ margin: "0 0.5rem", color: "#9ca3af" }}>&middot;</span>
+              <span style={{ margin: "0 0.5rem", color: "#6b7280" }}>&middot;</span>
               {new Date(enlargedPhoto.uploaded_at).toLocaleDateString("fr-FR")}
             </div>
             <button

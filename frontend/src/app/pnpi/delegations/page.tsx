@@ -60,9 +60,9 @@ export default function DelegationsPage() {
         }}>
           <div style={{ flex: 1, fontSize: 13 }}>
             <span style={{ fontWeight: 700 }}>{type === "given" ? `\u2192 ${d.to}` : `\u2190 ${d.from}`}</span>
-            {d.reason && <span style={{ color: "var(--text-soft, #526175)" }}> — {d.reason}</span>}
+            {d.reason && <span style={{ color: "var(--text-soft, #526175)" }}> · {d.reason}</span>}
             <div style={{ fontSize: 11, color: "var(--text-soft, #9ca3af)", marginTop: 2 }}>
-              {new Date(d.start_date).toLocaleDateString("fr-FR")} — {new Date(d.end_date).toLocaleDateString("fr-FR")}
+              {new Date(d.start_date).toLocaleDateString("fr-FR")} · {new Date(d.end_date).toLocaleDateString("fr-FR")}
             </div>
           </div>
           <span style={{

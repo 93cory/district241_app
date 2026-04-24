@@ -1,4 +1,4 @@
-"""PNPI / PNPI — Endpoints de gestion 2FA (TOTP)."""
+"""PNPI / PNPI · Endpoints de gestion 2FA (TOTP)."""
 from __future__ import annotations
 
 import hashlib
@@ -83,7 +83,7 @@ def _get_user_row(db: Session, username: str) -> UserAccountORM:
 
 
 # ---------------------------------------------------------------------------
-# POST /auth/2fa/setup — Generate TOTP secret for current user
+# POST /auth/2fa/setup · Generate TOTP secret for current user
 # ---------------------------------------------------------------------------
 
 @router.post("/setup", response_model=TOTPSetupResponse)
@@ -128,7 +128,7 @@ async def totp_setup(
 
 
 # ---------------------------------------------------------------------------
-# POST /auth/2fa/confirm — Confirm TOTP setup with a valid code
+# POST /auth/2fa/confirm · Confirm TOTP setup with a valid code
 # ---------------------------------------------------------------------------
 
 @router.post("/confirm", response_model=TOTPConfirmResponse)
@@ -179,7 +179,7 @@ async def totp_confirm(
 
 
 # ---------------------------------------------------------------------------
-# POST /auth/2fa/verify — Verify TOTP code during login
+# POST /auth/2fa/verify · Verify TOTP code during login
 # ---------------------------------------------------------------------------
 
 @router.post("/verify", response_model=TOTPVerifyResponse)
@@ -216,7 +216,7 @@ async def totp_verify(
 
 
 # ---------------------------------------------------------------------------
-# DELETE /auth/2fa/disable — Disable 2FA for current user (admin or self)
+# DELETE /auth/2fa/disable · Disable 2FA for current user (admin or self)
 # ---------------------------------------------------------------------------
 
 @router.delete("/disable", response_model=TOTPDisableResponse)
@@ -266,7 +266,7 @@ async def totp_disable(
 
 
 # ---------------------------------------------------------------------------
-# POST /auth/2fa/verify-backup — Verify a backup code during login
+# POST /auth/2fa/verify-backup · Verify a backup code during login
 # ---------------------------------------------------------------------------
 
 @router.post("/verify-backup")
