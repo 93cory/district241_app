@@ -23,10 +23,10 @@ export const AdminModeration = ({ declarations, notifications, fieldReports }: P
   const validateDeclaration = async (declarationId: string) => {
     setBusyId(declarationId);
     setMessage(null);
-    const response = await fetch("/api/admin/declarations/validate", {
-      method: "POST",
+    const response = await fetch(`/api/declarations/${encodeURIComponent(declarationId)}/validate`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ declaration_id: declarationId, validated: true }),
+      body: JSON.stringify({ validated: true }),
     });
     setBusyId(null);
     if (!response.ok) {
@@ -40,11 +40,14 @@ export const AdminModeration = ({ declarations, notifications, fieldReports }: P
   const markNotificationRead = async (notificationId: string) => {
     setBusyId(notificationId);
     setMessage(null);
-    const response = await fetch("/api/admin/notifications/read", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notification_id: notificationId, is_read: true }),
-    });
+    const response = await fetch(
+      `/api/admin/notifications/${encodeURIComponent(notificationId)}/read`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_read: true }),
+      },
+    );
     setBusyId(null);
     if (!response.ok) {
       setMessage(`Mise a jour notification echouee (${response.status}).`);
@@ -57,11 +60,14 @@ export const AdminModeration = ({ declarations, notifications, fieldReports }: P
   const changeFieldReportStatus = async (reportId: string, status: string) => {
     setBusyId(reportId);
     setMessage(null);
-    const response = await fetch("/api/admin/field-reports/status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ report_id: reportId, status }),
-    });
+    const response = await fetch(
+      `/api/field-reports/${encodeURIComponent(reportId)}/status`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      },
+    );
     setBusyId(null);
     if (!response.ok) {
       setMessage(`Mise a jour rapport echouee (${response.status}).`);
@@ -74,10 +80,8 @@ export const AdminModeration = ({ declarations, notifications, fieldReports }: P
   const deleteFieldReport = async (reportId: string) => {
     setBusyId(reportId);
     setMessage(null);
-    const response = await fetch("/api/admin/field-reports/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ report_id: reportId }),
+    const response = await fetch(`/api/field-reports/${encodeURIComponent(reportId)}`, {
+      method: "DELETE",
     });
     setBusyId(null);
     if (!response.ok) {
