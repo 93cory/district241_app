@@ -2639,6 +2639,7 @@ from .routers.api_keys import router as api_keys_router
 from .routers.ati import router as ati_router
 from .routers.auth import router as auth_router
 from .routers.calendar import router as calendar_router
+from .routers.chat import router as chat_router
 from .routers.checklists import router as checklists_router
 from .routers.conventions import router as conventions_router
 from .routers.delegations import router as delegations_router
@@ -2682,6 +2683,7 @@ app.include_router(exports_router)
 app.include_router(pnpi_dashboard_router)
 app.include_router(ati_router)
 app.include_router(operateurs_router)
+app.include_router(chat_router)
 app.include_router(inspections_router)
 app.include_router(notifications_router)
 app.include_router(documents_router)

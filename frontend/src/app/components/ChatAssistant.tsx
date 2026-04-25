@@ -111,19 +111,57 @@ export function ChatAssistant() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [pending, setPending] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState<boolean | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = () => {
-    if (!input.trim()) return;
-    const userMsg: Message = { role: "user", text: input };
-    const answer = findAnswer(input);
-    const botMsg: Message = { role: "bot", text: answer };
-    setMessages((prev) => [...prev, userMsg, botMsg]);
+  // Detection capacite IA (une fois a l'ouverture)
+  useEffect(() => {
+    if (!open || aiEnabled !== null) return;
+    fetch("/api/chat/status")
+      .then((r) => (r.ok ? r.json() : { enabled: false }))
+      .then((d) => setAiEnabled(Boolean(d.enabled)))
+      .catch(() => setAiEnabled(false));
+  }, [open, aiEnabled]);
+
+  const askBackend = async (question: string): Promise<string> => {
+    try {
+      const res = await fetch("/api/chat/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      if (data?.fallback || !data?.answer) return findAnswer(question);
+      return data.answer;
+    } catch {
+      // fallback FAQ statique en cas d'erreur reseau / 5xx
+      return findAnswer(question);
+    }
+  };
+
+  const send = async () => {
+    if (!input.trim() || pending) return;
+    const question = input;
+    const userMsg: Message = { role: "user", text: question };
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
+
+    // Si l'IA est explicitement desactivee, FAQ direct (zero latence)
+    if (aiEnabled === false) {
+      setMessages((prev) => [...prev, { role: "bot", text: findAnswer(question) }]);
+      return;
+    }
+
+    setPending(true);
+    const answer = await askBackend(question);
+    setPending(false);
+    setMessages((prev) => [...prev, { role: "bot", text: answer }]);
   };
 
   if (!open) {
@@ -227,11 +265,27 @@ export function ChatAssistant() {
               color: m.role === "user" ? "#fff" : "var(--text-main)",
               fontSize: 13,
               lineHeight: 1.5,
+              whiteSpace: "pre-wrap",
             }}
           >
             {m.text}
           </div>
         ))}
+        {pending && (
+          <div
+            style={{
+              alignSelf: "flex-start",
+              padding: "8px 12px",
+              borderRadius: 12,
+              background: "var(--bg-base, #f4f8fb)",
+              color: "var(--text-soft, #526175)",
+              fontSize: 13,
+              fontStyle: "italic",
+            }}
+          >
+            L'assistant reflechit...
+          </div>
+        )}
         <div ref={endRef} />
       </div>
 
