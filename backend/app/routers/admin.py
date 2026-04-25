@@ -52,7 +52,16 @@ def _to_notification_read(row: NotificationORM) -> dict:
 
 @router.get("/admin/users")
 async def list_user_accounts(
-    _: User = Depends(require_roles(Role.admin, Role.ministre)),
+    _: User = Depends(
+        require_roles(
+            Role.admin,
+            Role.ministre,
+            Role.directeur,
+            Role.instructeur,
+            Role.inspecteur,
+            Role.operateur,
+        )
+    ),
     db: Session = Depends(get_db),
 ):
     rows = db.execute(select(UserAccountORM).order_by(UserAccountORM.created_at.desc())).scalars().all()
@@ -157,7 +166,16 @@ async def delete_user_account(
 
 @router.get("/admin/notifications")
 async def list_notifications(
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.operateur, Role.inspecteur)),
+    current_user: User = Depends(
+        require_roles(
+            Role.admin,
+            Role.ministre,
+            Role.directeur,
+            Role.instructeur,
+            Role.inspecteur,
+            Role.operateur,
+        )
+    ),
     db: Session = Depends(get_db),
 ):
     role_values = [role.value for role in current_user.roles]
@@ -215,7 +233,16 @@ async def create_notification(
 async def mark_notification_read(
     notification_id: str,
     payload: dict,
-    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.operateur, Role.inspecteur)),
+    current_user: User = Depends(
+        require_roles(
+            Role.admin,
+            Role.ministre,
+            Role.directeur,
+            Role.instructeur,
+            Role.inspecteur,
+            Role.operateur,
+        )
+    ),
     db: Session = Depends(get_db),
 ):
     row = db.get(NotificationORM, notification_id)

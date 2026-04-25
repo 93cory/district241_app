@@ -22,7 +22,7 @@ from ..core.decision_engine import recommend_decision
 from ..core.field_tracker import get_field_history
 from ..core.pagination import PaginatedResponse, PaginationParams
 from ..core.risk_assessment import assess_risk
-from ..database import get_db, now_utc
+from ..database import as_utc, get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
     ATICommentORM,
@@ -1737,8 +1737,8 @@ async def get_my_stats(
     )
 
     total_transitions = len(transitions)
-    this_month_transitions = sum(1 for t in transitions if t.changed_at >= month_start)
-    last_30d_transitions = sum(1 for t in transitions if t.changed_at >= thirty_days_ago)
+    this_month_transitions = sum(1 for t in transitions if as_utc(t.changed_at) >= month_start)
+    last_30d_transitions = sum(1 for t in transitions if as_utc(t.changed_at) >= thirty_days_ago)
 
     # Decisions (transitions vers approuve/rejete)
     decisions = [t for t in transitions if t.new_statut in ("approuve", "rejete")]
