@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 // Le type SpeechRecognition n'est pas dans les types DOM standards.
 // Declaration minimale pour eviter les erreurs de compilation.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SR = any;
 
 interface Props {

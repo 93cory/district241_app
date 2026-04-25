@@ -80,6 +80,10 @@ jobs:
 
   flutter:
     runs-on: ubuntu-latest
+    # Job conditionnel : ne tourne que si le projet Flutter existe (pubspec.yaml).
+    # Le sprint mobile n'a pas encore demarre — a reactiver des qu'un dossier
+    # mobile/ ou flutter_app/ contenant pubspec.yaml sera commite.
+    if: ${{ false }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
