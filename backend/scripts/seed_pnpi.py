@@ -14,6 +14,7 @@ Usage:
 """
 from __future__ import annotations
 
+import os
 import sys
 import uuid
 from collections import Counter
@@ -50,6 +51,16 @@ def hash_password(plain: str) -> str:
     return pwd_context.hash(plain)
 
 
+def _resolve_password(username: str, default: str) -> str:
+    """Si PNPI_<USERNAME>_PASSWORD est defini, l'utiliser ; sinon fallback dev.
+
+    Permet de garder le seed simple en local (creds hardcodes documentes)
+    tout en autorisant un override env-driven en prod/CI sans toucher au code.
+    """
+    env_key = f"PNPI_{username.upper()}_PASSWORD"
+    return os.getenv(env_key, default)
+
+
 def uid(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:10].upper()}"
 
@@ -64,6 +75,12 @@ def nif_gabon(digits: str, letter: str) -> str:
 
 # ---------------------------------------------------------------------------
 # 1. UTILISATEURS PNPI
+#
+# ATTENTION : les mots de passe ci-dessous sont des DEFAULTS DEV/DEMO publics.
+# En production, definissez systematiquement les variables d'environnement
+# PNPI_<USERNAME>_PASSWORD (ex: PNPI_ADMIN_PASSWORD, PNPI_MINISTRE_PASSWORD)
+# avant d'executer le seed. Le helper _resolve_password() lit ces variables
+# en priorite et ne tombe sur le default que si elles sont absentes.
 # ---------------------------------------------------------------------------
 
 USERS_DATA = [
@@ -356,11 +373,12 @@ def main() -> None:
         print("  [1/5] Utilisateurs PNPI...")
         nb_c = nb_u = 0
         for udata in USERS_DATA:
+            password = _resolve_password(udata["username"], udata["password"])
             existing = db.get(UserAccountORM, udata["username"])
             if existing:
                 existing.full_name       = udata["full_name"]
                 existing.roles_csv       = udata["roles_csv"]
-                existing.hashed_password = hash_password(udata["password"])
+                existing.hashed_password = hash_password(password)
                 existing.is_active       = True
                 nb_u += 1
             else:
@@ -368,7 +386,7 @@ def main() -> None:
                     username              = udata["username"],
                     full_name             = udata["full_name"],
                     roles_csv             = udata["roles_csv"],
-                    hashed_password       = hash_password(udata["password"]),
+                    hashed_password       = hash_password(password),
                     is_active             = True,
                     created_at            = days_ago(730),
                     failed_login_attempts = 0,
