@@ -6,7 +6,7 @@ from app.config import Settings
 def test_default_settings():
     s = Settings()
     assert s.algorithm == "HS256"
-    assert s.access_token_expire_minutes == 60
+    assert s.access_token_expire_minutes == 480  # 8h, aligne sur cookie
 
 
 def test_validate_warns_on_default_secret_in_prod():
