@@ -1,8 +1,10 @@
 name: PNPI CD
 
+# Workflow CD desactive tant que les secrets de deploiement ne sont pas
+# configures (DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, GHCR_TOKEN).
+# A reactiver en passant 'on: push' quand l'infra prod sera prete.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   # ------------------------------------------------------------------
