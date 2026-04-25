@@ -74,6 +74,12 @@ async def create_user_account(
     _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
+    # Validation manuelle (payload: dict ne fait pas la validation pydantic)
+    required = {"username", "password", "full_name"}
+    missing = required - set(payload.keys() if isinstance(payload, dict) else [])
+    if missing:
+        raise HTTPException(status_code=422, detail=f"Champs requis manquants: {sorted(missing)}")
+
     existing = db.get(UserAccountORM, payload["username"])
     if existing:
         raise HTTPException(status_code=409, detail="Utilisateur deja existant.")
