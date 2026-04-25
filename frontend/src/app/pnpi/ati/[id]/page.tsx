@@ -48,9 +48,11 @@ const STATUT_COLORS: Record<string, string> = {
 const ETAPES = ["reception", "instruction", "validation", "decision"];
 
 export default async function ATIDetailPage({ params }: { params: { id: string } }) {
+  let userRoles: string[] = [];
   try {
     const profile = await fetchBackendProfile();
-    if (!((profile.roles ?? []) as string[]).some((r) => PNPI_ROLES.has(r))) redirect("/connexion");
+    userRoles = (profile.roles ?? []) as string[];
+    if (!userRoles.some((r) => PNPI_ROLES.has(r))) redirect("/connexion");
   } catch {
     redirect("/connexion");
   }
@@ -159,7 +161,12 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-            <WorkflowButtons atiId={ati.id} currentStatut={ati.statut} />
+            <WorkflowButtons
+              atiId={ati.id}
+              currentStatut={ati.statut}
+              currentEtape={ati.etape}
+              userRoles={userRoles}
+            />
             <a
               href={`/api/pnpi/ati/${ati.id}/pdf`}
               target="_blank"

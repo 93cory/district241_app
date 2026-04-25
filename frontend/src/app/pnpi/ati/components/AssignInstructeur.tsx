@@ -26,14 +26,19 @@ export function AssignInstructeur({
   useEffect(() => {
     fetch("/api/admin/users", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : Promise.resolve([])))
-      .then((all: User[]) =>
+      .then((data: unknown) => {
+        const list: User[] = Array.isArray(data)
+          ? (data as User[])
+          : Array.isArray((data as { users?: unknown })?.users)
+            ? (data as { users: User[] }).users
+            : [];
         setUsers(
-          all.filter(
+          list.filter(
             (u) =>
               u.is_active && u.roles.some((r) => ["instructeur", "admin", "directeur"].includes(r)),
           ),
-        ),
-      )
+        );
+      })
       .catch(() => {
         /* ignore -- non-admin */
       });
