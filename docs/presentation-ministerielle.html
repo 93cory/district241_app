@@ -1,0 +1,1346 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PNPI · Document de présentation au Ministère de l'Industrie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800;900&display=swap" />
+<style>
+  :root {
+    --gabon-green: #009E60;
+    --gabon-yellow: #FCD116;
+    --gabon-blue: #003DA5;
+    --ink: #051B36;
+    --ink-soft: #526175;
+    --ink-fade: #8a96a8;
+    --paper: #FAF8F4;
+    --cream: #F4F1EA;
+    --line: #E2DDD2;
+    --line-soft: #EFEBE3;
+    --gold: #B8956A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: "Inter", -apple-system, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.65;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .display { font-family: "Playfair Display", Georgia, serif; font-weight: 800; letter-spacing: -0.015em; line-height: 1.1; }
+  .serif { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-weight: 600; }
+
+  /* ============== Page wrapper for print ============== */
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 60px;
+    min-height: 100vh;
+    position: relative;
+  }
+  @media print {
+    .page { page-break-after: always; padding: 30mm 25mm; min-height: 0; }
+    body { background: white; font-size: 11pt; }
+    .no-print { display: none !important; }
+    section { animation: none !important; opacity: 1 !important; transform: none !important; }
+  }
+
+  /* ============== HERO (cover page) ============== */
+  .hero {
+    background: linear-gradient(160deg, #051B36 0%, #003DA5 50%, #009E60 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    padding: 60px;
+  }
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(252,209,22,0.15) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(0,158,96,0.2) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero-flag {
+    display: flex;
+    height: 4px;
+    margin-bottom: 32px;
+  }
+  .hero-flag span { flex: 1; }
+  .hero-flag span:nth-child(1) { background: var(--gabon-green); }
+  .hero-flag span:nth-child(2) { background: var(--gabon-yellow); }
+  .hero-flag span:nth-child(3) { background: var(--gabon-blue); }
+
+  .hero-emblem {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-emblem-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gabon-yellow), #d9a91a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Playfair Display", serif;
+    font-weight: 900;
+    font-size: 28px;
+    color: var(--ink);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 8px 24px rgba(252,209,22,0.4); }
+    50% { box-shadow: 0 8px 36px rgba(252,209,22,0.7); }
+  }
+  .hero-emblem-text { font-size: 13px; opacity: 0.85; letter-spacing: 0.08em; }
+  .hero-emblem-text strong { font-weight: 700; letter-spacing: 0.03em; display: block; font-size: 15px; }
+
+  .hero-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-eyebrow {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--gabon-yellow);
+    margin-bottom: 18px;
+    opacity: 0;
+    animation: fade-up 0.9s ease-out 0.2s forwards;
+  }
+  .hero-title {
+    font-family: "Playfair Display", serif;
+    font-weight: 900;
+    font-size: clamp(48px, 7vw, 86px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fade-up 1s ease-out 0.4s forwards;
+  }
+  .hero-title em {
+    font-style: normal;
+    background: linear-gradient(120deg, var(--gabon-yellow), #fff 50%, var(--gabon-yellow));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 4s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+  .hero-subtitle {
+    font-size: 21px;
+    font-weight: 300;
+    max-width: 720px;
+    opacity: 0.92;
+    line-height: 1.5;
+    margin-bottom: 50px;
+    opacity: 0;
+    animation: fade-up 1s ease-out 0.6s forwards;
+  }
+
+  .hero-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 32px;
+    padding-top: 40px;
+    border-top: 1px solid rgba(255,255,255,0.18);
+    opacity: 0;
+    animation: fade-up 1s ease-out 0.8s forwards;
+  }
+  .hero-meta-item .label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    opacity: 0.7;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .hero-meta-item .val { font-size: 18px; font-weight: 600; }
+
+  .hero-footer {
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 12px;
+    opacity: 0.7;
+    position: relative;
+    z-index: 1;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============== Reveal on scroll ============== */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .reveal-stagger.visible > * {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-stagger.visible > *:nth-child(1) { transition-delay: 0.05s; }
+  .reveal-stagger.visible > *:nth-child(2) { transition-delay: 0.15s; }
+  .reveal-stagger.visible > *:nth-child(3) { transition-delay: 0.25s; }
+  .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.35s; }
+  .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.45s; }
+  .reveal-stagger.visible > *:nth-child(6) { transition-delay: 0.55s; }
+
+  /* ============== Section general ============== */
+  .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gabon-green);
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .section-tag::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: var(--gabon-green);
+  }
+  .section-title {
+    font-family: "Playfair Display", serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    color: var(--ink);
+    line-height: 1.1;
+    margin-bottom: 24px;
+    letter-spacing: -0.015em;
+  }
+  .section-title em {
+    color: var(--gabon-green);
+    font-style: italic;
+    font-family: "Cormorant Garamond", serif;
+  }
+  .section-lede {
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    max-width: 780px;
+    margin-bottom: 48px;
+    font-weight: 300;
+  }
+
+  /* ============== Synthèse exécutive ============== */
+  .summary-quote {
+    border-left: 4px solid var(--gabon-yellow);
+    padding: 32px 40px;
+    background: linear-gradient(90deg, rgba(252,209,22,0.05), transparent);
+    margin: 40px 0;
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.5;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .pillar {
+    padding: 28px 24px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    border-top: 4px solid var(--gabon-green);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .pillar:hover { transform: translateY(-4px); box-shadow: 0 16px 32px -16px rgba(0,0,0,0.15); }
+  .pillar:nth-child(2) { border-top-color: var(--gabon-yellow); }
+  .pillar:nth-child(3) { border-top-color: var(--gabon-blue); }
+  .pillar h3 {
+    font-family: "Playfair Display", serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .pillar p { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+  /* ============== Stats ============== */
+  .stats {
+    background: linear-gradient(135deg, var(--ink) 0%, var(--gabon-blue) 100%);
+    color: #fff;
+    padding: 80px 60px;
+    margin: 60px -60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stats::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 90% 10%, rgba(252,209,22,0.1) 0%, transparent 40%);
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 40px;
+    position: relative;
+    z-index: 1;
+  }
+  .stat-item .num {
+    font-family: "Playfair Display", serif;
+    font-size: 72px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--gabon-yellow);
+    letter-spacing: -0.02em;
+  }
+  .stat-item .num small { font-size: 36px; opacity: 0.85; margin-left: 4px; }
+  .stat-item .lab {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-top: 12px;
+    font-weight: 400;
+  }
+  .stat-item .desc { font-size: 12px; opacity: 0.65; margin-top: 4px; }
+
+  /* ============== Roles ============== */
+  .roles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 48px;
+  }
+  .role {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 26px;
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .role::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent, var(--gabon-green));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .role:hover { transform: translateY(-6px); box-shadow: 0 24px 48px -24px rgba(0,0,0,0.2); }
+  .role:hover::before { transform: scaleX(1); }
+  .role-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--accent, var(--gabon-green));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: "Playfair Display", serif;
+    font-weight: 800;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+  .role h3 { font-family: "Playfair Display", serif; font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .role .role-tagline { font-size: 12px; color: var(--ink-fade); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+  .role p { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+  /* ============== Capabilities ============== */
+  .caps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 40px;
+  }
+  .cap {
+    background: linear-gradient(135deg, #fff 0%, var(--cream) 100%);
+    border-radius: 16px;
+    padding: 28px;
+    border: 1px solid var(--line-soft);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .cap:hover { transform: translateY(-3px); border-color: var(--gabon-green); }
+  .cap-num {
+    font-family: "Playfair Display", serif;
+    font-size: 56px;
+    font-weight: 900;
+    color: rgba(0, 158, 96, 0.12);
+    position: absolute;
+    top: 12px;
+    right: 24px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .cap h3 { font-family: "Playfair Display", serif; font-size: 19px; font-weight: 700; margin-bottom: 10px; position: relative; z-index: 1; }
+  .cap p { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+
+  /* ============== Security ============== */
+  .security-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 40px; }
+  @media (max-width: 720px) { .security-grid { grid-template-columns: 1fr; } }
+  .check-list { list-style: none; padding: 0; }
+  .check-list li {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line-soft);
+    align-items: flex-start;
+  }
+  .check-list li:last-child { border-bottom: 0; }
+  .check-list .check-mark {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--gabon-green);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 14px;
+    flex-shrink: 0;
+  }
+  .check-list h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .check-list p { font-size: 13px; color: var(--ink-soft); }
+
+  /* ============== Demo ============== */
+  .demo-card {
+    background: linear-gradient(135deg, var(--ink) 0%, var(--gabon-blue) 100%);
+    color: #fff;
+    border-radius: 24px;
+    padding: 48px;
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 48px;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (max-width: 720px) { .demo-card { grid-template-columns: 1fr; } }
+  .demo-card::after {
+    content: "";
+    position: absolute;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(252,209,22,0.2) 0%, transparent 70%);
+    top: -80px; right: -50px;
+  }
+  .demo-card h3 { font-family: "Playfair Display", serif; font-size: 28px; margin-bottom: 12px; }
+  .demo-card .creds { background: rgba(255,255,255,0.08); padding: 16px; border-radius: 12px; font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.8; margin-top: 20px; backdrop-filter: blur(8px); }
+  .demo-card .creds .role-line { display: flex; justify-content: space-between; padding: 4px 0; }
+  .demo-card .creds .role-name { color: var(--gabon-yellow); font-weight: 600; }
+  .qr-placeholder {
+    width: 200px; height: 200px;
+    background: #fff;
+    border-radius: 16px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: var(--ink); font-size: 12px; padding: 16px; text-align: center;
+    line-height: 1.4;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 12px 32px -12px rgba(0,0,0,0.3);
+  }
+  .qr-placeholder strong { display: block; font-size: 13px; color: var(--gabon-blue); margin-bottom: 4px; }
+
+  /* ============== Roadmap timeline ============== */
+  .timeline { margin-top: 48px; position: relative; padding-left: 40px; }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 12px; top: 12px; bottom: 12px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--gabon-green), var(--gabon-yellow), var(--gabon-blue));
+  }
+  .milestone {
+    position: relative;
+    padding: 16px 0 16px 28px;
+  }
+  .milestone::before {
+    content: "";
+    position: absolute;
+    left: -34px; top: 22px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--gabon-green);
+    border: 4px solid var(--paper);
+    box-shadow: 0 0 0 2px var(--gabon-green);
+  }
+  .milestone:nth-child(2)::before { background: var(--gabon-yellow); box-shadow: 0 0 0 2px var(--gabon-yellow); }
+  .milestone:nth-child(3)::before { background: var(--gabon-blue); box-shadow: 0 0 0 2px var(--gabon-blue); }
+  .milestone-time {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-fade);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .milestone h3 { font-family: "Playfair Display", serif; font-size: 22px; margin-bottom: 8px; }
+  .milestone p { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+  .milestone ul { margin-top: 12px; padding-left: 18px; }
+  .milestone li { font-size: 14px; color: var(--ink-soft); margin: 4px 0; }
+
+  /* ============== Call to action ============== */
+  .cta {
+    background: linear-gradient(135deg, var(--gabon-green) 0%, #006d3e 100%);
+    color: #fff;
+    border-radius: 24px;
+    padding: 64px 56px;
+    margin-top: 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(252,209,22,0.15) 0%, transparent 60%);
+  }
+  .cta-content { position: relative; z-index: 1; }
+  .cta h2 {
+    font-family: "Playfair Display", serif;
+    font-size: 40px;
+    font-weight: 800;
+    margin-bottom: 18px;
+    line-height: 1.15;
+  }
+  .cta p {
+    font-size: 18px;
+    opacity: 0.95;
+    max-width: 720px;
+    margin: 0 auto 32px;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  .ask-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    margin-top: 40px;
+  }
+  .ask-item {
+    background: rgba(255,255,255,0.1);
+    padding: 24px 20px;
+    border-radius: 14px;
+    backdrop-filter: blur(8px);
+  }
+  .ask-item .num { font-family: "Playfair Display", serif; font-size: 36px; font-weight: 800; color: var(--gabon-yellow); }
+  .ask-item h4 { font-size: 15px; font-weight: 600; margin: 8px 0 6px; }
+  .ask-item p { font-size: 13px; opacity: 0.85; margin: 0; }
+
+  /* ============== Contact ============== */
+  .contact {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 48px;
+    align-items: center;
+  }
+  @media (max-width: 720px) { .contact { grid-template-columns: 1fr; } }
+  .contact-card {
+    background: #fff;
+    padding: 40px 36px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    box-shadow: 0 12px 40px -20px rgba(0,0,0,0.1);
+  }
+  .contact-card .name {
+    font-family: "Playfair Display", serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .contact-card .role-tag {
+    font-size: 13px;
+    color: var(--gabon-green);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  .contact-card .info { display: flex; flex-direction: column; gap: 12px; }
+  .contact-card .info-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--line-soft);
+  }
+  .contact-card .info-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: var(--cream);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .contact-card .info-line .label { color: var(--ink-fade); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; }
+  .contact-card .info-line .val { font-weight: 600; color: var(--ink); }
+
+  .signature-zone {
+    padding: 40px 0;
+    text-align: center;
+  }
+  .signature-zone .quote {
+    font-family: "Cormorant Garamond", serif;
+    font-style: italic;
+    font-size: 24px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 28px;
+  }
+  .signature-zone .author {
+    font-family: "Playfair Display", serif;
+    font-size: 18px;
+    color: var(--ink);
+  }
+
+  /* ============== Footer ============== */
+  .doc-footer {
+    background: var(--ink);
+    color: #fff;
+    padding: 50px 60px 30px;
+    margin-top: 100px;
+  }
+  .doc-footer-flag {
+    height: 4px;
+    display: flex;
+    margin-bottom: 32px;
+  }
+  .doc-footer-flag span { flex: 1; }
+  .doc-footer-flag span:nth-child(1) { background: var(--gabon-green); }
+  .doc-footer-flag span:nth-child(2) { background: var(--gabon-yellow); }
+  .doc-footer-flag span:nth-child(3) { background: var(--gabon-blue); }
+  .doc-footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 32px;
+  }
+  .doc-footer h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 12px;
+    opacity: 0.7;
+    font-weight: 600;
+  }
+  .doc-footer p, .doc-footer ul { font-size: 13px; opacity: 0.85; }
+  .doc-footer ul { list-style: none; }
+  .doc-footer li { margin-bottom: 6px; }
+  .doc-footer-baseline {
+    font-size: 11px;
+    opacity: 0.6;
+    text-align: center;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 20px;
+    font-style: italic;
+  }
+  @media (max-width: 720px) { .doc-footer-grid { grid-template-columns: 1fr; } }
+
+  .scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(to right, var(--gabon-green), var(--gabon-yellow), var(--gabon-blue));
+    z-index: 100;
+    transition: width 0.1s;
+  }
+
+  .nav-dots {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 50;
+  }
+  .nav-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .nav-dot.active { background: var(--gabon-green); transform: scale(1.4); }
+  .nav-dot:hover { background: var(--gabon-blue); }
+  @media (max-width: 720px) { .nav-dots { display: none; } }
+
+  /* Print specific overrides */
+  @media print {
+    .scroll-progress, .nav-dots { display: none; }
+    .hero, .stats, .demo-card, .cta { background: #f5f5f5 !important; color: var(--ink) !important; }
+    .hero-title em { background: none; -webkit-text-fill-color: var(--gabon-green); color: var(--gabon-green); }
+    .stat-item .num { color: var(--gabon-blue) !important; }
+    .demo-card .creds { background: rgba(0,0,0,0.05) !important; color: var(--ink) !important; }
+    .ask-item { background: rgba(0,0,0,0.05) !important; }
+    .stats { color: var(--ink) !important; }
+    .role:hover, .pillar:hover, .cap:hover { transform: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scroll-progress" id="progress"></div>
+
+<nav class="nav-dots no-print" aria-label="Navigation rapide">
+  <a class="nav-dot" href="#cover" data-target="cover" title="Page de garde"></a>
+  <a class="nav-dot" href="#vision" data-target="vision" title="Vision"></a>
+  <a class="nav-dot" href="#impact" data-target="impact" title="Impact"></a>
+  <a class="nav-dot" href="#roles" data-target="roles" title="Utilisateurs"></a>
+  <a class="nav-dot" href="#capabilities" data-target="capabilities" title="Capacités"></a>
+  <a class="nav-dot" href="#security" data-target="security" title="Sécurité"></a>
+  <a class="nav-dot" href="#demo" data-target="demo" title="Démonstration"></a>
+  <a class="nav-dot" href="#roadmap" data-target="roadmap" title="Feuille de route"></a>
+  <a class="nav-dot" href="#cta" data-target="cta" title="Demande"></a>
+  <a class="nav-dot" href="#contact" data-target="contact" title="Contact"></a>
+</nav>
+
+<!-- =============================================================== -->
+<!-- COVER -->
+<!-- =============================================================== -->
+<section id="cover" class="hero">
+  <div class="hero-flag"><span></span><span></span><span></span></div>
+
+  <div class="hero-emblem">
+    <div class="hero-emblem-circle">PNPI</div>
+    <div class="hero-emblem-text">
+      <strong>République Gabonaise</strong>
+      Ministère de l'Industrie et de la Transformation Locale
+    </div>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">Document de présentation officiel</div>
+    <h1 class="hero-title">
+      La <em>souveraineté</em><br>industrielle<br>au service du Gabon.
+    </h1>
+    <p class="hero-subtitle">
+      La Plateforme Nationale de Pilotage Industriel (PNPI), l'outil numérique souverain pour la délivrance des Agréments Techniques Industriels, le suivi des inspections de conformité et le pilotage stratégique du tissu industriel national.
+    </p>
+
+    <div class="hero-meta">
+      <div class="hero-meta-item">
+        <div class="label">Audience</div>
+        <div class="val">Cabinet ministériel</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="label">Date</div>
+        <div class="val" id="presentation-date">À confirmer</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="label">Présenté par</div>
+        <div class="val">Jean Baptiste MBA NDONG</div>
+      </div>
+      <div class="hero-meta-item">
+        <div class="label">Statut projet</div>
+        <div class="val">Opérationnel</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-footer">
+    <span>PNPI v1.43 · Document confidentiel</span>
+    <span>Avril 2026</span>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- SYNTHESE EXECUTIVE -->
+<!-- =============================================================== -->
+<section id="vision" class="page reveal">
+  <div class="section-tag">Synthèse exécutive</div>
+  <h2 class="section-title">
+    Un outil <em>numérique</em><br>au service de la décision publique.
+  </h2>
+  <p class="section-lede">
+    Aujourd'hui, la délivrance d'un Agrément Technique Industriel au Gabon repose sur un circuit largement papier : dépôts physiques, transmissions inter-services manuelles, traçabilité limitée, statistiques tardives. La PNPI digitalise et accélère ce processus de bout en bout, en respectant les règles de souveraineté des données.
+  </p>
+
+  <div class="summary-quote">
+    « La PNPI permet au Ministère de l'Industrie de délivrer plus vite, de tracer mieux et de décider sur la base de données consolidées en temps réel. »
+  </div>
+
+  <div class="pillars reveal-stagger">
+    <div class="pillar">
+      <h3>Accélération</h3>
+      <p>Réduction du délai moyen de traitement des dossiers ATI de l'ordre de <strong>50%</strong> grâce à la dématérialisation, au workflow guidé et aux alertes SLA automatiques. Les opérateurs n'ont plus à se déplacer.</p>
+    </div>
+    <div class="pillar">
+      <h3>Traçabilité</h3>
+      <p>Chaque action (soumission, instruction, décision) est <strong>horodatée et auditable</strong>. La transparence administrative renforce la confiance des opérateurs et la redevabilité des agents publics.</p>
+    </div>
+    <div class="pillar">
+      <h3>Pilotage</h3>
+      <p>Tableaux de bord en temps réel pour le Ministre et son cabinet : volumes par secteur, par province, dépassements SLA, scoring des opérateurs, projections IA. La donnée devient un levier de décision stratégique.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- IMPACT CHIFFRE -->
+<!-- =============================================================== -->
+<section id="impact" class="page reveal" style="padding-bottom: 0;">
+  <div class="section-tag">Impact projeté</div>
+  <h2 class="section-title">
+    Des chiffres qui <em>parlent</em>.
+  </h2>
+  <p class="section-lede">
+    Estimations basées sur les workflows actuels et les benchmarks de digitalisation administrative dans la sous-région CEMAC.
+  </p>
+</section>
+
+<div class="stats reveal-stagger">
+  <div class="stats-grid">
+    <div class="stat-item">
+      <div class="num" data-count="50"><small>%</small></div>
+      <div class="lab">Réduction du délai moyen ATI</div>
+      <div class="desc">de 45j vers 22j ciblé</div>
+    </div>
+    <div class="stat-item">
+      <div class="num" data-count="100"><small>%</small></div>
+      <div class="lab">Décisions tracées</div>
+      <div class="desc">Audit trail intégral</div>
+    </div>
+    <div class="stat-item">
+      <div class="num" data-count="9"></div>
+      <div class="lab">Provinces couvertes</div>
+      <div class="desc">Accès uniforme via Internet</div>
+    </div>
+    <div class="stat-item">
+      <div class="num" data-count="24"><small>/7</small></div>
+      <div class="lab">Disponibilité</div>
+      <div class="desc">Contre 8h–17h au guichet</div>
+    </div>
+    <div class="stat-item">
+      <div class="num" data-count="0"></div>
+      <div class="lab">Faille de sécurité identifiée</div>
+      <div class="desc">Audit RBAC sur 108 combinaisons</div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================================== -->
+<!-- ROLES UTILISATEURS -->
+<!-- =============================================================== -->
+<section id="roles" class="page reveal">
+  <div class="section-tag">Utilisateurs</div>
+  <h2 class="section-title">
+    Une plateforme <em>pour chaque acteur</em><br>du circuit ATI.
+  </h2>
+  <p class="section-lede">
+    Six profils utilisateurs distincts, chacun avec un espace dédié, des actions adaptées à son rôle et une séparation stricte des responsabilités.
+  </p>
+
+  <div class="roles-grid reveal-stagger">
+    <div class="role" style="--accent: #b42318">
+      <div class="role-icon">A</div>
+      <h3>Administrateur</h3>
+      <div class="role-tagline">Supervision technique</div>
+      <p>Gère les comptes, la matrice RACI, les sauvegardes, le journal d'audit et les intégrations. Garant de la fiabilité et de la disponibilité de la plateforme.</p>
+    </div>
+    <div class="role" style="--accent: #051B36">
+      <div class="role-icon">M</div>
+      <h3>Ministre</h3>
+      <div class="role-tagline">Décision stratégique</div>
+      <p>Approuve les agréments en validation, pilote la politique industrielle, accède aux synthèses exécutives, projections IA, comparatifs entre périodes.</p>
+    </div>
+    <div class="role" style="--accent: #009E60">
+      <div class="role-icon">D</div>
+      <h3>Directeur</h3>
+      <div class="role-tagline">Pilotage opérationnel</div>
+      <p>Coordonne l'équipe d'instructeurs, valide les dossiers en intermédiaire, suit les performances par agent, configure son tableau de bord personnel.</p>
+    </div>
+    <div class="role" style="--accent: #003DA5">
+      <div class="role-icon">I</div>
+      <h3>Instructeur</h3>
+      <div class="role-tagline">Instruction des dossiers</div>
+      <p>Cœur du métier. Reçoit les dossiers, vérifie les pièces, demande les compléments, fait avancer les ATI dans le workflow. Génère les courriers administratifs.</p>
+    </div>
+    <div class="role" style="--accent: #7c3aed">
+      <div class="role-icon">N</div>
+      <h3>Inspecteur</h3>
+      <div class="role-tagline">Terrain</div>
+      <p>Réalise les inspections de conformité avec photos géolocalisées, saisit les rapports, évalue le respect des normes industrielles.</p>
+    </div>
+    <div class="role" style="--accent: #FCD116">
+      <div class="role-icon">O</div>
+      <h3>Opérateur</h3>
+      <div class="role-tagline">Entreprise industrielle</div>
+      <p>Soumet ses demandes d'agrément, joint ses documents, suit l'avancement de ses dossiers, télécharge ses certificats. Accès 24/7 à son guichet personnel.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- CAPABILITES -->
+<!-- =============================================================== -->
+<section id="capabilities" class="page reveal">
+  <div class="section-tag">Capacités principales</div>
+  <h2 class="section-title">
+    Tout ce que la PNPI <em>sait faire</em>.
+  </h2>
+  <p class="section-lede">
+    La plateforme couvre l'ensemble du cycle de vie d'un Agrément Technique Industriel et offre des outils transversaux pour la communication, le pilotage et la sécurité.
+  </p>
+
+  <div class="caps-grid reveal-stagger">
+    <div class="cap">
+      <div class="cap-num">01</div>
+      <h3>Workflow ATI complet</h3>
+      <p>De la soumission par l'opérateur jusqu'à la décision ministérielle, en passant par instruction et validation. Étapes, statuts et SLA configurables par secteur.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-num">02</div>
+      <h3>Inspections terrain</h3>
+      <p>Saisie géolocalisée des inspections de conformité avec photos GPS, génération automatique du rapport PDF, mise à jour conditionnelle de l'ATI.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-num">03</div>
+      <h3>Annuaire industriel</h3>
+      <p>Registre centralisé des opérateurs avec scoring de conformité, profil de risque, timeline d'activité, cartographie nationale.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-num">04</div>
+      <h3>Pilotage temps réel</h3>
+      <p>Tableaux de bord interactifs, KPI, comparatifs entre périodes, prédictions IA sur volumes, briefing audio quotidien pour le Ministre.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-num">05</div>
+      <h3>Traçabilité produit</h3>
+      <p>QR codes vérifiables sur chaque certificat ATI et lot produit. Page publique de vérification accessible aux douanes et aux consommateurs.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-num">06</div>
+      <h3>Cartographie SIG</h3>
+      <p>Vue carte nationale des opérateurs et des inspections, heatmap par province × secteur, suivi des concentrations industrielles.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-num">07</div>
+      <h3>Communication interne</h3>
+      <p>Messagerie inter-agents, annonces officielles ciblées, notifications push, digest quotidien par e-mail, sondages.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-num">08</div>
+      <h3>Assistant intelligent</h3>
+      <p>Chatbot intégré propulsé par l'intelligence artificielle, accessible à tous les utilisateurs, base de connaissance complète sur le fonctionnement de la plateforme.</p>
+    </div>
+    <div class="cap">
+      <div class="cap-num">09</div>
+      <h3>Exports et rapports</h3>
+      <p>Excel, PDF, PowerPoint pour briefings, ZIP pour archivage, GeoJSON pour cartographie. Rapports planifiés envoyés automatiquement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- SECURITE -->
+<!-- =============================================================== -->
+<section id="security" class="page reveal">
+  <div class="section-tag">Sécurité et conformité</div>
+  <h2 class="section-title">
+    Une rigueur de niveau <em>étatique</em>.
+  </h2>
+  <p class="section-lede">
+    La PNPI traite des données sensibles d'entreprises. La sécurité est intégrée dès la conception, auditée à chaque révision, et conforme aux exigences d'une plateforme ministérielle.
+  </p>
+
+  <div class="security-grid reveal-stagger">
+    <div>
+      <h3 style="font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px;">Authentification</h3>
+      <ul class="check-list">
+        <li>
+          <div class="check-mark">✓</div>
+          <div>
+            <h4>Authentification forte</h4>
+            <p>Cookies httpOnly, double facteur TOTP optionnel, biométrie sur mobile, politique de mot de passe stricte (12 caractères et plus).</p>
+          </div>
+        </li>
+        <li>
+          <div class="check-mark">✓</div>
+          <div>
+            <h4>Verrouillage automatique</h4>
+            <p>Cinq tentatives échouées, blocage de 15 minutes. Historique des connexions consultable par l'utilisateur.</p>
+          </div>
+        </li>
+        <li>
+          <div class="check-mark">✓</div>
+          <div>
+            <h4>Session courte</h4>
+            <p>Jeton d'accès de 8 heures, rotation automatique. Le risque de session volée est circonscrit.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 style="font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px;">Confidentialité et traçabilité</h3>
+      <ul class="check-list">
+        <li>
+          <div class="check-mark">✓</div>
+          <div>
+            <h4>Séparation des rôles</h4>
+            <p>Six profils distincts, contrôle d'accès audité : aucune fuite de privilège détectée sur 108 combinaisons testées.</p>
+          </div>
+        </li>
+        <li>
+          <div class="check-mark">✓</div>
+          <div>
+            <h4>Données masquées</h4>
+            <p>Les opérateurs ne voient pas le NIF ni l'effectif déclaré de leurs concurrents. Cloisonnement strict.</p>
+          </div>
+        </li>
+        <li>
+          <div class="check-mark">✓</div>
+          <div>
+            <h4>Journal d'audit complet</h4>
+            <p>Chaque action sensible est tracée : qui, quoi, quand, depuis quelle adresse. Conservation longue durée pour la redevabilité.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="margin-top: 48px; padding: 32px; background: var(--cream); border-radius: 16px; border-left: 4px solid var(--gabon-green);">
+    <p style="font-size: 15px; color: var(--ink-soft); line-height: 1.6;">
+      <strong style="color: var(--ink); font-size: 16px;">Souveraineté des données :</strong> les données ATI, opérateurs et inspections sont stockées dans des bases dont l'hébergement peut être réalisé sur une infrastructure contrôlée par l'État gabonais. Aucune dépendance vis-à-vis de prestataires étrangers pour la donnée elle-même.
+    </p>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- DEMONSTRATION -->
+<!-- =============================================================== -->
+<section id="demo" class="page reveal">
+  <div class="section-tag">Démonstration</div>
+  <h2 class="section-title">
+    Voir, c'est <em>convaincre</em>.
+  </h2>
+  <p class="section-lede">
+    La plateforme est opérationnelle. Le Cabinet est invité à la découvrir directement, en se connectant avec les comptes de démonstration ci-dessous.
+  </p>
+
+  <div class="demo-card">
+    <div>
+      <h3>Accès à la plateforme</h3>
+      <p style="opacity: 0.85; font-size: 15px; line-height: 1.6; margin-bottom: 18px;">
+        La PNPI est opérationnelle en mode démonstration. Six profils utilisateurs sont préconfigurés et permettent de parcourir l'ensemble des fonctionnalités selon le rôle exercé.
+      </p>
+      <div class="creds">
+        <div class="role-line"><span class="role-name">Administrateur</span><span>Supervision technique</span></div>
+        <div class="role-line"><span class="role-name">Ministre</span><span>Décision stratégique</span></div>
+        <div class="role-line"><span class="role-name">Directeur</span><span>Pilotage opérationnel</span></div>
+        <div class="role-line"><span class="role-name">Instructeur</span><span>Instruction des dossiers</span></div>
+        <div class="role-line"><span class="role-name">Inspecteur</span><span>Inspections terrain</span></div>
+        <div class="role-line"><span class="role-name">Opérateur</span><span>Guichet entreprise</span></div>
+      </div>
+      <p style="opacity: 0.78; font-size: 13px; line-height: 1.55; margin-top: 18px; font-style: italic;">
+        Les identifiants nominatifs de démonstration sont remis en main propre lors de l'audience, sur un feuillet séparé, à usage strictement réservé au Cabinet.
+      </p>
+    </div>
+    <div class="qr-placeholder">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&amp;margin=0&amp;data=https%3A%2F%2Fgithub.com%2F93cory%2Fpnpi-gabon" alt="QR code d'accès à la plateforme PNPI" style="width: 140px; height: 140px; display: block; margin: 0 auto 8px;" />
+      <strong>Scanner pour accéder</strong>
+      <span style="font-size: 11px; color: var(--ink-soft);">à la plateforme de démonstration</span>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- ROADMAP -->
+<!-- =============================================================== -->
+<section id="roadmap" class="page reveal">
+  <div class="section-tag">Feuille de route</div>
+  <h2 class="section-title">
+    Une vision <em>sur 12 mois</em>.
+  </h2>
+  <p class="section-lede">
+    La plateforme actuelle couvre le cœur métier. Trois jalons sont proposés pour la rendre pleinement opérationnelle à l'échelle nationale et la valoriser en levier de souveraineté numérique sous-régionale.
+  </p>
+
+  <div class="timeline reveal-stagger">
+    <div class="milestone">
+      <div class="milestone-time">Trimestre 1 · 2026 · Court terme</div>
+      <h3>Mise en production officielle</h3>
+      <p>Stabilisation, déploiement sur infrastructure de production, formation des agents publics, accompagnement au changement.</p>
+      <ul>
+        <li>Hébergement souverain (centre de données national ou prestataire local certifié)</li>
+        <li>Sauvegardes automatisées et plan de continuité d'activité</li>
+        <li>Formation des six profils utilisateurs (sessions par groupe métier)</li>
+        <li>Audit de sécurité externe (test de pénétration indépendant)</li>
+        <li>Signature électronique qualifiée pour les décisions ministérielles</li>
+      </ul>
+    </div>
+    <div class="milestone">
+      <div class="milestone-time">Trimestres 2 et 3 · 2026 · Moyen terme</div>
+      <h3>Extension fonctionnelle</h3>
+      <p>Mobilité terrain, intégration des registres officiels nationaux, transparence proactive vis-à-vis du public.</p>
+      <ul>
+        <li>Application mobile pour les inspecteurs (Android et iOS, mode hors ligne)</li>
+        <li>Intégration avec le Registre du Commerce gabonais (validation du NIF en temps réel)</li>
+        <li>Reconnaissance automatique de documents (OCR et IA pour pré-remplissage)</li>
+        <li>Page publique d'open data (statistiques agrégées pour la transparence)</li>
+        <li>Notifications push effectives (web et mobile)</li>
+      </ul>
+    </div>
+    <div class="milestone">
+      <div class="milestone-time">Trimestre 4 · 2026 · Long terme</div>
+      <h3>Rayonnement sous-régional</h3>
+      <p>Valorisation du modèle PNPI comme référence pour la zone CEMAC, intégration avec les autres administrations gabonaises.</p>
+      <ul>
+        <li>Architecture multi-pays (déploiement potentiel au Cameroun, au Congo, en Centrafrique)</li>
+        <li>Marketplace B2B des opérateurs industriels</li>
+        <li>Paiement intégré des redevances (mobile money national)</li>
+        <li>Tableau de bord citoyen et transparence proactive</li>
+        <li>Module IA d'aide à la décision pour le Ministre</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- CALL TO ACTION -->
+<!-- =============================================================== -->
+<section id="cta" class="page reveal">
+  <div class="cta">
+    <div class="cta-content">
+      <h2>Faisons de la PNPI<br>un acquis durable du Gabon.</h2>
+      <p>
+        La plateforme existe. Elle est opérationnelle, sécurisée, alignée avec les ambitions ministérielles de souveraineté numérique. Pour qu'elle devienne le standard de délivrance des Agréments Techniques Industriels au Gabon, le Ministère de l'Industrie peut accompagner sa formalisation.
+      </p>
+
+      <div class="ask-list">
+        <div class="ask-item">
+          <div class="num">01</div>
+          <h4>Adoption officielle</h4>
+          <p>Reconnaissance de la PNPI comme outil de référence du Ministère et intégration au schéma directeur informatique.</p>
+        </div>
+        <div class="ask-item">
+          <div class="num">02</div>
+          <h4>Hébergement souverain</h4>
+          <p>Mise à disposition d'une infrastructure de production (centre de données national ou partenaire certifié).</p>
+        </div>
+        <div class="ask-item">
+          <div class="num">03</div>
+          <h4>Équipe d'accompagnement</h4>
+          <p>Désignation d'un correspondant métier au sein de la Direction Générale de l'Industrie pour l'évolution de la plateforme.</p>
+        </div>
+        <div class="ask-item">
+          <div class="num">04</div>
+          <h4>Cadre contractuel</h4>
+          <p>Formalisation de la relation : convention de partenariat, marché de service, ou modèle à définir conjointement.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- CONTACT -->
+<!-- =============================================================== -->
+<section id="contact" class="page reveal">
+  <div class="section-tag">Contact</div>
+  <h2 class="section-title">
+    À votre <em>disposition</em>.
+  </h2>
+  <p class="section-lede">
+    Pour toute question, demande de démonstration approfondie ou suite à donner à cette présentation, je reste joignable à tout moment.
+  </p>
+
+  <div class="contact">
+    <div class="contact-card">
+      <div class="name">Jean Baptiste MBA NDONG</div>
+      <div class="role-tag">Concepteur et développeur PNPI</div>
+      <div class="info">
+        <div class="info-line">
+          <div class="info-icon">@</div>
+          <div>
+            <span class="label">Email</span><br>
+            <span class="val">corymba0@gmail.com</span>
+          </div>
+        </div>
+        <div class="info-line">
+          <div class="info-icon">☎</div>
+          <div>
+            <span class="label">Téléphone</span><br>
+            <span class="val">+241 77 30 71 93</span>
+          </div>
+        </div>
+        <div class="info-line">
+          <div class="info-icon">⚲</div>
+          <div>
+            <span class="label">Localisation</span><br>
+            <span class="val">Libreville, République Gabonaise</span>
+          </div>
+        </div>
+        <div class="info-line">
+          <div class="info-icon">⌘</div>
+          <div>
+            <span class="label">Disponibilité</span><br>
+            <span class="val">Pleinement disponible pour échange</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="signature-zone">
+      <div class="quote">
+        « Le numérique souverain n'est pas un slogan. C'est une infrastructure que l'on construit, que l'on protège et que l'on transmet aux générations qui suivent. »
+      </div>
+      <div class="author">Vision PNPI</div>
+    </div>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<!-- FOOTER -->
+<!-- =============================================================== -->
+<footer class="doc-footer">
+  <div class="doc-footer-flag"><span></span><span></span><span></span></div>
+  <div class="doc-footer-grid">
+    <div>
+      <h4>À propos de ce document</h4>
+      <p>Document de présentation préparé à l'attention du Cabinet du Ministre de l'Industrie et de la Transformation Locale, en vue de l'audience accordée. Toutes les données, captures et statistiques sont issues de la plateforme PNPI v1.43, audit du 25 avril 2026.</p>
+    </div>
+    <div>
+      <h4>Documents joints</h4>
+      <ul>
+        <li>Vision technique complète</li>
+        <li>Audit de sécurité RBAC</li>
+        <li>Spécifications fonctionnelles</li>
+        <li>Feuille de route détaillée</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Suite</h4>
+      <ul>
+        <li>Démonstration approfondie</li>
+        <li>Atelier métier</li>
+        <li>Formalisation du cadre</li>
+        <li>Mise en production</li>
+      </ul>
+    </div>
+  </div>
+  <div class="doc-footer-baseline">
+    République Gabonaise · Union · Travail · Justice · Document confidentiel · Usage cabinet ministériel uniquement
+  </div>
+</footer>
+
+<script>
+// Date dynamique
+const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+document.getElementById("presentation-date").textContent = today;
+
+// Scroll progress bar
+window.addEventListener("scroll", () => {
+  const total = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const pct = (window.scrollY / total) * 100;
+  document.getElementById("progress").style.width = pct + "%";
+});
+
+// Reveal on scroll
+const reveal = (entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add("visible");
+    }
+  });
+};
+const ro = new IntersectionObserver(reveal, { threshold: 0.15, rootMargin: "0px 0px -10% 0px" });
+document.querySelectorAll(".reveal, .reveal-stagger").forEach(el => ro.observe(el));
+
+// Counter animation
+const counters = document.querySelectorAll("[data-count]");
+const animateCounter = (el) => {
+  const target = parseInt(el.dataset.count);
+  const small = el.querySelector("small");
+  const smallText = small ? small.outerHTML : "";
+  let current = 0;
+  const step = Math.max(1, Math.ceil(target / 40));
+  const tick = () => {
+    current = Math.min(current + step, target);
+    el.innerHTML = current + smallText;
+    if (current < target) requestAnimationFrame(tick);
+  };
+  tick();
+};
+const co = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCounter(e.target);
+      co.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.5 });
+counters.forEach(el => co.observe(el));
+
+// Active nav dot on scroll
+const sections = document.querySelectorAll("section[id]");
+const dots = document.querySelectorAll(".nav-dot");
+const dotsObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      dots.forEach(d => d.classList.toggle("active", d.dataset.target === e.target.id));
+    }
+  });
+}, { threshold: 0.5 });
+sections.forEach(s => dotsObserver.observe(s));
+
+// Print-friendly: pause animations on print
+window.addEventListener("beforeprint", () => {
+  document.querySelectorAll(".reveal, .reveal-stagger").forEach(el => el.classList.add("visible"));
+});
+</script>
+
+</body>
+</html>

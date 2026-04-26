@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PNPI — Vision plateforme : roles, fonctionnalites, recommandations</title>
+<style>
+  :root {
+    --gabon-green: #006233;
+    --gabon-blue: #0c7eb4;
+    --gabon-yellow: #f2b800;
+    --ink: #051b36;
+    --ink-soft: #526175;
+    --paper: #f4f8fb;
+    --line: #dce4ef;
+    --code-bg: #0f172a;
+    --warn: #b45309;
+    --danger: #b42318;
+    --ok: #006233;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, Ubuntu, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.55;
+    font-size: 15px;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--ink) 0%, var(--gabon-green) 100%);
+    color: #fff;
+    padding: 32px 40px 28px;
+    border-bottom: 4px solid var(--gabon-yellow);
+  }
+  .header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+  .header p { margin: 0; opacity: 0.85; font-size: 14px; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 24px 80px; }
+
+  .toc {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 20px 0 28px;
+    position: sticky;
+    top: 8px;
+    z-index: 5;
+  }
+  .toc h2 { margin: 0 0 10px; font-size: 14px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; }
+  .toc ol { margin: 0; padding-left: 22px; columns: 3; column-gap: 24px; }
+  .toc ol li { margin: 3px 0; break-inside: avoid; font-size: 14px; }
+  .toc a { color: var(--gabon-blue); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  @media (max-width: 720px) { .toc ol { columns: 1; } }
+
+  h2.section {
+    margin: 36px 0 14px;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--ink);
+    border-left: 5px solid var(--gabon-green);
+    padding-left: 14px;
+  }
+  h3.sub {
+    margin: 24px 0 10px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  h4.subsub {
+    margin: 16px 0 6px;
+    font-size: 14px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+
+  .role-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-left: 6px solid var(--gabon-blue);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 14px 0;
+  }
+  .role-card.admin     { border-left-color: var(--danger); }
+  .role-card.ministre  { border-left-color: var(--ink); }
+  .role-card.directeur { border-left-color: var(--gabon-green); }
+  .role-card.instructeur { border-left-color: var(--gabon-blue); }
+  .role-card.inspecteur  { border-left-color: #7c3aed; }
+  .role-card.operateur   { border-left-color: var(--gabon-yellow); }
+
+  .role-card h3 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .role-card .pill {
+    font-size: 11px;
+    background: var(--paper);
+    padding: 2px 10px;
+    border-radius: 999px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .role-card .home {
+    color: var(--gabon-blue);
+    font-family: monospace;
+    font-size: 13px;
+  }
+  .role-card p { margin: 6px 0; font-size: 14px; }
+  .role-card ul { margin: 6px 0 0; padding-left: 22px; }
+  .role-card li { margin: 3px 0; font-size: 14px; }
+  .role-card .yes::before { content: "✓ "; color: var(--ok); font-weight: 800; }
+  .role-card .no::before  { content: "✗ "; color: var(--danger); font-weight: 800; }
+
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 10px;
+    background: #fff;
+  }
+  table.matrix th, table.matrix td {
+    border: 1px solid var(--line);
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.matrix th {
+    background: var(--paper);
+    font-weight: 700;
+    color: var(--ink);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+  table.matrix th.role-col { text-align: center; min-width: 64px; }
+  table.matrix td.cell { text-align: center; font-weight: 700; }
+  table.matrix .y { color: var(--ok); }
+  table.matrix .n { color: var(--danger); }
+  table.matrix .p { color: var(--warn); font-style: italic; }
+  table.matrix tr:nth-child(even) td { background: #fafcfe; }
+  table.matrix tr:hover td { background: #fff8e1; }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 14px 0;
+  }
+  .feature-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 18px;
+  }
+  .feature-card h4 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .feature-card .icon {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--gabon-green);
+    color: #fff;
+    font-size: 14px;
+    text-align: center;
+    line-height: 28px;
+    margin-right: 8px;
+    font-weight: 800;
+  }
+  .feature-card ul { margin: 6px 0 0; padding-left: 18px; }
+  .feature-card li { font-size: 13px; margin: 2px 0; }
+
+  .reco {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 22px;
+    margin: 14px 0;
+  }
+  .reco h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .reco .priority {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .reco .p-high   { background: #fef2f2; color: var(--danger); }
+  .reco .p-medium { background: #fef3c7; color: var(--warn); }
+  .reco .p-low    { background: #ecfdf5; color: var(--ok); }
+  .reco .effort {
+    font-size: 11px;
+    background: var(--paper);
+    padding: 2px 10px;
+    border-radius: 999px;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .reco p { margin: 6px 0; font-size: 14px; }
+  .reco ul { margin: 4px 0 0; padding-left: 22px; }
+  .reco li { font-size: 13px; margin: 2px 0; }
+
+  .legend {
+    display: inline-block;
+    margin-right: 16px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .legend .y { color: var(--ok); font-weight: 800; }
+  .legend .n { color: var(--danger); font-weight: 800; }
+  .legend .p { color: var(--warn); font-weight: 800; font-style: italic; }
+
+  footer {
+    margin-top: 40px;
+    padding: 20px 0;
+    color: var(--ink-soft);
+    font-size: 12px;
+    text-align: center;
+    border-top: 1px solid var(--line);
+  }
+
+  .stat {
+    display: inline-block;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 14px;
+    margin: 0 8px 8px 0;
+    font-size: 13px;
+  }
+  .stat strong { color: var(--gabon-green); font-weight: 800; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <h1>Vision plateforme PNPI : roles, fonctionnalites, recommandations</h1>
+  <p>Plateforme Nationale de Pilotage Industriel · Ministere de l'Industrie et de la Transformation Locale, Republique Gabonaise</p>
+</header>
+
+<main class="wrap">
+
+  <section class="toc">
+    <h2>Sommaire</h2>
+    <ol>
+      <li><a href="#vue-ensemble">1. Vue d'ensemble</a></li>
+      <li><a href="#roles">2. Les 6 roles</a></li>
+      <li><a href="#matrice">3. Matrice permissions</a></li>
+      <li><a href="#fonctions-metier">4. Fonctionnalites metier</a></li>
+      <li><a href="#fonctions-pilotage">5. Pilotage et analytics</a></li>
+      <li><a href="#fonctions-admin">6. Administration</a></li>
+      <li><a href="#fonctions-securite">7. Securite</a></li>
+      <li><a href="#fonctions-tech">8. Technique</a></li>
+      <li><a href="#reco-essentielles">9. Reco. essentielles</a></li>
+      <li><a href="#reco-court-terme">10. Reco. court terme</a></li>
+      <li><a href="#reco-moyen-terme">11. Reco. moyen terme</a></li>
+      <li><a href="#reco-strategiques">12. Reco. strategiques</a></li>
+    </ol>
+  </section>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="vue-ensemble">1. Vue d'ensemble</h2>
+
+  <p>La PNPI est l'outil souverain de pilotage industriel du Gabon, deployé pour le Ministere de l'Industrie et de la Transformation Locale. Elle digitalise trois processus metier critiques :</p>
+  <ul>
+    <li><strong>Agrements Techniques Industriels (ATI)</strong> — autorisations delivrees aux entreprises pour exploiter une activite industrielle</li>
+    <li><strong>Inspections de conformite</strong> — visites terrain par les inspecteurs avec photos geolocalisees</li>
+    <li><strong>Pilotage strategique</strong> — indicateurs, comparatifs, projections pour la decision ministerielle</li>
+  </ul>
+
+  <div>
+    <span class="stat">Roles : <strong>6</strong></span>
+    <span class="stat">Pages frontend : <strong>112</strong></span>
+    <span class="stat">Endpoints backend : <strong>37 routers</strong></span>
+    <span class="stat">Composants UI : <strong>49</strong></span>
+    <span class="stat">Migrations BD : <strong>34</strong></span>
+    <span class="stat">Tests automatises : <strong>167 passing</strong></span>
+    <span class="stat">Secteurs : <strong>7</strong></span>
+    <span class="stat">Provinces : <strong>9</strong></span>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="roles">2. Les 6 roles</h2>
+
+  <article class="role-card admin">
+    <h3>Admin <span class="pill">superviseur technique</span> <span class="home">→ /admin</span></h3>
+    <p>Responsable de la plateforme. Acces complet a la couche technique et metier.</p>
+    <h4 class="subsub">Peut</h4>
+    <ul>
+      <li class="yes">Creer / modifier / supprimer tous les comptes utilisateurs</li>
+      <li class="yes">Importer en masse des operateurs et utilisateurs (CSV)</li>
+      <li class="yes">Modifier la matrice RACI (responsabilites par etape ATI)</li>
+      <li class="yes">Lancer / consulter les sauvegardes BD vers S3</li>
+      <li class="yes">Consulter le journal d'audit complet (qui a fait quoi, quand)</li>
+      <li class="yes">Publier des annonces officielles cibles par role</li>
+      <li class="yes">Configurer les workflows et integrations externes</li>
+      <li class="yes">Simuler n'importe quel utilisateur (impersonation pour debug)</li>
+      <li class="yes">Acceder a tous les indicateurs ministeriels</li>
+      <li class="yes">Decider, transitionner, supprimer des ATI</li>
+    </ul>
+    <h4 class="subsub">Ne peut pas</h4>
+    <ul>
+      <li class="no">Modifier la BD directement (passe par migrations Alembic)</li>
+    </ul>
+  </article>
+
+  <article class="role-card ministre">
+    <h3>Ministre <span class="pill">decision strategique</span> <span class="home">→ /pnpi</span></h3>
+    <p>Niveau executif, pilote la politique industrielle nationale.</p>
+    <h4 class="subsub">Peut</h4>
+    <ul>
+      <li class="yes">Approuver / rejeter les ATI passes en validation</li>
+      <li class="yes">Consulter la synthese executive et les briefings audio</li>
+      <li class="yes">Voir tous les comparatifs entre periodes (2025 vs 2026, Q1 vs Q2)</li>
+      <li class="yes">Consulter le scoring des operateurs (top performers, retardataires)</li>
+      <li class="yes">Publier des annonces officielles</li>
+      <li class="yes">Voir les projections IA sur volumes ATI</li>
+      <li class="yes">Exporter rapports executifs en PDF / PowerPoint</li>
+      <li class="yes">Voir l'empreinte carbone industrielle, l'impact economique, l'impact social</li>
+      <li class="yes">Soumettre un ATI au nom de l'Etat (cas exceptionnel)</li>
+    </ul>
+    <h4 class="subsub">Ne peut pas</h4>
+    <ul>
+      <li class="no">Administrer la plateforme (creer users, modifier RACI)</li>
+      <li class="no">Lancer les sauvegardes</li>
+      <li class="no">Consulter le journal d'audit (releve admin)</li>
+    </ul>
+  </article>
+
+  <article class="role-card directeur">
+    <h3>Directeur <span class="pill">pilotage operationnel</span> <span class="home">→ /pnpi</span></h3>
+    <p>Pilote l'equipe d'instructeurs, valide les decisions metier intermediaires.</p>
+    <h4 class="subsub">Peut</h4>
+    <ul>
+      <li class="yes">Approuver / rejeter les ATI (delegation depuis le ministre)</li>
+      <li class="yes">Affecter les dossiers aux instructeurs</li>
+      <li class="yes">Consulter le tableau d'equipe, RACI, delegations</li>
+      <li class="yes">Voir tous les comparatifs et stats avancees</li>
+      <li class="yes">Configurer son dashboard personnel (builder)</li>
+      <li class="yes">Voir tous les ATI, opérateurs et inspections</li>
+      <li class="yes">Modifier la matrice RACI</li>
+    </ul>
+    <h4 class="subsub">Ne peut pas</h4>
+    <ul>
+      <li class="no">Soumettre un nouvel ATI (separation des roles)</li>
+      <li class="no">Acceder aux outils admin (audit log, backups)</li>
+    </ul>
+  </article>
+
+  <article class="role-card instructeur">
+    <h3>Instructeur <span class="pill">instruction des dossiers</span> <span class="home">→ /pnpi</span></h3>
+    <p>Coeur du metier. Recoit les dossiers ATI et les fait avancer dans le workflow.</p>
+    <h4 class="subsub">Peut</h4>
+    <ul>
+      <li class="yes">Soumettre un ATI au nom d'un operateur (cas particulier)</li>
+      <li class="yes">Prendre en charge un dossier (soumis → en_instruction)</li>
+      <li class="yes">Verifier la checklist documentaire de l'ATI</li>
+      <li class="yes">Demander des documents complementaires a l'operateur</li>
+      <li class="yes">Soumettre un dossier en validation (en_instruction → en_validation)</li>
+      <li class="yes">Ajouter des commentaires publics et internes</li>
+      <li class="yes">Generer un courrier pre-redige (7 templates disponibles)</li>
+      <li class="yes">Consulter ses statistiques personnelles (delai moyen, taux SLA, ATIs decides)</li>
+      <li class="yes">Voir la file de triage (dossiers prioritaires)</li>
+    </ul>
+    <h4 class="subsub">Ne peut pas</h4>
+    <ul>
+      <li class="no">Approuver / rejeter un ATI (releve directeur/ministre)</li>
+      <li class="no">Voir les comparatifs strategiques (period-comparison)</li>
+      <li class="no">Voir le scoring operateurs (releve direction)</li>
+      <li class="no">Modifier RACI ou faire de l'admin</li>
+    </ul>
+  </article>
+
+  <article class="role-card inspecteur">
+    <h3>Inspecteur <span class="pill">terrain</span> <span class="home">→ /inspecteur</span></h3>
+    <p>Realise les inspections de conformite chez les operateurs.</p>
+    <h4 class="subsub">Peut</h4>
+    <ul>
+      <li class="yes">Creer une inspection (avec photos geolocalisees lat/lon/altitude)</li>
+      <li class="yes">Saisir le statut conformite (conforme / partiel / non_conforme)</li>
+      <li class="yes">Generer le rapport PDF d'inspection</li>
+      <li class="yes">Consulter sa propre activite et ses inspections recentes</li>
+      <li class="yes">Voir la liste des operateurs (annuaire industriel)</li>
+      <li class="yes">Voir la carte nationale des operateurs</li>
+      <li class="yes">Recevoir des notifications d'inspections planifiees</li>
+    </ul>
+    <h4 class="subsub">Ne peut pas</h4>
+    <ul>
+      <li class="no">Acceder au dashboard ministeriel (/pnpi)</li>
+      <li class="no">Soumettre un ATI ou changer son statut</li>
+      <li class="no">Voir les stats financieres / decision-making</li>
+    </ul>
+  </article>
+
+  <article class="role-card operateur">
+    <h3>Operateur <span class="pill">entreprise industrielle</span> <span class="home">→ /pnpi/guichet</span></h3>
+    <p>Entreprise privee qui demande un agrement ou suit ses dossiers.</p>
+    <h4 class="subsub">Peut</h4>
+    <ul>
+      <li class="yes">Soumettre un nouvel ATI via le wizard 3 etapes</li>
+      <li class="yes">Suivre l'etat de ses propres dossiers (timeline visuelle)</li>
+      <li class="yes">Joindre ses documents (statuts, bilan, plan, certifications)</li>
+      <li class="yes">Re-soumettre un dossier rejete apres corrections</li>
+      <li class="yes">Renouveler un ATI approuve (6 mois avant expiration)</li>
+      <li class="yes">Telecharger son certificat ATI une fois approuve</li>
+      <li class="yes">Voir l'annuaire industriel (sans NIF ni effectifs concurrents)</li>
+      <li class="yes">Generer un QR produit pour la tracabilite</li>
+      <li class="yes">Communiquer avec les agents via la messagerie interne</li>
+    </ul>
+    <h4 class="subsub">Ne peut pas</h4>
+    <ul>
+      <li class="no">Voir les ATI des autres operateurs (IDOR ferme)</li>
+      <li class="no">Voir le NIF / effectif declare des autres operateurs</li>
+      <li class="no">Acceder aux dashboards strategiques</li>
+      <li class="no">Voir les inspections (releve agents publics)</li>
+    </ul>
+  </article>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="matrice">3. Matrice complete des permissions</h2>
+
+  <p style="font-size: 13px; color: var(--ink-soft);">
+    <span class="legend"><span class="y">✓</span> autorise</span>
+    <span class="legend"><span class="n">✗</span> refuse (403)</span>
+    <span class="legend"><span class="p">~</span> partiel (filtre cote serveur)</span>
+  </p>
+
+  <table class="matrix">
+    <thead>
+      <tr>
+        <th style="width: 38%;">Action / endpoint</th>
+        <th class="role-col">admin</th>
+        <th class="role-col">ministre</th>
+        <th class="role-col">directeur</th>
+        <th class="role-col">instructeur</th>
+        <th class="role-col">inspecteur</th>
+        <th class="role-col">operateur</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="7" style="background: var(--paper); font-weight: 700; text-align: center;">ATI — Workflow metier</td></tr>
+      <tr><td>Lister les ATI (toutes)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell p">~ ses propres</td></tr>
+      <tr><td>Voir le detail d'un ATI</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell p">~ s'il est createur</td></tr>
+      <tr><td>Soumettre un ATI</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell y">✓</td></tr>
+      <tr><td>Affecter un instructeur</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Prendre en charge (en_instruction)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Soumettre en validation</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Approuver / Rejeter</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Resoumettre apres rejet</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell p">~ ses propres</td></tr>
+      <tr><td>Renouveler un ATI approuve</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell p">~ ses propres</td></tr>
+      <tr><td>Joindre des documents</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell p">~ a ses dossiers</td></tr>
+      <tr><td>Telecharger un document</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell p">~ ses dossiers</td></tr>
+      <tr><td>Commenter (commentaires internes)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell p">~ public seulement</td></tr>
+      <tr><td>Generer un courrier (template)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+
+      <tr><td colspan="7" style="background: var(--paper); font-weight: 700; text-align: center;">Operateurs</td></tr>
+      <tr><td>Lister les operateurs</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell p">~ NIF + effectif masques</td></tr>
+      <tr><td>Voir le detail d'un operateur</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell p">~ s'il a deja interagi</td></tr>
+      <tr><td>Creer un operateur</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Importer en masse (CSV)</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Voir scoring / classement</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Voir profil de risque</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+
+      <tr><td colspan="7" style="background: var(--paper); font-weight: 700; text-align: center;">Inspections terrain</td></tr>
+      <tr><td>Lister les inspections</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td></tr>
+      <tr><td>Creer une inspection</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell y">✓</td><td class="cell n">✗</td></tr>
+      <tr><td>Uploader photo geolocalisee</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell y">✓</td><td class="cell n">✗</td></tr>
+      <tr><td>Generer rapport PDF</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td></tr>
+
+      <tr><td colspan="7" style="background: var(--paper); font-weight: 700; text-align: center;">Pilotage et statistiques</td></tr>
+      <tr><td>Dashboard ministeriel (/pnpi)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>KPIs globaux</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Synthese executive</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Comparaison entre periodes</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Predictions IA (volumes ATI)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Empreinte carbone, impact eco/social</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Bilan annuel / multi-annees</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Stats personnelles (/pnpi/me/stats)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td></tr>
+      <tr><td>Builder dashboard personnel</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+
+      <tr><td colspan="7" style="background: var(--paper); font-weight: 700; text-align: center;">Administration</td></tr>
+      <tr><td>Creer / modifier comptes</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Supprimer un compte</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Annuaire interne (lecture)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td></tr>
+      <tr><td>Notifications (lecture / marquer lu)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td></tr>
+      <tr><td>Creer notification ciblee</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Annonces officielles (creation)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Matrice RACI (lecture)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Matrice RACI (modification)</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Journal d'audit</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Sauvegardes BD</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Workflows / Integrations / API usage</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>Impersonation (simuler un user)</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+
+      <tr><td colspan="7" style="background: var(--paper); font-weight: 700; text-align: center;">Outils transversaux</td></tr>
+      <tr><td>Recherche multi-criteres</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell p">~ scope limite</td></tr>
+      <tr><td>Calendrier / echeances</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td></tr>
+      <tr><td>Kanban pipeline ATI</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td></tr>
+      <tr><td>Carte nationale</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell y">✓</td><td class="cell n">✗</td></tr>
+      <tr><td>Messagerie interne</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td></tr>
+      <tr><td>Assistant chat IA (Claude)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td></tr>
+      <tr><td>Sondages (vote)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td></tr>
+      <tr><td>Sondages (creation)</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell y">✓</td><td class="cell n">✗</td><td class="cell n">✗</td><td class="cell n">✗</td></tr>
+      <tr><td>2FA (TOTP)</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td><td class="cell y">✓</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="fonctions-metier">4. Fonctionnalites metier</h2>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4><span class="icon">A</span>Workflow ATI</h4>
+      <ul>
+        <li>4 etapes : reception → instruction → validation → decision</li>
+        <li>6 statuts : soumis, en_instruction, en_validation, approuve, rejete, expire</li>
+        <li>Wizard de soumission 3 etapes (operateur → activite → confirmation)</li>
+        <li>Numerotation automatique unique (ATI-YYYY-NNNNNN)</li>
+        <li>SLA configurable par secteur (21/30/45 jours)</li>
+        <li>Detection automatique des dossiers en retard SLA</li>
+        <li>Re-soumission apres rejet avec corrections</li>
+        <li>Renouvellement 6 mois avant expiration</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">D</span>Documents</h4>
+      <ul>
+        <li>4 types obligatoires : statuts, bilan, plan_site, certification</li>
+        <li>Upload multipart 10 MB max par fichier</li>
+        <li>Versioning des documents (historique des uploads)</li>
+        <li>Resume automatique (pieces manquantes flag)</li>
+        <li>Telechargement individuel ou ZIP complet du dossier</li>
+        <li>Signature electronique sur la decision (PNG persistant)</li>
+        <li>QR code de verification sur le certificat</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">I</span>Inspections terrain</h4>
+      <ul>
+        <li>3 statuts conformite : conforme / partiel / non_conforme</li>
+        <li>Photos avec geolocalisation (lat / lon / altitude)</li>
+        <li>Galerie photos par inspection</li>
+        <li>Rapport PDF auto-genere avec photos</li>
+        <li>Lien vers ATI revisable si non-conforme</li>
+        <li>Historique geolocalise sur la carte</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">O</span>Operateurs industriels</h4>
+      <ul>
+        <li>Annuaire 35+ entreprises sur 9 provinces</li>
+        <li>Fiche detaillee : NIF, raison sociale, secteur, geolocalisation</li>
+        <li>Soft delete (deleted_at) pour archivage RGPD</li>
+        <li>Import en masse via CSV</li>
+        <li>Toggle actif / inactif</li>
+        <li>Profil de risque calcule (inspections + ATIs + historique)</li>
+        <li>Scoring 0-100 (5 piliers : ATI, inspections, docs, SLA, activite)</li>
+        <li>Timeline de conformite chronologique</li>
+        <li>Liste des ATIs par operateur</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">W</span>Workflow administratif</h4>
+      <ul>
+        <li>Affectation manuelle ou regle automatique des dossiers</li>
+        <li>Delegations entre instructeurs (vacances, charge)</li>
+        <li>Objectifs personnels mensuels</li>
+        <li>Triage par priorite (critique / urgent / normal)</li>
+        <li>7 templates courriers (notification, demande complement, decision...)</li>
+        <li>Checklist documentaire dynamique par secteur</li>
+        <li>Matrice RACI configurable cote admin</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">T</span>Tracabilite</h4>
+      <ul>
+        <li>Numero unique ATI verifiable publiquement</li>
+        <li>QR code produit avec lot pour controle douanier / consommateur</li>
+        <li>Page publique de verification ATI / operateur / produit</li>
+        <li>Certificat PDF signe avec QR de validation</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="fonctions-pilotage">5. Pilotage, analytics, IA</h2>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4><span class="icon">K</span>KPIs et indicateurs</h4>
+      <ul>
+        <li>ATIs en cours / approuves / rejetes / expires</li>
+        <li>Delai moyen de traitement par secteur</li>
+        <li>Taux SLA national</li>
+        <li>Operateurs actifs par province</li>
+        <li>Score de sante global (0-100)</li>
+        <li>Briefing audio quotidien (TTS web)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">C</span>Comparaisons</h4>
+      <ul>
+        <li>Comparaison entre 2 periodes au choix (Q1 vs Q2, 2025 vs 2026)</li>
+        <li>Multi-annees (5 dernieres annees)</li>
+        <li>Avant / Apres reglementation</li>
+        <li>Benchmark provincial</li>
+        <li>Benchmark CEMAC (zone monetaire)</li>
+        <li>Comparaison sectorielle</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">P</span>Projections IA</h4>
+      <ul>
+        <li>Predictions volume ATI 6 mois</li>
+        <li>Detection anomalies sur soumissions</li>
+        <li>Recommandation moteur de decision (assist instructeur)</li>
+        <li>Alertes intelligentes SLA J+3 / J+7</li>
+        <li>Heatmap densite par province × secteur</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">$</span>Impact economique</h4>
+      <ul>
+        <li>Empreinte carbone industrielle (par secteur)</li>
+        <li>PIB industriel projete</li>
+        <li>Emplois crees (impact social)</li>
+        <li>Simulateur ROI pour nouveaux investissements</li>
+        <li>Suivi ODD (Objectifs de Developpement Durable)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">R</span>Rapports</h4>
+      <ul>
+        <li>Bilan annuel auto-genere</li>
+        <li>Synthese executive ministerielle</li>
+        <li>Exports Excel (.xlsx)</li>
+        <li>Exports PDF (rapports formels)</li>
+        <li>Exports PowerPoint (briefings)</li>
+        <li>Rapport carbone CEMAC</li>
+        <li>Rapports planifies (envoi automatique)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">B</span>Briefing & Presentation</h4>
+      <ul>
+        <li>Mode presentation pour briefings ministeriels</li>
+        <li>Mode kiosque (affichage hall)</li>
+        <li>Briefing audio (TTS web SpeechSynthesis)</li>
+        <li>Salle de pilotage temps reel</li>
+        <li>Vue temps reel des stats live</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">IA</span>Assistant chat (Claude)</h4>
+      <ul>
+        <li>Bulle 💬 en bas a droite de chaque page</li>
+        <li>Base de connaissance PNPI (workflow, roles, secteurs)</li>
+        <li>Adapte ton + reponses au role de l'utilisateur</li>
+        <li>Prompt caching ~90% economie apres warm-up</li>
+        <li>Fallback FAQ statique si API non configuree</li>
+        <li>Audit log des questions (longueur, pas contenu)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="fonctions-admin">6. Administration et gouvernance</h2>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4><span class="icon">U</span>Comptes utilisateurs</h4>
+      <ul>
+        <li>CRUD complet (admin/ministre)</li>
+        <li>Multi-roles par utilisateur</li>
+        <li>Politique mots de passe (12+ chars, special, chiffre, casse)</li>
+        <li>Verrouillage automatique 5 echecs / 15 min</li>
+        <li>Affectation province pour scope geographique</li>
+        <li>Bulk-import CSV</li>
+        <li>Soft archive (is_active=false)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">N</span>Notifications</h4>
+      <ul>
+        <li>Notifications targettees par role ou utilisateur</li>
+        <li>4 niveaux severite (info, low, medium, critical)</li>
+        <li>Lecture / non-lue avec timestamp</li>
+        <li>Cloche dans la nav avec compteur</li>
+        <li>Push notifications (Service Worker)</li>
+        <li>Preferences personnelles dans /profil</li>
+        <li>Digest quotidien par email</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">A</span>Annonces officielles</h4>
+      <ul>
+        <li>Banniere haut de page (par severite)</li>
+        <li>Cible par role(s)</li>
+        <li>Date d'expiration</li>
+        <li>Activation / desactivation</li>
+        <li>Dismissable cote utilisateur</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">L</span>Audit trail</h4>
+      <ul>
+        <li>Toute action sensible loggee (qui, quoi, quand, IP, user-agent)</li>
+        <li>Filtre par action / utilisateur / periode</li>
+        <li>Export CSV pour archivage</li>
+        <li>Conservation longue duree</li>
+        <li>Correlation IDs end-to-end</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">S</span>Sauvegardes</h4>
+      <ul>
+        <li>Lancement manuel depuis /admin/backups</li>
+        <li>Script cron_tasks.py (a planifier)</li>
+        <li>Upload S3 (MinIO compatible)</li>
+        <li>Listing historique des backups</li>
+        <li>Verification d'integrite</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">R</span>RACI</h4>
+      <ul>
+        <li>Matrice editable au clic (admin uniquement)</li>
+        <li>Persistance fichier JSON</li>
+        <li>Visible par admin/ministre/directeur</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">F</span>Feature flags</h4>
+      <ul>
+        <li>Activation par variable d'environnement (PNPI_FF_*)</li>
+        <li>Vue admin de l'etat des flags</li>
+        <li>Activation / desactivation par module (ex: GraphQL API)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">W</span>Workflows et integrations</h4>
+      <ul>
+        <li>Webhooks sortants avec retry exponentiel</li>
+        <li>Anti-SSRF (blocage IPs privees / metadata cloud)</li>
+        <li>Health check des integrations externes</li>
+        <li>API keys management (CRUD)</li>
+        <li>Rate limiting par sliding window</li>
+        <li>Configuration des regles d'affectation auto</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="fonctions-securite">7. Securite</h2>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4><span class="icon">🔐</span>Authentification</h4>
+      <ul>
+        <li>JWT Bearer (cookie httpOnly, sameSite=lax, TTL 8h)</li>
+        <li>Refresh token (TTL 14 jours)</li>
+        <li>2FA TOTP (Google Authenticator / Authy)</li>
+        <li>Biometrie sur app mobile (empreinte / Face ID)</li>
+        <li>Politique mots de passe forte</li>
+        <li>Verrouillage anti-bruteforce</li>
+        <li>Historique des connexions</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">🛡</span>RBAC</h4>
+      <ul>
+        <li>6 roles distincts</li>
+        <li>require_roles() sur chaque endpoint</li>
+        <li>Helper check_ati_access() (filtre ownership operateur)</li>
+        <li>Multi-roles par utilisateur</li>
+        <li>Audit RBAC : 0 fuite sur 108 combinaisons testees</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">⚡</span>Hardening backend</h4>
+      <ul>
+        <li>CORS strict (origines configurees)</li>
+        <li>CSRF origin validation</li>
+        <li>Rate limiter Redis (sliding window)</li>
+        <li>Request size limit 10/50 MB</li>
+        <li>Request timeout 30s</li>
+        <li>Security headers (HSTS, X-Frame, CSP)</li>
+        <li>Sanitization XSS (SanitizedStr type)</li>
+        <li>Upload validation (type / taille / contenu)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">🔍</span>Donnees sensibles</h4>
+      <ul>
+        <li>NIF / effectif masques pour role operateur</li>
+        <li>Hash bcrypt jamais expose</li>
+        <li>Soft delete RGPD-compatible</li>
+        <li>Conservation et purge configurables</li>
+        <li>Pas de logging des credentials</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">📊</span>Monitoring</h4>
+      <ul>
+        <li>Health probes (/health, /health/ready, /health/live)</li>
+        <li>Score de sante global 0-100</li>
+        <li>Metriques Prometheus / Grafana</li>
+        <li>API analytics in-memory</li>
+        <li>Logging JSON structure</li>
+        <li>Correlation IDs end-to-end</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="fonctions-tech">8. Technique et infrastructure</h2>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4><span class="icon">⚙</span>Stack</h4>
+      <ul>
+        <li>Backend : Python 3.12 + FastAPI + SQLAlchemy 2.x</li>
+        <li>Frontend : Next.js 14 + React 18 + TypeScript</li>
+        <li>Base : PostgreSQL + PostGIS + Redis</li>
+        <li>Storage : MinIO (S3 compatible)</li>
+        <li>Mobile : Flutter (sprint a venir)</li>
+        <li>Containers : Docker Compose (dev + prod)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">🔄</span>CI/CD</h4>
+      <ul>
+        <li>GitHub Actions : ci.yml (lint + tests + docker)</li>
+        <li>cd.yml deploy SSH (a configurer)</li>
+        <li>167 tests pytest passing, 11 skipped TODO</li>
+        <li>ESLint + Prettier checks</li>
+        <li>Ruff lint + format Python</li>
+        <li>pip-audit + npm audit security</li>
+        <li>Docker build cache</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">📦</span>Architecture</h4>
+      <ul>
+        <li>34 migrations Alembic</li>
+        <li>37 routers FastAPI modulaires</li>
+        <li>API versioning /api/v1/*</li>
+        <li>Catch-all proxy Next.js → FastAPI</li>
+        <li>Server Components par defaut (Next 14 App Router)</li>
+        <li>112 pages frontend</li>
+        <li>Composants reutilisables (Toast, Confirm, DataTable, etc.)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">🌐</span>Internationalisation</h4>
+      <ul>
+        <li>Langue UI : francais (administratif)</li>
+        <li>i18n helper (lib/i18n.ts)</li>
+        <li>App mobile FR + EN (a venir)</li>
+        <li>Provinces du Gabon code par cle (estuaire, haut_ogooue, ...)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">📱</span>Accessibilite et UX</h4>
+      <ul>
+        <li>Theme clair / sombre / auto</li>
+        <li>Panneau accessibilite (taille texte, contraste, mouvement)</li>
+        <li>Police dyslexie disponible</li>
+        <li>Skip-link clavier</li>
+        <li>aria-labels et roles WAI-ARIA</li>
+        <li>Raccourcis clavier (g d, g a, ?, Ctrl+K)</li>
+        <li>Command palette (recherche universelle)</li>
+        <li>Mode hors ligne (offline-cache)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card">
+      <h4><span class="icon">🧪</span>Qualite et tests</h4>
+      <ul>
+        <li>178 tests backend (pytest + asyncio)</li>
+        <li>Playwright E2E (a re-activer apres setup containers)</li>
+        <li>Lint Ruff + Prettier + ESLint</li>
+        <li>Format check obligatoire en CI</li>
+        <li>Tests securite (SSRF, XSS sanitize, rate limit)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="reco-essentielles">9. Recommandations essentielles (avant la mise en production)</h2>
+
+  <article class="reco">
+    <h3>Activer les sauvegardes automatiques quotidiennes <span class="priority p-high">CRITIQUE</span> <span class="effort">~2 h</span></h3>
+    <p>Le script <code>scripts/backup_s3.py</code> existe mais n'est pas planifié. Sans sauvegardes automatiques, une corruption de la base ou une suppression accidentelle équivaut à une perte définitive des données ATI, opérateurs et inspections.</p>
+    <ul>
+      <li>Configurer cron (Linux) ou Task Scheduler (Windows) : <code>0 2 * * * python scripts/backup_s3.py</code></li>
+      <li>Rétention de 30 jours sur S3 ou MinIO (lifecycle policy)</li>
+      <li>Test mensuel de restauration sur un environnement de staging</li>
+      <li>Alerte e-mail ou Slack en cas d'échec de la sauvegarde</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Planifier <code>cron_tasks.py</code> (alertes SLA, expirations) <span class="priority p-high">CRITIQUE</span> <span class="effort">~1 h</span></h3>
+    <p>Le script <code>scripts/cron_tasks.py</code> gère les alertes SLA J+3 et J+7, les expirations d'ATI, les badges. Actuellement non planifié, ces alertes ne partent jamais.</p>
+    <ul>
+      <li>Cron horaire : <code>0 * * * * python scripts/cron_tasks.py</code></li>
+      <li>Configuration des e-mails sortants (SMTP, SendGrid ou AWS SES)</li>
+      <li>Idempotence : drapeau pour éviter les doublons d'alertes</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Configurer les secrets de déploiement et réactiver la CD <span class="priority p-high">CRITIQUE</span> <span class="effort">~3 h</span></h3>
+    <p>Le workflow <code>cd.yml</code> est désactivé (<code>workflow_dispatch</code> uniquement) car les secrets manquent. Sans CD, chaque déploiement est manuel : risque humain et lenteur accrus.</p>
+    <ul>
+      <li>Provisionner un serveur de production (VPS Linode, OVH, Hetzner Africa)</li>
+      <li>Ajouter les secrets GitHub : <code>DEPLOY_HOST</code>, <code>DEPLOY_USER</code>, <code>DEPLOY_SSH_KEY</code>, <code>GHCR_TOKEN</code></li>
+      <li>Réactiver <code>on: push</code> sur le workflow CD</li>
+      <li>Stratégie blue-green ou rolling restart pour un zéro temps d'arrêt</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Audit de sécurité externe avant ouverture publique <span class="priority p-high">CRITIQUE</span> <span class="effort">~2 sem.</span></h3>
+    <p>Pour un outil ministériel manipulant des données d'entreprises (NIF, bilans), un audit de pénétration indépendant est obligatoire avant l'exposition au public.</p>
+    <ul>
+      <li>Pentest externe (boîte noire) : injection SQL, IDOR, contournement d'authentification</li>
+      <li>Audit de code (boîte blanche) sur <code>auth.py</code>, <code>sanitize.py</code>, <code>webhooks.py</code></li>
+      <li>Vérification de conformité de type RGPD (loi N°026/2017 du Gabon sur la protection des données)</li>
+      <li>Certificat HTTPS valide (Let's Encrypt ou autorité reconnue)</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Tests E2E réactivés avec le backend dans le même job CI <span class="priority p-medium">IMPORTANT</span> <span class="effort">~1 j</span></h3>
+    <p>Les tests Playwright sont désactivés (<code>if: false</code>) car le backend n'est pas démarré dans le job. Sans E2E, une régression d'interface peut atteindre la production sans alerte.</p>
+    <ul>
+      <li>Refactor de <code>frontend_e2e</code> avec services Docker (Postgres et backend FastAPI)</li>
+      <li>Démarrer les deux services avant <code>npm run test:e2e</code></li>
+      <li>Au moins un test par parcours utilisateur clé (connexion, création d'ATI, transition de statut)</li>
+    </ul>
+  </article>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="reco-court-terme">10. Recommandations à court terme (1 à 3 mois)</h2>
+
+  <article class="reco">
+    <h3>Application mobile Flutter pour les inspecteurs terrain <span class="priority p-high">FORT IMPACT MÉTIER</span> <span class="effort">~6 sem.</span></h3>
+    <p>Le projet déclare un volet mobile dans CLAUDE.md mais aucun code Flutter n'existe. Pourtant, les inspecteurs sur le terrain (Gabon : réseau 2G/3G fréquent, zones rurales hors ligne) en ont besoin.</p>
+    <ul>
+      <li>Authentification biométrique (empreinte ou Face ID)</li>
+      <li>Mode hors ligne avec synchronisation (les inspecteurs vont au fond du Woleu-Ntem sans 4G)</li>
+      <li>Photos géoréférencées (GPS embarqué)</li>
+      <li>Saisie rapide du formulaire de conformité</li>
+      <li>Génération du rapport PDF en local, puis synchronisation</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Signature électronique qualifiée pour les décisions ministérielles <span class="priority p-high">CONFORMITÉ</span> <span class="effort">~4 sem.</span></h3>
+    <p>La signature actuelle est un PNG dessiné à la souris, non opposable juridiquement. Pour un acte administratif (décision d'agrément), il faut une signature qualifiée au sens de la loi.</p>
+    <ul>
+      <li>Intégration avec une autorité de certification reconnue au Gabon ou en zone CEMAC</li>
+      <li>Horodatage conforme (Trusted Timestamp Authority)</li>
+      <li>Horodatage qualifié sur chaque décision</li>
+      <li>Archivage longue durée (10 ans et plus, format PAdES)</li>
+      <li>Possibilité de signature en cascade (instructeur → directeur → ministre)</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Notifications push réelles (web et mobile) <span class="priority p-medium">UX</span> <span class="effort">~1 sem.</span></h3>
+    <p>Le composant <code>PushNotifications.tsx</code> existe mais n'a pas de backend. Résultat : les utilisateurs doivent vérifier manuellement leur cloche.</p>
+    <ul>
+      <li>Clés VAPID générées et stockées</li>
+      <li>Endpoint backend <code>POST /push/subscribe</code> qui sauvegarde l'abonnement</li>
+      <li>Service worker qui écoute et affiche</li>
+      <li>Ciblage par rôle ou par utilisateur</li>
+      <li>Application mobile : Firebase Cloud Messaging</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Intégration au registre du commerce officiel du Gabon <span class="priority p-medium">QUALITÉ DES DONNÉES</span> <span class="effort">~3 sem.</span></h3>
+    <p>Aujourd'hui, l'opérateur saisit lui-même son NIF et sa raison sociale, ce qui présente un risque d'erreur ou de fraude. L'intégration au RCCM ou à l'OPRAG permettrait une validation automatique.</p>
+    <ul>
+      <li>Webhook ou API du registre national</li>
+      <li>Autocomplétion lors de la création d'un opérateur</li>
+      <li>Alerte en cas de NIF inconnu ou radié</li>
+      <li>Vérification de l'effectif déclaré au regard des déclarations CNSS</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Page publique de statistiques (open data) <span class="priority p-medium">TRANSPARENCE</span> <span class="effort">~2 sem.</span></h3>
+    <p>Une page publique <code>/open-data</code> existe mais reste vide. Une plateforme ministérielle gagne en crédibilité quand elle expose ses chiffres agrégés au citoyen et au chercheur.</p>
+    <ul>
+      <li>Nombre d'ATI délivrés par année, par secteur, par province (données agrégées)</li>
+      <li>Délais moyens de traitement (transparence du service public)</li>
+      <li>Investissements industriels déclarés</li>
+      <li>Format JSON ou CSV téléchargeable</li>
+      <li>Tableau de bord public simplifié (sans connexion)</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Accompagnement et formation des utilisateurs <span class="priority p-medium">ADOPTION</span> <span class="effort">~3 sem.</span></h3>
+    <p>Un OnboardingTour existe (7 étapes) mais reste léger. Pour un déploiement ministériel réel, la formation et l'accompagnement sont essentiels.</p>
+    <ul>
+      <li>Documentation utilisateur PDF par rôle (5 guides distincts)</li>
+      <li>Vidéos tutorielles courtes (1 à 2 min par fonctionnalité)</li>
+      <li>Webinaires de prise en main (2 par rôle)</li>
+      <li>FAQ exhaustive (page <code>/aide</code> enrichie)</li>
+      <li>Helpdesk via la messagerie interne</li>
+    </ul>
+  </article>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="reco-moyen-terme">11. Recommandations — moyen terme (3-6 mois)</h2>
+
+  <article class="reco">
+    <h3>OCR documents et extraction automatique <span class="priority p-medium">EFFICIENCE</span> <span class="effort">~6 sem.</span></h3>
+    <p>L'instructeur ouvre chaque document PDF/image manuellement pour verifier. Une extraction OCR + IA pourrait pre-remplir les champs et detecter les anomalies.</p>
+    <ul>
+      <li>OCR via Tesseract ou Azure Document Intelligence</li>
+      <li>Extraction automatique : raison sociale, NIF, capital social, effectif (depuis les statuts)</li>
+      <li>Verification automatique du bilan (annee / signe expert-comptable)</li>
+      <li>Alerte si incoherence avec ce que l'operateur a saisi</li>
+      <li>Claude Vision pour comprendre les schemas (plan d'implantation)</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Multi-tenant pour deploiement regional CEMAC <span class="priority p-low">EXPANSION</span> <span class="effort">~3 mois</span></h3>
+    <p>Si la PNPI prouve son efficacite au Gabon, les autres pays CEMAC (Cameroun, Congo, Centrafrique, Tchad, Guinee equatoriale) pourraient l'adopter. Une architecture multi-tenant facilite ce passage.</p>
+    <ul>
+      <li>Isolation par tenant (tenant.py existe deja partiellement)</li>
+      <li>Configuration par pays (devises, secteurs locaux, langues)</li>
+      <li>Provinces / regions parametrables</li>
+      <li>Branding configurable (logo, couleurs, devise)</li>
+      <li>Donnees CEMAC consolidees pour la BCEAO/BEAC</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Modele IA : recommandation de decision <span class="priority p-low">IA</span> <span class="effort">~8 sem.</span></h3>
+    <p>Le composant Recommendation.tsx + endpoint /recommendation existent mais le modele est rule-based simple. Un vrai modele ML entraine sur l'historique des decisions ferait gagner du temps a l'instructeur.</p>
+    <ul>
+      <li>Dataset : 5+ ans de decisions historiques</li>
+      <li>Features : secteur, province, capital, effectif, completude documents, antecedents</li>
+      <li>Cible : approuve / rejete + motif</li>
+      <li>Modele explicable (LIME / SHAP) pour la transparence</li>
+      <li>Recommandation comme aide, pas decision automatique</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Rapports executifs auto-generes par IA <span class="priority p-low">PRODUCTIVITE</span> <span class="effort">~3 sem.</span></h3>
+    <p>L'export PDF contient les chiffres bruts. Une couche IA pourrait generer un commentaire executif (paragraphes interpretant les tendances).</p>
+    <ul>
+      <li>Claude API genere le commentaire executif a partir des chiffres</li>
+      <li>Highlight automatique des anomalies / tendances</li>
+      <li>Suggestions d'actions (ex: "secteur bois en retard SLA, considerer renfort instructeur")</li>
+      <li>Personnalisation par role destinataire</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>API publique pour partenaires <span class="priority p-low">ECOSYSTEME</span> <span class="effort">~4 sem.</span></h3>
+    <p>Aujourd'hui les API keys existent (router api_keys.py) mais l'API documentation publique est minimale. Une API ouverte permettrait aux partenaires (CCIA, banques, douanes) d'interroger.</p>
+    <ul>
+      <li>Endpoint <code>GET /public/v1/operateurs/{nif}/agrement-status</code> pour verification</li>
+      <li>Webhook : notifier banques d'une approbation pour deblocage credits</li>
+      <li>Documentation OpenAPI publique</li>
+      <li>Rate limiting strict par cle API</li>
+      <li>Sandbox pour tests partenaires</li>
+    </ul>
+  </article>
+
+  <!-- ============================================================ -->
+  <h2 class="section" id="reco-strategiques">12. Recommandations — strategiques / vision long terme</h2>
+
+  <article class="reco">
+    <h3>Blockchain pour la traçabilite des certificats <span class="priority p-low">VISION</span> <span class="effort">~6 mois</span></h3>
+    <p>Une blockchain (publique ou consortium CEMAC) immortaliserait chaque agrement comme un NFT verifiable. Util pour exportateurs internationaux qui doivent prouver l'origine licite.</p>
+    <ul>
+      <li>Hyperledger Fabric ou Polygon (couts faibles)</li>
+      <li>1 token par ATI approuve, transfert si renouvellement</li>
+      <li>Smart contract : verification douaniere automatique</li>
+      <li>Interoperabilite avec systemes douaniers (douane Gabonaise)</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Marketplace partenariats industriels <span class="priority p-low">DEVELOPPEMENT</span> <span class="effort">~4 mois</span></h3>
+    <p>Le menu /pnpi/marketplace existe mais semble un placeholder. Une vraie marketplace mettant en relation operateurs (sous-traitance, capacite de production excedentaire, recherche partenaires) creerait un effet reseau.</p>
+    <ul>
+      <li>Profils operateurs enrichis (capacites, certifications, surplus)</li>
+      <li>Annonces : recherche fournisseur / partenaire / sous-traitant</li>
+      <li>Messagerie B2B securisee</li>
+      <li>Score de fiabilite (base sur conformite ATI + inspections)</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Tableau de bord citoyen / transparence proactive <span class="priority p-low">DEMOCRATIE</span> <span class="effort">~6 sem.</span></h3>
+    <p>Un dashboard public montrant en temps reel l'activite industrielle nationale (anonymisee mais granulaire) renforcerait la confiance et la redevabilite.</p>
+    <ul>
+      <li>Carte interactive operateurs actifs par province</li>
+      <li>Volume d'investissements industriels par mois</li>
+      <li>Emplois crees par secteur</li>
+      <li>Budget alloue / depense (si publique)</li>
+      <li>Page "Engagements" avec suivi des ODD</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Integration paiement des taxes / redevances <span class="priority p-low">FINANCIER</span> <span class="effort">~4 mois</span></h3>
+    <p>Aujourd'hui l'operateur paie ses redevances industrielles ailleurs (DGI, Tresor). Une integration via mobile money (MOOV, Airtel Money) gabonais simplifierait.</p>
+    <ul>
+      <li>Estimation de redevance directement dans la fiche ATI</li>
+      <li>Paiement Airtel Money / MOOV / carte</li>
+      <li>Reconciliation automatique avec DGI</li>
+      <li>Recu PDF avec QR de verification</li>
+      <li>Historique paiements par operateur</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Module IA d'analyse risque-pays / due diligence <span class="priority p-low">VEILLE</span> <span class="effort">~6 sem.</span></h3>
+    <p>Pour les ATIs concernant des investisseurs etrangers, un module d'analyse risque (sanctions, PEP, FATF) serait precieux pour le Ministre.</p>
+    <ul>
+      <li>Verification listes ONU, OFAC, UE</li>
+      <li>Recherche presse mondiale (Open Sanctions API)</li>
+      <li>Score de risque-pays mis a jour quotidiennement</li>
+      <li>Alerte automatique si match</li>
+    </ul>
+  </article>
+
+  <article class="reco">
+    <h3>Module evenementiel / salons industriels <span class="priority p-low">PROMOTION</span> <span class="effort">~3 sem.</span></h3>
+    <p>Le ministere organise / participe regulierement a des salons (Investir au Gabon, EmiraTes ExpoIndustrie). Un module dedie permettrait de valoriser les ATI nouveaux et d'attirer investisseurs.</p>
+    <ul>
+      <li>Vitrine des operateurs phares (recents agrements approuves)</li>
+      <li>Catalogue d'opportunites d'investissement</li>
+      <li>Pre-inscription evenements ministeriels</li>
+      <li>Generation kit de presse personnalisable par operateur</li>
+    </ul>
+  </article>
+
+  <!-- ============================================================ -->
+  <footer>
+    <p>Document genere le 25 avril 2026 · base sur l'audit RBAC + revue fonctionnelle complete · PNPI v1.43</p>
+    <p>Republique Gabonaise · Ministere de l'Industrie et de la Transformation Locale</p>
+  </footer>
+
+</main>
+</body>
+</html>
