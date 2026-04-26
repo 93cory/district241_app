@@ -35,7 +35,7 @@ export function PushNotifications() {
 
   const subscribe = async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      alert("Les notifications push ne sont pas supportees sur ce navigateur.");
+      alert("Les notifications push ne sont pas supportées sur ce navigateur.");
       return;
     }
 
@@ -46,15 +46,25 @@ export function PushNotifications() {
 
       const reg = await navigator.serviceWorker.ready;
 
-      // VAPID public key · in production, fetch from /api/push/vapid-key
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY || "";
+      // Récupère la clé VAPID publique depuis le backend
+      let vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY || "";
+      let serverEnabled = false;
+      try {
+        const keyRes = await fetch("/api/push/vapid-key", { credentials: "include" });
+        if (keyRes.ok) {
+          const data = await keyRes.json();
+          vapidKey = data.public_key || vapidKey;
+          serverEnabled = !!data.enabled;
+        }
+      } catch {
+        /* ignore - fallback local */
+      }
 
-      if (!vapidKey) {
-        // Fallback: just enable browser notifications without push server
+      if (!vapidKey || !serverEnabled) {
+        // Fallback : notifications navigateur locales uniquement
         setSubscribed(true);
-        // Send a test notification
         new Notification("PNPI", {
-          body: "Notifications activees !",
+          body: "Notifications activées (mode local).",
           icon: "/icons/pnpi-192.png",
         });
         return;
@@ -65,11 +75,16 @@ export function PushNotifications() {
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
-      // Send subscription to backend
+      const subJson = sub.toJSON();
       await fetch("/api/push/subscribe", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sub.toJSON()),
+        body: JSON.stringify({
+          endpoint: subJson.endpoint,
+          keys: subJson.keys,
+          user_agent: navigator.userAgent.slice(0, 300),
+        }),
       });
 
       setSubscribed(true);

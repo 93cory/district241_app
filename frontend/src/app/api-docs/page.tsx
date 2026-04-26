@@ -1,16 +1,40 @@
+export const metadata = {
+  title: "Documentation API — PNPI",
+  description:
+    "Référence des endpoints publics et authentifiés de la Plateforme Nationale de Pilotage Industriel.",
+};
+
 export default function ApiDocsPage() {
   const endpoints = [
     {
-      group: "Verification publique",
-      color: "#006233",
+      group: "Open Data (public, sans authentification)",
+      color: "#009E60",
       items: [
         {
           method: "GET",
-          path: "/pnpi/ati/verify/{numero_ati}",
-          desc: "Verifier la validite d'un ATI (public, sans auth)",
+          path: "/open-data/stats",
+          desc: "Statistiques agrégées anonymisées (totaux, répartitions, indicateurs)",
           auth: false,
         },
-        { method: "GET", path: "/health/status", desc: "Statut du systeme (public)", auth: false },
+        {
+          method: "GET",
+          path: "/open-data/sectors",
+          desc: "Volume d'ATI par secteur d'activité",
+          auth: false,
+        },
+        {
+          method: "GET",
+          path: "/open-data/provinces",
+          desc: "Volume d'opérateurs par province",
+          auth: false,
+        },
+        {
+          method: "GET",
+          path: "/pnpi/ati/verify/{numero_ati}",
+          desc: "Vérifier la validité d'un agrément ATI",
+          auth: false,
+        },
+        { method: "GET", path: "/health/status", desc: "Statut opérationnel de la plateforme", auth: false },
       ],
     },
     {
@@ -160,21 +184,171 @@ export default function ApiDocsPage() {
     PATCH: "#d97706",
     DELETE: "#b42318",
   };
+  const METHOD_BG: Record<string, string> = {
+    GET: "#dcfce7",
+    POST: "#e0f2fe",
+    PATCH: "#fef3c7",
+    DELETE: "#fee2e2",
+  };
 
   return (
-    <div style={{ padding: "24px 32px", maxWidth: 900, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 800, margin: "0 0 4px" }}>Documentation API</h1>
-      <p style={{ color: "var(--text-soft, #526175)", fontSize: 14, margin: "0 0 8px" }}>
-        Reference des endpoints de la plateforme PNPI pour l&apos;integration avec les systemes
-        partenaires.
+    <div style={{ padding: "24px 32px", maxWidth: 920, margin: "0 auto" }}>
+      <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 6px", color: "#051B36" }}>
+        Documentation API PNPI
+      </h1>
+      <p style={{ color: "var(--text-soft, #526175)", fontSize: 14, margin: "0 0 16px", lineHeight: 1.6 }}>
+        Référence des endpoints publics et authentifiés de la Plateforme Nationale de Pilotage
+        Industriel pour l&apos;intégration avec les systèmes partenaires (banques, douanes,
+        registres, applications tierces).
       </p>
-      <p style={{ fontSize: 12, color: "var(--text-soft, #9ca3af)", margin: "0 0 24px" }}>
-        Documentation interactive complete disponible a{" "}
-        <a href="/api/docs" style={{ color: "var(--accent, #006233)" }}>
-          /api/docs
-        </a>{" "}
-        (Swagger UI)
-      </p>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 12,
+          marginBottom: 22,
+        }}
+      >
+        <a
+          href="/api/docs"
+          style={{
+            background: "#051B36",
+            color: "#fff",
+            padding: "14px 18px",
+            borderRadius: 12,
+            textDecoration: "none",
+            display: "block",
+          }}
+        >
+          <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+            Interactif
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Swagger UI · /api/docs</div>
+          <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>Test des endpoints en direct</div>
+        </a>
+        <a
+          href="/api/redoc"
+          style={{
+            background: "#003DA5",
+            color: "#fff",
+            padding: "14px 18px",
+            borderRadius: 12,
+            textDecoration: "none",
+            display: "block",
+          }}
+        >
+          <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+            Lecture
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>ReDoc · /api/redoc</div>
+          <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>Référence imprimable détaillée</div>
+        </a>
+        <a
+          href="/api/openapi.json"
+          style={{
+            background: "#009E60",
+            color: "#fff",
+            padding: "14px 18px",
+            borderRadius: 12,
+            textDecoration: "none",
+            display: "block",
+          }}
+        >
+          <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+            Schéma
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>OpenAPI 3 · openapi.json</div>
+          <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>Pour génération de SDK</div>
+        </a>
+      </div>
+
+      <div
+        style={{
+          background: "#fff",
+          padding: "20px 22px",
+          borderRadius: 12,
+          border: "1px solid #e2e8f0",
+          marginBottom: 22,
+        }}
+      >
+        <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10, color: "#051B36" }}>
+          Démarrage rapide
+        </h2>
+        <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.65 }}>
+          <p style={{ marginBottom: 10 }}>
+            <strong>1. Vérifier un agrément (sans authentification)</strong>
+          </p>
+          <pre
+            style={{
+              background: "#0f172a",
+              color: "#e2e8f0",
+              padding: "12px 14px",
+              borderRadius: 8,
+              fontSize: 12,
+              overflowX: "auto",
+              marginBottom: 14,
+            }}
+          >
+{`curl https://pnpi.industrie.gouv.ga/pnpi/ati/verify/ATI-2026-00042`}
+          </pre>
+
+          <p style={{ marginBottom: 10 }}>
+            <strong>2. Obtenir un Bearer token</strong>
+          </p>
+          <pre
+            style={{
+              background: "#0f172a",
+              color: "#e2e8f0",
+              padding: "12px 14px",
+              borderRadius: 8,
+              fontSize: 12,
+              overflowX: "auto",
+              marginBottom: 14,
+            }}
+          >
+{`curl -X POST https://pnpi.industrie.gouv.ga/auth/login \\
+  -H "Content-Type: application/json" \\
+  -d '{"username": "<utilisateur>", "password": "<mot_de_passe>"}'`}
+          </pre>
+
+          <p style={{ marginBottom: 10 }}>
+            <strong>3. Appeler un endpoint authentifié</strong>
+          </p>
+          <pre
+            style={{
+              background: "#0f172a",
+              color: "#e2e8f0",
+              padding: "12px 14px",
+              borderRadius: 8,
+              fontSize: 12,
+              overflowX: "auto",
+              marginBottom: 4,
+            }}
+          >
+{`curl https://pnpi.industrie.gouv.ga/pnpi/dashboard/kpis \\
+  -H "Authorization: Bearer <access_token>"`}
+          </pre>
+        </div>
+      </div>
+
+      <div
+        style={{
+          background: "#fff7ed",
+          border: "1px solid #fed7aa",
+          borderLeft: "4px solid #ea580c",
+          padding: "14px 18px",
+          borderRadius: 10,
+          marginBottom: 22,
+          fontSize: 13,
+          color: "#7c2d12",
+          lineHeight: 1.6,
+        }}
+      >
+        <strong>Limites de débit :</strong> 60 requêtes/minute par IP sur les endpoints publics,
+        120 requêtes/minute par utilisateur authentifié. Un dépassement renvoie un{" "}
+        <code>HTTP 429 Too Many Requests</code> avec un en-tête <code>Retry-After</code>.
+      </div>
 
       {endpoints.map((group) => (
         <div key={group.group} style={{ marginBottom: 20 }}>
@@ -211,7 +385,7 @@ export default function ApiDocsPage() {
                     borderRadius: 4,
                     fontSize: 10,
                     fontWeight: 800,
-                    background: `${METHOD_COLORS[ep.method] || "#526175"}12`,
+                    background: METHOD_BG[ep.method] || "#f1f5f9",
                     color: METHOD_COLORS[ep.method] || "#526175",
                     fontFamily: "monospace",
                     minWidth: 40,

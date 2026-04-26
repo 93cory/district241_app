@@ -1,17 +1,57 @@
 name: PNPI CD
 
-# Workflow CD desactive tant que les secrets de deploiement ne sont pas
-# configures (DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, GHCR_TOKEN).
-# A reactiver en passant 'on: push' quand l'infra prod sera prete.
+# Le workflow s'arme automatiquement des que les secrets de production sont
+# configures dans les Settings du repo (DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY).
+# Tant que ces secrets ne sont pas presents, chaque job se contente de loguer une
+# notice et termine avec succes : aucun deploiement accidentel possible.
+#
+# Pour activer le CD :
+#   1. Provisionner le serveur de production (cf docs/deployment-guide.md)
+#   2. Ajouter les secrets DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY dans Settings -> Secrets
+#   3. Le prochain push sur main declenchera automatiquement le deploiement
 on:
+  push:
+    branches: [main, master]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  # ------------------------------------------------------------------
+  # Verifie que les secrets de deploiement sont presents
+  # ------------------------------------------------------------------
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      armed: ${{ steps.check.outputs.armed }}
+    steps:
+      - name: Verifier la presence des secrets
+        id: check
+        run: |
+          missing=()
+          [ -z "${{ secrets.DEPLOY_HOST }}" ] && missing+=("DEPLOY_HOST")
+          [ -z "${{ secrets.DEPLOY_USER }}" ] && missing+=("DEPLOY_USER")
+          [ -z "${{ secrets.DEPLOY_SSH_KEY }}" ] && missing+=("DEPLOY_SSH_KEY")
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "armed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::CD inactif. Secrets manquants : ${missing[*]}. Voir docs/deployment-guide.md pour activer."
+          else
+            echo "armed=true" >> "$GITHUB_OUTPUT"
+          fi
+
   # ------------------------------------------------------------------
   # Wait for CI to pass before deploying
   # ------------------------------------------------------------------
   ci-check:
     runs-on: ubuntu-latest
+    needs: preflight
+    if: needs.preflight.outputs.armed == 'true'
     steps:
       - name: Wait for CI workflow
         uses: lewagon/wait-on-check-action@v1.3.4
@@ -26,7 +66,8 @@ jobs:
   # ------------------------------------------------------------------
   build-and-push:
     runs-on: ubuntu-latest
-    needs: ci-check
+    needs: [preflight, ci-check]
+    if: needs.preflight.outputs.armed == 'true'
     permissions:
       contents: read
       packages: write
@@ -64,7 +105,8 @@ jobs:
   # ------------------------------------------------------------------
   deploy:
     runs-on: ubuntu-latest
-    needs: build-and-push
+    needs: [preflight, build-and-push]
+    if: needs.preflight.outputs.armed == 'true'
     environment: production
     env:
       IMAGE_TAG: ${{ github.sha }}

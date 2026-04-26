@@ -2522,29 +2522,57 @@ _openapi_tags = [
 ]
 
 app = FastAPI(
-    title="PNPI · Plateforme Nationale de la Politique Industrielle",
-    description="API du Ministere de l'Industrie et de la Transformation Locale du Gabon. "
-    "Gestion des Agrements Techniques Industriels, inspections de conformite, "
-    "pilotage ministeriel et tracabilite des lots.",
+    title="PNPI · Plateforme Nationale de Pilotage Industriel",
+    description=(
+        "**API officielle de la Plateforme Nationale de Pilotage Industriel (PNPI).**\n\n"
+        "Outil souverain du Ministère de l'Industrie et de la Transformation Locale "
+        "de la République Gabonaise. Couvre la délivrance des Agréments Techniques "
+        "Industriels (ATI), les inspections de conformité, le pilotage ministériel "
+        "et la traçabilité des lots produits.\n\n"
+        "### Endpoints publics (sans authentification)\n"
+        "- `GET /open-data/stats` · statistiques agrégées anonymisées\n"
+        "- `GET /open-data/sectors` · répartition par secteur\n"
+        "- `GET /open-data/provinces` · répartition par province\n"
+        "- `GET /pnpi/ati/verify/{numero}` · vérification d'un agrément\n"
+        "- `GET /health/status` · état opérationnel de la plateforme\n\n"
+        "### Endpoints authentifiés\n"
+        "Tous les autres endpoints exigent un Bearer token JWT obtenu via "
+        "`POST /auth/login`. Les rôles disponibles sont : `admin`, `ministre`, "
+        "`directeur`, `instructeur`, `inspecteur`, `operateur`.\n\n"
+        "### Limites de débit\n"
+        "Limitation glissante de 60 requêtes/minute par IP sur les endpoints publics, "
+        "120 requêtes/minute par utilisateur authentifié.\n\n"
+        "### Conformité\n"
+        "Données stockées sur infrastructure souveraine. Conformité visée à la "
+        "loi N°026/2017 du Gabon sur la protection des données personnelles."
+    ),
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
     openapi_tags=_openapi_tags,
+    servers=[
+        {"url": "/", "description": "Serveur courant"},
+        {"url": "https://pnpi.industrie.gouv.ga", "description": "Production (à configurer)"},
+    ],
     swagger_ui_parameters={
         "defaultModelsExpandDepth": -1,
         "docExpansion": "none",
         "filter": True,
         "persistAuthorization": True,
         "syntaxHighlight.theme": "monokai",
+        "tryItOutEnabled": True,
     },
     license_info={
-        "name": "Ministere de l'Industrie · Gabon",
+        "name": "Ministère de l'Industrie · République Gabonaise",
+        "url": "https://pnpi.industrie.gouv.ga/licence",
     },
     contact={
-        "name": "PNPI Support",
+        "name": "Équipe PNPI",
         "email": "support@pnpi-gabon.ga",
+        "url": "https://pnpi.industrie.gouv.ga/aide",
     },
+    terms_of_service="https://pnpi.industrie.gouv.ga/cgu",
 )
 
 if CORS_ALLOW_ORIGINS_RAW == "*":
@@ -2657,10 +2685,12 @@ from .routers.integration_health import router as integration_health_router
 from .routers.messages import router as messages_router
 from .routers.notes import router as notes_router
 from .routers.notifications import router as notifications_router
+from .routers.open_data import router as open_data_router
 from .routers.operateurs import router as operateurs_router
 from .routers.pilotage import router as pilotage_router
 from .routers.pnpi_dashboard import router as pnpi_dashboard_router
 from .routers.polls import router as polls_router
+from .routers.push import router as push_router
 from .routers.reminders import router as reminders_router
 from .routers.reports import router as reports_router
 from .routers.scheduled_reports import router as scheduled_reports_router
@@ -2686,6 +2716,7 @@ app.include_router(operateurs_router)
 app.include_router(chat_router)
 app.include_router(inspections_router)
 app.include_router(notifications_router)
+app.include_router(open_data_router)
 app.include_router(documents_router)
 app.include_router(geo_router)
 app.include_router(totp_router)
@@ -2707,6 +2738,7 @@ app.include_router(announcements_router)
 app.include_router(integration_health_router)
 app.include_router(scheduled_reports_router)
 app.include_router(polls_router)
+app.include_router(push_router)
 app.include_router(graphql_router)
 app.include_router(conventions_router)
 app.include_router(search_router)

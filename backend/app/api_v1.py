@@ -26,10 +26,12 @@ from .routers.integration_health import router as integration_health_router
 from .routers.messages import router as messages_router
 from .routers.notes import router as notes_router
 from .routers.notifications import router as notifications_router
+from .routers.open_data import router as open_data_router
 from .routers.operateurs import router as operateurs_router
 from .routers.pilotage import router as pilotage_router
 from .routers.pnpi_dashboard import router as pnpi_dashboard_router
 from .routers.polls import router as polls_router
+from .routers.push import router as push_router
 from .routers.reminders import router as reminders_router
 from .routers.reports import router as reports_router
 from .routers.scheduled_reports import router as scheduled_reports_router
@@ -54,6 +56,7 @@ _all_routers = [
     operateurs_router,
     inspections_router,
     notifications_router,
+    open_data_router,
     documents_router,
     geo_router,
     totp_router,
@@ -75,6 +78,7 @@ _all_routers = [
     integration_health_router,
     scheduled_reports_router,
     polls_router,
+    push_router,
     graphql_router,
     conventions_router,
     search_router,

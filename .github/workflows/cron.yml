@@ -1,0 +1,104 @@
+name: PNPI Cron
+
+on:
+  schedule:
+    # Toutes les heures : SLA + rappels d'expiration
+    - cron: "5 * * * *"
+    # Tous les jours a 03:00 UTC : nettoyage
+    - cron: "0 3 * * *"
+    # Tous les lundis a 06:00 UTC : rapport hebdomadaire
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Tache a executer"
+        required: true
+        type: choice
+        options:
+          - sla-check
+          - reminders
+          - cleanup
+          - weekly-report
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cron-${{ github.event.schedule || github.event.inputs.task }}
+  cancel-in-progress: false
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      PNPI_DATABASE_URL: ${{ secrets.PNPI_DATABASE_URL }}
+      PNPI_SECRET_KEY: ${{ secrets.PNPI_SECRET_KEY }}
+      PNPI_REDIS_URL: ${{ secrets.PNPI_REDIS_URL }}
+      PNPI_SMTP_HOST: ${{ secrets.PNPI_SMTP_HOST }}
+      PNPI_SMTP_PORT: ${{ secrets.PNPI_SMTP_PORT }}
+      PNPI_SMTP_USER: ${{ secrets.PNPI_SMTP_USER }}
+      PNPI_SMTP_PASSWORD: ${{ secrets.PNPI_SMTP_PASSWORD }}
+      PNPI_SMTP_FROM: ${{ secrets.PNPI_SMTP_FROM }}
+    steps:
+      - name: Skip si secrets non configures
+        id: gate
+        run: |
+          if [ -z "${{ secrets.PNPI_DATABASE_URL }}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::PNPI_DATABASE_URL non configure, job ignore (mode pre-prod)."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.skip != 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.skip != 'true'
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend deps
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Determiner la tache
+        id: task
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          if [ -n "${{ github.event.inputs.task }}" ]; then
+            echo "name=${{ github.event.inputs.task }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "5 * * * *" ]; then
+            echo "name=sla-check-and-reminders" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 3 * * *" ]; then
+            echo "name=cleanup" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 6 * * 1" ]; then
+            echo "name=weekly-report" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=sla-check" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Executer la tache
+        if: steps.gate.outputs.skip != 'true'
+        run: |
+          case "${{ steps.task.outputs.name }}" in
+            sla-check-and-reminders)
+              python scripts/cron_tasks.py sla-check
+              python scripts/cron_tasks.py reminders
+              ;;
+            *)
+              python scripts/cron_tasks.py "${{ steps.task.outputs.name }}"
+              ;;
+          esac
+
+      - name: Notifier echec
+        if: failure() && steps.gate.outputs.skip != 'true'
+        run: |
+          echo "::error::Cron task ${{ steps.task.outputs.name }} a echoue."

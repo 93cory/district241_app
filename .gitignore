@@ -36,6 +36,9 @@ migrate_working_dir/
 .pub/
 /build/
 /frontend/node_modules/
+/video/node_modules/
+/video/out/
+/video/.remotion/
 /backend/.venv/
 /backend/.venv312/
 *.db
@@ -63,3 +66,4 @@ nul
 # Test backups + Claude harness state
 *.db.testbackup
 .claude/scheduled_tasks.lock
+.playwright-mcp/
