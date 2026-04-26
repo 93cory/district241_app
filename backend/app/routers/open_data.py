@@ -89,8 +89,7 @@ def _yearly_rows(db: Session) -> list[dict[str, Any]]:
         .order_by(annee)
     ).all()
     return [
-        {"annee": int(a), "soumis": int(s), "approuve": int(ap or 0), "rejete": int(rj or 0)}
-        for a, s, ap, rj in rows
+        {"annee": int(a), "soumis": int(s), "approuve": int(ap or 0), "rejete": int(rj or 0)} for a, s, ap, rj in rows
     ]
 
 
@@ -158,9 +157,7 @@ async def public_stats(
     totaux = _compute_totaux(db)
     inspections_total = totaux["inspections_total"]
     taux_conformite = (
-        round(100.0 * totaux["inspections_conformes"] / inspections_total, 1)
-        if inspections_total
-        else None
+        round(100.0 * totaux["inspections_conformes"] / inspections_total, 1) if inspections_total else None
     )
     atis_decides = _count(
         db,
@@ -168,9 +165,7 @@ async def public_stats(
         .select_from(AgrementTechniqueIndustrielORM)
         .where(AgrementTechniqueIndustrielORM.statut.in_(["approuve", "rejete"])),
     )
-    taux_approbation = (
-        round(100.0 * totaux["atis_approuves"] / atis_decides, 1) if atis_decides else None
-    )
+    taux_approbation = round(100.0 * totaux["atis_approuves"] / atis_decides, 1) if atis_decides else None
 
     payload = {
         "generated_at": now_utc().isoformat(),

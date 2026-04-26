@@ -34,7 +34,12 @@ export default function ApiDocsPage() {
           desc: "Vérifier la validité d'un agrément ATI",
           auth: false,
         },
-        { method: "GET", path: "/health/status", desc: "Statut opérationnel de la plateforme", auth: false },
+        {
+          method: "GET",
+          path: "/health/status",
+          desc: "Statut opérationnel de la plateforme",
+          auth: false,
+        },
       ],
     },
     {
@@ -196,7 +201,14 @@ export default function ApiDocsPage() {
       <h1 style={{ fontSize: 28, fontWeight: 800, margin: "0 0 6px", color: "#051B36" }}>
         Documentation API PNPI
       </h1>
-      <p style={{ color: "var(--text-soft, #526175)", fontSize: 14, margin: "0 0 16px", lineHeight: 1.6 }}>
+      <p
+        style={{
+          color: "var(--text-soft, #526175)",
+          fontSize: 14,
+          margin: "0 0 16px",
+          lineHeight: 1.6,
+        }}
+      >
         Référence des endpoints publics et authentifiés de la Plateforme Nationale de Pilotage
         Industriel pour l&apos;intégration avec les systèmes partenaires (banques, douanes,
         registres, applications tierces).
@@ -221,11 +233,21 @@ export default function ApiDocsPage() {
             display: "block",
           }}
         >
-          <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 11,
+              opacity: 0.7,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginBottom: 4,
+            }}
+          >
             Interactif
           </div>
           <div style={{ fontSize: 15, fontWeight: 700 }}>Swagger UI · /api/docs</div>
-          <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>Test des endpoints en direct</div>
+          <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>
+            Test des endpoints en direct
+          </div>
         </a>
         <a
           href="/api/redoc"
@@ -238,11 +260,21 @@ export default function ApiDocsPage() {
             display: "block",
           }}
         >
-          <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 11,
+              opacity: 0.7,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginBottom: 4,
+            }}
+          >
             Lecture
           </div>
           <div style={{ fontSize: 15, fontWeight: 700 }}>ReDoc · /api/redoc</div>
-          <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>Référence imprimable détaillée</div>
+          <div style={{ fontSize: 11, opacity: 0.75, marginTop: 4 }}>
+            Référence imprimable détaillée
+          </div>
         </a>
         <a
           href="/api/openapi.json"
@@ -255,7 +287,15 @@ export default function ApiDocsPage() {
             display: "block",
           }}
         >
-          <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
+          <div
+            style={{
+              fontSize: 11,
+              opacity: 0.7,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginBottom: 4,
+            }}
+          >
             Schéma
           </div>
           <div style={{ fontSize: 15, fontWeight: 700 }}>OpenAPI 3 · openapi.json</div>
@@ -290,7 +330,7 @@ export default function ApiDocsPage() {
               marginBottom: 14,
             }}
           >
-{`curl https://pnpi.industrie.gouv.ga/pnpi/ati/verify/ATI-2026-00042`}
+            {`curl https://pnpi.industrie.gouv.ga/pnpi/ati/verify/ATI-2026-00042`}
           </pre>
 
           <p style={{ marginBottom: 10 }}>
@@ -307,7 +347,7 @@ export default function ApiDocsPage() {
               marginBottom: 14,
             }}
           >
-{`curl -X POST https://pnpi.industrie.gouv.ga/auth/login \\
+            {`curl -X POST https://pnpi.industrie.gouv.ga/auth/login \\
   -H "Content-Type: application/json" \\
   -d '{"username": "<utilisateur>", "password": "<mot_de_passe>"}'`}
           </pre>
@@ -326,7 +366,7 @@ export default function ApiDocsPage() {
               marginBottom: 4,
             }}
           >
-{`curl https://pnpi.industrie.gouv.ga/pnpi/dashboard/kpis \\
+            {`curl https://pnpi.industrie.gouv.ga/pnpi/dashboard/kpis \\
   -H "Authorization: Bearer <access_token>"`}
           </pre>
         </div>
@@ -345,8 +385,8 @@ export default function ApiDocsPage() {
           lineHeight: 1.6,
         }}
       >
-        <strong>Limites de débit :</strong> 60 requêtes/minute par IP sur les endpoints publics,
-        120 requêtes/minute par utilisateur authentifié. Un dépassement renvoie un{" "}
+        <strong>Limites de débit :</strong> 60 requêtes/minute par IP sur les endpoints publics, 120
+        requêtes/minute par utilisateur authentifié. Un dépassement renvoie un{" "}
         <code>HTTP 429 Too Many Requests</code> avec un en-tête <code>Retry-After</code>.
       </div>
 

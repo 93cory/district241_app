@@ -158,9 +158,11 @@ def list_subscriptions(
     db: Session = Depends(get_db),
     current_user: UserAccountORM = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
-    subs = db.execute(
-        select(PushSubscriptionORM).where(PushSubscriptionORM.username == current_user.username)
-    ).scalars().all()
+    subs = (
+        db.execute(select(PushSubscriptionORM).where(PushSubscriptionORM.username == current_user.username))
+        .scalars()
+        .all()
+    )
     return [
         {
             "id": s.id,
@@ -217,9 +219,7 @@ def send_push_to_user(
         logger.warning("pywebpush not installed, push notifications disabled.")
         return (0, 0)
 
-    subs = db.execute(
-        select(PushSubscriptionORM).where(PushSubscriptionORM.username == username)
-    ).scalars().all()
+    subs = db.execute(select(PushSubscriptionORM).where(PushSubscriptionORM.username == username)).scalars().all()
 
     if not subs:
         return (0, 0)
@@ -260,11 +260,7 @@ def send_push_to_user(
                 logger.warning("Push failed for %s (%s): %s", username, status, exc)
 
     if expired_ids:
-        db.execute(
-            PushSubscriptionORM.__table__.delete().where(
-                PushSubscriptionORM.id.in_(expired_ids)
-            )
-        )
+        db.execute(PushSubscriptionORM.__table__.delete().where(PushSubscriptionORM.id.in_(expired_ids)))
         logger.info("Cleaned %d expired push subscriptions for %s.", len(expired_ids), username)
 
     db.commit()

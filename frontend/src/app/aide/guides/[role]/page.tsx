@@ -113,9 +113,17 @@ export default function GuidePage({ params }: { params: { role: string } }) {
                   </ul>
                 );
               case "note":
-                return <div key={bIdx} className="note">{block.text}</div>;
+                return (
+                  <div key={bIdx} className="note">
+                    {block.text}
+                  </div>
+                );
               case "warn":
-                return <div key={bIdx} className="warn">{block.text}</div>;
+                return (
+                  <div key={bIdx} className="warn">
+                    {block.text}
+                  </div>
+                );
             }
           })}
         </section>

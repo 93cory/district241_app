@@ -32,7 +32,8 @@ interface PublicStats {
 
 async function fetchStats(): Promise<PublicStats | null> {
   try {
-    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    const backendUrl =
+      process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
     const res = await fetch(`${backendUrl}/open-data/stats`, { cache: "no-store" });
     if (!res.ok) return null;
     return (await res.json()) as PublicStats;
@@ -124,7 +125,13 @@ export default async function OpenDataPage() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "Manrope, system-ui, sans-serif", background: "#f7f9fc" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        fontFamily: "Manrope, system-ui, sans-serif",
+        background: "#f7f9fc",
+      }}
+    >
       <div
         style={{
           background: "linear-gradient(135deg, #051B36, #0C7EB4)",
@@ -133,13 +140,23 @@ export default async function OpenDataPage() {
           textAlign: "center",
         }}
       >
-        <div style={{ fontSize: 11, opacity: 0.7, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 12 }}>
+        <div
+          style={{
+            fontSize: 11,
+            opacity: 0.7,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            marginBottom: 12,
+          }}
+        >
           Plateforme Nationale de Pilotage Industriel
         </div>
         <h1 style={{ fontSize: 36, fontWeight: 800, margin: "0 0 12px", letterSpacing: "-0.01em" }}>
           Open Data
         </h1>
-        <p style={{ fontSize: 16, opacity: 0.85, maxWidth: 640, margin: "0 auto", lineHeight: 1.55 }}>
+        <p
+          style={{ fontSize: 16, opacity: 0.85, maxWidth: 640, margin: "0 auto", lineHeight: 1.55 }}
+        >
           Transparence du service public industriel. Indicateurs anonymisés et agrégés issus de
           l'activité réelle de la plateforme PNPI.
         </p>
@@ -179,9 +196,21 @@ export default async function OpenDataPage() {
             { label: "ATI approuvés", value: t?.atis_approuves ?? 0, accent: "#10b981" },
             { label: "ATI en cours", value: t?.atis_en_cours ?? 0, accent: "#0c7eb4" },
             { label: "Inspections", value: t?.inspections_total ?? 0, accent: "#7c3aed" },
-            { label: "Délai moyen", value: fmtDelai(i?.delai_moyen_jours ?? null), accent: "#0891b2" },
-            { label: "Taux d'approbation", value: fmtPct(i?.taux_approbation_pct ?? null), accent: "#16a34a" },
-            { label: "Inspections conformes", value: fmtPct(i?.taux_conformite_inspections_pct ?? null), accent: "#0d9488" },
+            {
+              label: "Délai moyen",
+              value: fmtDelai(i?.delai_moyen_jours ?? null),
+              accent: "#0891b2",
+            },
+            {
+              label: "Taux d'approbation",
+              value: fmtPct(i?.taux_approbation_pct ?? null),
+              accent: "#16a34a",
+            },
+            {
+              label: "Inspections conformes",
+              value: fmtPct(i?.taux_conformite_inspections_pct ?? null),
+              accent: "#0d9488",
+            },
           ].map((k) => (
             <div
               key={k.label}
@@ -194,7 +223,16 @@ export default async function OpenDataPage() {
               <div style={{ fontSize: 26, fontWeight: 800, color: k.accent, lineHeight: 1.1 }}>
                 {k.value}
               </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#526175", marginTop: 6, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#526175",
+                  marginTop: 6,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                }}
+              >
                 {k.label}
               </div>
             </div>
@@ -210,8 +248,22 @@ export default async function OpenDataPage() {
             marginBottom: 28,
           }}
         >
-          <ChartCard title="Répartition par secteur" data={r?.par_secteur ?? []} max={maxSecteur} keyName="secteur" valueName="total" color="#009E60" />
-          <ChartCard title="Répartition par province" data={r?.par_province ?? []} max={maxProvince} keyName="province" valueName="total" color="#003DA5" />
+          <ChartCard
+            title="Répartition par secteur"
+            data={r?.par_secteur ?? []}
+            max={maxSecteur}
+            keyName="secteur"
+            valueName="total"
+            color="#009E60"
+          />
+          <ChartCard
+            title="Répartition par province"
+            data={r?.par_province ?? []}
+            max={maxProvince}
+            keyName="province"
+            valueName="total"
+            color="#003DA5"
+          />
         </div>
 
         {/* Annee timeline */}
@@ -226,11 +278,36 @@ export default async function OpenDataPage() {
             <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 18, color: "#051B36" }}>
               Activité ATI par année
             </h3>
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 14, height: 180, padding: "0 8px" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 14,
+                height: 180,
+                padding: "0 8px",
+              }}
+            >
               {r.par_annee.map((a) => (
-                <div key={a.annee} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                <div
+                  key={a.annee}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#526175" }}>{a.soumis}</div>
-                  <div style={{ width: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", height: 130 }}>
+                  <div
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "flex-end",
+                      height: 130,
+                    }}
+                  >
                     <div
                       style={{
                         width: "100%",
@@ -259,7 +336,9 @@ export default async function OpenDataPage() {
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", gap: 16, marginTop: 14, fontSize: 11, color: "#526175" }}>
+            <div
+              style={{ display: "flex", gap: 16, marginTop: 14, fontSize: 11, color: "#526175" }}
+            >
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ width: 10, height: 10, background: "#009E60", borderRadius: 3 }} />
                 Approuvés
@@ -280,54 +359,61 @@ export default async function OpenDataPage() {
           {datasets.map((ds) => {
             const authStyle = AUTH_COLORS[ds.auth] ?? AUTH_COLORS.JWT;
             return (
-            <div
-              key={ds.endpoint}
-              style={{
-                padding: "16px 20px",
-                borderRadius: 12,
-                background: "#fff",
-                border: "1px solid #e2e8f0",
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ flex: "1 1 280px" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#051B36" }}>{ds.name}</div>
-                <div style={{ fontSize: 12, color: "#526175", marginTop: 3 }}>{ds.desc}</div>
-                <code style={{ fontSize: 11, color: "#0c7eb4", marginTop: 6, display: "inline-block" }}>
-                  {ds.endpoint}
-                </code>
+              <div
+                key={ds.endpoint}
+                style={{
+                  padding: "16px 20px",
+                  borderRadius: 12,
+                  background: "#fff",
+                  border: "1px solid #e2e8f0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ flex: "1 1 280px" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#051B36" }}>{ds.name}</div>
+                  <div style={{ fontSize: 12, color: "#526175", marginTop: 3 }}>{ds.desc}</div>
+                  <code
+                    style={{
+                      fontSize: 11,
+                      color: "#0c7eb4",
+                      marginTop: 6,
+                      display: "inline-block",
+                    }}
+                  >
+                    {ds.endpoint}
+                  </code>
+                </div>
+                <span
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    background: authStyle.bg,
+                    color: authStyle.fg,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {ds.auth}
+                </span>
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: 4,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    background: "#f3f4f6",
+                    fontFamily: "monospace",
+                    color: "#374151",
+                  }}
+                >
+                  {ds.format}
+                </span>
               </div>
-              <span
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  background: authStyle.bg,
-                  color: authStyle.fg,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {ds.auth}
-              </span>
-              <span
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: 4,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  background: "#f3f4f6",
-                  fontFamily: "monospace",
-                  color: "#374151",
-                }}
-              >
-                {ds.format}
-              </span>
-            </div>
             );
           })}
         </div>
@@ -399,7 +485,9 @@ function ChartCard({
     <div style={{ ...CARD_BASE, padding: "20px 22px" }}>
       <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#051B36" }}>{title}</h3>
       {data.length === 0 ? (
-        <div style={{ fontSize: 12, color: "#94a3b8", padding: "12px 0" }}>Pas encore de donnée.</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", padding: "12px 0" }}>
+          Pas encore de donnée.
+        </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {data.slice(0, 8).map((d) => {
@@ -413,12 +501,25 @@ function ChartCard({
                 aria-label={`${k} : ${v} sur un total maximum de ${max}`}
                 style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12 }}
               >
-                <div style={{ width: 100, color: "#526175", fontWeight: 600, textTransform: "capitalize" }}>
+                <div
+                  style={{
+                    width: 100,
+                    color: "#526175",
+                    fontWeight: 600,
+                    textTransform: "capitalize",
+                  }}
+                >
                   {k}
                 </div>
                 <div
                   aria-hidden="true"
-                  style={{ flex: 1, height: 18, background: "#f1f5f9", borderRadius: 6, overflow: "hidden" }}
+                  style={{
+                    flex: 1,
+                    height: 18,
+                    background: "#f1f5f9",
+                    borderRadius: 6,
+                    overflow: "hidden",
+                  }}
                 >
                   <div
                     style={{
