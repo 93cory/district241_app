@@ -11,7 +11,7 @@ def upgrade():
     op.create_table(
         "push_subscriptions",
         sa.Column("id", sa.String(length=40), primary_key=True),
-        sa.Column("username", sa.String(length=80), nullable=False, index=True),
+        sa.Column("username", sa.String(length=80), nullable=False),
         sa.Column("endpoint", sa.Text(), nullable=False, unique=True),
         sa.Column("p256dh", sa.Text(), nullable=False),
         sa.Column("auth", sa.Text(), nullable=False),
