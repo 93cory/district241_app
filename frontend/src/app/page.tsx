@@ -18,6 +18,59 @@ const STATS = [
   { value: "100%", label: "Décisions tracées" },
 ];
 
+const VITRINE_CSS = `
+  .vitrine { font-family: "Inter", system-ui, sans-serif; color: #051B36; background: #FAF8F4; min-height: 100vh; }
+  .vitrine-hero { background: linear-gradient(160deg, #051B36 0%, #003DA5 50%, #009E60 100%); color: #fff; padding: 90px 32px 100px; position: relative; overflow: hidden; }
+  .vitrine-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 20% 30%, rgba(252,209,22,0.18) 0%, transparent 50%), radial-gradient(circle at 85% 70%, rgba(0,158,96,0.2) 0%, transparent 55%); pointer-events: none; }
+  .vitrine-flag { display: flex; height: 4px; max-width: 1100px; margin: 0 auto 36px; }
+  .vitrine-flag span { flex: 1; }
+  .vitrine-flag span:nth-child(1) { background: #009E60; }
+  .vitrine-flag span:nth-child(2) { background: #FCD116; }
+  .vitrine-flag span:nth-child(3) { background: #003DA5; }
+  .vitrine-hero-inner { max-width: 1100px; margin: 0 auto; position: relative; }
+  .vitrine-eyebrow { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-size: 22px; color: #FCD116; margin-bottom: 18px; }
+  .vitrine-h1 { font-family: "Playfair Display", Georgia, serif; font-weight: 900; font-size: clamp(42px, 6vw, 72px); line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 24px; max-width: 880px; }
+  .vitrine-h1 em { font-style: italic; font-family: "Cormorant Garamond", serif; color: #FCD116; }
+  .vitrine-lede { font-size: 19px; line-height: 1.65; max-width: 720px; opacity: 0.92; margin-bottom: 40px; font-weight: 300; }
+  .vitrine-cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 56px; }
+  .vitrine-btn { padding: 14px 26px; border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
+  .vitrine-btn-primary { background: #FCD116; color: #051B36; }
+  .vitrine-btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(8px); }
+  .vitrine-btn:hover { transform: translateY(-2px); }
+  .vitrine-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; padding-top: 36px; border-top: 1px solid rgba(255,255,255,0.18); }
+  .vitrine-stat .num { font-family: "Playfair Display", serif; font-size: 48px; font-weight: 900; color: #FCD116; line-height: 1; }
+  .vitrine-stat .lab { font-size: 13px; opacity: 0.85; margin-top: 8px; }
+  .vitrine-section { max-width: 1100px; margin: 0 auto; padding: 80px 32px; }
+  .vitrine-section h2 { font-family: "Playfair Display", serif; font-weight: 800; font-size: clamp(32px, 4vw, 44px); letter-spacing: -0.015em; margin-bottom: 14px; }
+  .vitrine-section h2 em { font-style: italic; font-family: "Cormorant Garamond", serif; color: #009E60; }
+  .vitrine-section .sub { font-size: 17px; color: #526175; max-width: 640px; margin-bottom: 40px; line-height: 1.6; }
+  .vitrine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .vitrine-card { padding: 28px 26px; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; border-top: 4px solid var(--accent); transition: transform 0.3s, box-shadow 0.3s; }
+  .vitrine-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -16px rgba(0,0,0,0.18); }
+  .vitrine-card h3 { font-family: "Playfair Display", serif; font-size: 21px; font-weight: 700; margin-bottom: 12px; }
+  .vitrine-card p { font-size: 14px; color: #526175; line-height: 1.65; }
+  .vitrine-cta-bottom { background: linear-gradient(135deg, #009E60 0%, #006d3e 100%); color: #fff; padding: 80px 32px; text-align: center; position: relative; overflow: hidden; }
+  .vitrine-cta-bottom::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(252,209,22,0.18) 0%, transparent 60%); }
+  .vitrine-cta-bottom-inner { max-width: 720px; margin: 0 auto; position: relative; }
+  .vitrine-cta-bottom h2 { font-family: "Playfair Display", serif; font-size: clamp(30px, 4vw, 40px); font-weight: 800; margin-bottom: 18px; line-height: 1.15; }
+  .vitrine-cta-bottom p { font-size: 17px; opacity: 0.95; margin-bottom: 32px; line-height: 1.6; }
+  .vitrine-footer { background: #051B36; color: rgba(255,255,255,0.7); padding: 50px 32px 30px; }
+  .vitrine-footer-inner { max-width: 1100px; margin: 0 auto; }
+  .vitrine-footer-flag { display: flex; height: 3px; margin-bottom: 28px; }
+  .vitrine-footer-flag span { flex: 1; }
+  .vitrine-footer-flag span:nth-child(1) { background: #009E60; }
+  .vitrine-footer-flag span:nth-child(2) { background: #FCD116; }
+  .vitrine-footer-flag span:nth-child(3) { background: #003DA5; }
+  .vitrine-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; margin-bottom: 30px; }
+  @media (max-width: 720px) { .vitrine-footer-grid { grid-template-columns: 1fr; } }
+  .vitrine-footer h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; opacity: 0.7; font-weight: 600; }
+  .vitrine-footer p, .vitrine-footer ul { font-size: 13px; line-height: 1.7; }
+  .vitrine-footer ul { list-style: none; padding: 0; }
+  .vitrine-footer a { color: inherit; text-decoration: none; opacity: 0.85; }
+  .vitrine-footer a:hover { opacity: 1; color: #FCD116; }
+  .vitrine-baseline { font-size: 11px; opacity: 0.6; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 22px; font-style: italic; letter-spacing: 0.04em; }
+`;
+
 const FEATURES = [
   {
     title: "Agréments Techniques Industriels",
@@ -64,58 +117,7 @@ export default async function HomePage() {
 
   return (
     <main className="vitrine">
-      <style>{`
-        .vitrine { font-family: "Inter", system-ui, sans-serif; color: #051B36; background: #FAF8F4; min-height: 100vh; }
-        .vitrine-hero { background: linear-gradient(160deg, #051B36 0%, #003DA5 50%, #009E60 100%); color: #fff; padding: 90px 32px 100px; position: relative; overflow: hidden; }
-        .vitrine-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 20% 30%, rgba(252,209,22,0.18) 0%, transparent 50%), radial-gradient(circle at 85% 70%, rgba(0,158,96,0.2) 0%, transparent 55%); pointer-events: none; }
-        .vitrine-flag { display: flex; height: 4px; max-width: 1100px; margin: 0 auto 36px; }
-        .vitrine-flag span { flex: 1; }
-        .vitrine-flag span:nth-child(1) { background: #009E60; }
-        .vitrine-flag span:nth-child(2) { background: #FCD116; }
-        .vitrine-flag span:nth-child(3) { background: #003DA5; }
-        .vitrine-hero-inner { max-width: 1100px; margin: 0 auto; position: relative; }
-        .vitrine-eyebrow { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-size: 22px; color: #FCD116; margin-bottom: 18px; }
-        .vitrine-h1 { font-family: "Playfair Display", Georgia, serif; font-weight: 900; font-size: clamp(42px, 6vw, 72px); line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 24px; max-width: 880px; }
-        .vitrine-h1 em { font-style: italic; font-family: "Cormorant Garamond", serif; color: #FCD116; }
-        .vitrine-lede { font-size: 19px; line-height: 1.65; max-width: 720px; opacity: 0.92; margin-bottom: 40px; font-weight: 300; }
-        .vitrine-cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 56px; }
-        .vitrine-btn { padding: 14px 26px; border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
-        .vitrine-btn-primary { background: #FCD116; color: #051B36; }
-        .vitrine-btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(8px); }
-        .vitrine-btn:hover { transform: translateY(-2px); }
-        .vitrine-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; padding-top: 36px; border-top: 1px solid rgba(255,255,255,0.18); }
-        .vitrine-stat .num { font-family: "Playfair Display", serif; font-size: 48px; font-weight: 900; color: #FCD116; line-height: 1; }
-        .vitrine-stat .lab { font-size: 13px; opacity: 0.85; margin-top: 8px; }
-        .vitrine-section { max-width: 1100px; margin: 0 auto; padding: 80px 32px; }
-        .vitrine-section h2 { font-family: "Playfair Display", serif; font-weight: 800; font-size: clamp(32px, 4vw, 44px); letter-spacing: -0.015em; margin-bottom: 14px; }
-        .vitrine-section h2 em { font-style: italic; font-family: "Cormorant Garamond", serif; color: #009E60; }
-        .vitrine-section .sub { font-size: 17px; color: #526175; max-width: 640px; margin-bottom: 40px; line-height: 1.6; }
-        .vitrine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
-        .vitrine-card { padding: 28px 26px; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; border-top: 4px solid var(--accent); transition: transform 0.3s, box-shadow 0.3s; }
-        .vitrine-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -16px rgba(0,0,0,0.18); }
-        .vitrine-card h3 { font-family: "Playfair Display", serif; font-size: 21px; font-weight: 700; margin-bottom: 12px; }
-        .vitrine-card p { font-size: 14px; color: #526175; line-height: 1.65; }
-        .vitrine-cta-bottom { background: linear-gradient(135deg, #009E60 0%, #006d3e 100%); color: #fff; padding: 80px 32px; text-align: center; position: relative; overflow: hidden; }
-        .vitrine-cta-bottom::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(252,209,22,0.18) 0%, transparent 60%); }
-        .vitrine-cta-bottom-inner { max-width: 720px; margin: 0 auto; position: relative; }
-        .vitrine-cta-bottom h2 { font-family: "Playfair Display", serif; font-size: clamp(30px, 4vw, 40px); font-weight: 800; margin-bottom: 18px; line-height: 1.15; }
-        .vitrine-cta-bottom p { font-size: 17px; opacity: 0.95; margin-bottom: 32px; line-height: 1.6; }
-        .vitrine-footer { background: #051B36; color: rgba(255,255,255,0.7); padding: 50px 32px 30px; }
-        .vitrine-footer-inner { max-width: 1100px; margin: 0 auto; }
-        .vitrine-footer-flag { display: flex; height: 3px; margin-bottom: 28px; }
-        .vitrine-footer-flag span { flex: 1; }
-        .vitrine-footer-flag span:nth-child(1) { background: #009E60; }
-        .vitrine-footer-flag span:nth-child(2) { background: #FCD116; }
-        .vitrine-footer-flag span:nth-child(3) { background: #003DA5; }
-        .vitrine-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; margin-bottom: 30px; }
-        @media (max-width: 720px) { .vitrine-footer-grid { grid-template-columns: 1fr; } }
-        .vitrine-footer h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; opacity: 0.7; font-weight: 600; }
-        .vitrine-footer p, .vitrine-footer ul { font-size: 13px; line-height: 1.7; }
-        .vitrine-footer ul { list-style: none; padding: 0; }
-        .vitrine-footer a { color: inherit; text-decoration: none; opacity: 0.85; }
-        .vitrine-footer a:hover { opacity: 1; color: #FCD116; }
-        .vitrine-baseline { font-size: 11px; opacity: 0.6; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 22px; font-style: italic; letter-spacing: 0.04em; }
-      `}</style>
+      <style dangerouslySetInnerHTML={{ __html: VITRINE_CSS }} />
 
       {/* HERO */}
       <section className="vitrine-hero">
