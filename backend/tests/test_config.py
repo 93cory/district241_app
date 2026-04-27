@@ -1,5 +1,5 @@
 """Tests for the config validation."""
-import os
+
 from app.config import Settings
 
 

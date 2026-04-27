@@ -451,8 +451,7 @@ def test_mark_notification_read_is_audited() -> None:
     assert audit_response.status_code == 200
     events = audit_response.json()
     assert any(
-        entry["action"] == "admin.mark_notification_read" and entry["target"] == notification_id
-        for entry in events
+        entry["action"] == "admin.mark_notification_read" and entry["target"] == notification_id for entry in events
     )
 
 
@@ -487,10 +486,7 @@ def test_field_report_lifecycle_is_audited() -> None:
     assert audit_response.status_code == 200
     events = audit_response.json()
     assert any(entry["action"] == "field_reports.create" and entry["target"] == report_id for entry in events)
-    assert any(
-        entry["action"] == "field_reports.update_status" and entry["target"] == report_id
-        for entry in events
-    )
+    assert any(entry["action"] == "field_reports.update_status" and entry["target"] == report_id for entry in events)
     assert any(entry["action"] == "field_reports.delete" and entry["target"] == report_id for entry in events)
 
 
@@ -584,6 +580,7 @@ def test_ops_alerts_check_endpoint() -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 # PNPI · Dashboard KPIs
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestPNPIDashboard:
     def test_kpis_requires_auth(self) -> None:
@@ -1003,11 +1000,14 @@ class TestInspections:
         headers = auth_headers("ministre", "ministre-dev-password")
         # ministere role should be allowed, but let's test an unauthorized role won't work
         # Testing without auth is sufficient to cover the 401 path
-        response = client.post("/pnpi/inspections", json={
-            "operateur_id": _created_operateur_id,
-            "statut_conformite": "partiel",
-            "observations": "Test sans auth",
-        })
+        response = client.post(
+            "/pnpi/inspections",
+            json={
+                "operateur_id": _created_operateur_id,
+                "statut_conformite": "partiel",
+                "observations": "Test sans auth",
+            },
+        )
         assert response.status_code == 401
 
     def test_requires_auth(self) -> None:
@@ -1018,6 +1018,7 @@ class TestInspections:
 # ─────────────────────────────────────────────────────────────────────────────
 # PNPI · Alertes et historique (lot 5-6)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestPNPIAlerts:
     def test_list_alerts(self) -> None:
@@ -1096,6 +1097,7 @@ class TestSearchInspections:
 # PNPI · Toggle active + Recap PDF + E2E workflow (lot 7)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.skip(reason="toggle-active endpoint contract a stabiliser - lot 68")
 class TestOperateurToggleActive:
     def test_toggle_active(self) -> None:
@@ -1141,25 +1143,33 @@ class TestE2EATIWorkflow:
 
         # 1. Create operateur
         nif = f"NIF-E2E-{uuid.uuid4().hex[:8].upper()}"
-        op = client.post("/pnpi/operateurs", headers=headers, json={
-            "nif_gabon": nif,
-            "raison_sociale": "E2E Test Company",
-            "secteur": "mines",
-            "province": "haut_ogooue",
-            "ville": "Franceville",
-            "effectif_declare": 50,
-        })
+        op = client.post(
+            "/pnpi/operateurs",
+            headers=headers,
+            json={
+                "nif_gabon": nif,
+                "raison_sociale": "E2E Test Company",
+                "secteur": "mines",
+                "province": "haut_ogooue",
+                "ville": "Franceville",
+                "effectif_declare": 50,
+            },
+        )
         assert op.status_code == 201
         op_id = op.json()["id"]
 
         # 2. Create ATI
-        ati = client.post("/pnpi/ati", headers=headers, json={
-            "operateur_id": op_id,
-            "type_activite": "Exploitation miniere E2E",
-            "secteur": "mines",
-            "priorite": "haute",
-            "sla_jours": 20,
-        })
+        ati = client.post(
+            "/pnpi/ati",
+            headers=headers,
+            json={
+                "operateur_id": op_id,
+                "type_activite": "Exploitation miniere E2E",
+                "secteur": "mines",
+                "priorite": "haute",
+                "sla_jours": 20,
+            },
+        )
         assert ati.status_code == 201
         ati_id = ati.json()["id"]
         assert ati.json()["statut"] == "soumis"

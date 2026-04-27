@@ -1,5 +1,6 @@
 """Tests for the sanitization module."""
-from app.core.sanitize import sanitize_html, is_safe_input
+
+from app.core.sanitize import is_safe_input, sanitize_html
 
 
 def test_strip_script_tags():
@@ -31,7 +32,7 @@ def test_preserves_french_accents():
 
 def test_is_safe_input_detects_script():
     assert is_safe_input("normal text") is True
-    assert is_safe_input('<script>alert(1)</script>') is False
+    assert is_safe_input("<script>alert(1)</script>") is False
     assert is_safe_input('"><img onerror=alert(1)>') is False
     assert is_safe_input("javascript:void(0)") is False
 

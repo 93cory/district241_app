@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
-from pathlib import Path
 import sys
+from datetime import UTC, date, datetime
+from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.main import (  # noqa: E402
+from app.main import (
     Base,
     DeclarationORM,
     NotificationORM,
@@ -83,7 +83,7 @@ def add_demo_units_and_declarations() -> None:
             volume_tons=520,
             jobs=295,
             validated=True,
-            submitted_at=datetime(2026, 3, 28, tzinfo=timezone.utc),
+            submitted_at=datetime(2026, 3, 28, tzinfo=UTC),
             submitted_by="operateur",
         ),
         DeclarationORM(
@@ -93,7 +93,7 @@ def add_demo_units_and_declarations() -> None:
             volume_tons=460,
             jobs=250,
             validated=True,
-            submitted_at=datetime(2026, 3, 27, tzinfo=timezone.utc),
+            submitted_at=datetime(2026, 3, 27, tzinfo=UTC),
             submitted_by="operateur",
         ),
         DeclarationORM(
@@ -103,7 +103,7 @@ def add_demo_units_and_declarations() -> None:
             volume_tons=390,
             jobs=210,
             validated=False,
-            submitted_at=datetime(2026, 3, 29, tzinfo=timezone.utc),
+            submitted_at=datetime(2026, 3, 29, tzinfo=UTC),
             submitted_by="inspecteur",
         ),
         DeclarationORM(
@@ -113,7 +113,7 @@ def add_demo_units_and_declarations() -> None:
             volume_tons=280,
             jobs=165,
             validated=True,
-            submitted_at=datetime(2026, 3, 26, tzinfo=timezone.utc),
+            submitted_at=datetime(2026, 3, 26, tzinfo=UTC),
             submitted_by="operateur",
         ),
         DeclarationORM(
@@ -123,7 +123,7 @@ def add_demo_units_and_declarations() -> None:
             volume_tons=130,
             jobs=74,
             validated=False,
-            submitted_at=datetime(2026, 3, 25, tzinfo=timezone.utc),
+            submitted_at=datetime(2026, 3, 25, tzinfo=UTC),
             submitted_by="inspecteur",
         ),
     ]
@@ -136,7 +136,7 @@ def add_demo_units_and_declarations() -> None:
             factory="Cluster Bois Nord Gabon",
             certification="PEFC",
             quantity_tons=66,
-            timestamp=datetime(2026, 3, 28, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 3, 28, tzinfo=UTC),
             qr_code="https://pnpi-gabon/qr/B202603-101",
         ),
         TraceBatchORM(
@@ -146,7 +146,7 @@ def add_demo_units_and_declarations() -> None:
             factory="Plateforme Halieutique Sud",
             certification="HACCP",
             quantity_tons=48,
-            timestamp=datetime(2026, 3, 29, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 3, 29, tzinfo=UTC),
             qr_code="https://pnpi-gabon/qr/B202603-102",
         ),
         TraceBatchORM(
@@ -156,7 +156,7 @@ def add_demo_units_and_declarations() -> None:
             factory="Transformation Cacao Haut-Ogooue",
             certification="Origine Controlee",
             quantity_tons=36,
-            timestamp=datetime(2026, 3, 30, tzinfo=timezone.utc),
+            timestamp=datetime(2026, 3, 30, tzinfo=UTC),
             qr_code="https://pnpi-gabon/qr/B202603-103",
         ),
     ]
@@ -168,7 +168,7 @@ def add_demo_units_and_declarations() -> None:
             title="Validation terrain urgente",
             message="Verifier la declaration PD-UI103-202603 avant arbitrage ministeriel.",
             severity="critical",
-            created_at=datetime(2026, 3, 30, tzinfo=timezone.utc),
+            created_at=datetime(2026, 3, 30, tzinfo=UTC),
             is_read=False,
         ),
         NotificationORM(
@@ -177,7 +177,7 @@ def add_demo_units_and_declarations() -> None:
             title="Ecart import agroalimentaire",
             message="Consolider plan de substitution sur 2 trimestres.",
             severity="high",
-            created_at=datetime(2026, 3, 30, tzinfo=timezone.utc),
+            created_at=datetime(2026, 3, 30, tzinfo=UTC),
             is_read=False,
         ),
     ]
@@ -201,4 +201,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

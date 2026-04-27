@@ -1,4 +1,5 @@
 """Tests for the API analytics module."""
+
 from app.core.api_analytics import APIAnalytics
 
 

@@ -1,4 +1,5 @@
 """Tests for webhooks module and SSRF protection."""
+
 from app.core.webhooks import _is_safe_url
 
 

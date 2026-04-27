@@ -18,6 +18,7 @@ def auth_headers(username: str, password: str) -> dict[str, str]:
 # CSV exports
 # ---------------------------------------------------------------------------
 
+
 def test_export_ati_csv() -> None:
     """ATI CSV export returns valid CSV content."""
     headers = auth_headers("ministre", "ministre-dev-password")
@@ -57,6 +58,7 @@ def test_export_inspections_csv() -> None:
 # ---------------------------------------------------------------------------
 # PDF exports
 # ---------------------------------------------------------------------------
+
 
 def test_export_briefing_pdf() -> None:
     """Briefing PDF export returns a valid PDF document."""

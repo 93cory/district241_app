@@ -149,7 +149,7 @@ def main() -> int:
                 # 2 tentatives : Next.js dev compile a froid au 1er hit (lent).
                 status = 0
                 last_exc: Exception | None = None
-                for attempt in range(2):
+                for _attempt in range(2):
                     try:
                         r = client.get(f"{FRONTEND}{path}", timeout=30.0)
                         status = r.status_code

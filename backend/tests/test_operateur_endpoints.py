@@ -1,5 +1,7 @@
 """Tests for operateur-specific endpoints (risk profile, SLA, timeline)."""
+
 from fastapi.testclient import TestClient
+
 from app.main import app
 
 client = TestClient(app)

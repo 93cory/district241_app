@@ -31,6 +31,9 @@ class OperateurIndustrielORM(Base):
 
     id: Mapped[str] = mapped_column(String(24), primary_key=True)
     nif_gabon: Mapped[str] = mapped_column(String(30), unique=True, nullable=False, index=True)
+    # Colonne chiffree at-rest (Fernet). Voir `app.core.encryption`.
+    # Lecture / ecriture passent par la property `nif` (lazy fallback sur nif_gabon).
+    nif_gabon_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     raison_sociale: Mapped[str] = mapped_column(String(300), nullable=False)
     secteur: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     province: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
@@ -44,6 +47,38 @@ class OperateurIndustrielORM(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     created_by: Mapped[str | None] = mapped_column(String(80), nullable=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    @property
+    def nif(self) -> str | None:
+        """NIF en clair : dechiffre `nif_gabon_encrypted` si present, sinon fallback `nif_gabon`.
+
+        Pendant la phase de migration, les nouvelles lignes auront les deux
+        colonnes synchronisees (cf `set_nif`). Les anciennes n'ont que
+        `nif_gabon` en clair.
+        """
+        from ..core.encryption import decrypt_str
+
+        if self.nif_gabon_encrypted:
+            decrypted = decrypt_str(self.nif_gabon_encrypted)
+            if decrypted is not None:
+                return decrypted
+        return self.nif_gabon
+
+    def set_nif(self, value: str | None) -> None:
+        """Setter unifie : chiffre dans `nif_gabon_encrypted` ET ecrit
+        `nif_gabon` en clair tant que la migration n'est pas finalisee.
+
+        Une migration future supprimera la colonne en clair une fois 100%
+        des lignes legacy chiffrees.
+        """
+        from ..core.encryption import encrypt_str
+
+        if value is None:
+            self.nif_gabon = ""  # NOT NULL contrainte legacy
+            self.nif_gabon_encrypted = None
+            return
+        self.nif_gabon = value
+        self.nif_gabon_encrypted = encrypt_str(value)
 
     agrements: Mapped[list[AgrementTechniqueIndustrielORM]] = relationship(
         back_populates="operateur",

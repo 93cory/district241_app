@@ -14,12 +14,13 @@ Environment variables:
   PNPI_S3_REGION     · S3 region (default: us-east-1)
   PNPI_BACKUP_RETAIN_DAYS · Days to retain backups (default: 30)
 """
-import sys
-import os
-import subprocess
+
 import gzip
 import logging
-from datetime import datetime, timedelta, timezone
+import os
+import subprocess
+import sys
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlparse
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -75,7 +76,7 @@ def parse_db_url():
 def task_backup():
     """Create a compressed PostgreSQL dump and upload to S3."""
     db = parse_db_url()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     filename = f"pnpi_{now.strftime('%Y%m%d_%H%M%S')}.sql.gz"
     local_path = f"/tmp/{filename}"
 
@@ -86,9 +87,12 @@ def task_backup():
 
     dump_cmd = [
         "pg_dump",
-        "-h", db["host"],
-        "-p", db["port"],
-        "-U", db["user"],
+        "-h",
+        db["host"],
+        "-p",
+        db["port"],
+        "-U",
+        db["user"],
         "-Fc",  # Custom format (compressed)
         db["dbname"],
     ]
@@ -122,7 +126,9 @@ def task_backup():
         s3.create_bucket(Bucket=bucket)
 
     s3.upload_file(
-        local_path, bucket, filename,
+        local_path,
+        bucket,
+        filename,
         ExtraArgs={"ContentType": "application/gzip"},
     )
     logger.info(f"Upload complete: s3://{bucket}/{filename}")
@@ -137,7 +143,7 @@ def task_backup():
     response = s3.list_objects_v2(Bucket=bucket, Prefix="pnpi_")
     if "Contents" in response:
         for obj in response["Contents"]:
-            if obj["LastModified"].replace(tzinfo=timezone.utc) < cutoff:
+            if obj["LastModified"].replace(tzinfo=UTC) < cutoff:
                 s3.delete_object(Bucket=bucket, Key=obj["Key"])
                 logger.info(f"Deleted expired backup: {obj['Key']}")
 
@@ -179,6 +185,7 @@ def task_restore(filename: str):
     # Decompress if gzipped
     if filename.endswith(".gz"):
         import tempfile
+
         with gzip.open(local_path, "rb") as gz:
             dump_data = gz.read()
         tmp = tempfile.NamedTemporaryFile(suffix=".dump", delete=False)
@@ -190,10 +197,14 @@ def task_restore(filename: str):
 
     restore_cmd = [
         "pg_restore",
-        "-h", db["host"],
-        "-p", db["port"],
-        "-U", db["user"],
-        "-d", db["dbname"],
+        "-h",
+        db["host"],
+        "-p",
+        db["port"],
+        "-U",
+        db["user"],
+        "-d",
+        db["dbname"],
         "--clean",
         "--if-exists",
         restore_path,

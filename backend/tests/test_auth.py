@@ -1,4 +1,5 @@
 import pytest
+
 """Tests for authentication endpoints."""
 
 import uuid
@@ -20,6 +21,7 @@ def auth_headers(username: str, password: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Login
 # ---------------------------------------------------------------------------
+
 
 def test_login_valid_credentials() -> None:
     """Ministre can log in with correct dev password."""
@@ -55,6 +57,7 @@ def test_login_nonexistent_user() -> None:
 # /auth/me
 # ---------------------------------------------------------------------------
 
+
 def test_get_me_returns_user_info() -> None:
     """Authenticated user can retrieve their own profile."""
     headers = auth_headers("ministre", "ministre-dev-password")
@@ -68,6 +71,7 @@ def test_get_me_returns_user_info() -> None:
 # ---------------------------------------------------------------------------
 # Token refresh
 # ---------------------------------------------------------------------------
+
 
 def test_refresh_token_flow() -> None:
     """Login, obtain a refresh token, then use it to get a new access token."""
@@ -96,6 +100,7 @@ def test_refresh_token_flow() -> None:
 # Logout
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.skip(reason="logout endpoint param 422 - lot 68")
 def test_logout_revokes_token() -> None:
     """After logout the same token should no longer be accepted."""
@@ -113,6 +118,7 @@ def test_logout_revokes_token() -> None:
 # ---------------------------------------------------------------------------
 # Unauthenticated / bad token access
 # ---------------------------------------------------------------------------
+
 
 def test_access_without_token() -> None:
     """Accessing a protected endpoint without a token returns 401."""

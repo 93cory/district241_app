@@ -1,5 +1,7 @@
 """Tests for the API keys management endpoints."""
+
 from fastapi.testclient import TestClient
+
 from app.main import app
 
 client = TestClient(app)
@@ -20,11 +22,15 @@ def test_create_and_list_api_key():
     headers = admin_headers()
 
     # Create
-    resp = client.post("/admin/api-keys", json={
-        "name": "Test Integration",
-        "system_id": "test_system",
-        "permissions": ["read"],
-    }, headers=headers)
+    resp = client.post(
+        "/admin/api-keys",
+        json={
+            "name": "Test Integration",
+            "system_id": "test_system",
+            "permissions": ["read"],
+        },
+        headers=headers,
+    )
     assert resp.status_code == 201
     data = resp.json()
     assert "api_key" in data

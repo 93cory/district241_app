@@ -1,4 +1,5 @@
 """Tests for the global search endpoint."""
+
 from fastapi.testclient import TestClient
 
 from app.main import app

@@ -1,4 +1,5 @@
 import pytest
+
 """Tests for the pagination module."""
 from app.core.pagination import PaginatedResponse, PaginationParams
 

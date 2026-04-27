@@ -1,4 +1,5 @@
 import pytest
+
 """Tests for PNPI inspection endpoints."""
 
 import uuid
@@ -57,6 +58,7 @@ def _create_inspection(headers: dict[str, str], operateur_id: str) -> dict:
 # CRUD
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.skip(reason="inspecteur create role check 403 - lot 68")
 def test_create_inspection() -> None:
     """Inspecteur can create an inspection after creating an operateur."""
@@ -104,6 +106,7 @@ def test_get_inspection_detail() -> None:
 # ---------------------------------------------------------------------------
 # Role-based access control
 # ---------------------------------------------------------------------------
+
 
 def test_operateur_cannot_create_inspection() -> None:
     """Operateur role must not be allowed to create inspections (403)."""

@@ -5,9 +5,10 @@ Usage:
   python scripts/cron_tasks.py sla-check
   python scripts/cron_tasks.py cleanup
 """
-import sys
-import os
+
 import logging
+import os
+import sys
 
 # Add parent dir to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -15,11 +16,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("pnpi.cron")
 
-from app.database import SessionLocal
-from app.core.executive_report import generate_executive_report
-from app.core.email import send_email, SMTP_ENABLED
-from app.database import now_utc
 from sqlalchemy import select
+
+from app.core.email import SMTP_ENABLED
+from app.core.executive_report import generate_executive_report
+from app.database import SessionLocal, now_utc
 
 
 def task_weekly_report():
@@ -31,6 +32,7 @@ def task_weekly_report():
 
         # Find admin/minister emails
         from app.models.core import UserAccountORM
+
         users = db.execute(select(UserAccountORM).where(UserAccountORM.is_active.is_(True))).scalars().all()
         recipients = []
         for u in users:
@@ -64,14 +66,15 @@ def task_sla_check():
     db = SessionLocal()
     try:
         from app.models.pnpi import AgrementTechniqueIndustrielORM
+
         now = now_utc()
         all_atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
 
         terminal = {"approuve", "rejete", "expire"}
         overdue = [
-            a for a in all_atis
-            if a.statut not in terminal
-            and (now.date() - a.date_soumission.date()).days > a.sla_jours
+            a
+            for a in all_atis
+            if a.statut not in terminal and (now.date() - a.date_soumission.date()).days > a.sla_jours
         ]
 
         logger.info(f"Total ATIs: {len(all_atis)}, Overdue: {len(overdue)}")
@@ -91,17 +94,23 @@ def task_cleanup():
     logger.info("Running cleanup...")
     db = SessionLocal()
     try:
-        from app.models.core import RefreshTokenORM
         from datetime import timedelta
+
+        from app.models.core import RefreshTokenORM
+
         now = now_utc()
 
         # Revoke expired tokens
-        expired = db.execute(
-            select(RefreshTokenORM).where(
-                RefreshTokenORM.expires_at < now,
-                RefreshTokenORM.revoked_at.is_(None),
+        expired = (
+            db.execute(
+                select(RefreshTokenORM).where(
+                    RefreshTokenORM.expires_at < now,
+                    RefreshTokenORM.revoked_at.is_(None),
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
         for token in expired:
             token.revoked_at = now
@@ -114,12 +123,16 @@ def task_cleanup():
 
         # Delete revoked tokens older than 30 days
         cutoff_30d = now - timedelta(days=30)
-        old_revoked = db.execute(
-            select(RefreshTokenORM).where(
-                RefreshTokenORM.revoked_at.isnot(None),
-                RefreshTokenORM.revoked_at < cutoff_30d,
+        old_revoked = (
+            db.execute(
+                select(RefreshTokenORM).where(
+                    RefreshTokenORM.revoked_at.isnot(None),
+                    RefreshTokenORM.revoked_at < cutoff_30d,
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         for t in old_revoked:
             db.delete(t)
         if old_revoked:
@@ -128,13 +141,18 @@ def task_cleanup():
 
         # Delete read notifications older than 90 days
         from app.models.core import NotificationORM
+
         cutoff_90d = now - timedelta(days=90)
-        old_notifs = db.execute(
-            select(NotificationORM).where(
-                NotificationORM.is_read.is_(True),
-                NotificationORM.created_at < cutoff_90d,
+        old_notifs = (
+            db.execute(
+                select(NotificationORM).where(
+                    NotificationORM.is_read.is_(True),
+                    NotificationORM.created_at < cutoff_90d,
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         for n in old_notifs:
             db.delete(n)
         if old_notifs:
@@ -143,14 +161,19 @@ def task_cleanup():
 
         # Delete login history older than 180 days
         from app.models.core import LoginHistoryORM
+
         cutoff_180d = now - timedelta(days=180)
-        old_logins = db.execute(
-            select(LoginHistoryORM).where(
-                LoginHistoryORM.created_at < cutoff_180d,
+        old_logins = (
+            db.execute(
+                select(LoginHistoryORM).where(
+                    LoginHistoryORM.created_at < cutoff_180d,
+                )
             )
-        ).scalars().all()
-        for l in old_logins:
-            db.delete(l)
+            .scalars()
+            .all()
+        )
+        for entry in old_logins:
+            db.delete(entry)
         if old_logins:
             db.commit()
             logger.info(f"Deleted {len(old_logins)} old login history entries.")
@@ -165,8 +188,9 @@ def task_generate_reminders():
     logger.info("Generating SLA + renewal reminders...")
     db = SessionLocal()
     try:
-        from app.models.pnpi import AgrementTechniqueIndustrielORM, ATIReminderORM
         import uuid
+
+        from app.models.pnpi import AgrementTechniqueIndustrielORM, ATIReminderORM
 
         now = now_utc()
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -197,14 +221,16 @@ def task_generate_reminders():
                     ).scalar_one_or_none()
                     if not existing:
                         recipient = getattr(ati, "instructeur_username", None) or "admin"
-                        db.add(ATIReminderORM(
-                            id=str(uuid.uuid4()),
-                            ati_id=ati.id,
-                            type=rtype,
-                            recipient_username=recipient,
-                            message=msg,
-                            scheduled_at=now,
-                        ))
+                        db.add(
+                            ATIReminderORM(
+                                id=str(uuid.uuid4()),
+                                ati_id=ati.id,
+                                type=rtype,
+                                recipient_username=recipient,
+                                message=msg,
+                                scheduled_at=now,
+                            )
+                        )
                         created += 1
 
             # --- Renouvellement (ATI approuve) ---
@@ -216,7 +242,10 @@ def task_generate_reminders():
                 elif days_left <= 30:
                     rtype, msg = "renewal_30", f"A renouveler : ATI {ati.numero_ati} expire dans {days_left}j."
                 elif days_left <= 60:
-                    rtype, msg = "renewal_60", f"Preparer renouvellement : ATI {ati.numero_ati} expire dans {days_left}j."
+                    rtype, msg = (
+                        "renewal_60",
+                        f"Preparer renouvellement : ATI {ati.numero_ati} expire dans {days_left}j.",
+                    )
                 elif days_left <= 90:
                     rtype, msg = "renewal_90", f"A anticiper : ATI {ati.numero_ati} expire dans {days_left}j."
 
@@ -229,18 +258,23 @@ def task_generate_reminders():
                     ).scalar_one_or_none()
                     if not existing:
                         recipients = set()
-                        if ati.instructeur_username: recipients.add(ati.instructeur_username)
-                        if ati.created_by: recipients.add(ati.created_by)
-                        if not recipients: recipients.add("admin")
+                        if ati.instructeur_username:
+                            recipients.add(ati.instructeur_username)
+                        if ati.created_by:
+                            recipients.add(ati.created_by)
+                        if not recipients:
+                            recipients.add("admin")
                         for r in recipients:
-                            db.add(ATIReminderORM(
-                                id=str(uuid.uuid4()),
-                                ati_id=ati.id,
-                                type=rtype,
-                                recipient_username=r,
-                                message=msg,
-                                scheduled_at=now,
-                            ))
+                            db.add(
+                                ATIReminderORM(
+                                    id=str(uuid.uuid4()),
+                                    ati_id=ati.id,
+                                    type=rtype,
+                                    recipient_username=r,
+                                    message=msg,
+                                    scheduled_at=now,
+                                )
+                            )
                             created += 1
 
         db.commit()

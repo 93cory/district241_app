@@ -1,5 +1,7 @@
 """Tests for the in-memory cache module."""
+
 import pytest
+
 from app.core.cache import _InMemoryCache
 
 
@@ -45,6 +47,7 @@ async def test_expired_key(mem_cache):
     await mem_cache.set("expiring", "value", ttl=0)
     # TTL=0 means expires_at = time.time() + 0 = now, so immediate expiry
     import time
+
     time.sleep(0.01)
     result = await mem_cache.get("expiring")
     assert result is None

@@ -5809,3 +5809,213 @@ textarea:focus-visible {
     height: 320px;
   }
 }
+
+/* ============================================================ */
+/* == LOT 79 — POLISH MOBILE RESPONSIVE GLOBAL                   */
+/* == Cible : iPhone SE (375px) -> iPad mini (768px)            */
+/* == Strategie : reduit padding du shell, force grilles 1col,  */
+/* == typographie mesuree, tables defilantes proprement.         */
+/* ============================================================ */
+
+@media (max-width: 720px) {
+  /* Shell : on libere de l'espace horizontal */
+  .page-shell {
+    padding: 0 0.75rem 1.5rem;
+  }
+
+  .page-shell > header[role="banner"] {
+    margin: 0 -0.75rem 1rem;
+  }
+
+  .top-nav {
+    padding: 0.55rem 0.75rem;
+  }
+
+  .nav-brand span {
+    font-size: 0.95rem;
+  }
+
+  /* Typographie titres : on calme les Playfair sur smartphone */
+  h1 {
+    font-size: 1.45rem !important;
+    line-height: 1.2;
+  }
+  h2 {
+    font-size: 1.2rem !important;
+    line-height: 1.25;
+  }
+  .section h2 {
+    font-size: 1.2rem;
+  }
+
+  /* Cartes institutionnelles : reduit padding interne */
+  .chart-card,
+  .table-card,
+  .map-card {
+    padding: 1rem 1rem;
+    border-radius: 12px;
+  }
+
+  /* Grilles horizontales -> empilement vertical */
+  .hero-grid,
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  /* Footer / breadcrumbs : tassement */
+  .breadcrumbs {
+    font-size: 0.78rem;
+  }
+
+  /* Tables : container avec scroll horizontal + indication tactile */
+  .annex-table,
+  .table-scroll table,
+  .chart-card table,
+  .table-card table {
+    font-size: 0.78rem;
+  }
+
+  .annex-table th,
+  .annex-table td {
+    padding: 0.5rem 0.5rem;
+  }
+
+  /* Wrap forcé pour les containers de tables défilantes */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* KPI cards et grilles inline (patterns inline-style frequents
+     dans guichet, inspecteur, profil) */
+  .pnpi-mini-kpis {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .pnpi-page-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .pnpi-page-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .pnpi-page-actions .export-link {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Pagination : empilement */
+  .pnpi-pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+  .pnpi-pagination-ctrls {
+    justify-content: space-between;
+  }
+
+  /* Briefing audio button : pleine largeur */
+  .briefing-audio-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Tablette portrait : on conserve 2 colonnes mais on aere */
+@media (min-width: 721px) and (max-width: 960px) {
+  .page-shell {
+    padding: 0 1.25rem 2rem;
+  }
+
+  .page-shell > header[role="banner"] {
+    margin: 0 -1.25rem 1.25rem;
+  }
+
+  .top-nav {
+    padding: 0.65rem 1.25rem;
+  }
+}
+
+/* ============================================================ */
+/* == LOT 79 — DARK MODE COMPLEMENT                              */
+/* == Couvre les cards inline (#fff hardcoded), badges, banners  */
+/* == des pages inspecteur / profil / open-data / guichet        */
+/* ============================================================ */
+
+html[data-theme="dark"] .table-card {
+  background: var(--bg-layer);
+  border-color: var(--line);
+  color: var(--text-main);
+}
+
+/* Annule les inline backgrounds blancs (.chart-card couvre deja) */
+html[data-theme="dark"] .chart-card[style],
+html[data-theme="dark"] .table-card[style],
+html[data-theme="dark"] .map-card[style] {
+  background: var(--bg-layer) !important;
+}
+
+/* Ligne de separation des items inline dans /admin et /open-data */
+html[data-theme="dark"] [style*="border-bottom: 1px solid #eef1f5"],
+html[data-theme="dark"] [style*="border-bottom: 1px solid #f3f4f6"],
+html[data-theme="dark"] [style*="borderBottom: 1px solid #eef1f5"],
+html[data-theme="dark"] [style*="border-bottom:1px solid #eef1f5"] {
+  border-bottom-color: var(--line) !important;
+}
+
+/* Texte gris clair (Tailwind-like) sur fond sombre = illisible */
+html[data-theme="dark"] [style*="color: #6b7280"],
+html[data-theme="dark"] [style*="color:#6b7280"],
+html[data-theme="dark"] [style*="color: #6c7a8c"],
+html[data-theme="dark"] [style*="color: #3a4351"],
+html[data-theme="dark"] [style*="color: #374151"] {
+  color: var(--text-soft) !important;
+}
+
+/* Hero inspecteur : conserve son gradient vert/encre, juste forcer
+   le contraste des sous-cartes (rgba blanche -> verre sombre) */
+html[data-theme="dark"] [style*="rgba(255, 255, 255, 0.72)"],
+html[data-theme="dark"] [style*="rgba(255,255,255,0.72)"] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-main);
+}
+
+/* Surlignage des ATI en retard (#fef9eb) -> ambre tres sombre */
+html[data-theme="dark"] tr[style*="#fef9eb"] {
+  background: rgba(217, 119, 6, 0.18) !important;
+}
+
+/* Selection rgba bleue dans table ATI : on amplifie en sombre */
+html[data-theme="dark"] tr[style*="rgba(0,63,143,0.06)"] {
+  background: rgba(74, 144, 226, 0.18) !important;
+}
+
+/* Pills mini-kpi : translucides en sombre */
+html[data-theme="dark"] .pnpi-mini-kpi {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--line);
+}
+
+/* Footer institutionnel */
+html[data-theme="dark"] footer,
+html[data-theme="dark"] .footer-institutional {
+  background: var(--bg-layer);
+  color: var(--text-soft);
+  border-top-color: var(--line);
+}
+
+/* Skeleton shimmer : adapte le degrade au sombre */
+html[data-theme="dark"] [style*="linear-gradient(90deg, #e8edf2"],
+html[data-theme="dark"] .skeleton-line {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  ) !important;
+  background-size: 200% 100% !important;
+}

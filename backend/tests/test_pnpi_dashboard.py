@@ -1,4 +1,5 @@
 import pytest
+
 """Tests for PNPI dashboard endpoints."""
 
 from fastapi.testclient import TestClient
@@ -19,6 +20,7 @@ def auth_headers(username: str, password: str) -> dict[str, str]:
 # KPIs
 # ---------------------------------------------------------------------------
 
+
 def test_dashboard_kpis_returns_expected_keys() -> None:
     """KPIs endpoint returns a dict with high-level indicator keys."""
     headers = auth_headers("ministre", "ministre-dev-password")
@@ -35,6 +37,7 @@ def test_dashboard_kpis_returns_expected_keys() -> None:
 # Carte (map data)
 # ---------------------------------------------------------------------------
 
+
 def test_dashboard_carte_returns_geo_points() -> None:
     """Carte endpoint returns a list of geo-located items."""
     headers = auth_headers("ministre", "ministre-dev-password")
@@ -50,6 +53,7 @@ def test_dashboard_carte_returns_geo_points() -> None:
 # ---------------------------------------------------------------------------
 # Secteurs / Provinces / Pipeline / Tendances
 # ---------------------------------------------------------------------------
+
 
 def test_dashboard_secteurs() -> None:
     headers = auth_headers("ministre", "ministre-dev-password")
@@ -83,6 +87,7 @@ def test_dashboard_tendances() -> None:
 # Recents (recent activity)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.skip(reason="dashboard/recents 422 query param - lot 68")
 def test_dashboard_recents() -> None:
     """Dashboard should expose a recents / activity feed endpoint."""
@@ -95,6 +100,7 @@ def test_dashboard_recents() -> None:
 # ---------------------------------------------------------------------------
 # Health
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.skip(reason="dashboard/health auth requirement a clarifier - lot 68")
 def test_dashboard_health() -> None:
@@ -109,6 +115,7 @@ def test_dashboard_health() -> None:
 # Export recap PDF
 # ---------------------------------------------------------------------------
 
+
 def test_export_recap_pdf() -> None:
     """Dashboard PDF export returns a valid PDF."""
     headers = auth_headers("ministre", "ministre-dev-password")
@@ -121,6 +128,7 @@ def test_export_recap_pdf() -> None:
 # ---------------------------------------------------------------------------
 # Role-based access control
 # ---------------------------------------------------------------------------
+
 
 def test_operateur_cannot_access_dashboard() -> None:
     """Operateur role must not be allowed to access dashboard KPIs (403)."""

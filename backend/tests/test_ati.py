@@ -1,4 +1,5 @@
 import pytest
+
 """Tests for ATI (Agrement Technique Industriel) endpoints."""
 
 import uuid
@@ -56,6 +57,7 @@ def _create_ati(headers: dict[str, str], operateur_id: str) -> dict:
 # CRUD
 # ---------------------------------------------------------------------------
 
+
 def test_create_ati() -> None:
     """Instructeur can create an ATI after creating an operateur."""
     headers = auth_headers("instructeur", "instructeur-dev-password")
@@ -92,6 +94,7 @@ def test_get_ati_detail() -> None:
 # ---------------------------------------------------------------------------
 # Status transitions
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.skip(reason="transition statut payload a ajuster - lot 68")
 def test_update_ati_statut() -> None:
@@ -130,6 +133,7 @@ def test_operateur_cannot_update_ati_statut() -> None:
 # ---------------------------------------------------------------------------
 # Search
 # ---------------------------------------------------------------------------
+
 
 def test_ati_search() -> None:
     """Search endpoint can find ATIs by keyword."""
