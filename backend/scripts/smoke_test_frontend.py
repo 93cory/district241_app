@@ -146,12 +146,18 @@ def main() -> int:
 
             for path in cfg["routes"]:
                 total += 1
-                try:
-                    r = client.get(f"{FRONTEND}{path}", timeout=15.0)
-                    status = r.status_code
-                except Exception as e:
-                    status = 0
-                    print(f"  [FAIL] {path:34s} -> EXC {e}")
+                # 2 tentatives : Next.js dev compile a froid au 1er hit (lent).
+                status = 0
+                last_exc: Exception | None = None
+                for attempt in range(2):
+                    try:
+                        r = client.get(f"{FRONTEND}{path}", timeout=30.0)
+                        status = r.status_code
+                        break
+                    except Exception as e:
+                        last_exc = e
+                if status == 0:
+                    print(f"  [FAIL] {path:34s} -> EXC {last_exc}")
                     fails += 1
                     continue
                 # 200 OK ; 307/308 = redirect, mais vers /connexion = auth perdue.
