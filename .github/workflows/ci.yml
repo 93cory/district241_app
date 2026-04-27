@@ -63,7 +63,8 @@ jobs:
     needs: [backend, frontend]
     services:
       postgres:
-        image: postgres:16
+        # PostGIS requis pour la migration 20260321_07 (geometry, ST_SetSRID).
+        image: postgis/postgis:16-3.4
         env:
           POSTGRES_USER: pnpi
           POSTGRES_PASSWORD: pnpi

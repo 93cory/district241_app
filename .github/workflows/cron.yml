@@ -1,13 +1,14 @@
 name: PNPI Cron
 
+# Le workflow s'arme automatiquement quand la variable de repo
+# PNPI_PROD_READY=true est definie ET que les secrets sont presents.
+# Tant que ce n'est pas le cas, les declenchements automatiques (schedule)
+# sont ignores au niveau du job pour eviter les faux echecs.
 on:
   schedule:
-    # Toutes les heures : SLA + rappels d'expiration
-    - cron: "5 * * * *"
-    # Tous les jours a 03:00 UTC : nettoyage
-    - cron: "0 3 * * *"
-    # Tous les lundis a 06:00 UTC : rapport hebdomadaire
-    - cron: "0 6 * * 1"
+    - cron: "5 * * * *"   # SLA + rappels (horaire)
+    - cron: "0 3 * * *"   # cleanup (quotidien)
+    - cron: "0 6 * * 1"   # rapport hebdo
   workflow_dispatch:
     inputs:
       task:
@@ -30,6 +31,10 @@ concurrency:
 jobs:
   cron:
     runs-on: ubuntu-latest
+    # Tant que la variable PNPI_PROD_READY n'est pas a 'true', le job est
+    # ignore sur les declenchements schedule (evite les echecs en pre-prod).
+    # workflow_dispatch declenche toujours (utilisateur explicit).
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.PNPI_PROD_READY == 'true' }}
     defaults:
       run:
         working-directory: backend
@@ -43,35 +48,21 @@ jobs:
       PNPI_SMTP_PASSWORD: ${{ secrets.PNPI_SMTP_PASSWORD }}
       PNPI_SMTP_FROM: ${{ secrets.PNPI_SMTP_FROM }}
     steps:
-      - name: Skip si secrets non configures
-        id: gate
-        run: |
-          if [ -z "${{ secrets.PNPI_DATABASE_URL }}" ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::PNPI_DATABASE_URL non configure, job ignore (mode pre-prod)."
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - uses: actions/checkout@v4
-        if: steps.gate.outputs.skip != 'true'
 
       - uses: actions/setup-python@v5
-        if: steps.gate.outputs.skip != 'true'
         with:
           python-version: "3.12"
           cache: "pip"
           cache-dependency-path: backend/requirements.txt
 
       - name: Install backend deps
-        if: steps.gate.outputs.skip != 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Determiner la tache
         id: task
-        if: steps.gate.outputs.skip != 'true'
         run: |
           if [ -n "${{ github.event.inputs.task }}" ]; then
             echo "name=${{ github.event.inputs.task }}" >> "$GITHUB_OUTPUT"
@@ -86,7 +77,6 @@ jobs:
           fi
 
       - name: Executer la tache
-        if: steps.gate.outputs.skip != 'true'
         run: |
           case "${{ steps.task.outputs.name }}" in
             sla-check-and-reminders)
@@ -97,8 +87,3 @@ jobs:
               python scripts/cron_tasks.py "${{ steps.task.outputs.name }}"
               ;;
           esac
-
-      - name: Notifier echec
-        if: failure() && steps.gate.outputs.skip != 'true'
-        run: |
-          echo "::error::Cron task ${{ steps.task.outputs.name }} a echoue."
