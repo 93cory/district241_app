@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Charte graphique PNPI · v1.0</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800;900&display=swap" />
+<style>
+  :root { --green: #009E60; --yellow: #FCD116; --blue: #003DA5; --ink: #051B36; --soft: #526175; --line: #E2DDD2; --paper: #FAF8F4; --cream: #F4F1EA; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Inter", system-ui, sans-serif; color: var(--ink); background: var(--paper); line-height: 1.65; font-size: 15px; }
+  .page { max-width: 920px; margin: 0 auto; padding: 60px 48px; }
+  .flag-bar { display: flex; height: 4px; margin-bottom: 30px; }
+  .flag-bar span { flex: 1; }
+  .flag-bar span:nth-child(1) { background: var(--green); }
+  .flag-bar span:nth-child(2) { background: var(--yellow); }
+  .flag-bar span:nth-child(3) { background: var(--blue); }
+  .meta { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--soft); margin-bottom: 14px; }
+  h1 { font-family: "Playfair Display", serif; font-size: 44px; font-weight: 800; letter-spacing: -0.015em; margin-bottom: 18px; }
+  h2 { font-family: "Playfair Display", serif; font-size: 28px; font-weight: 700; margin: 56px 0 22px; padding-bottom: 10px; border-bottom: 2px solid var(--green); }
+  h3 { font-size: 18px; font-weight: 700; margin: 28px 0 12px; }
+  p, li { font-size: 15px; line-height: 1.7; margin: 10px 0; }
+  ul { padding-left: 24px; }
+  code { font-family: "JetBrains Mono", monospace; background: var(--cream); padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+  .footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 11px; color: var(--soft); text-align: center; letter-spacing: 0.04em; }
+
+  .palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 18px; }
+  .swatch { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+  .swatch-color { height: 120px; }
+  .swatch-info { padding: 14px 16px; font-size: 12px; line-height: 1.55; }
+  .swatch-info strong { display: block; font-size: 14px; margin-bottom: 4px; color: var(--ink); }
+  .swatch-info code { display: inline-block; margin-top: 4px; font-size: 11px; }
+
+  .typo { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 18px; }
+  .typo-card { background: #fff; padding: 24px; border-radius: 12px; border: 1px solid var(--line); }
+  .typo-card .name { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--soft); margin-bottom: 8px; }
+  .typo-card .sample { font-size: 32px; line-height: 1.1; margin-bottom: 12px; }
+  .typo-card .info { font-size: 13px; color: var(--soft); }
+
+  .logo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 18px; }
+  .logo-block { background: #fff; padding: 32px; border-radius: 12px; border: 1px solid var(--line); text-align: center; }
+  .logo-block.dark { background: var(--ink); color: #fff; }
+  .logo-block .label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--soft); margin-top: 14px; }
+  .logo-block.dark .label { color: rgba(255,255,255,0.6); }
+
+  .rule { background: rgba(0, 158, 96, 0.06); border-left: 4px solid var(--green); padding: 14px 18px; margin: 14px 0; border-radius: 6px; font-size: 14px; }
+  .rule.no { background: rgba(180, 35, 24, 0.06); border-left-color: #b42318; }
+  .rule strong { display: block; font-weight: 700; margin-bottom: 4px; }
+
+  .tokens { background: #fff; border-radius: 12px; padding: 20px 24px; border: 1px solid var(--line); margin-top: 14px; }
+  .tokens-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .tokens-row:last-child { border-bottom: none; }
+  .tokens-row code { font-size: 12px; }
+
+  @page { size: A4; margin: 18mm 16mm; }
+  @media print { body { background: #fff; } .page { padding: 0; } h2 { page-break-after: avoid; } .swatch, .typo-card, .logo-block, .tokens { page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="page">
+<div class="flag-bar"><span></span><span></span><span></span></div>
+<div class="meta">Charte graphique · v1.0 · Avril 2026</div>
+<h1>Charte graphique PNPI</h1>
+<p style="font-size: 17px; color: var(--soft); max-width: 720px;">Règles d'usage de l'identité visuelle de la Plateforme Nationale de Pilotage Industriel — couleurs, polices, logo, principes typographiques.</p>
+
+<h2>1. Palette de couleurs</h2>
+<p>L'identité visuelle PNPI s'inspire directement du <strong>drapeau de la République Gabonaise</strong> (vert, jaune, bleu) et y ajoute trois couleurs neutres pour la mise en page.</p>
+
+<h3>Couleurs primaires (drapeau)</h3>
+<div class="palette">
+  <div class="swatch">
+    <div class="swatch-color" style="background:#009E60"></div>
+    <div class="swatch-info"><strong>Vert Gabon</strong>Forêt, fertilité, espoir.<br/><code>#009E60</code> · RGB(0,158,96)</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#FCD116"></div>
+    <div class="swatch-info"><strong>Jaune Gabon</strong>Soleil équatorial, générosité civique.<br/><code>#FCD116</code> · RGB(252,209,22)</div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#003DA5"></div>
+    <div class="swatch-info"><strong>Bleu Gabon</strong>Atlantique, souveraineté.<br/><code>#003DA5</code> · RGB(0,61,165)</div>
+  </div>
+</div>
+
+<h3>Couleurs neutres</h3>
+<div class="palette">
+  <div class="swatch">
+    <div class="swatch-color" style="background:#051B36"></div>
+    <div class="swatch-info"><strong>Encre profonde</strong>Texte principal, en-têtes.<br/><code>#051B36</code></div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#526175"></div>
+    <div class="swatch-info"><strong>Encre douce</strong>Texte secondaire, légendes.<br/><code>#526175</code></div>
+  </div>
+  <div class="swatch">
+    <div class="swatch-color" style="background:#FAF8F4;border:1px solid var(--line)"></div>
+    <div class="swatch-info"><strong>Papier</strong>Fond principal des documents.<br/><code>#FAF8F4</code></div>
+  </div>
+</div>
+
+<h3>Couleurs sémantiques (états)</h3>
+<div class="palette">
+  <div class="swatch"><div class="swatch-color" style="background:#10b981"></div><div class="swatch-info"><strong>Succès</strong> · Approuvé, OK<br/><code>#10b981</code></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#d97706"></div><div class="swatch-info"><strong>Attention</strong> · SLA en cours<br/><code>#d97706</code></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#b42318"></div><div class="swatch-info"><strong>Erreur</strong> · Rejeté, dépassement<br/><code>#b42318</code></div></div>
+  <div class="swatch"><div class="swatch-color" style="background:#0c7eb4"></div><div class="swatch-info"><strong>Info</strong> · Notifications, liens<br/><code>#0c7eb4</code></div></div>
+</div>
+
+<h3>Règles d'usage</h3>
+<div class="rule"><strong>OUI</strong>Bandeau drapeau (3 bandes) en en-tête de tout document officiel. Vert pour les actions positives, jaune pour les distinctions, bleu pour les informations institutionnelles.</div>
+<div class="rule no"><strong>NON</strong>Ne pas mélanger les 3 couleurs primaires sur un même bouton ou élément. Ne jamais utiliser le jaune pour du texte fin (contraste insuffisant). Ne pas inverser l'ordre des bandes du drapeau.</div>
+
+<h2>2. Typographie</h2>
+
+<div class="typo">
+  <div class="typo-card">
+    <div class="name">Titres · Display</div>
+    <div class="sample" style="font-family: 'Playfair Display', serif; font-weight: 800;">Playfair Display</div>
+    <div class="info">Gras 700-900 · Titres de pages, hero, KPI cards.<br/>Letter-spacing: -0.015em.</div>
+  </div>
+  <div class="typo-card">
+    <div class="name">Italiques · Accent</div>
+    <div class="sample" style="font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600;">Cormorant Garamond</div>
+    <div class="info">Italiques uniquement · Citations, sous-titres expressifs, mots accent.</div>
+  </div>
+  <div class="typo-card">
+    <div class="name">Corps · Sans-serif</div>
+    <div class="sample" style="font-family: 'Inter', sans-serif; font-weight: 500;">Inter</div>
+    <div class="info">300, 400, 500, 600, 700 · Texte courant, UI, navigation, formulaires.</div>
+  </div>
+  <div class="typo-card">
+    <div class="name">Code · Monospace</div>
+    <div class="sample" style="font-family: 'JetBrains Mono', monospace; font-size: 24px;">JetBrains Mono</div>
+    <div class="info">Réservé aux blocs de code, identifiants techniques, valeurs d'API.</div>
+  </div>
+</div>
+
+<h3>Hiérarchie typographique</h3>
+<div class="tokens">
+  <div class="tokens-row"><span>H1 · Hero</span><code>Playfair Display 800 · 48-72px</code></div>
+  <div class="tokens-row"><span>H2 · Section</span><code>Playfair Display 700 · 32-44px</code></div>
+  <div class="tokens-row"><span>H3 · Sous-section</span><code>Inter 700 · 18-22px</code></div>
+  <div class="tokens-row"><span>Corps</span><code>Inter 400 · 15px · line-height 1.65</code></div>
+  <div class="tokens-row"><span>Légende / meta</span><code>Inter 500 · 11-13px · letter-spacing 0.06em</code></div>
+  <div class="tokens-row"><span>Citation</span><code>Cormorant Garamond italic · 18-26px</code></div>
+</div>
+
+<h2>3. Logo et symbole</h2>
+
+<div class="logo-grid">
+  <div class="logo-block">
+    <img src="../frontend/public/pnpi-logo.svg" alt="Logo PNPI complet" width="160" height="160" style="margin: 0 auto;" />
+    <div class="label">Logo complet · sur fond clair</div>
+  </div>
+  <div class="logo-block dark">
+    <img src="../frontend/public/pnpi-logo-mark.svg" alt="Symbole PNPI" width="120" height="120" style="margin: 0 auto;" />
+    <div class="label">Symbole seul · sur fond foncé</div>
+  </div>
+</div>
+
+<h3>Construction</h3>
+<ul>
+  <li><strong>Disque doré</strong> : générosité civique, soleil équatorial, valeur transmise à l'État.</li>
+  <li><strong>Pilier central</strong> : le mât industriel, la colonne de l'agrément ATI, l'ascendance vers l'excellence.</li>
+  <li><strong>Étoile sommitale</strong> : excellence, distinction officielle, étoile gabonaise.</li>
+  <li><strong>Engrenages</strong> : pilotage industriel, mécanique du service public.</li>
+  <li><strong>Socle tricolore</strong> : ancrage dans la République Gabonaise.</li>
+</ul>
+
+<h3>Règles d'usage</h3>
+<div class="rule"><strong>Espace de protection</strong>Réserver autour du logo un espace équivalent à 1/4 du diamètre du disque doré. Aucun élément graphique ne doit empiéter dans cet espace.</div>
+<div class="rule"><strong>Tailles minimales</strong>Logo complet : 80×80 px en numérique, 25 mm en imprimé. Symbole seul : 24×24 px en numérique, 8 mm en imprimé.</div>
+<div class="rule no"><strong>Interdits</strong>Ne pas modifier les couleurs du logo. Ne pas écraser ou étirer les proportions. Ne pas ajouter d'effets (ombres, halos, gradients alternatifs). Ne pas placer sur un fond qui réduit la lisibilité.</div>
+
+<h2>4. Tons et écriture</h2>
+<ul>
+  <li><strong>Sobre, institutionnel, factuel.</strong> Le ton est celui d'une administration moderne, pas d'une startup.</li>
+  <li><strong>Citoyen au cœur.</strong> Le destinataire est un agent public ou un opérateur — clarté avant rhétorique.</li>
+  <li><strong>Verbes d'action en majuscules courtes</strong> dans les CTA : « Soumettre », « Valider », « Approuver », « Vérifier ».</li>
+  <li><strong>Pas de superlatifs commerciaux</strong> (« exceptionnel », « révolutionnaire »). On dit ce qui est, pas ce qu'on voudrait être.</li>
+  <li><strong>Accents toujours respectés.</strong> Pas d'« etat » ou « operateur » sans accents. Le français de la République Gabonaise.</li>
+  <li><strong>Guillemets français</strong> « … » avec espaces insécables.</li>
+  <li><strong>Jamais de tirets cadratin (—)</strong> comme séparateurs : préférer le point médian ( · ) ou les virgules.</li>
+</ul>
+
+<h2>5. Iconographie</h2>
+<ul>
+  <li><strong>Style trait fin uniforme</strong>, 1.5 px d'épaisseur sur un viewBox 24×24.</li>
+  <li><strong>Couleur</strong> : encre profonde (#051B36) sur fond clair, blanc sur fond foncé. Couleur primaire uniquement pour souligner une action.</li>
+  <li><strong>Pas d'émojis</strong> dans l'interface utilisateur officielle. Les indicateurs de statut utilisent des badges textuels colorés.</li>
+  <li>Source recommandée : Lucide Icons ou Heroicons (cohérence trait fin).</li>
+</ul>
+
+<h2>6. Application aux supports</h2>
+
+<h3>Documents officiels (PDF, courriers)</h3>
+<ul>
+  <li>En-tête : bandeau drapeau (4 px) + emblème République + nom complet du Ministère.</li>
+  <li>Pied de page : devise « Union · Travail · Justice » en italique Cormorant + numéro de version.</li>
+  <li>Marges A4 : 18 mm haut/bas, 16 mm gauche/droite.</li>
+</ul>
+
+<h3>Interface web</h3>
+<ul>
+  <li>Conteneur principal : largeur max 1100-1200 px, padding latéral 24-32 px.</li>
+  <li>Cards : <code>border-radius: 12-16px</code>, <code>box-shadow: 0 4px 16px rgba(0,0,0,0.05)</code>, <code>border: 1px solid #e2e8f0</code>.</li>
+  <li>Boutons primaires : fond <code>#009E60</code>, texte blanc, padding 12-14 px vertical, border-radius 8-12 px.</li>
+  <li>Focus visible : outline 2 px solide jaune (<code>#FCD116</code>) avec offset 2 px.</li>
+</ul>
+
+<h3>Vidéo et présentations</h3>
+<ul>
+  <li>Format 16:9 · 1920×1080 minimum.</li>
+  <li>Polices identiques (Playfair, Inter, Cormorant) embarquées ou rendues à plat.</li>
+  <li>Bandeau drapeau d'ouverture obligatoire dans toute production officielle.</li>
+</ul>
+
+<div class="footer">Charte graphique PNPI · v1.0 · Avril 2026 · Document interne · Toute reproduction soumise à autorisation du Ministère de l'Industrie et de la Transformation Locale</div>
+</div>
+</body>
+</html>

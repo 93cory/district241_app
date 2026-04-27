@@ -32,7 +32,13 @@ import "./globals.css";
 export const metadata = {
   title: "PNPI | Plateforme Nationale de Pilotage Industriel",
   description: "Ministere de l'Industrie du Gabon · Plateforme Nationale de Pilotage Industriel.",
-  icons: { icon: "/pnpi_logo.png" },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/pnpi_logo.png", sizes: "32x32" },
+    ],
+    apple: "/pnpi-logo-mark.svg",
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -54,7 +60,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="fr" data-theme="light">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/pnpi_logo.png" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="apple-touch-icon" href="/pnpi-logo-mark.svg" />
         <meta name="theme-color" content="#1E3A8A" />
         <meta name="color-scheme" content="light" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -70,11 +77,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <nav className="top-nav" aria-label="Navigation principale">
               <Link href={homeHref} className="nav-brand" aria-label="Accueil PNPI">
                 <Image
-                  src="/pnpi_logo.png"
+                  src="/pnpi-logo-mark.svg"
                   alt="PNPI"
-                  width={32}
-                  height={32}
-                  style={{ borderRadius: 6 }}
+                  width={36}
+                  height={36}
+                  style={{ borderRadius: 8 }}
                 />
                 <span>PNPI</span>
               </Link>

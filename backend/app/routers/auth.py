@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 import uuid
 
 import pyotp
@@ -26,6 +27,7 @@ from ..core.auth import (
     verify_password,
 )
 from ..core.badges import compute_badges
+from ..core.cache import cache
 from ..core.digest import generate_daily_digest
 from ..database import as_utc, get_db, now_utc
 from ..models.core import LoginHistoryORM, RefreshTokenORM, UserAccountORM
@@ -46,18 +48,79 @@ def get_client_ip(request: Request) -> str:
 router = APIRouter(tags=["Authentification"])
 
 
+CAPTCHA_THRESHOLD = 3  # captcha requis apres N echecs depuis la meme IP en 10 min
+CAPTCHA_TTL = 300
+
+
+async def _ip_failure_count(client_ip: str) -> int:
+    return int(await cache.get(f"login:fail:{client_ip}") or 0)
+
+
+async def _bump_ip_failure(client_ip: str) -> None:
+    n = await _ip_failure_count(client_ip)
+    await cache.set(f"login:fail:{client_ip}", n + 1, ttl=600)
+
+
+async def _reset_ip_failure(client_ip: str) -> None:
+    await cache.delete(f"login:fail:{client_ip}")
+
+
+@router.get("/auth/captcha", summary="Genere un challenge captcha si requis pour cette IP")
+async def get_captcha(request: Request) -> dict:
+    """Retourne un challenge mathematique simple si l'IP est marquee suspecte."""
+    client_ip = get_client_ip(request)
+    needed = await _ip_failure_count(client_ip) >= CAPTCHA_THRESHOLD
+    if not needed:
+        return {"required": False}
+
+    a = secrets.randbelow(9) + 1
+    b = secrets.randbelow(9) + 1
+    token = secrets.token_urlsafe(16)
+    await cache.set(f"captcha:{token}", a + b, ttl=CAPTCHA_TTL)
+    return {
+        "required": True,
+        "token": token,
+        "question": f"Combien font {a} + {b} ?",
+        "expires_in": CAPTCHA_TTL,
+    }
+
+
+async def _verify_captcha_if_required(client_ip: str, token: str | None, answer: str | None) -> None:
+    if await _ip_failure_count(client_ip) < CAPTCHA_THRESHOLD:
+        return  # pas requis
+    if not token or not answer:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Captcha requis. Veuillez resoudre le challenge avant de reessayer.",
+        )
+    expected = await cache.get(f"captcha:{token}")
+    if expected is None:
+        raise HTTPException(status_code=400, detail="Captcha expire. Demandez un nouveau challenge.")
+    try:
+        if int(answer.strip()) != int(expected):
+            raise ValueError
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Captcha incorrect.")
+    await cache.delete(f"captcha:{token}")  # one-shot
+
+
 @router.post("/auth/token")
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
+    captcha_token: str | None = Form(None),
+    captcha_answer: str | None = Form(None),
     db: Session = Depends(get_db),
 ):
     from ..main import AUTH_RATE_LIMIT_MAX_REQUESTS, enforce_rate_limit, log_action
 
     client_ip = get_client_ip(request)
     await enforce_rate_limit(key=f"auth:token:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+    await _verify_captcha_if_required(client_ip, captcha_token, captcha_answer)
+
     user, error_detail = authenticate_user(db, form_data.username, form_data.password)
     if not user:
+        await _bump_ip_failure(client_ip)
         failed_record = LoginHistoryORM(
             id=str(uuid.uuid4()),
             username=form_data.username,
@@ -73,6 +136,8 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=error_detail or "Identifiants invalides.",
         )
+
+    await _reset_ip_failure(client_ip)
 
     # Check if user has 2FA enabled · if so, require TOTP verification
     row = db.get(UserAccountORM, user.username)

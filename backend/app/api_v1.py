@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from .routers.admin import router as admin_router
 from .routers.announcements import router as announcements_router
+from .routers.appeals import router as appeals_router
 from .routers.ati import router as ati_router
 from .routers.auth import router as auth_router
 from .routers.calendar import router as calendar_router
@@ -53,6 +54,7 @@ _all_routers = [
     exports_router,
     pnpi_dashboard_router,
     ati_router,
+    appeals_router,
     operateurs_router,
     inspections_router,
     notifications_router,

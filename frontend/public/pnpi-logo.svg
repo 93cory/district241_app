@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Logo PNPI - Plateforme Nationale de Pilotage Industriel">
+  <title>Plateforme Nationale de Pilotage Industriel</title>
+  <defs>
+    <linearGradient id="pnpiGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FCD116"/>
+      <stop offset="100%" stop-color="#d9a91a"/>
+    </linearGradient>
+    <linearGradient id="pnpiInk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#003DA5"/>
+      <stop offset="100%" stop-color="#051B36"/>
+    </linearGradient>
+    <filter id="pnpiSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Disque doré (générosité civique, soleil gabonais) -->
+  <circle cx="120" cy="120" r="108" fill="url(#pnpiGold)" filter="url(#pnpiSoft)"/>
+
+  <!-- Anneau bleu (souveraineté) -->
+  <circle cx="120" cy="120" r="108" fill="none" stroke="url(#pnpiInk)" stroke-width="3" opacity="0.85"/>
+  <circle cx="120" cy="120" r="98" fill="none" stroke="#051B36" stroke-width="1.5" opacity="0.35"/>
+
+  <!-- Tour industrielle (cheminée stylisée + pilier ATI) -->
+  <g transform="translate(120, 120)">
+    <!-- Base : socle (terre, industrie) -->
+    <rect x="-46" y="42" width="92" height="14" rx="2" fill="#051B36"/>
+    <rect x="-46" y="42" width="30" height="14" rx="2" fill="#009E60"/>
+    <rect x="16" y="42" width="30" height="14" rx="2" fill="#003DA5"/>
+
+    <!-- Pilier central (l'ATI, l'agrément) -->
+    <rect x="-12" y="-44" width="24" height="86" fill="#051B36"/>
+    <rect x="-12" y="-44" width="24" height="6" fill="#009E60"/>
+    <rect x="-12" y="-32" width="24" height="6" fill="#FCD116" opacity="0.4"/>
+
+    <!-- Sommet : étoile (excellence, étoile gabonaise stylisée) -->
+    <polygon points="0,-72 6,-50 -6,-50" fill="#051B36"/>
+    <circle cx="0" cy="-78" r="5" fill="#051B36"/>
+
+    <!-- Engrenages latéraux (pilotage industriel) -->
+    <g transform="translate(-32, 0)">
+      <circle cx="0" cy="0" r="14" fill="#051B36"/>
+      <circle cx="0" cy="0" r="6" fill="url(#pnpiGold)"/>
+      <g fill="#051B36">
+        <rect x="-2" y="-18" width="4" height="6"/>
+        <rect x="-2" y="12" width="4" height="6"/>
+        <rect x="-18" y="-2" width="6" height="4"/>
+        <rect x="12" y="-2" width="6" height="4"/>
+      </g>
+    </g>
+    <g transform="translate(32, 0)">
+      <circle cx="0" cy="0" r="14" fill="#051B36"/>
+      <circle cx="0" cy="0" r="6" fill="url(#pnpiGold)"/>
+      <g fill="#051B36">
+        <rect x="-2" y="-18" width="4" height="6"/>
+        <rect x="-2" y="12" width="4" height="6"/>
+        <rect x="-18" y="-2" width="6" height="4"/>
+        <rect x="12" y="-2" width="6" height="4"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Texte PNPI en bas (lisible même petit) -->
+  <text x="120" y="216" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-weight="900" font-size="22" fill="#051B36" letter-spacing="2">PNPI</text>
+</svg>

@@ -1,42 +1,55 @@
-import dynamic from "next/dynamic";
+import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
-import {
-  fetchBatches,
-  fetchDashboard,
-  fetchDashboardAlerts,
-  fetchFieldReports,
-  fetchForecast,
-  fetchUnits,
-  type DashboardAlert,
-} from "../lib/api";
 import { fetchBackendProfile } from "../lib/backend";
 import { getDefaultRouteForRoles } from "../lib/role-routing";
-import { BatchTable } from "./components/BatchTable";
-import { ExportPanel } from "./components/ExportPanel";
-import { KpiCard } from "./components/KpiCard";
-import { SectorCard } from "./components/SectorCard";
-import { UnitsTable } from "./components/UnitsTable";
 
-const ForecastChart = dynamic(() => import("./components/ForecastChart"), { ssr: false });
-
-const MapSection = dynamic(() => import("./components/MapSection"), { ssr: false });
-
-const normalizeNumber = (value: number) =>
-  value >= 1_000 ? `${(value / 1_000).toFixed(1)}k` : value.toFixed(0);
-
-const severityColor = (severity: string) => {
-  switch (severity.toLowerCase()) {
-    case "critical":
-      return "#b42318";
-    case "high":
-      return "#d92d20";
-    case "medium":
-      return "#f79009";
-    default:
-      return "#1570ef";
-  }
+export const metadata = {
+  title: "PNPI · Plateforme Nationale de Pilotage Industriel · République Gabonaise",
+  description:
+    "L'outil souverain du Ministère de l'Industrie et de la Transformation Locale du Gabon : agréments techniques, inspections, pilotage stratégique.",
 };
+
+const STATS = [
+  { value: "50%", label: "Délai de traitement réduit" },
+  { value: "9", label: "Provinces couvertes" },
+  { value: "6", label: "Profils utilisateurs" },
+  { value: "100%", label: "Décisions tracées" },
+];
+
+const FEATURES = [
+  {
+    title: "Agréments Techniques Industriels",
+    desc: "Soumission, instruction, validation et décision dématérialisées de bout en bout. SLA tracé, certificats PDF horodatés avec QR code de vérification.",
+    accent: "#009E60",
+  },
+  {
+    title: "Inspections de conformité",
+    desc: "Inspections terrain géolocalisées, photos GPS, rapports automatisés. Mode hors-ligne pour les zones rurales.",
+    accent: "#003DA5",
+  },
+  {
+    title: "Pilotage ministériel",
+    desc: "Tableaux de bord temps réel, briefing audio quotidien, comparatifs entre périodes, prédictions IA, exports PowerPoint.",
+    accent: "#FCD116",
+  },
+  {
+    title: "Open Data publique",
+    desc: "Statistiques agrégées et anonymisées en accès libre, conformes aux principes de transparence des services publics.",
+    accent: "#0c7eb4",
+  },
+  {
+    title: "Souveraineté numérique",
+    desc: "Hébergement souverain (ANINF), code source en séquestre, conformité loi N°026/2017 sur la protection des données.",
+    accent: "#7c3aed",
+  },
+  {
+    title: "Sécurité de niveau étatique",
+    desc: "Authentification forte avec 2FA, audit trail intégral, RBAC sur 6 rôles, k-anonymity sur l'open data.",
+    accent: "#b42318",
+  },
+];
 
 export default async function HomePage() {
   try {
@@ -46,216 +59,204 @@ export default async function HomePage() {
       redirect(defaultRoute);
     }
   } catch {
-    redirect("/connexion");
-  }
-
-  try {
-    const [snapshot, forecast, batches, units, alerts, fieldReports] = await Promise.all([
-      fetchDashboard(),
-      fetchForecast(),
-      fetchBatches(),
-      fetchUnits(),
-      fetchDashboardAlerts(),
-      fetchFieldReports().catch(() => []),
-    ]);
-
-    const baselineVsTarget = [
-      {
-        metric: "Indice national",
-        baseline: `${(snapshot.national_index * 100).toFixed(1)}%`,
-        target: "85%",
-      },
-      {
-        metric: "Emplois industriels",
-        baseline: normalizeNumber(snapshot.jobs_created),
-        target: "5k",
-      },
-      {
-        metric: "Ecart import",
-        baseline: `${normalizeNumber(snapshot.import_gap_tons)} T`,
-        target: "0 T",
-      },
-      {
-        metric: "Lots traces",
-        baseline: normalizeNumber(snapshot.traced_batches),
-        target: "500",
-      },
-    ];
-
-    return (
-      <>
-        <section className="hero-grid">
-          <KpiCard
-            title="Indice national"
-            value={`${(snapshot.national_index * 100).toFixed(0)} %`}
-            detail="Objectif 85 % d'ici 2028"
-          />
-          <KpiCard
-            title="Emplois industrialises"
-            value={normalizeNumber(snapshot.jobs_created)}
-            detail="Multiplication des chaines locales"
-          />
-          <KpiCard
-            title="Ecart import"
-            value={`${normalizeNumber(snapshot.import_gap_tons)} T`}
-            detail="Moins d'imports = plus de valeur locale"
-          />
-          <KpiCard
-            title="Unites actives"
-            value={normalizeNumber(snapshot.active_units)}
-            detail="Capacite industrielle mobilisee"
-          />
-          <KpiCard
-            title="Zones actives"
-            value={normalizeNumber(snapshot.active_zones)}
-            detail="Territoires industriels en activite"
-          />
-          <KpiCard
-            title="Lots traces"
-            value={normalizeNumber(snapshot.traced_batches)}
-            detail="Tracabilite lot par lot"
-          />
-        </section>
-
-        <section className="section">
-          <h2>Pilotage 2026 vs Cible 2028</h2>
-          <p>Lecture directe des ecarts strategiques pour orienter les decisions ministerielles.</p>
-          <div className="cards-grid">
-            {baselineVsTarget.map((entry) => (
-              <div className="chart-card" key={entry.metric}>
-                <p
-                  style={{
-                    margin: 0,
-                    color: "#6c7482",
-                    textTransform: "uppercase",
-                    fontSize: "0.85rem",
-                  }}
-                >
-                  {entry.metric}
-                </p>
-                <div
-                  style={{ marginTop: "0.6rem", display: "flex", justifyContent: "space-between" }}
-                >
-                  <div>
-                    <div style={{ color: "#082251", fontWeight: 700 }}>Baseline 2026</div>
-                    <div style={{ fontSize: "1.25rem" }}>{entry.baseline}</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ color: "#0f6b3f", fontWeight: 700 }}>Cible 2028</div>
-                    <div style={{ fontSize: "1.25rem" }}>{entry.target}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="section">
-          <h2>Alertes prioritaires</h2>
-          <p>Signalements critiques a traiter pour accelerer la transformation locale.</p>
-          <AlertGrid alerts={alerts} />
-        </section>
-
-        <section className="section">
-          <h2>Prevision et villes prioritaires</h2>
-          <p>Courbe de production appuyee par les unites locales et les clusters.</p>
-          <ForecastChart data={forecast} />
-        </section>
-
-        <section className="section">
-          <h2>Secteurs strategiques</h2>
-          <p>Volumes localises versus import, emplois crees.</p>
-          <div className="cards-grid">
-            {snapshot.indicators.map((indicator) => (
-              <SectorCard
-                key={indicator.sector}
-                sector={indicator.sector}
-                local={indicator.local_volume_tons}
-                imported={indicator.import_volume_tons}
-                jobs={indicator.jobs}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="section">
-          <h2>Cartographie</h2>
-          <p>Couche geospatiale avec points terrain inspecteurs et zones industrielles actives.</p>
-          <MapSection units={units} fieldReports={fieldReports} />
-        </section>
-
-        <section className="section">
-          <ExportPanel indicators={snapshot.indicators} batches={batches} units={units} />
-        </section>
-
-        <section className="section">
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-            <div style={{ flex: "2 1 500px" }}>
-              <BatchTable batches={batches} />
-            </div>
-            <div style={{ flex: "1 1 300px" }}>
-              <UnitsTable units={units} />
-            </div>
-          </div>
-        </section>
-      </>
-    );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Erreur inconnue";
-    return (
-      <section className="section">
-        <div className="chart-card">
-          <h2>Tableau de bord indisponible</h2>
-          <p style={{ color: "#b42318" }}>{message}</p>
-          <p>
-            Verifiez NEXT_PUBLIC_BACKEND_URL, PNPI_BACKEND_USERNAME et PNPI_BACKEND_PASSWORD, puis
-            relancez le serveur Next.js.
-          </p>
-        </div>
-      </section>
-    );
-  }
-}
-
-const AlertGrid = ({ alerts }: { alerts: DashboardAlert[] }) => {
-  if (!alerts.length) {
-    return (
-      <div className="chart-card">
-        <strong>Aucune alerte prioritaire</strong>
-        <p style={{ marginTop: "0.4rem", marginBottom: 0, color: "#3a4351" }}>
-          Les signaux critiques sont sous controle pour le cycle en cours.
-        </p>
-      </div>
-    );
+    /* visiteur non connecté · on affiche la vitrine publique */
   }
 
   return (
-    <div className="cards-grid">
-      {alerts.map((alert) => {
-        const color = severityColor(alert.severity);
-        return (
-          <div
-            key={alert.id}
-            className="chart-card"
-            style={{ border: `1px solid ${color}`, boxShadow: `0 10px 24px ${color}22` }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
-              <strong>{alert.title}</strong>
-              <span
-                style={{ color, fontWeight: 700, textTransform: "uppercase", fontSize: "0.75rem" }}
-              >
-                {alert.severity}
-              </span>
+    <main className="vitrine">
+      <style>{`
+        .vitrine { font-family: "Inter", system-ui, sans-serif; color: #051B36; background: #FAF8F4; min-height: 100vh; }
+        .vitrine-hero { background: linear-gradient(160deg, #051B36 0%, #003DA5 50%, #009E60 100%); color: #fff; padding: 90px 32px 100px; position: relative; overflow: hidden; }
+        .vitrine-hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 20% 30%, rgba(252,209,22,0.18) 0%, transparent 50%), radial-gradient(circle at 85% 70%, rgba(0,158,96,0.2) 0%, transparent 55%); pointer-events: none; }
+        .vitrine-flag { display: flex; height: 4px; max-width: 1100px; margin: 0 auto 36px; }
+        .vitrine-flag span { flex: 1; }
+        .vitrine-flag span:nth-child(1) { background: #009E60; }
+        .vitrine-flag span:nth-child(2) { background: #FCD116; }
+        .vitrine-flag span:nth-child(3) { background: #003DA5; }
+        .vitrine-hero-inner { max-width: 1100px; margin: 0 auto; position: relative; }
+        .vitrine-eyebrow { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-size: 22px; color: #FCD116; margin-bottom: 18px; }
+        .vitrine-h1 { font-family: "Playfair Display", Georgia, serif; font-weight: 900; font-size: clamp(42px, 6vw, 72px); line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 24px; max-width: 880px; }
+        .vitrine-h1 em { font-style: italic; font-family: "Cormorant Garamond", serif; color: #FCD116; }
+        .vitrine-lede { font-size: 19px; line-height: 1.65; max-width: 720px; opacity: 0.92; margin-bottom: 40px; font-weight: 300; }
+        .vitrine-cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 56px; }
+        .vitrine-btn { padding: 14px 26px; border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s; }
+        .vitrine-btn-primary { background: #FCD116; color: #051B36; }
+        .vitrine-btn-secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(8px); }
+        .vitrine-btn:hover { transform: translateY(-2px); }
+        .vitrine-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; padding-top: 36px; border-top: 1px solid rgba(255,255,255,0.18); }
+        .vitrine-stat .num { font-family: "Playfair Display", serif; font-size: 48px; font-weight: 900; color: #FCD116; line-height: 1; }
+        .vitrine-stat .lab { font-size: 13px; opacity: 0.85; margin-top: 8px; }
+        .vitrine-section { max-width: 1100px; margin: 0 auto; padding: 80px 32px; }
+        .vitrine-section h2 { font-family: "Playfair Display", serif; font-weight: 800; font-size: clamp(32px, 4vw, 44px); letter-spacing: -0.015em; margin-bottom: 14px; }
+        .vitrine-section h2 em { font-style: italic; font-family: "Cormorant Garamond", serif; color: #009E60; }
+        .vitrine-section .sub { font-size: 17px; color: #526175; max-width: 640px; margin-bottom: 40px; line-height: 1.6; }
+        .vitrine-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .vitrine-card { padding: 28px 26px; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; border-top: 4px solid var(--accent); transition: transform 0.3s, box-shadow 0.3s; }
+        .vitrine-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -16px rgba(0,0,0,0.18); }
+        .vitrine-card h3 { font-family: "Playfair Display", serif; font-size: 21px; font-weight: 700; margin-bottom: 12px; }
+        .vitrine-card p { font-size: 14px; color: #526175; line-height: 1.65; }
+        .vitrine-cta-bottom { background: linear-gradient(135deg, #009E60 0%, #006d3e 100%); color: #fff; padding: 80px 32px; text-align: center; position: relative; overflow: hidden; }
+        .vitrine-cta-bottom::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(252,209,22,0.18) 0%, transparent 60%); }
+        .vitrine-cta-bottom-inner { max-width: 720px; margin: 0 auto; position: relative; }
+        .vitrine-cta-bottom h2 { font-family: "Playfair Display", serif; font-size: clamp(30px, 4vw, 40px); font-weight: 800; margin-bottom: 18px; line-height: 1.15; }
+        .vitrine-cta-bottom p { font-size: 17px; opacity: 0.95; margin-bottom: 32px; line-height: 1.6; }
+        .vitrine-footer { background: #051B36; color: rgba(255,255,255,0.7); padding: 50px 32px 30px; }
+        .vitrine-footer-inner { max-width: 1100px; margin: 0 auto; }
+        .vitrine-footer-flag { display: flex; height: 3px; margin-bottom: 28px; }
+        .vitrine-footer-flag span { flex: 1; }
+        .vitrine-footer-flag span:nth-child(1) { background: #009E60; }
+        .vitrine-footer-flag span:nth-child(2) { background: #FCD116; }
+        .vitrine-footer-flag span:nth-child(3) { background: #003DA5; }
+        .vitrine-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; margin-bottom: 30px; }
+        @media (max-width: 720px) { .vitrine-footer-grid { grid-template-columns: 1fr; } }
+        .vitrine-footer h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 12px; opacity: 0.7; font-weight: 600; }
+        .vitrine-footer p, .vitrine-footer ul { font-size: 13px; line-height: 1.7; }
+        .vitrine-footer ul { list-style: none; padding: 0; }
+        .vitrine-footer a { color: inherit; text-decoration: none; opacity: 0.85; }
+        .vitrine-footer a:hover { opacity: 1; color: #FCD116; }
+        .vitrine-baseline { font-size: 11px; opacity: 0.6; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 22px; font-style: italic; letter-spacing: 0.04em; }
+      `}</style>
+
+      {/* HERO */}
+      <section className="vitrine-hero">
+        <div className="vitrine-flag">
+          <span />
+          <span />
+          <span />
+        </div>
+        <div className="vitrine-hero-inner">
+          <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 36 }}>
+            <Image src="/pnpi-logo-mark.svg" alt="PNPI" width={64} height={64} />
+            <div>
+              <div style={{ fontSize: 13, opacity: 0.85, letterSpacing: "0.06em" }}>
+                République Gabonaise
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>
+                Ministère de l'Industrie et de la Transformation Locale
+              </div>
             </div>
-            <p style={{ marginTop: "0.55rem", marginBottom: "0.45rem", color: "#3a4351" }}>
-              {alert.detail}
-            </p>
-            <p style={{ margin: 0, color: "#6c7a8c", fontSize: "0.85rem" }}>
-              Source: {alert.source} • {new Date(alert.created_at).toLocaleDateString("fr-FR")}
-            </p>
           </div>
-        );
-      })}
-    </div>
+          <div className="vitrine-eyebrow">L'outil souverain de l'industrie gabonaise</div>
+          <h1 className="vitrine-h1">
+            La <em>souveraineté</em> industrielle au service du Gabon.
+          </h1>
+          <p className="vitrine-lede">
+            La Plateforme Nationale de Pilotage Industriel digitalise la délivrance des Agréments
+            Techniques Industriels, le suivi des inspections de conformité et le pilotage
+            stratégique du tissu industriel national.
+          </p>
+          <div className="vitrine-cta-row">
+            <Link href="/connexion" className="vitrine-btn vitrine-btn-primary">
+              Se connecter à la plateforme →
+            </Link>
+            <Link href="/open-data" className="vitrine-btn vitrine-btn-secondary">
+              Consulter les statistiques publiques
+            </Link>
+          </div>
+          <div className="vitrine-stats">
+            {STATS.map((s) => (
+              <div key={s.label} className="vitrine-stat">
+                <div className="num">{s.value}</div>
+                <div className="lab">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section className="vitrine-section">
+        <h2>
+          Une plateforme <em>pour chaque acteur</em> du circuit industriel.
+        </h2>
+        <p className="sub">
+          Six profils utilisateurs, un cycle complet de l'agrément technique, une transparence
+          publique mesurable.
+        </p>
+        <div className="vitrine-grid">
+          {FEATURES.map((f) => (
+            <div key={f.title} className="vitrine-card" style={{ ["--accent" as never]: f.accent }}>
+              <h3>{f.title}</h3>
+              <p>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CTA bottom */}
+      <section className="vitrine-cta-bottom">
+        <div className="vitrine-cta-bottom-inner">
+          <h2>Prêt à découvrir la plateforme ?</h2>
+          <p>
+            Connectez-vous avec votre compte de démonstration. Les six profils utilisateurs sont
+            préconfigurés.
+          </p>
+          <Link href="/connexion" className="vitrine-btn vitrine-btn-primary">
+            Accéder à la plateforme →
+          </Link>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="vitrine-footer">
+        <div className="vitrine-footer-inner">
+          <div className="vitrine-footer-flag">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="vitrine-footer-grid">
+            <div>
+              <h4>PNPI</h4>
+              <p>
+                Plateforme Nationale de Pilotage Industriel · Ministère de l'Industrie et de la
+                Transformation Locale · République Gabonaise.
+              </p>
+            </div>
+            <div>
+              <h4>Plateforme</h4>
+              <ul>
+                <li>
+                  <Link href="/connexion">Se connecter</Link>
+                </li>
+                <li>
+                  <Link href="/open-data">Open Data</Link>
+                </li>
+                <li>
+                  <Link href="/aide/guides">Guides utilisateur</Link>
+                </li>
+                <li>
+                  <Link href="/api-docs">Documentation API</Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4>Légal</h4>
+              <ul>
+                <li>
+                  <Link href="/about">À propos</Link>
+                </li>
+                <li>
+                  <Link href="/contact">Contact</Link>
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/93cory/pnpi-gabon"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Code source
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="vitrine-baseline">
+            République Gabonaise · Union · Travail · Justice · PNPI v1.43 ©{" "}
+            {new Date().getFullYear()}
+          </div>
+        </div>
+      </footer>
+    </main>
   );
-};
+}
