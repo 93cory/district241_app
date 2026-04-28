@@ -37,6 +37,7 @@ migrate_working_dir/
 /build/
 /frontend/node_modules/
 /frontend/tsconfig.tsbuildinfo
+/docs/architecture/pdf/*.html
 /video/node_modules/
 /video/out/
 /video/.remotion/
