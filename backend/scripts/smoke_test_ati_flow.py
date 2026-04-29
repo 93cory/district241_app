@@ -83,7 +83,7 @@ class Audit:
         return False
 
     def status(self, label: str, status: int, ok_codes: tuple[int, ...] = (200, 201, 204)) -> bool:
-        return self.assert_(f"{label:60s} -> {status}", status in ok_codes)
+        return self.assertTrue(f"{label:60s} -> {status}", status in ok_codes)
 
 
 # ── fixtures de donnees ───────────────────────────────────────────────────
@@ -188,7 +188,11 @@ def run_ati_full_flow(client: httpx.Client, audit: Audit) -> None:
     # 1.5  Transition en_validation -> approuve (par DIRECTEUR ou MINISTRE)
     r = client.patch(
         f"{BASE}/pnpi/ati/{ati_id}/statut",
-        json={"new_statut": "approuve", "note": "approuve par le ministre", "numero_reference_decision": "REF-SMOKE-001"},
+        json={
+            "new_statut": "approuve",
+            "note": "approuve par le ministre",
+            "numero_reference_decision": "REF-SMOKE-001",
+        },
         headers=H(t_min),
         timeout=15.0,
     )
@@ -442,7 +446,7 @@ def run_open_data_checks(client: httpx.Client, audit: Audit) -> None:
             text = r.text.lower()
             audit.assert_(
                 f"{path} ne contient pas le champ 'nif'",
-                "\"nif\"" not in text and "'nif'" not in text,
+                '"nif"' not in text and "'nif'" not in text,
             )
 
     # Rate-limit: 35 requetes (limite=30/60s) -> on doit voir au moins un 429
@@ -474,7 +478,7 @@ def run_captcha_checks(client: httpx.Client, audit: Audit) -> None:
     print("\n=== 6. Captcha login (3 echecs -> captcha requis) ===")
     bogus_user = f"smoke_bogus_{uuid.uuid4().hex[:6]}"
     # 4 echecs deliberes (depasser le seuil = 3)
-    for i in range(4):
+    for _i in range(4):
         client.post(
             f"{BASE}/auth/token",
             data={"username": bogus_user, "password": "wrong-password"},
@@ -540,7 +544,7 @@ def main() -> int:
                 if r.status_code != 200:
                     print(f"!! Backend ne repond pas (HTTP {r.status_code}). Demarrer FastAPI avant.")
                     return 2
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"!! Backend injoignable a {BASE} : {exc}")
                 return 2
 

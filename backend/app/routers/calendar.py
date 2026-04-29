@@ -71,9 +71,7 @@ async def get_calendar_events(
             AgrementTechniqueIndustrielORM.date_decision.between(start_dt, end_dt),
         )
         if operateur_only:
-            decided_query = decided_query.where(
-                AgrementTechniqueIndustrielORM.created_by == current_user.username
-            )
+            decided_query = decided_query.where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
         decided = db.execute(decided_query).scalars().all()
 
         for ati in decided:
@@ -97,9 +95,7 @@ async def get_calendar_events(
             AgrementTechniqueIndustrielORM.statut == "approuve",
         )
         if operateur_only:
-            expiring_query = expiring_query.where(
-                AgrementTechniqueIndustrielORM.created_by == current_user.username
-            )
+            expiring_query = expiring_query.where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
         expiring = db.execute(expiring_query).scalars().all()
 
         for ati in expiring:

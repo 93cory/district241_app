@@ -91,7 +91,7 @@ def run(client: httpx.Client, audit: Audit) -> None:
         audit.expect(f"GET {path} (no auth) -> 200", r.status_code == 200, f"status={r.status_code}")
         if r.status_code == 200:
             text = r.text.lower()
-            audit.expect(f"{path} ne contient pas 'nif'", "\"nif\"" not in text and "'nif'" not in text)
+            audit.expect(f"{path} ne contient pas 'nif'", '"nif"' not in text and "'nif'" not in text)
 
     # rate limit (30 req / 60s) : 35 requetes -> au moins un 429
     statuses = [client.get(f"{BASE}/open-data/sectors", timeout=10.0).status_code for _ in range(35)]
@@ -152,7 +152,7 @@ def main() -> int:
                 if rh.status_code != 200:
                     print(f"!! Backend ne repond pas (HTTP {rh.status_code}).")
                     return 2
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"!! Backend injoignable: {exc}")
                 return 2
             run(client, audit)
