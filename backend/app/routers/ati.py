@@ -1113,6 +1113,7 @@ async def download_ati_certificate(
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
     if ati.statut != "approuve":
         raise HTTPException(status_code=400, detail="Certificat disponible uniquement pour les ATI approuves.")
 
@@ -2070,12 +2071,19 @@ async def verify_ati_public(numero_ati: str, db: Session = Depends(get_db)):
     if ati.date_expiration and ati.date_expiration.date() < now.date():
         is_expired = True
 
+    # Masquage du NIF en public : seuls les 4 derniers chars sont visibles.
+    # Format ex: "GA-NIF-12345678" -> "***-****-5678"
+    nif_masked = None
+    if op and op.nif_gabon:
+        last4 = op.nif_gabon[-4:] if len(op.nif_gabon) >= 4 else op.nif_gabon
+        nif_masked = f"***-****-{last4}"
+
     return {
         "valid": ati.statut == "approuve" and not is_expired,
         "numero_ati": ati.numero_ati,
         "statut": "expire" if is_expired else ati.statut,
         "operateur": op.raison_sociale if op else None,
-        "nif": op.nif_gabon if op else None,
+        "nif_masque": nif_masked,
         "secteur": ati.secteur,
         "type_activite": ati.type_activite,
         "date_approbation": ati.date_decision.isoformat() if ati.date_decision else None,
@@ -2092,6 +2100,11 @@ async def toggle_favorite(
     ),
     db: Session = Depends(get_db),
 ):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
+
     existing = db.execute(
         select(UserFavoriteORM).where(
             UserFavoriteORM.username == current_user.username,
@@ -2356,6 +2369,7 @@ async def renew_ati(
     count = db.execute(select(func.count()).select_from(AgrementTechniqueIndustrielORM)).scalar() or 0
     numero = f"ATI-REN-{count + 1:04d}"
 
+    now = now_utc()
     renewed = AgrementTechniqueIndustrielORM(
         id=str(uuid.uuid4()),
         numero_ati=numero,
@@ -2364,17 +2378,37 @@ async def renew_ati(
         type_activite=data.get("type_activite", original.type_activite),
         observations=data.get("observations", f"Renouvellement de {original.numero_ati}"),
         statut="soumis",
-        date_soumission=now_utc(),
+        etape="reception",
+        date_soumission=now,
         sla_jours=original.sla_jours,
+        # created_by indispensable pour preserver l'acces operateur via check_ati_access.
+        created_by=current_user.username,
+        updated_at=now,
     )
     db.add(renewed)
+    db.flush()
+
+    # Transition initiale (creation) tracee dans l'historique.
+    db.add(
+        ATITransitionORM(
+            id=str(uuid.uuid4()),
+            ati_id=renewed.id,
+            changed_by=current_user.username,
+            previous_statut=None,
+            new_statut="soumis",
+            previous_etape=None,
+            new_etape="reception",
+            note=f"Renouvellement automatique de {original.numero_ati}",
+            changed_at=now,
+        )
+    )
 
     write_audit_event(
         db,
         actor=current_user.username,
         action="ati.renew",
         target=renewed.id,
-        details=f"Renouvellement de {original.numero_ati} → {numero}",
+        details=f"Renouvellement de {original.numero_ati} -> {numero}",
     )
     db.commit()
 

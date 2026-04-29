@@ -17,7 +17,6 @@ const SEV_COLORS: Record<string, string> = {
   medium: "#3b82f6",
   info: "#6b7280",
 };
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
 const markRead = async (id: string) => {
   try {

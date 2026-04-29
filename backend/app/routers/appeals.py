@@ -92,11 +92,10 @@ def create_appeal(
 
     write_audit_event(
         db,
+        actor=current_user.username,
         action="appeal.created",
-        target_type="ati",
-        target_id=ati_id,
-        username=current_user.username,
-        details={"appeal_id": appeal.id, "motif_excerpt": payload.motif[:200]},
+        target=ati_id,
+        details=f"appeal_id={appeal.id}; motif={payload.motif[:200]}",
     )
 
     return {"id": appeal.id, "statut": appeal.statut, "deposed_at": appeal.deposed_at.isoformat()}

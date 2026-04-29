@@ -38,7 +38,6 @@ export default async function ATIListPage({ searchParams }: { searchParams: Sear
   const province = searchParams.province ?? "";
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10));
   const PER_PAGE = 25;
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
   try {
     const raw = await fetchPNPIATIs({

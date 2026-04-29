@@ -12,8 +12,6 @@ interface Photo {
   uploaded_by: string;
 }
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
 export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +23,7 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
 
   const fetchPhotos = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/pnpi/inspections/${inspectionId}/photos`, {
+      const res = await fetch(`/api/pnpi/inspections/${inspectionId}/photos`, {
         credentials: "include",
       });
       if (res.ok) {
@@ -57,7 +55,7 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
       formData.append("file", file);
 
       try {
-        const res = await fetch(`${API}/pnpi/inspections/${inspectionId}/photos`, {
+        const res = await fetch(`/api/pnpi/inspections/${inspectionId}/photos`, {
           method: "POST",
           body: formData,
           credentials: "include",
@@ -81,7 +79,7 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
 
   const handleDelete = async (photoId: string) => {
     try {
-      const res = await fetch(`${API}/pnpi/inspections/${inspectionId}/photos/${photoId}`, {
+      const res = await fetch(`/api/pnpi/inspections/${inspectionId}/photos/${photoId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -96,7 +94,7 @@ export function PhotoGallery({ inspectionId }: { inspectionId: string }) {
   };
 
   const photoUrl = (photo: Photo) =>
-    `${API}/pnpi/inspections/${inspectionId}/photos/${photo.id}/file`;
+    `/api/pnpi/inspections/${inspectionId}/photos/${photo.id}/file`;
 
   return (
     <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>

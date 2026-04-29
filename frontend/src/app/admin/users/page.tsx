@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { fetchBackendProfile } from "../../../lib/backend";
+import { backendRequest, fetchBackendProfile } from "../../../lib/backend";
 import { AdminCreateUser } from "../AdminCreateUser";
 import { AdminUserImport } from "../AdminUserImport";
 import { AdminUserList } from "../AdminUserList";
@@ -21,9 +21,7 @@ interface UserRow {
 
 async function fetchUsers(): Promise<UserRow[]> {
   try {
-    const backendUrl =
-      process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-    const res = await fetch(`${backendUrl}/admin/users`, { cache: "no-store" });
+    const res = await backendRequest("/admin/users", { cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data) ? data : Array.isArray(data?.users) ? data.users : [];

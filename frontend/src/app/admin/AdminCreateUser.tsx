@@ -19,8 +19,6 @@ const ROLE_COLORS: Record<string, string> = {
   operateur: "#d97706",
 };
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
 export function AdminCreateUser({ onCreated }: { onCreated?: () => void }) {
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState("");
@@ -54,7 +52,7 @@ export function AdminCreateUser({ onCreated }: { onCreated?: () => void }) {
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch(`${BACKEND}/admin/users`, {
+      const res = await fetch(`/api/admin/users`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

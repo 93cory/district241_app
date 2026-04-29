@@ -169,7 +169,6 @@ export function DocumentUpload({
     }
   };
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
   const pendingCount = queue.filter((q) => q.status === "pending" || q.status === "error").length;
 
   return (
@@ -328,7 +327,7 @@ export function DocumentUpload({
                 </div>
               </div>
               <a
-                href={`${BACKEND_URL}/pnpi/documents/${doc.id}/download`}
+                href={`/api/pnpi/documents/${doc.id}/download`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="docupload-dl"

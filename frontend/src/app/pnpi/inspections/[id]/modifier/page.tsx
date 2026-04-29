@@ -3,7 +3,6 @@ import { useState, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 const CONF_OPTIONS = [
   { value: "conforme", label: "Conforme", color: "#10b981" },
   { value: "non_conforme", label: "Non conforme", color: "#ef4444" },
@@ -56,7 +55,7 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
   const [lng, setLng] = useState("");
 
   useEffect(() => {
-    fetch(`${BACKEND}/pnpi/inspections/${params.id}`, { credentials: "include" })
+    fetch(`/api/pnpi/inspections/${params.id}`, { credentials: "include" })
       .then((r) => {
         if (!r.ok) throw new Error(`Erreur ${r.status}`);
         return r.json();
@@ -82,7 +81,7 @@ export default function ModifierInspectionPage({ params }: { params: { id: strin
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`${BACKEND}/pnpi/inspections/${params.id}`, {
+      const res = await fetch(`/api/pnpi/inspections/${params.id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

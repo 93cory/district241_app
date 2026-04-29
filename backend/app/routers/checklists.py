@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from ..core.auth import Role, User, get_current_user, require_roles
 from ..database import get_db, now_utc
 from ..models.pnpi import AgrementTechniqueIndustrielORM, ATIChecklistItemORM
+from .ati import check_ati_access
 
 router = APIRouter(prefix="/checklists", tags=["Checklists"])
 
@@ -71,6 +72,11 @@ async def get_checklist(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+    check_ati_access(ati, current_user)
+
     items = (
         db.execute(
             select(ATIChecklistItemORM)

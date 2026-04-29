@@ -9,13 +9,20 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.auth import User, get_current_user
-from ..database import get_db
+from ..database import as_utc, get_db
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
     InspectionConformiteORM,
 )
 
 router = APIRouter(prefix="/calendar", tags=["Calendar"])
+
+_PRIVILEGED_ROLES = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+
+
+def _is_operateur_only(current_user: User) -> bool:
+    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    return bool(roles) and not (roles & _PRIVILEGED_ROLES) and "operateur" in roles
 
 
 @router.get("/events")
@@ -32,19 +39,18 @@ async def get_calendar_events(
     except (ValueError, TypeError):
         return {"count": 0, "events": [], "error": "Invalid date format. Use YYYY-MM-DD."}
 
+    operateur_only = _is_operateur_only(current_user)
+
     try:
         events = []
 
         # ATI submissions
-        atis = (
-            db.execute(
-                select(AgrementTechniqueIndustrielORM).where(
-                    AgrementTechniqueIndustrielORM.date_soumission.between(start_dt, end_dt)
-                )
-            )
-            .scalars()
-            .all()
+        ati_query = select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.date_soumission.between(start_dt, end_dt)
         )
+        if operateur_only:
+            ati_query = ati_query.where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
+        atis = db.execute(ati_query).scalars().all()
 
         for ati in atis:
             events.append(
@@ -60,16 +66,15 @@ async def get_calendar_events(
             )
 
         # ATI decisions
-        decided = (
-            db.execute(
-                select(AgrementTechniqueIndustrielORM).where(
-                    AgrementTechniqueIndustrielORM.date_decision.isnot(None),
-                    AgrementTechniqueIndustrielORM.date_decision.between(start_dt, end_dt),
-                )
-            )
-            .scalars()
-            .all()
+        decided_query = select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.date_decision.isnot(None),
+            AgrementTechniqueIndustrielORM.date_decision.between(start_dt, end_dt),
         )
+        if operateur_only:
+            decided_query = decided_query.where(
+                AgrementTechniqueIndustrielORM.created_by == current_user.username
+            )
+        decided = db.execute(decided_query).scalars().all()
 
         for ati in decided:
             color = "#006233" if ati.statut == "approuve" else "#b42318"
@@ -86,17 +91,16 @@ async def get_calendar_events(
             )
 
         # ATI expirations
-        expiring = (
-            db.execute(
-                select(AgrementTechniqueIndustrielORM).where(
-                    AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
-                    AgrementTechniqueIndustrielORM.date_expiration.between(start_dt, end_dt),
-                    AgrementTechniqueIndustrielORM.statut == "approuve",
-                )
-            )
-            .scalars()
-            .all()
+        expiring_query = select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
+            AgrementTechniqueIndustrielORM.date_expiration.between(start_dt, end_dt),
+            AgrementTechniqueIndustrielORM.statut == "approuve",
         )
+        if operateur_only:
+            expiring_query = expiring_query.where(
+                AgrementTechniqueIndustrielORM.created_by == current_user.username
+            )
+        expiring = db.execute(expiring_query).scalars().all()
 
         for ati in expiring:
             op = getattr(ati, "operateur", None)
@@ -112,14 +116,19 @@ async def get_calendar_events(
                 }
             )
 
-        # Inspections
-        inspections = (
-            db.execute(
-                select(InspectionConformiteORM).where(InspectionConformiteORM.date_inspection.between(start_dt, end_dt))
+        # Inspections : opérateur ne voit pas le calendrier d'inspections globales
+        if operateur_only:
+            inspections = []
+        else:
+            inspections = (
+                db.execute(
+                    select(InspectionConformiteORM).where(
+                        InspectionConformiteORM.date_inspection.between(start_dt, end_dt)
+                    )
+                )
+                .scalars()
+                .all()
             )
-            .scalars()
-            .all()
-        )
 
         for insp in inspections:
             conf_color = {"conforme": "#006233", "non_conforme": "#b42318", "partiel": "#d97706"}.get(
@@ -142,19 +151,20 @@ async def get_calendar_events(
 
         # SLA deadlines (ATIs in progress approaching deadline)
         now = datetime.now(UTC)
-        in_progress = (
-            db.execute(
-                select(AgrementTechniqueIndustrielORM).where(
-                    AgrementTechniqueIndustrielORM.statut.notin_(["approuve", "rejete", "expire"])
-                )
-            )
-            .scalars()
-            .all()
+        in_progress_query = select(AgrementTechniqueIndustrielORM).where(
+            AgrementTechniqueIndustrielORM.statut.notin_(["approuve", "rejete", "expire"])
         )
+        if operateur_only:
+            in_progress_query = in_progress_query.where(
+                AgrementTechniqueIndustrielORM.created_by == current_user.username
+            )
+        in_progress = db.execute(in_progress_query).scalars().all()
 
         for ati in in_progress:
             sla = ati.sla_jours or 30
-            deadline = ati.date_soumission + timedelta(days=sla)
+            # Wrap naive datetimes (SQLite) before timedelta + tz-aware comparison
+            soumission_aware = as_utc(ati.date_soumission) or ati.date_soumission
+            deadline = soumission_aware + timedelta(days=sla)
             if start_dt <= deadline <= end_dt:
                 overdue = deadline < now
                 events.append(

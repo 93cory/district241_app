@@ -41,7 +41,6 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
   const fileRef = useRef<HTMLInputElement>(null);
-  const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
   const loadPhotos = useCallback(async () => {
     try {
@@ -268,14 +267,14 @@ export function InspectionPhotoUpload({ inspectionId, canEdit }: Props) {
           {photos.map((p) => (
             <li key={p.id} className="photo-upload-card">
               <a
-                href={`${BACKEND}/pnpi/inspections/${inspectionId}/photos/${p.id}/file`}
+                href={`/api/pnpi/inspections/${inspectionId}/photos/${p.id}/file`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="photo-upload-thumb"
                 aria-label={`Voir ${p.nom_fichier}`}
               >
                 <img
-                  src={`${BACKEND}/pnpi/inspections/${inspectionId}/photos/${p.id}/file`}
+                  src={`/api/pnpi/inspections/${inspectionId}/photos/${p.id}/file`}
                   alt={p.description || p.nom_fichier}
                   loading="lazy"
                 />

@@ -109,8 +109,6 @@ export const PilotageDossiersTable = ({ dossiers }: Props) => {
     setSortDirection("asc");
   };
 
-  const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
   return (
     <div className="table-card reveal" style={{ marginTop: "1rem" }}>
       <div
@@ -217,7 +215,7 @@ export const PilotageDossiersTable = ({ dossiers }: Props) => {
                   {["approved", "rejected"].includes(dossier.status) ? (
                     <a
                       className="export-link"
-                      href={`${backendBase}/pilotage/dossiers/${encodeURIComponent(
+                      href={`/api/pilotage/dossiers/${encodeURIComponent(
                         dossier.id,
                       )}/decision-document.pdf`}
                     >

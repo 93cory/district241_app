@@ -19,8 +19,6 @@ const STATUT_COLORS: Record<string, string> = {
   rejete: "#ef4444",
   expire: "#9ca3af",
 };
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
 export function SearchBar() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -46,7 +44,7 @@ export function SearchBar() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`${BACKEND}/pnpi/dashboard/search?q=${encodeURIComponent(q)}`, {
+      const res = await fetch(`/api/pnpi/dashboard/search?q=${encodeURIComponent(q)}`, {
         credentials: "include",
       });
       if (res.ok) {

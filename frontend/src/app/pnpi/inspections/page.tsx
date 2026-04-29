@@ -29,7 +29,6 @@ export default async function InspectionsPage({ searchParams }: { searchParams: 
   const statut_conformite = searchParams.statut_conformite ?? "";
   const inspecteur = searchParams.inspecteur ?? "";
   const canCreate = userRoles.some((r) => ["admin", "inspecteur", "directeur"].includes(r));
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
 
   try {
     const [inspections, operateurs] = await Promise.all([

@@ -103,8 +103,6 @@ export default async function HistoriquePage({ searchParams }: { searchParams: S
     weekAgo.setDate(weekAgo.getDate() - 7);
     const transitionsWeek = filtered.filter((e) => new Date(e.changed_at) >= weekAgo).length;
 
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
     // Build pagination links
     const buildPageUrl = (page: number) => {
       const params = new URLSearchParams();
@@ -133,7 +131,7 @@ export default async function HistoriquePage({ searchParams }: { searchParams: S
             &larr; Dashboard
           </Link>
           <a
-            href={`${backendUrl}/pnpi/exports/pilotage-transitions.csv`}
+            href={`/api/pnpi/exports/pilotage-transitions.csv`}
             style={{
               padding: "0.35rem 0.7rem",
               background: "#f9fafb",

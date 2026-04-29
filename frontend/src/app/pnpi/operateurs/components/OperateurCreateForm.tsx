@@ -2,8 +2,6 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-
 const SECTEURS = ["bois", "mines", "agroalimentaire", "btp", "petrole", "services"];
 const PROVINCES = [
   "estuaire",
@@ -80,7 +78,7 @@ export function OperateurCreateForm({ onCreated }: { onCreated?: () => void }) {
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch(`${BACKEND}/pnpi/operateurs`, {
+      const res = await fetch(`/api/pnpi/operateurs`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

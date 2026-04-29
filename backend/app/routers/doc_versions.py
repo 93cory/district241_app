@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..core.auth import User, get_current_user
 from ..database import get_db
-from ..models.pnpi import DocumentVersionORM
+from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentVersionORM
+from .ati import check_ati_access
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -23,6 +24,11 @@ async def get_document_versions(
     db: Session = Depends(get_db),
 ):
     """List all document versions for an ATI."""
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+    check_ati_access(ati, current_user)
+
     query = select(DocumentVersionORM).where(DocumentVersionORM.ati_id == ati_id)
     if document_id:
         query = query.where(DocumentVersionORM.document_id == document_id)
@@ -56,6 +62,11 @@ async def upload_document_version(
     db: Session = Depends(get_db),
 ):
     """Record a new version of a document."""
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+    check_ati_access(ati, current_user)
+
     document_id = data.get("document_id") or str(uuid.uuid4())
 
     # Get latest version number
