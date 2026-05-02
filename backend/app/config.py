@@ -66,6 +66,18 @@ class Settings:
         self.sla_medium_days = int(os.getenv("PNPI_SLA_MEDIUM_DAYS", os.getenv("PNPI_SLA_MEDIUM_DAYS", "30")))
         self.sla_high_days = int(os.getenv("PNPI_SLA_HIGH_DAYS", os.getenv("PNPI_SLA_HIGH_DAYS", "21")))
 
+    def enforce(self) -> None:
+        """Hard checks that abort the boot in production when misconfigured."""
+        if self.env != "production":
+            return
+        if self.cors_origins == "*":
+            raise RuntimeError(
+                "PNPI_CORS_ALLOW_ORIGINS='*' is forbidden in production. "
+                "Set PNPI_CORS_ALLOW_ORIGINS to an explicit comma-separated allowlist."
+            )
+        if self.secret_key == "change-me-in-production":
+            raise RuntimeError("PNPI_SECRET_KEY must be overridden in production (default value detected).")
+
     def validate(self) -> list[str]:
         """Validate critical settings. Returns list of warnings."""
         warnings: list[str] = []
@@ -96,3 +108,5 @@ import logging as _logging
 _config_logger = _logging.getLogger("pnpi.config")
 for _w in settings.validate():
     _config_logger.warning(_w)
+
+settings.enforce()

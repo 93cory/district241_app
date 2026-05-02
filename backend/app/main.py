@@ -2844,7 +2844,8 @@ async def db_tables_info(
             for col in inspector.get_columns(table_name)
         ]
         try:
-            row_count = db.execute(text(f'SELECT COUNT(*) FROM "{table_name}"')).scalar()
+            # table_name comes from SQLAlchemy schema introspection (inspector.get_table_names()), never user input; endpoint requires Role.admin
+            row_count = db.execute(text(f'SELECT COUNT(*) FROM "{table_name}"')).scalar()  # nosec B608
         except Exception:
             row_count = -1
         indexes = [{"name": idx["name"], "columns": idx["column_names"]} for idx in inspector.get_indexes(table_name)]
