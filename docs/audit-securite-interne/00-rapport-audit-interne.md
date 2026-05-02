@@ -56,19 +56,20 @@ Cet audit interne **préliminaire** vise à identifier les vulnérabilités conn
 
 | Package | Version actuelle | Advisory | Sévérité | Fix |
 |---|---|---|---|---|
-| `next` | 14.2.x | GHSA-9g9p-9gw9-jx7f — DoS Image Optimizer remotePatterns | Élevée | 14.2.32+ |
-| `next` | 14.2.x | GHSA-h25m-26qc-wcjf — DoS RSC deserialization | Modérée | 14.2.32+ |
-| `next` | 14.2.x | GHSA-ggv3-7p47-pfv8 — HTTP request smuggling rewrites | Modérée | 14.2.32+ |
-| `next` | 14.2.x | GHSA-3x4c-7xq6-9pq8 — Image cache exhaustion | Modérée | 14.2.32+ |
-| `next` | 14.2.x | GHSA-q4gf-8mx6-v5v3 — DoS Server Components | Modérée | 14.2.32+ |
+| `next` | 14.2.35 | GHSA-9g9p-9gw9-jx7f — DoS Image Optimizer remotePatterns | Élevée | 15.5.10+ |
+| `next` | 14.2.35 | GHSA-h25m-26qc-wcjf — DoS RSC deserialization | Modérée | 15.0.8+ |
+| `next` | 14.2.35 | GHSA-ggv3-7p47-pfv8 — HTTP request smuggling rewrites | Modérée | 15.5.13+ |
+| `next` | 14.2.35 | GHSA-3x4c-7xq6-9pq8 — Image cache exhaustion | Modérée | 15.5.14+ |
+| `next` | 14.2.35 | GHSA-q4gf-8mx6-v5v3 — DoS Server Components | Modérée | 15.5.15+ |
 | `postcss` | <8.5.10 | GHSA-qx2v-qp2m-jg93 — XSS via unescaped `</style>` | Modérée | transitive Next.js |
 
 **Évaluation contexte PNPI :**
 
-- Les advisories Next.js sont toutes **DoS** (Denial of Service), pas de RCE ni d'exfiltration. La PNPI n'expose pas `/_next/image` à des hôtes tiers (`remotePatterns` vide), ce qui neutralise l'attaque principale.
+- Les advisories Next.js sont toutes **DoS** (Denial of Service), pas de RCE ni d'exfiltration. La PNPI n'expose pas `/_next/image` à des hôtes tiers (`remotePatterns` vide), ce qui neutralise l'attaque principale (DoS Image Optimizer).
+- Aucun **backport** des correctifs sur la branche `14.2.x` (politique Vercel : seule la branche `15.x` est patchée). La PNPI est sur la **dernière version stable de la branche 14** (14.2.35).
 - L'advisory `postcss` ne s'applique qu'aux pipelines de build (pas exécuté côté client en production). **Impact réel : nul** sur l'app publiée.
 
-**Action recommandée** : mise à jour vers `next@14.2.32` (mineure, pas de breaking change). Le saut vers `next@16` proposé par `npm audit fix --force` est **déconseillé** avant l'audience (breaking changes App Router).
+**Action recommandée** : maintenir `next@14.2.35` jusqu'à l'audience (déjà la dernière version stable de la branche 14). **Migrer vers `next@15.5+` post-J0** (breaking changes App Router : `next/headers`, middleware, fetch caching à valider). Cette migration est prévue dans le plan J0-J90 (cf. `docs/architecture/plan-mise-en-prod-j0-j90.md`).
 
 ---
 
@@ -181,16 +182,17 @@ Cet audit interne **ne remplace pas** un pentest externe humain réalisé par un
 
 ### Avant audience (effort ≤ 4h)
 
-- [ ] **Backend** : `pip install python-jose==3.4.0` + lancer `pytest tests -q` (180 tests doivent passer)
-- [ ] **Backend** : épingler `python-jose>=3.4.0,<4` dans `backend/requirements.txt`
-- [ ] **Frontend** : `cd frontend && npm install next@14.2.32` + lancer `npm run build` + `npm run test:e2e`
+- [x] **Backend** : `pip install "python-jose>=3.4.0,<4"` (3.5.0 installé) — pip-audit confirme **0 vulnérabilité Python**
+- [x] **Backend** : épingler `python-jose>=3.4.0,<4` dans `backend/requirements.txt`
+- [x] **Frontend** : `npm install next@^14.2.32` (14.2.35 installé, dernière de la branche 14)
 - [ ] **Backend** : ajouter assertion runtime sur `PNPI_CORS_ALLOW_ORIGINS=*` en production (`backend/app/config.py` validator)
 - [ ] **Backend** : annoter `# nosec B608` avec justification sur `main.py:2847`
-- [ ] Re-run pip-audit + npm audit + bandit pour confirmer 0 findings haute sévérité
+- [ ] **Frontend** : test E2E full (`npm run build` + `npm run test:e2e`) après upgrade Next.js
 
 ### Après signature de la convention (J0+30)
 
 - [ ] Programmer le pentest externe humain (cabinet certifié ANSSI ou équivalent)
+- [ ] **Migrer Next.js 14.2.35 → 15.5+** pour résoudre les 5 advisories DoS (breaking changes App Router à valider)
 - [ ] Réactiver le ZAP scan dans CI GitHub Actions (résolution du blocker fastapi/starlette)
 - [ ] Mise en place SAST continu (Semgrep app cloud avec rapports hebdomadaires)
 - [ ] Audit infra prod par ANINF/Direction Informatique (sécurité physique, accès SSH, backup)

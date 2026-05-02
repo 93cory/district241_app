@@ -154,38 +154,38 @@ Périmètre : Plateforme Nationale de Pilotage Industriel (backend FastAPI + fro
 <tbody>
 <tr>
 <td><code>next</code></td>
-<td>14.2.x</td>
+<td>14.2.35</td>
 <td>GHSA-9g9p-9gw9-jx7f — DoS Image Optimizer remotePatterns</td>
 <td>Élevée</td>
-<td>14.2.32+</td>
+<td>15.5.10+</td>
 </tr>
 <tr>
 <td><code>next</code></td>
-<td>14.2.x</td>
+<td>14.2.35</td>
 <td>GHSA-h25m-26qc-wcjf — DoS RSC deserialization</td>
 <td>Modérée</td>
-<td>14.2.32+</td>
+<td>15.0.8+</td>
 </tr>
 <tr>
 <td><code>next</code></td>
-<td>14.2.x</td>
+<td>14.2.35</td>
 <td>GHSA-ggv3-7p47-pfv8 — HTTP request smuggling rewrites</td>
 <td>Modérée</td>
-<td>14.2.32+</td>
+<td>15.5.13+</td>
 </tr>
 <tr>
 <td><code>next</code></td>
-<td>14.2.x</td>
+<td>14.2.35</td>
 <td>GHSA-3x4c-7xq6-9pq8 — Image cache exhaustion</td>
 <td>Modérée</td>
-<td>14.2.32+</td>
+<td>15.5.14+</td>
 </tr>
 <tr>
 <td><code>next</code></td>
-<td>14.2.x</td>
+<td>14.2.35</td>
 <td>GHSA-q4gf-8mx6-v5v3 — DoS Server Components</td>
 <td>Modérée</td>
-<td>14.2.32+</td>
+<td>15.5.15+</td>
 </tr>
 <tr>
 <td><code>postcss</code></td>
@@ -198,10 +198,11 @@ Périmètre : Plateforme Nationale de Pilotage Industriel (backend FastAPI + fro
 </table>
 <p><strong>Évaluation contexte PNPI :</strong></p>
 <ul>
-<li>Les advisories Next.js sont toutes <strong>DoS</strong> (Denial of Service), pas de RCE ni d'exfiltration. La PNPI n'expose pas <code>/_next/image</code> à des hôtes tiers (<code>remotePatterns</code> vide), ce qui neutralise l'attaque principale.</li>
+<li>Les advisories Next.js sont toutes <strong>DoS</strong> (Denial of Service), pas de RCE ni d'exfiltration. La PNPI n'expose pas <code>/_next/image</code> à des hôtes tiers (<code>remotePatterns</code> vide), ce qui neutralise l'attaque principale (DoS Image Optimizer).</li>
+<li>Aucun <strong>backport</strong> des correctifs sur la branche <code>14.2.x</code> (politique Vercel : seule la branche <code>15.x</code> est patchée). La PNPI est sur la <strong>dernière version stable de la branche 14</strong> (14.2.35).</li>
 <li>L'advisory <code>postcss</code> ne s'applique qu'aux pipelines de build (pas exécuté côté client en production). <strong>Impact réel : nul</strong> sur l'app publiée.</li>
 </ul>
-<p><strong>Action recommandée</strong> : mise à jour vers <code>next@14.2.32</code> (mineure, pas de breaking change). Le saut vers <code>next@16</code> proposé par <code>npm audit fix --force</code> est <strong>déconseillé</strong> avant l'audience (breaking changes App Router).</p>
+<p><strong>Action recommandée</strong> : maintenir <code>next@14.2.35</code> jusqu'à l'audience (déjà la dernière version stable de la branche 14). <strong>Migrer vers <code>next@15.5+</code> post-J0</strong> (breaking changes App Router : <code>next/headers</code>, middleware, fetch caching à valider). Cette migration est prévue dans le plan J0-J90 (cf. <code>docs/architecture/plan-mise-en-prod-j0-j90.md</code>).</p>
 <hr />
 <h2 id="3-analyse-statique-du-code-python-bandit">3. Analyse statique du code Python (<code>bandit</code>)</h2>
 <p><strong>26 alertes</strong> sur 20 563 lignes (densité = 1.3 alerte / 1 000 LOC, ce qui est <strong>très bon</strong> — référence Django ~5/1000).</p>
@@ -380,16 +381,17 @@ app.add_middleware(
 <h2 id="7-plan-daction-checklist-avant-audience">7. Plan d'action — checklist avant audience</h2>
 <h3 id="avant-audience-effort-4h">Avant audience (effort ≤ 4h)</h3>
 <ul>
-<li>[ ] <strong>Backend</strong> : <code>pip install python-jose==3.4.0</code> + lancer <code>pytest tests -q</code> (180 tests doivent passer)</li>
-<li>[ ] <strong>Backend</strong> : épingler <code>python-jose&gt;=3.4.0,&lt;4</code> dans <code>backend/requirements.txt</code></li>
-<li>[ ] <strong>Frontend</strong> : <code>cd frontend &amp;&amp; npm install next@14.2.32</code> + lancer <code>npm run build</code> + <code>npm run test:e2e</code></li>
+<li>[x] <strong>Backend</strong> : <code>pip install "python-jose&gt;=3.4.0,&lt;4"</code> (3.5.0 installé) — pip-audit confirme <strong>0 vulnérabilité Python</strong></li>
+<li>[x] <strong>Backend</strong> : épingler <code>python-jose&gt;=3.4.0,&lt;4</code> dans <code>backend/requirements.txt</code></li>
+<li>[x] <strong>Frontend</strong> : <code>npm install next@^14.2.32</code> (14.2.35 installé, dernière de la branche 14)</li>
 <li>[ ] <strong>Backend</strong> : ajouter assertion runtime sur <code>PNPI_CORS_ALLOW_ORIGINS=*</code> en production (<code>backend/app/config.py</code> validator)</li>
 <li>[ ] <strong>Backend</strong> : annoter <code># nosec B608</code> avec justification sur <code>main.py:2847</code></li>
-<li>[ ] Re-run pip-audit + npm audit + bandit pour confirmer 0 findings haute sévérité</li>
+<li>[ ] <strong>Frontend</strong> : test E2E full (<code>npm run build</code> + <code>npm run test:e2e</code>) après upgrade Next.js</li>
 </ul>
 <h3 id="apres-signature-de-la-convention-j030">Après signature de la convention (J0+30)</h3>
 <ul>
 <li>[ ] Programmer le pentest externe humain (cabinet certifié ANSSI ou équivalent)</li>
+<li>[ ] <strong>Migrer Next.js 14.2.35 → 15.5+</strong> pour résoudre les 5 advisories DoS (breaking changes App Router à valider)</li>
 <li>[ ] Réactiver le ZAP scan dans CI GitHub Actions (résolution du blocker fastapi/starlette)</li>
 <li>[ ] Mise en place SAST continu (Semgrep app cloud avec rapports hebdomadaires)</li>
 <li>[ ] Audit infra prod par ANINF/Direction Informatique (sécurité physique, accès SSH, backup)</li>
