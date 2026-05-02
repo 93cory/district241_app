@@ -83,7 +83,7 @@ class Audit:
         return False
 
     def status(self, label: str, status: int, ok_codes: tuple[int, ...] = (200, 201, 204)) -> bool:
-        return self.assertTrue(f"{label:60s} -> {status}", status in ok_codes)
+        return self.assert_(f"{label:60s} -> {status}", status in ok_codes)
 
 
 # ── fixtures de donnees ───────────────────────────────────────────────────
