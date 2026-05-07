@@ -6,9 +6,9 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
-  // Build ID explicite (evite TypeError "generate is not a function" avec
-  // Next 14.2.35 quand le champ est absent de la config).
-  generateBuildId: async () => null,
+  // Build ID explicite : retourner une string fixe par commit
+  // (Next 14.2.35 plante avec "generate is not a function" si on retourne null).
+  generateBuildId: async () => process.env.GITHUB_SHA || `pnpi-${Date.now()}`,
 
   // Security headers
   async headers() {
