@@ -33,7 +33,7 @@ export function SLAClock({ dateSoumission, slaJours, statut }: Props) {
   const remaining = deadline.getTime() - now.getTime();
   const pct = Math.min((elapsed / total) * 100, 100);
 
-  const isTerminal = terminal.includes(statut);
+  const isTerminal = TERMINAL_STATUTS.includes(statut);
   const isOverdue = remaining < 0 && !isTerminal;
   const isWarning = remaining > 0 && remaining < total * 0.2 && !isTerminal;
 
