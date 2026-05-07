@@ -64,10 +64,9 @@ export default function MapView({ operators }: Props) {
 
         // Decalage deterministe (hash sur op.id) pour eviter que les markers
         // sautent a chaque re-render quand l'utilisateur filtre par secteur.
-        const seed = (op.id || op.nif_gabon || op.raison_sociale || "").split("").reduce(
-          (h, c) => ((h * 31 + c.charCodeAt(0)) | 0),
-          0,
-        );
+        const seed = (op.id || op.nif_gabon || op.raison_sociale || "")
+          .split("")
+          .reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
         const offLat = ((Math.abs(seed) % 1000) / 1000 - 0.5) * 0.3;
         const offLng = ((Math.abs(seed >> 8) % 1000) / 1000 - 0.5) * 0.3;
         const lat = coords[0] + offLat;
