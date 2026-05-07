@@ -1,14 +1,25 @@
+// Sequence deterministe d'uptime sur 90 jours - valeurs stables pour la
+// presentation publique (sera remplace par /api/uptime/history en post-prod).
+const UPTIME_90D = [
+  99.9, 99.8, 99.9, 100, 99.7, 99.9, 99.9, 99.8, 99.5, 98.2, 99.9, 99.9, 99.9, 99.8, 99.9, 99.9,
+  99.9, 99.6, 99.9, 100, 99.9, 99.9, 99.9, 99.4, 99.9, 99.9, 99.7, 99.9, 99.9, 99.8, 100, 99.9,
+  99.9, 99.6, 99.9, 99.9, 99.9, 99.5, 99.9, 99.9, 99.9, 99.8, 99.9, 99.9, 99.7, 99.9, 99.9, 99.9,
+  99.8, 99.9, 99.9, 99.6, 99.9, 99.9, 99.7, 99.9, 99.9, 99.9, 99.4, 99.9, 99.9, 99.9, 99.8, 99.9,
+  99.9, 99.5, 99.9, 99.9, 99.9, 99.7, 99.9, 99.9, 99.9, 99.6, 99.9, 99.9, 99.5, 99.9, 99.9, 99.9,
+  99.8, 99.9, 99.9, 99.6, 99.9, 99.9, 99.7, 99.9, 99.9, 99.9,
+];
+
 export default function UptimeHistoryPage() {
-  const days = Array.from({ length: 90 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (89 - i));
-    const uptime = 95 + Math.random() * 5;
+  const baseDate = new Date("2026-05-07T00:00:00Z");
+  const days = UPTIME_90D.map((uptime, i) => {
+    const d = new Date(baseDate);
+    d.setUTCDate(baseDate.getUTCDate() - (89 - i));
     const status = uptime >= 99.5 ? "ok" : uptime >= 95 ? "degraded" : "down";
     return {
       date: d.toISOString().slice(0, 10),
-      day: d.getDate(),
-      month: d.toLocaleDateString("fr-FR", { month: "short" }),
-      uptime: Math.round(uptime * 10) / 10,
+      day: d.getUTCDate(),
+      month: d.toLocaleDateString("fr-FR", { month: "short", timeZone: "UTC" }),
+      uptime,
       status,
     };
   });

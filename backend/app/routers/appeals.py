@@ -181,11 +181,10 @@ def decide_appeal(
 
     write_audit_event(
         db,
+        actor=current_user.username,
         action=f"appeal.{payload.decision}",
-        target_type="ati_appeal",
-        target_id=appeal_id,
-        username=current_user.username,
-        details={"ati_id": ati_id, "motif_excerpt": payload.motif[:200]},
+        target=appeal_id,
+        details=f"ati_id={ati_id}; motif={payload.motif[:200]}",
     )
 
     return {

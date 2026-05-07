@@ -1,23 +1,27 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const INTERVAL_MS = 120_000; // 2 minutes
 
 export default function DashboardRefresh() {
   const router = useRouter();
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [ago, setAgo] = useState("a l'instant");
+  const lastRefreshRef = useRef<number | null>(null);
+  const [ago, setAgo] = useState("");
 
   useEffect(() => {
+    lastRefreshRef.current = Date.now();
+    setAgo("a l'instant");
+
     const refreshTimer = setInterval(() => {
       router.refresh();
-      setLastRefresh(new Date());
+      lastRefreshRef.current = Date.now();
     }, INTERVAL_MS);
 
     const tickTimer = setInterval(() => {
-      const diff = Math.floor((Date.now() - lastRefresh.getTime()) / 1000);
+      if (lastRefreshRef.current == null) return;
+      const diff = Math.floor((Date.now() - lastRefreshRef.current) / 1000);
       if (diff < 10) setAgo("a l'instant");
       else if (diff < 60) setAgo(`il y a ${diff}s`);
       else setAgo(`il y a ${Math.floor(diff / 60)} min`);
@@ -27,7 +31,7 @@ export default function DashboardRefresh() {
       clearInterval(refreshTimer);
       clearInterval(tickTimer);
     };
-  }, [router, lastRefresh]);
+  }, [router]);
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -45,7 +49,8 @@ export default function DashboardRefresh() {
       <button
         onClick={() => {
           router.refresh();
-          setLastRefresh(new Date());
+          lastRefreshRef.current = Date.now();
+          setAgo("a l'instant");
         }}
         style={{
           padding: "0.2rem 0.5rem",

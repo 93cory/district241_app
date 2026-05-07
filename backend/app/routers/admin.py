@@ -52,16 +52,7 @@ def _to_notification_read(row: NotificationORM) -> dict:
 
 @router.get("/admin/users")
 async def list_user_accounts(
-    _: User = Depends(
-        require_roles(
-            Role.admin,
-            Role.ministre,
-            Role.directeur,
-            Role.instructeur,
-            Role.inspecteur,
-            Role.operateur,
-        )
-    ),
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur)),
     db: Session = Depends(get_db),
 ):
     rows = db.execute(select(UserAccountORM).order_by(UserAccountORM.created_at.desc())).scalars().all()

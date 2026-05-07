@@ -8,15 +8,23 @@ interface Props {
   statut: string;
 }
 
+const TERMINAL_STATUTS = ["approuve", "rejete", "expire"];
+
 export function SLAClock({ dateSoumission, slaJours, statut }: Props) {
-  const [now, setNow] = useState(new Date());
-  const terminal = ["approuve", "rejete", "expire"];
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (terminal.includes(statut)) return;
+    setNow(new Date());
+    if (TERMINAL_STATUTS.includes(statut)) return;
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, [statut]);
+
+  if (!now) {
+    return (
+      <div style={{ padding: "14px 18px", borderRadius: 14, background: "#f1f5f9", height: 80 }} />
+    );
+  }
 
   const soumission = new Date(dateSoumission);
   const deadline = new Date(soumission.getTime() + slaJours * 86400000);

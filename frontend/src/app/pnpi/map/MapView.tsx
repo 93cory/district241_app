@@ -62,9 +62,16 @@ export default function MapView({ operators }: Props) {
         const coords = PROVINCE_COORDS[province];
         if (!coords) return;
 
-        // Add slight random offset to avoid overlap
-        const lat = coords[0] + (Math.random() - 0.5) * 0.3;
-        const lng = coords[1] + (Math.random() - 0.5) * 0.3;
+        // Decalage deterministe (hash sur op.id) pour eviter que les markers
+        // sautent a chaque re-render quand l'utilisateur filtre par secteur.
+        const seed = (op.id || op.nif_gabon || op.raison_sociale || "").split("").reduce(
+          (h, c) => ((h * 31 + c.charCodeAt(0)) | 0),
+          0,
+        );
+        const offLat = ((Math.abs(seed) % 1000) / 1000 - 0.5) * 0.3;
+        const offLng = ((Math.abs(seed >> 8) % 1000) / 1000 - 0.5) * 0.3;
+        const lat = coords[0] + offLat;
+        const lng = coords[1] + offLng;
         const color = SECTOR_COLORS[op.secteur] || "#526175";
 
         const icon = L.divIcon({

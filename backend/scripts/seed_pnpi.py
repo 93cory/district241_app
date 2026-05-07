@@ -1157,7 +1157,12 @@ def main() -> None:
                 motif_rejet=motif,
                 numero_reference_decision=num_ref,
                 observations=None,
-                created_by="operateur",
+                # Le compte demo "operateur" represente UNE entreprise (le premier
+                # operateur du seed). Pour les autres entreprises, on attribue un
+                # username synthetique inexistant : ces ATIs sont invisibles au
+                # compte "operateur" mais visibles aux roles privilegies. Cela
+                # rend la demo RBAC credible (un operateur = ses dossiers).
+                created_by=("operateur" if op_idx == 0 else f"op_{op_idx:02d}"),
                 updated_at=soumis_at,
             )
             db.add(ati)

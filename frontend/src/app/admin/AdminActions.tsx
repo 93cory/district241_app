@@ -79,7 +79,14 @@ export const AdminActions = () => {
         <h3 style={{ marginTop: 0 }}>Nouveau compte</h3>
         <input name="username" placeholder="username" required style={fieldStyle} />
         <input name="full_name" placeholder="Nom complet" required style={fieldStyle} />
-        <input name="password" placeholder="Mot de passe" required style={fieldStyle} />
+        <input
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          placeholder="Mot de passe"
+          required
+          style={fieldStyle}
+        />
         <select name="role" defaultValue="inspecteur" style={fieldStyle}>
           {roleOptions.map((role) => (
             <option key={role} value={role}>

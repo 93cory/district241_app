@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 interface TooltipProps {
   content: string;
@@ -17,7 +17,7 @@ const POSITIONS = {
 
 export function Tooltip({ content, children, position = "top" }: TooltipProps) {
   const [visible, setVisible] = useState(false);
-  const tooltipId = useRef(`tooltip-${Math.random().toString(36).slice(2, 8)}`).current;
+  const tooltipId = useId();
 
   return (
     <span

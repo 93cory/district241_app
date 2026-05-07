@@ -327,7 +327,9 @@ async def data_quality_score(
             complete_ops = sum(
                 1
                 for o in ops
-                if getattr(o, "email", None) and getattr(o, "telephone", None) and getattr(o, "province", None)
+                if getattr(o, "contact_email", None)
+                and getattr(o, "contact_telephone", None)
+                and getattr(o, "province", None)
             )
             score = round(complete_ops / max(len(ops), 1) * 100)
             checks.append(
