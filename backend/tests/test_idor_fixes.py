@@ -113,7 +113,7 @@ def test_operateur_calendar_filtered() -> None:
     assert not foreign_ids, f"Operateur voit un ATI tiers: {foreign_ids}"
 
 
-def test_signature_required_before_approval(monkeypatch, tmp_path) -> None:
+def test_signature_required_before_approval(monkeypatch) -> None:
     """En production (flag = 1), une approbation sans signature doit etre refusee 422."""
     from pathlib import Path as _Path
 
