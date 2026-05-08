@@ -69,3 +69,6 @@ nul
 *.db.testbackup
 .claude/scheduled_tasks.lock
 .playwright-mcp/
+
+# Runtime artifacts (documents ATI, photos inspections, signatures)
+/backend/uploads/
