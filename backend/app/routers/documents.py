@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
 from ..core.auth import Role, User, require_roles
+from ..core.upload_validation import BLOCKED_EXTENSIONS
 from ..database import get_db, now_utc
 from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM
 from .ati import check_ati_access
@@ -32,6 +33,7 @@ ALLOWED_CONTENT_TYPES = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
 TYPE_DOCUMENT_VALUES = {"statuts", "bilan", "plan_site", "certification", "autre"}
+_TERMINAL_STATUTS = {"approuve", "rejete", "expire"}
 
 
 class DocumentRead(BaseModel):
@@ -133,8 +135,29 @@ async def upload_ati_document(
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
     check_ati_access(ati, current_user)
+    if ati.statut in _TERMINAL_STATUTS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Impossible d'uploader un document sur un ATI en statut terminal ({ati.statut}).",
+        )
     if type_document not in TYPE_DOCUMENT_VALUES:
         raise HTTPException(status_code=422, detail=f"type_document doit etre parmi: {TYPE_DOCUMENT_VALUES}")
+
+    # Validation filename: extensions executables bloquees, pas de path traversal.
+    filename_raw = (file.filename or "").strip()
+    if not filename_raw:
+        raise HTTPException(status_code=400, detail="Nom de fichier requis.")
+    ext = Path(filename_raw).suffix.lower()
+    if ext in BLOCKED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Type de fichier non autorise: {ext}")
+    if ".." in filename_raw or "/" in filename_raw or "\\" in filename_raw:
+        raise HTTPException(status_code=400, detail="Nom de fichier invalide.")
+    # Validation MIME: limiter aux types attendus (PDF, Office, images).
+    if file.content_type and file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Type MIME non autorise ({file.content_type}). Types acceptes: PDF, DOC, DOCX, JPEG, PNG.",
+        )
 
     content = await file.read()
     if len(content) > MAX_FILE_SIZE:
@@ -143,7 +166,6 @@ async def upload_ati_document(
         )
 
     doc_id = f"DOC-{uuid.uuid4().hex[:12].upper()}"
-    ext = Path(file.filename or "file.bin").suffix.lower()
     stored_name = f"{doc_id}{ext}"
     ati_dir = UPLOAD_DIR / ati_id
     ati_dir.mkdir(parents=True, exist_ok=True)
@@ -202,6 +224,13 @@ async def delete_document(
     doc = db.get(DocumentDossierORM, doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document introuvable.")
+    # Bloquer suppression de preuves sur ATI deja signe / decide / expire.
+    ati = db.get(AgrementTechniqueIndustrielORM, doc.ati_id)
+    if ati and ati.statut in _TERMINAL_STATUTS:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Impossible de supprimer un document d'un ATI en statut terminal ({ati.statut}).",
+        )
     file_path = Path(doc.chemin_stockage)
     if file_path.exists():
         file_path.unlink()

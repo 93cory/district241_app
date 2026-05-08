@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import io
 import logging
+import os
 import uuid
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
 from fastapi.responses import Response as FastAPIResponse
@@ -45,6 +47,33 @@ _PRIVILEGED_ROLES = {"admin", "ministre", "directeur", "instructeur", "inspecteu
 
 def _user_role_values(current_user: User) -> set[str]:
     return {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+
+
+def _has_decision_signature(ati_id: str) -> bool:
+    """Verifie qu'au moins une signature PNG existe pour cet ATI."""
+    sig_dir = Path("uploads/signatures") / ati_id
+    if not sig_dir.exists():
+        return False
+    return any(p.is_file() and p.suffix.lower() == ".png" for p in sig_dir.iterdir())
+
+
+def _enforce_signature_before_approval(ati: AgrementTechniqueIndustrielORM) -> None:
+    """Refuse l'approbation si la signature ministerielle n'a pas ete apposee.
+
+    Controle desactivable via `PNPI_FF_REQUIRE_SIGNATURE_APPROVAL=0` (legacy / tests).
+    Par defaut active, conformement aux exigences d'audit ministeriel.
+    """
+    flag = os.getenv("PNPI_FF_REQUIRE_SIGNATURE_APPROVAL", "1").lower()
+    if flag in ("0", "false", "no", "off"):
+        return
+    if not _has_decision_signature(ati.id):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Signature ministerielle requise avant approbation. "
+                "Apposer la signature via POST /pnpi/ati/{id}/sign-decision tant que le statut est en_validation."
+            ),
+        )
 
 
 def check_ati_access(ati: AgrementTechniqueIndustrielORM, current_user: User) -> None:
@@ -570,6 +599,8 @@ async def update_ati_statut(
                 status_code=400,
                 detail=f"Transition invalide: {ati.statut} -> {payload.new_statut}. Transitions autorisees: {', '.join(allowed) or 'aucune'}",
             )
+        if payload.new_statut == "approuve":
+            _enforce_signature_before_approval(ati)
         ati.statut = payload.new_statut
 
     if payload.new_etape is not None:
@@ -1381,8 +1412,11 @@ async def sign_decision(
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(404, "ATI introuvable.")
-    if ati.statut not in ("approuve", "rejete"):
-        raise HTTPException(400, "La decision doit etre approuve ou rejete avant signature.")
+    # en_validation autorise = signature pre-approbation (workflow exige par l'audit ministeriel).
+    if ati.statut not in ("approuve", "rejete", "en_validation"):
+        raise HTTPException(
+            400, "La signature peut etre apposee en en_validation (avant decision) ou apres approuve/rejete."
+        )
 
     data_url = (data.get("signature_dataurl") or "").strip()
     m = re.match(r"^data:image/png;base64,(.+)$", data_url)
@@ -1888,6 +1922,11 @@ async def bulk_approve(
             continue
         if ati.statut not in ("en_validation",):
             results["errors"].append({"id": ati_id, "error": f"Statut actuel: {ati.statut}, transition impossible"})
+            continue
+        try:
+            _enforce_signature_before_approval(ati)
+        except HTTPException as exc:
+            results["errors"].append({"id": ati_id, "error": exc.detail})
             continue
         now = now_utc()
         ati.statut = "approuve"
