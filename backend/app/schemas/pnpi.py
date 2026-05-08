@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # ---------------------------------------------------------------------------
 # Operateurs industriels
@@ -41,8 +41,7 @@ class OperateurRead(BaseModel):
     created_at: datetime
     created_by: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OperateurBrief(BaseModel):
@@ -55,8 +54,7 @@ class OperateurBrief(BaseModel):
     is_active: bool
     effectif_declare: int | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ---------------------------------------------------------------------------
@@ -97,8 +95,7 @@ class ATIRead(BaseModel):
     age_jours: int
     is_overdue: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ATIBrief(BaseModel):
@@ -114,8 +111,7 @@ class ATIBrief(BaseModel):
     age_jours: int
     is_overdue: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ATIStatusUpdate(BaseModel):
@@ -138,8 +134,7 @@ class ATITransitionRead(BaseModel):
     note: str
     changed_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ---------------------------------------------------------------------------
@@ -176,8 +171,7 @@ class InspectionRead(BaseModel):
     secteur: str = ""
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ---------------------------------------------------------------------------

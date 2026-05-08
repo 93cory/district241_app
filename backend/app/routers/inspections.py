@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from fastapi.responses import Response as FastAPIResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -49,8 +49,7 @@ class PhotoRead(BaseModel):
     uploaded_at: str
     uploaded_by: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 def _to_photo_read(photo: InspectionPhotoORM) -> PhotoRead:
