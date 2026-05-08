@@ -170,10 +170,16 @@ async def add_declaration(
 
 @router.get("/declarations")
 async def list_declarations(
-    _: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
+    current_user: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
-    rows = db.execute(select(DeclarationORM)).scalars().all()
+    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+    query = select(DeclarationORM)
+    # Operateur: ne voit que ses propres declarations (donnees concurrentielles).
+    if not (roles & privileged) and "operateur" in roles:
+        query = query.where(DeclarationORM.submitted_by == current_user.username)
+    rows = db.execute(query).scalars().all()
     return [_to_declaration_read(row) for row in rows]
 
 

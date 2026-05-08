@@ -699,9 +699,12 @@ async def export_ati_documents_zip(
     db: Session = Depends(get_db),
 ):
     """Download all documents for an ATI as a ZIP archive."""
+    from .ati import check_ati_access
+
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
         raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
 
     docs = db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)).scalars().all()
 

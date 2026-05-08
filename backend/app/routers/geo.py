@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
-from ..core.auth import Role, User, get_current_user, require_roles
+from ..core.auth import Role, User, require_roles
 from ..database import get_db, now_utc
 from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
 
@@ -337,7 +337,9 @@ async def export_geojson(
     statut_conformite: str | None = Query(None),
     include_atis: bool = Query(True),
     include_inspections: bool = Query(False),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)
+    ),
     db: Session = Depends(get_db),
 ):
     """Export filtered GeoJSON for mapping tools (QGIS, Leaflet, etc.)."""

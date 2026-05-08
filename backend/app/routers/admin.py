@@ -656,6 +656,14 @@ async def impersonate_user(
     if username == current_user.username:
         raise HTTPException(status_code=400, detail="Impossible de se simuler soi-meme.")
 
+    target_user = user_from_row(target)
+    target_role_values = {r.value for r in target_user.roles}
+    if "admin" in target_role_values or "ministre" in target_role_values:
+        raise HTTPException(
+            status_code=403,
+            detail="Impersonation d'un compte admin ou ministre interdite (separation des pouvoirs).",
+        )
+
     write_audit_event(
         db,
         actor=current_user.username,
@@ -665,7 +673,6 @@ async def impersonate_user(
     )
     db.commit()
 
-    target_user = user_from_row(target)
     token = create_access_token(
         data={
             "sub": target_user.username,

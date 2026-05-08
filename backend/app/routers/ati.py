@@ -2365,9 +2365,16 @@ async def renew_ati(
     if original.statut not in ("approuve", "expire"):
         raise HTTPException(400, "Seuls les ATI approuves ou expires peuvent etre renouveles.")
 
-    # Generate new ATI number
-    count = db.execute(select(func.count()).select_from(AgrementTechniqueIndustrielORM)).scalar() or 0
-    numero = f"ATI-REN-{count + 1:04d}"
+    # Generate new ATI number with REN prefix and atomic max-based sequencing.
+    year = now_utc().year
+    prefix = f"ATI-REN-{year}-"
+    max_num = db.execute(
+        select(func.max(AgrementTechniqueIndustrielORM.numero_ati)).where(
+            AgrementTechniqueIndustrielORM.numero_ati.like(f"{prefix}%")
+        )
+    ).scalar()
+    seq = int(max_num.split("-")[-1]) + 1 if max_num else 1
+    numero = f"{prefix}{seq:04d}"
 
     now = now_utc()
     renewed = AgrementTechniqueIndustrielORM(

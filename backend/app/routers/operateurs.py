@@ -316,7 +316,12 @@ async def get_operateur(
             raise HTTPException(
                 status_code=403, detail="Acces restreint aux operateurs avec lesquels vous avez interagi."
             )
-    return _to_operateur_read(op)
+    result = _to_operateur_read(op)
+    # Operateur ne doit pas voir NIF / effectif des concurrents (meme avec lien d'interaction).
+    if not (roles & privileged) and "operateur" in roles:
+        result.nif_gabon = ""
+        result.effectif_declare = None
+    return result
 
 
 @router.get("/operateurs/{operateur_id}/risk-profile", summary="Profil de risque d'un operateur")

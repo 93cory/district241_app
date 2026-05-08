@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..core.auth import User, get_current_user
+from ..core.auth import Role, User, get_current_user, require_roles
 from ..database import get_db
 from ..models.core import UserAccountORM
 from ..models.pnpi import DelegationORM
@@ -72,7 +72,9 @@ async def my_delegations(
 @router.post("/create")
 async def create_delegation(
     data: CreateDelegationBody,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.directeur, Role.instructeur, Role.inspecteur, Role.ministre)
+    ),
     db: Session = Depends(get_db),
 ):
     if data.to_username == current_user.username:

@@ -22,6 +22,12 @@ async def get_reminders(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    from .ati import check_ati_access
+
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(404, "ATI introuvable.")
+    check_ati_access(ati, current_user)
     reminders = (
         db.execute(
             select(ATIReminderORM).where(ATIReminderORM.ati_id == ati_id).order_by(ATIReminderORM.scheduled_at.asc())
