@@ -57,6 +57,11 @@ os.environ.setdefault("PNPI_SECRET_KEY", "tests-pnpi-secret-key-do-not-use-in-pr
 # directement sans setup de signature. Un test dedie verifie l'enforcement
 # (cf test_idor_fixes.py::test_signature_required_before_approval).
 os.environ.setdefault("PNPI_FF_REQUIRE_SIGNATURE_APPROVAL", "0")
+# Feature flag: dossier complet (4 documents requis) avant transition en_validation.
+# Meme logique que la signature : active par defaut en prod, desactivee dans
+# les tests legacy. Un test dedie verifie l'enforcement
+# (cf test_idor_fixes.py::test_dossier_complet_required_before_en_validation).
+os.environ.setdefault("PNPI_FF_REQUIRE_COMPLETE_DOSSIER", "0")
 
 # ---------------------------------------------------------------------------
 # 3. Fixture session-scoped : reinitialise les comptes au demarrage

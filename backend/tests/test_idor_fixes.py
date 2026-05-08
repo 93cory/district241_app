@@ -204,3 +204,79 @@ def test_document_upload_rejects_blocked_extension(monkeypatch) -> None:
     )
     assert r.status_code == 400, r.text
     assert ".exe" in r.json().get("detail", "")
+
+
+def test_dossier_complet_required_before_en_validation(monkeypatch) -> None:
+    """En prod (flag=1), passer un ATI en en_validation sans documents requis doit echouer 422."""
+    monkeypatch.setenv("PNPI_FF_REQUIRE_COMPLETE_DOSSIER", "1")
+    instr = _auth("instructeur", "instructeur-dev-password")
+    op = _create_operateur(instr)
+    r = client.post(
+        "/pnpi/ati",
+        headers=instr,
+        json={"operateur_id": op["id"], "type_activite": "Scierie", "secteur": "bois", "province": "estuaire"},
+    )
+    ati_id = r.json()["id"]
+    r = client.patch(f"/pnpi/ati/{ati_id}/statut", headers=instr, json={"new_statut": "en_instruction"})
+    assert r.status_code == 200, r.text
+
+    # Sans aucun document -> doit refuser en_validation.
+    r = client.patch(f"/pnpi/ati/{ati_id}/statut", headers=instr, json={"new_statut": "en_validation"})
+    assert r.status_code == 422, r.text
+    assert "incomplet" in r.json().get("detail", "").lower()
+
+    # Apres upload des 4 docs requis -> 200.
+    for type_doc in ("statuts", "bilan", "plan_site", "certification"):
+        rr = client.post(
+            f"/pnpi/ati/{ati_id}/documents",
+            headers=instr,
+            files={"file": (f"{type_doc}.pdf", b"%PDF-1.4 fake", "application/pdf")},
+            data={"type_document": type_doc},
+        )
+        assert rr.status_code in (200, 201), rr.text
+
+    r = client.patch(f"/pnpi/ati/{ati_id}/statut", headers=instr, json={"new_statut": "en_validation"})
+    assert r.status_code == 200, r.text
+
+
+def test_cron_archive_expired_basculates_approuve_to_expire(monkeypatch) -> None:
+    """Le cron archive-expired doit basculer les ATI approuves expires en 'expire'."""
+    from datetime import timedelta
+
+    from sqlalchemy import select as _select
+
+    from app.database import SessionLocal, now_utc
+    from app.models.pnpi import AgrementTechniqueIndustrielORM
+    from scripts.cron_tasks import task_archive_expired
+
+    monkeypatch.setenv("PNPI_FF_REQUIRE_SIGNATURE_APPROVAL", "0")
+    instr = _auth("instructeur", "instructeur-dev-password")
+    op = _create_operateur(instr)
+    r = client.post(
+        "/pnpi/ati",
+        headers=instr,
+        json={"operateur_id": op["id"], "type_activite": "Scierie", "secteur": "bois", "province": "estuaire"},
+    )
+    ati_id = r.json()["id"]
+
+    # Pousser jusqu'a approuve via l'API
+    for s in ("en_instruction", "en_validation", "approuve"):
+        body = {"new_statut": s}
+        if s == "approuve":
+            body["numero_reference_decision"] = "REF-EXPIRY-TEST"
+        rr = client.patch(f"/pnpi/ati/{ati_id}/statut", headers=instr, json=body)
+        assert rr.status_code == 200, rr.text
+
+    # Forcer une expiration dans le passe directement en base
+    with SessionLocal() as db:
+        ati_row = db.get(AgrementTechniqueIndustrielORM, ati_id)
+        ati_row.date_expiration = now_utc() - timedelta(days=1)
+        db.commit()
+
+    # Lancer le cron
+    task_archive_expired()
+
+    # L'ATI doit maintenant etre en 'expire'
+    with SessionLocal() as db:
+        rows = db.execute(_select(AgrementTechniqueIndustrielORM).where(AgrementTechniqueIndustrielORM.id == ati_id)).scalars().all()
+        assert rows[0].statut == "expire"

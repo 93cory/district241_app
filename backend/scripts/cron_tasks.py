@@ -4,6 +4,8 @@ Usage:
   python scripts/cron_tasks.py weekly-report
   python scripts/cron_tasks.py sla-check
   python scripts/cron_tasks.py cleanup
+  python scripts/cron_tasks.py archive-expired
+  python scripts/cron_tasks.py reminders
 """
 
 import logging
@@ -283,11 +285,57 @@ def task_generate_reminders():
         db.close()
 
 
+def task_archive_expired():
+    """Bascule automatiquement les ATI 'approuve' dont la date_expiration est passee.
+
+    Sans ce cron, le tableau ministeriel affiche encore 'approuve' des ATI dont
+    l'agrement a expire depuis des mois.
+    """
+    logger.info("Archiving expired ATIs (approuve -> expire)...")
+    db = SessionLocal()
+    try:
+        from app.core.audit import write_audit_event
+        from app.models.pnpi import AgrementTechniqueIndustrielORM
+
+        now = now_utc()
+        expired = (
+            db.execute(
+                select(AgrementTechniqueIndustrielORM).where(
+                    AgrementTechniqueIndustrielORM.statut == "approuve",
+                    AgrementTechniqueIndustrielORM.date_expiration.isnot(None),
+                    AgrementTechniqueIndustrielORM.date_expiration < now,
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+        for ati in expired:
+            ati.statut = "expire"
+            ati.updated_at = now
+
+        if expired:
+            write_audit_event(
+                db,
+                actor="system.cron",
+                action="ati.bulk_archive_expired",
+                target=f"{len(expired)} ATIs",
+                details=f"Bascule auto approuve->expire (cron). IDs: {', '.join(a.numero_ati for a in expired[:20])}",
+            )
+            db.commit()
+            logger.info(f"Archived {len(expired)} expired ATI(s).")
+        else:
+            logger.info("No expired ATI to archive.")
+    finally:
+        db.close()
+
+
 TASKS = {
     "weekly-report": task_weekly_report,
     "sla-check": task_sla_check,
     "cleanup": task_cleanup,
     "reminders": task_generate_reminders,
+    "archive-expired": task_archive_expired,
 }
 
 

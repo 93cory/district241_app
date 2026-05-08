@@ -76,6 +76,38 @@ def _enforce_signature_before_approval(ati: AgrementTechniqueIndustrielORM) -> N
         )
 
 
+_REQUIRED_DOC_TYPES = {"statuts", "bilan", "plan_site", "certification"}
+
+
+def _enforce_dossier_complet(ati_id: str, db: Session) -> None:
+    """Refuse la transition vers 'en_validation' si les documents requis sont absents.
+
+    Controle desactivable via `PNPI_FF_REQUIRE_COMPLETE_DOSSIER=0` (legacy / tests).
+    Par defaut active : conformite processus d'instruction (pas de validation
+    sur dossier vide).
+    """
+    flag = os.getenv("PNPI_FF_REQUIRE_COMPLETE_DOSSIER", "1").lower()
+    if flag in ("0", "false", "no", "off"):
+        return
+    from ..models.pnpi import DocumentDossierORM
+
+    present = {
+        d.type_document
+        for d in db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id))
+        .scalars()
+        .all()
+    }
+    missing = _REQUIRED_DOC_TYPES - present
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Dossier incomplet. Documents requis manquants: {', '.join(sorted(missing))}. "
+                "Uploader via POST /pnpi/ati/{id}/documents avant de passer en_validation."
+            ),
+        )
+
+
 def check_ati_access(ati: AgrementTechniqueIndustrielORM, current_user: User) -> None:
     """Operateur: accede uniquement aux ATI qu'il a crees. Roles privilegies: pass-through.
 
@@ -599,6 +631,8 @@ async def update_ati_statut(
                 status_code=400,
                 detail=f"Transition invalide: {ati.statut} -> {payload.new_statut}. Transitions autorisees: {', '.join(allowed) or 'aucune'}",
             )
+        if payload.new_statut == "en_validation":
+            _enforce_dossier_complet(ati_id, db)
         if payload.new_statut == "approuve":
             _enforce_signature_before_approval(ati)
         ati.statut = payload.new_statut
