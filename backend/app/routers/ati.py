@@ -93,9 +93,7 @@ def _enforce_dossier_complet(ati_id: str, db: Session) -> None:
 
     present = {
         d.type_document
-        for d in db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id))
-        .scalars()
-        .all()
+        for d in db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)).scalars().all()
     }
     missing = _REQUIRED_DOC_TYPES - present
     if missing:
