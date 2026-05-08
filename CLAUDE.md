@@ -86,6 +86,11 @@ docker compose -f docker-compose.prod.yml up -d  # Prod
 
 # Pre-deploy
 bash scripts/pre-deploy-check.sh   # Lint + tests + build + docker
+
+# Pre-commit hook (a installer une seule fois apres clone)
+cd backend && pip install pre-commit && cd .. && pre-commit install
+# Lance ruff check + ruff format sur les fichiers backend/app modifies
+# avant chaque commit. Evite les echecs CI sur lint / format.
 ```
 
 ## Variables d'environnement

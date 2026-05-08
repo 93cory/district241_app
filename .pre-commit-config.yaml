@@ -1,0 +1,21 @@
+# Hooks executes localement avant chaque commit pour eviter les echecs CI
+# liees au lint / format.
+#
+# Installation (une seule fois apres clone) :
+#   pip install pre-commit
+#   pre-commit install
+#
+# Lancement manuel sur tout le projet :
+#   pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      # Lint backend (equivalent CI: ruff check app/). Auto-corrige ce qui peut l'etre.
+      - id: ruff
+        files: ^backend/app/.*\.py$
+        args: [--fix]
+      # Format backend (equivalent CI: ruff format --check app/). Auto-format.
+      - id: ruff-format
+        files: ^backend/app/.*\.py$
