@@ -59,6 +59,8 @@ Exemple :
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import logging
 import os
 from functools import lru_cache
@@ -68,6 +70,7 @@ logger = logging.getLogger("pnpi.encryption")
 ENCRYPTED_PREFIX = "enc:v1:"
 ENV_KEY = "PNPI_FIELD_ENCRYPTION_KEY"
 ENV_KEY_OLD = "PNPI_FIELD_ENCRYPTION_KEY_OLD"
+_DEV_LOOKUP_PEPPER = "pnpi-dev-lookup-pepper-not-secret"
 
 
 class EncryptionUnavailableError(RuntimeError):
@@ -161,6 +164,38 @@ def decrypt_str(stored: str | None) -> str | None:
         return None
 
 
+def hash_for_lookup(value: str | None) -> str | None:
+    """Empreinte deterministe (HMAC-SHA256) pour recherche exacte / unicite
+    sur un champ par ailleurs chiffre (donc non comparable directement en SQL).
+
+    Contrairement a `encrypt_str` (non deterministe, un chiffre different a
+    chaque appel via l'IV Fernet), cette empreinte est stable : deux appels
+    avec la meme valeur produisent le meme hash, ce qui permet un `WHERE
+    xxx_hash = :hash` ou une contrainte UNIQUE sans jamais stocker le clair.
+    Le hash n'est pas reversible : il ne remplace pas `encrypt_str` pour
+    l'affichage, seulement pour la correspondance exacte.
+
+    Utilise la cle `PNPI_FIELD_ENCRYPTION_KEY` comme sel HMAC (memes
+    garanties de disponibilite que le chiffrement). En dev sans cle, un sel
+    fixe non secret est utilise (coherent avec le mode pass-through).
+    """
+    if value is None:
+        return None
+    key = os.getenv(ENV_KEY, "").strip() or _DEV_LOOKUP_PEPPER
+    return hmac.new(key.encode("utf-8"), value.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def mask_tail(value: str | None, visible: int = 4) -> str | None:
+    """Masque une chaine en ne laissant visibles que les `visible` derniers
+    caracteres (ex: NIF affiche en liste sans exposer la valeur complete).
+    """
+    if value is None:
+        return None
+    if len(value) <= visible:
+        return value
+    return ("*" * (len(value) - visible)) + value[-visible:]
+
+
 # ---------------------------------------------------------------------------
 # Type SQLAlchemy : EncryptedString (TypeDecorator transparent)
 # ---------------------------------------------------------------------------
@@ -201,5 +236,7 @@ __all__ = [
     "EncryptionUnavailableError",
     "decrypt_str",
     "encrypt_str",
+    "hash_for_lookup",
     "is_encryption_enabled",
+    "mask_tail",
 ]

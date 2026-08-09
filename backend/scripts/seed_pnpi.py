@@ -1126,7 +1126,6 @@ def main() -> None:
             dlat, dlng = data["lat_off"]
             op = OperateurIndustrielORM(
                 id=uid("OPI"),
-                nif_gabon=data["nif"],
                 raison_sociale=data["raison_sociale"],
                 secteur=data["secteur"],
                 province=data["province"],
@@ -1140,6 +1139,7 @@ def main() -> None:
                 created_at=days_ago(365 * 3 + 90),
                 created_by="admin",
             )
+            op.set_nif(data["nif"])  # chiffre + empreinte de recherche
             db.add(op)
             operateurs.append(op)
         db.flush()

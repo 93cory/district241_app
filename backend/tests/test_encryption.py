@@ -125,3 +125,35 @@ def test_invalid_ciphertext_returns_none(fresh_module):
 
     bad = f"{enc.ENCRYPTED_PREFIX}corrupted-token-not-base64"
     assert enc.decrypt_str(bad) is None
+
+
+def test_hash_for_lookup_is_deterministic(fresh_module):
+    """Meme valeur -> meme hash (necessaire pour recherche exacte / unicite)."""
+    key = _make_key()
+    enc = fresh_module({"PNPI_FIELD_ENCRYPTION_KEY": key, "PNPI_ENV": "development"})
+
+    h1 = enc.hash_for_lookup("GA-NIF-2024-00123")
+    h2 = enc.hash_for_lookup("GA-NIF-2024-00123")
+    assert h1 == h2
+    assert h1 is not None
+    assert "GA-NIF-2024-00123" not in h1  # non reversible / n'expose pas le clair
+
+
+def test_hash_for_lookup_differs_per_value(fresh_module):
+    key = _make_key()
+    enc = fresh_module({"PNPI_FIELD_ENCRYPTION_KEY": key, "PNPI_ENV": "development"})
+
+    assert enc.hash_for_lookup("nif-a") != enc.hash_for_lookup("nif-b")
+
+
+def test_hash_for_lookup_none(fresh_module):
+    key = _make_key()
+    enc = fresh_module({"PNPI_FIELD_ENCRYPTION_KEY": key, "PNPI_ENV": "development"})
+    assert enc.hash_for_lookup(None) is None
+
+
+def test_mask_tail_keeps_only_last_chars(fresh_module):
+    enc = fresh_module({"PNPI_ENV": "development"})
+    assert enc.mask_tail("GA-NIF-2024-00123") == "*************0123"
+    assert enc.mask_tail("abc") == "abc"  # trop court pour masquer
+    assert enc.mask_tail(None) is None

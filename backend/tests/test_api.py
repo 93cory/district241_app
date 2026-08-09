@@ -748,6 +748,28 @@ class TestOperateurs:
         assert data["id"].startswith("OP-")
         _created_operateur_id = data["id"]
 
+    def test_create_operateur_populates_encryption_fields(self) -> None:
+        """L'endpoint doit passer par `set_nif()` : `nif_gabon_hash` et
+        `nif_gabon_encrypted` doivent etre renseignes, pas seulement
+        `nif_gabon` en clair (regression : ces colonnes etaient orphelines
+        car aucun call site n'appelait `set_nif()`)."""
+        if not _created_operateur_id:
+            return
+        from app.database import SessionLocal
+        from app.models.pnpi import OperateurIndustrielORM
+
+        with SessionLocal() as db:
+            op = db.get(OperateurIndustrielORM, _created_operateur_id)
+            assert op is not None
+            assert op.nif_gabon_hash is not None
+            # nif_gabon_encrypted n'est chiffre que si une cle est configuree ;
+            # en dev/test sans PNPI_FIELD_ENCRYPTION_KEY, encrypt_str() est
+            # pass-through — on verifie donc surtout que le hash (toujours
+            # calcule, cle ou pas) est bien present.
+            from app.core.encryption import hash_for_lookup
+
+            assert op.nif_gabon_hash == hash_for_lookup(_test_nif)
+
     def test_create_operateur_duplicate_nif(self) -> None:
         headers = auth_headers("ministre", "ministre-dev-password")
         payload = {

@@ -133,7 +133,6 @@ async def import_operateurs_csv(
 
             op = OperateurIndustrielORM(
                 id=f"OP-{uuid.uuid4().hex[:12].upper()}",
-                nif_gabon=nif,
                 raison_sociale=raison,
                 secteur=(row.get("secteur") or "autre").strip().lower(),
                 province=(row.get("province") or "").strip().lower().replace(" ", "_"),
@@ -144,6 +143,7 @@ async def import_operateurs_csv(
                 created_at=now_utc(),
                 created_by=current_user.username,
             )
+            op.set_nif(nif)  # chiffre + empreinte de recherche (cf models/pnpi.py)
             db.add(op)
             created += 1
 
@@ -269,7 +269,6 @@ async def create_operateur(
 
     op = OperateurIndustrielORM(
         id=f"OP-{uuid.uuid4().hex[:12].upper()}",
-        nif_gabon=payload.nif_gabon.strip(),
         raison_sociale=payload.raison_sociale.strip(),
         secteur=payload.secteur.strip(),
         province=payload.province.strip(),
@@ -283,6 +282,7 @@ async def create_operateur(
         created_at=now_utc(),
         created_by=current_user.username,
     )
+    op.set_nif(payload.nif_gabon.strip())  # chiffre + empreinte de recherche
     db.add(op)
     write_audit_event(
         db,

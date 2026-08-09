@@ -1447,7 +1447,6 @@ def seed_pnpi_data(db: Session) -> None:
     for op_id, nif, raison, secteur, province, ville, lat, lng, effectif, email, tel in operateurs_data:
         op = OperateurIndustrielORM(
             id=op_id,
-            nif_gabon=nif,
             raison_sociale=raison,
             secteur=secteur,
             province=province,
@@ -1461,6 +1460,7 @@ def seed_pnpi_data(db: Session) -> None:
             created_at=now,
             created_by="system",
         )
+        op.set_nif(nif)  # chiffre + empreinte de recherche (cf models/pnpi.py)
         operateurs.append(op)
     db.add_all(operateurs)
     db.flush()

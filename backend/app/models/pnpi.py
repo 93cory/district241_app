@@ -34,6 +34,10 @@ class OperateurIndustrielORM(Base):
     # Colonne chiffree at-rest (Fernet). Voir `app.core.encryption`.
     # Lecture / ecriture passent par la property `nif` (lazy fallback sur nif_gabon).
     nif_gabon_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Empreinte deterministe (HMAC) pour recherche exacte / unicite sans lire
+    # le clair (le ciphertext Fernet n'est pas comparable en SQL). NULL
+    # autorise plusieurs fois (contrainte UNIQUE Postgres ignore les NULL).
+    nif_gabon_hash: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True, index=True)
     raison_sociale: Mapped[str] = mapped_column(String(300), nullable=False)
     secteur: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     province: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
@@ -65,20 +69,28 @@ class OperateurIndustrielORM(Base):
         return self.nif_gabon
 
     def set_nif(self, value: str | None) -> None:
-        """Setter unifie : chiffre dans `nif_gabon_encrypted` ET ecrit
-        `nif_gabon` en clair tant que la migration n'est pas finalisee.
+        """Setter unifie : chiffre dans `nif_gabon_encrypted`, calcule
+        l'empreinte de recherche dans `nif_gabon_hash`, ET ecrit `nif_gabon`
+        en clair tant que la migration n'est pas finalisee (cf
+        `docs/audit-deep/db-integrity.md`).
 
-        Une migration future supprimera la colonne en clair une fois 100%
-        des lignes legacy chiffrees.
+        A utiliser systematiquement a la creation/mise a jour d'un operateur
+        — ne jamais assigner `nif_gabon=` directement, sinon le chiffrement
+        et l'empreinte ne sont pas calcules pour cette ligne.
+
+        Une migration future supprimera/masquera la colonne en clair une
+        fois 100% des lignes migrees (cf `scripts/encrypt_existing_nifs.py`).
         """
-        from ..core.encryption import encrypt_str
+        from ..core.encryption import encrypt_str, hash_for_lookup
 
         if value is None:
             self.nif_gabon = ""  # NOT NULL contrainte legacy
             self.nif_gabon_encrypted = None
+            self.nif_gabon_hash = None
             return
         self.nif_gabon = value
         self.nif_gabon_encrypted = encrypt_str(value)
+        self.nif_gabon_hash = hash_for_lookup(value)
 
     agrements: Mapped[list[AgrementTechniqueIndustrielORM]] = relationship(
         back_populates="operateur",
