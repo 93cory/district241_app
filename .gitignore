@@ -43,6 +43,7 @@ migrate_working_dir/
 /video/.remotion/
 /backend/.venv/
 /backend/.venv312/
+/backend/.venv-audit/
 *.db
 **/__pycache__/
 /coverage/
@@ -72,3 +73,12 @@ nul
 
 # Runtime artifacts (documents ATI, photos inspections, signatures)
 /backend/uploads/
+
+# Livrables ministeriels generes (regenerer via docs/livrables-ministere/build_*.py)
+/outputs/
+
+# Dumps DB / sauvegardes locales (donnees sensibles, jamais versionnees)
+/backups/
+
+# Cache outils locaux (Codex runtimes, etc.)
+/.cache/

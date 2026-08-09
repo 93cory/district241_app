@@ -5,7 +5,8 @@
       "Bash(python -c \"import docx; print\\(''python-docx OK''\\)\")",
       "Bash(python -c \"import reportlab; print\\(''reportlab OK''\\)\")",
       "Bash(python -c \"import sys; print\\(sys.executable\\)\")",
-      "Bash(pip show sqlalchemy)"
+      "Bash(pip show sqlalchemy)",
+      "Bash(grep -E '^\\\\s{0,2}[a-z_-]+:')"
     ]
   }
 }

@@ -28,6 +28,11 @@ jobs:
   # ------------------------------------------------------------------
   preflight:
     runs-on: ubuntu-latest
+    # Tant que vars.PNPI_PROD_READY != 'true', le CD reste dormant : le job est
+    # skip (0 minute facturee) au lieu de tourner a vide a chaque push sur main.
+    # workflow_dispatch declenche toujours (utilisateur explicite). Meme pattern
+    # que cron.yml / backup.yml.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.PNPI_PROD_READY == 'true' }}
     outputs:
       armed: ${{ steps.check.outputs.armed }}
     steps:

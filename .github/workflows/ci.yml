@@ -3,8 +3,18 @@ name: PNPI CI
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".gitignore"
+      - "LICENSE"
   pull_request:
     branches: [main, master]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - ".gitignore"
+      - "LICENSE"
 
 permissions:
   contents: read
@@ -14,8 +24,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Detecte quels domaines ont change pour ne lancer que les jobs pertinents.
+  # Un commit backend-only ne relance pas le build frontend, et inversement.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      docker: ${{ steps.filter.outputs.docker }}
+      deps: ${{ steps.filter.outputs.deps }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            docker:
+              - 'backend/Dockerfile'
+              - 'frontend/Dockerfile'
+              - 'backend/requirements.txt'
+              - 'frontend/package-lock.json'
+              - 'docker-compose*.yml'
+            deps:
+              - 'backend/requirements.txt'
+              - 'frontend/package-lock.json'
+              - 'frontend/package.json'
+
   backend:
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     defaults:
       run:
         working-directory: backend
@@ -39,6 +81,8 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
     defaults:
       run:
         working-directory: frontend
@@ -180,6 +224,9 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
+    needs: changes
+    # L'audit de dependances n'a de sens que quand les dependances changent.
+    if: ${{ needs.changes.outputs.deps == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -199,7 +246,17 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
-    needs: [backend, frontend]
+    needs: [changes, backend, frontend]
+    # Ne construit les images que si un Dockerfile / les dependances / le compose
+    # changent. Le build est le poste le plus couteux et cd.yml reconstruit +
+    # pousse deja les images au deploiement : inutile de le refaire a chaque commit.
+    # !cancelled() permet de tourner meme si backend/frontend sont skip (change-only),
+    # tant qu'aucun des deux n'a echoue.
+    if: >-
+      ${{ !cancelled()
+          && needs.changes.outputs.docker == 'true'
+          && needs.backend.result != 'failure'
+          && needs.frontend.result != 'failure' }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
