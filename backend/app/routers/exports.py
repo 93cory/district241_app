@@ -23,6 +23,7 @@ from ..core.audit import write_audit_event
 from ..core.auth import Role, User, require_roles
 from ..core.executive_report import generate_executive_report
 from ..core.signature import generate_signature
+from ..core.storage import get_storage
 from ..database import get_db, now_utc
 from ..models.core import FieldReportORM, TraceBatchORM, UnitORM, UserAccountORM
 from ..models.pilotage import ProjectDossierTransitionORM
@@ -711,12 +712,12 @@ async def export_ati_documents_zip(
     if not docs:
         raise HTTPException(status_code=404, detail="Aucun document pour cet ATI.")
 
+    storage = get_storage(os.getenv("PNPI_UPLOAD_DIR", "uploads/ati"))
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for doc in docs:
-            file_path = doc.chemin_stockage
-            if os.path.exists(file_path):
-                zf.write(file_path, doc.nom_fichier)
+            if storage.exists(doc.chemin_stockage):
+                zf.writestr(doc.nom_fichier, storage.read(doc.chemin_stockage))
 
     buf.seek(0)
 

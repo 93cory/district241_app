@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
-from fastapi.responses import FileResponse
 from fastapi.responses import Response as FastAPIResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
@@ -19,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
 from ..core.auth import Role, User, require_roles
+from ..core.storage import get_storage
 from ..database import as_utc, get_db, now_utc
 from ..models.core import UserAccountORM
 from ..models.pnpi import (
@@ -38,8 +38,14 @@ from ..schemas.pnpi import InspectionCreate, InspectionRead
 
 router = APIRouter(prefix="/pnpi", tags=["Inspections"])
 
-PHOTO_UPLOAD_DIR = Path(os.getenv("PNPI_UPLOAD_DIR", "uploads/inspections"))
-PHOTO_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+PHOTO_UPLOAD_DIR_NAME = os.getenv("PNPI_INSPECTIONS_UPLOAD_DIR", "uploads/inspections")
+
+
+def _photo_storage():
+    """Backend de stockage actif pour les photos d'inspection (local ou
+    S3/MinIO selon PNPI_STORAGE_BACKEND). cf `core/storage.py` — dette D-001."""
+    return get_storage(PHOTO_UPLOAD_DIR_NAME)
+
 
 PHOTO_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 PHOTO_ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -1600,10 +1606,7 @@ async def upload_inspection_photo(
 
     photo_id = f"PHO-{uuid.uuid4().hex[:12].upper()}"
     stored_name = f"{photo_id}{ext}"
-    inspection_dir = PHOTO_UPLOAD_DIR / inspection_id
-    inspection_dir.mkdir(parents=True, exist_ok=True)
-    file_path = inspection_dir / stored_name
-    file_path.write_bytes(content)
+    stored_ref = _photo_storage().save(f"{inspection_id}/{stored_name}", content)
 
     # Parse captured_at si ISO fourni
     captured_dt = None
@@ -1619,7 +1622,7 @@ async def upload_inspection_photo(
         id=photo_id,
         inspection_id=inspection_id,
         nom_fichier=file.filename or stored_name,
-        chemin_stockage=str(file_path),
+        chemin_stockage=stored_ref,
         taille_octets=len(content),
         description=description,
         latitude=latitude,
@@ -1647,14 +1650,19 @@ async def download_inspection_photo(
     photo_id: str,
     _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
     db: Session = Depends(get_db),
-) -> FileResponse:
+) -> FastAPIResponse:
     photo = db.get(InspectionPhotoORM, photo_id)
     if not photo or photo.inspection_id != inspection_id:
         raise HTTPException(status_code=404, detail="Photo introuvable.")
-    file_path = Path(photo.chemin_stockage)
-    if not file_path.exists():
+    storage = _photo_storage()
+    if not storage.exists(photo.chemin_stockage):
         raise HTTPException(status_code=404, detail="Fichier physique introuvable sur le serveur.")
-    return FileResponse(path=str(file_path), filename=photo.nom_fichier, media_type="application/octet-stream")
+    content = storage.read(photo.chemin_stockage)
+    return FastAPIResponse(
+        content=content,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{photo.nom_fichier}"'},
+    )
 
 
 @router.delete(
@@ -1671,9 +1679,7 @@ async def delete_inspection_photo(
     photo = db.get(InspectionPhotoORM, photo_id)
     if not photo or photo.inspection_id != inspection_id:
         raise HTTPException(status_code=404, detail="Photo introuvable.")
-    file_path = Path(photo.chemin_stockage)
-    if file_path.exists():
-        file_path.unlink()
+    _photo_storage().delete(photo.chemin_stockage)
     db.delete(photo)
     write_audit_event(
         db,

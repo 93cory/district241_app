@@ -68,6 +68,15 @@ services:
       PNPI_S3_ACCESS_KEY: ${PNPI_S3_ACCESS_KEY:-pnpi_minio}
       PNPI_S3_SECRET_KEY: ${PNPI_S3_SECRET_KEY:-changeme_minio_secret}
       PNPI_BACKUP_RETAIN_DAYS: "30"
+      # Stockage documents ATI / photos (dette D-001) : bucket dedie, distinct
+      # des sauvegardes DB (cycle de vie/retention different). Reste en local
+      # (PNPI_UPLOAD_DIR, comportement historique) tant que
+      # PNPI_STORAGE_BACKEND n'est pas passe a "s3" — cf
+      # scripts/migrate_uploads_to_s3.py pour la bascule (migrer AVANT
+      # d'activer le flag, sinon les documents deja uploades en local
+      # deviennent invisibles).
+      PNPI_S3_DOCUMENTS_BUCKET: pnpi-documents
+      PNPI_STORAGE_BACKEND: ${PNPI_STORAGE_BACKEND:-local}
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
       interval: 15s

@@ -36,6 +36,7 @@ backend/
       timeout_middleware.py     # Request timeout (30s default)
       request_size_limit.py    # Body size limit (10/50 MB)
       upload_validation.py     # File type/size validation
+      storage.py          # Document/photo storage abstraction (local fs | S3/MinIO)
       webhooks.py        # Outbound webhooks with retry
       api_analytics.py   # In-memory API usage analytics
       health_score.py    # Global health score (0-100)
@@ -111,7 +112,18 @@ cd backend && pip install pre-commit && cd .. && pre-commit install
 - `PNPI_WEBHOOK_URL` : URL webhook externe
 - `PNPI_FF_*` : Feature flags (ex: PNPI_FF_GRAPHQL_API=0)
 - `PNPI_ACCESS_TOKEN_EXPIRE_MINUTES` : TTL JWT (default 480 = 8h, match cookie)
-- `PNPI_UPLOAD_DIR` : Dossier stockage documents ATI (default `uploads/ati`)
+- `PNPI_UPLOAD_DIR` : Dossier stockage local documents ATI (default `uploads/ati`)
+- `PNPI_INSPECTIONS_UPLOAD_DIR` : Dossier stockage local photos inspection
+  (default `uploads/inspections`)
+- `PNPI_STORAGE_BACKEND` : `local` (default) | `s3` — backend de stockage
+  documents/photos/signatures (cf `core/storage.py`, dette D-001). Bascule
+  vers S3 seulement apres `scripts/migrate_uploads_to_s3.py` (sinon les
+  fichiers deja uploades en local deviennent inaccessibles).
+- `PNPI_S3_ENDPOINT`, `PNPI_S3_ACCESS_KEY`, `PNPI_S3_SECRET_KEY`,
+  `PNPI_S3_REGION` : identifiants S3/MinIO (partages avec
+  `scripts/backup_s3.py`)
+- `PNPI_S3_DOCUMENTS_BUCKET` : bucket documents/photos (default
+  `pnpi-documents`, distinct de `PNPI_S3_BUCKET` = sauvegardes DB)
 - `PNPI_FIELD_ENCRYPTION_KEY` : cle Fernet pour chiffrement at-rest des champs
   sensibles (NIF, etc. — cf `core/encryption.py`). Obligatoire en production
   (RuntimeError au demarrage sinon) ; pass-through clair en dev si absente.

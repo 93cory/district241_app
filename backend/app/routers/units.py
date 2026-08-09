@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
 from ..core.auth import Role, User, require_roles
+from ..core.storage import get_storage
 from ..database import get_db, now_utc
 from ..models.core import AuditEventORM, DeclarationORM, FieldReportORM, TraceBatchORM, UnitORM
 
@@ -288,7 +289,7 @@ async def list_field_reports(
     return [_to_field_report_read(row) for row in rows]
 
 
-UPLOAD_DIR = Path("uploads/field-reports")
+UPLOAD_DIR_NAME = "uploads/field-reports"
 
 
 @router.post("/field-reports", status_code=status.HTTP_201_CREATED)
@@ -352,15 +353,10 @@ async def upload_field_report_photo(
     if not row:
         raise HTTPException(status_code=404, detail="Rapport terrain introuvable.")
 
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     ext = Path(photo.filename).suffix if photo.filename else ".jpg"
     filename = f"{report_id}{ext}"
-    filepath = UPLOAD_DIR / filename
-
     content = await photo.read()
-    filepath.write_bytes(content)
-
-    row.photo_path = str(filepath)
+    row.photo_path = get_storage(UPLOAD_DIR_NAME).save(filename, content)
     db.commit()
     db.refresh(row)
     return _to_field_report_read(row)

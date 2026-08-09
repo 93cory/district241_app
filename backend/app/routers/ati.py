@@ -8,7 +8,6 @@ import logging
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
 from fastapi.responses import Response as FastAPIResponse
@@ -22,6 +21,7 @@ from ..core.decision_engine import recommend_decision
 from ..core.field_tracker import get_field_history
 from ..core.pagination import PaginatedResponse, PaginationParams
 from ..core.risk_assessment import assess_risk
+from ..core.storage import get_storage
 from ..database import as_utc, get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -70,10 +70,8 @@ def _user_role_values(current_user: User) -> set[str]:
 
 def _has_decision_signature(ati_id: str) -> bool:
     """Verifie qu'au moins une signature PNG existe pour cet ATI."""
-    sig_dir = Path("uploads/signatures") / ati_id
-    if not sig_dir.exists():
-        return False
-    return any(p.is_file() and p.suffix.lower() == ".png" for p in sig_dir.iterdir())
+    storage = get_storage("uploads/signatures")
+    return any(ref.lower().endswith(".png") for ref in storage.list_prefix(ati_id))
 
 
 def _enforce_signature_before_approval(ati: AgrementTechniqueIndustrielORM) -> None:
@@ -2194,7 +2192,6 @@ async def sign_decision(
     """
     import base64
     import re
-    from pathlib import Path
 
     ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
     if not ati:
@@ -2215,11 +2212,8 @@ async def sign_decision(
     except Exception:
         raise HTTPException(400, "Signature base64 illisible.")
 
-    sig_dir = Path("uploads/signatures") / ati_id
-    sig_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{current_user.username}_{now_utc().strftime('%Y%m%d_%H%M%S')}.png"
-    sig_path = sig_dir / filename
-    sig_path.write_bytes(png_bytes)
+    sig_ref = get_storage("uploads/signatures").save(f"{ati_id}/{filename}", png_bytes)
 
     write_audit_event(
         db,
@@ -2233,7 +2227,7 @@ async def sign_decision(
     return {
         "status": "ok",
         "filename": filename,
-        "path": str(sig_path),
+        "path": sig_ref,
         "signed_by": current_user.username,
         "signed_at": now_utc().isoformat(),
         "ati_statut": ati.statut,

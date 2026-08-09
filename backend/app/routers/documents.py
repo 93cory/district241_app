@@ -8,13 +8,14 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
 from ..core.auth import Role, User, require_roles
+from ..core.storage import get_storage
 from ..core.upload_validation import BLOCKED_EXTENSIONS
 from ..database import get_db, now_utc
 from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM, DocumentVersionORM, OperateurIndustrielORM
@@ -22,8 +23,14 @@ from .ati import _required_docs_for_ati, check_ati_access
 
 router = APIRouter(prefix="/pnpi", tags=["Documents"])
 
-UPLOAD_DIR = Path(os.getenv("PNPI_UPLOAD_DIR", "uploads/ati"))
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_DIR_NAME = os.getenv("PNPI_UPLOAD_DIR", "uploads/ati")
+
+
+def _storage():
+    """Backend de stockage actif (local ou S3/MinIO selon
+    PNPI_STORAGE_BACKEND). cf `core/storage.py` — dette D-001."""
+    return get_storage(UPLOAD_DIR_NAME)
+
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 ALLOWED_CONTENT_TYPES = {
@@ -147,7 +154,7 @@ async def documents_cockpit(
             )
 
     orphan_docs = [doc for doc in docs if doc.ati_id not in ati_ids]
-    physical_missing = [doc for doc in docs if doc.chemin_stockage and not Path(doc.chemin_stockage).exists()]
+    physical_missing = [doc for doc in docs if doc.chemin_stockage and not _storage().exists(doc.chemin_stockage)]
     documents_with_versions = {version.document_id for version in versions}
     versioned_docs = sum(1 for doc in docs if doc.id in documents_with_versions)
     coverage_score = round((complete_atis / max(len(atis), 1)) * 100) if atis else 100
@@ -357,10 +364,7 @@ async def upload_ati_document(
 
     doc_id = f"DOC-{uuid.uuid4().hex[:12].upper()}"
     stored_name = f"{doc_id}{ext}"
-    ati_dir = UPLOAD_DIR / ati_id
-    ati_dir.mkdir(parents=True, exist_ok=True)
-    file_path = ati_dir / stored_name
-    file_path.write_bytes(content)
+    stored_ref = _storage().save(f"{ati_id}/{stored_name}", content)
 
     doc = DocumentDossierORM(
         id=doc_id,
@@ -368,7 +372,7 @@ async def upload_ati_document(
         nom_fichier=file.filename or stored_name,
         type_document=type_document,
         taille_octets=len(content),
-        chemin_stockage=str(file_path),
+        chemin_stockage=stored_ref,
         uploaded_at=now_utc(),
         uploaded_by=current_user.username,
     )
@@ -392,17 +396,22 @@ async def download_document(
         require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
     ),
     db: Session = Depends(get_db),
-) -> FileResponse:
+) -> Response:
     doc = db.get(DocumentDossierORM, doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document introuvable.")
     ati = db.get(AgrementTechniqueIndustrielORM, doc.ati_id)
     if ati:
         check_ati_access(ati, current_user)
-    file_path = Path(doc.chemin_stockage)
-    if not file_path.exists():
+    storage = _storage()
+    if not storage.exists(doc.chemin_stockage):
         raise HTTPException(status_code=404, detail="Fichier physique introuvable sur le serveur.")
-    return FileResponse(path=str(file_path), filename=doc.nom_fichier, media_type="application/octet-stream")
+    content = storage.read(doc.chemin_stockage)
+    return Response(
+        content=content,
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{doc.nom_fichier}"'},
+    )
 
 
 @router.delete("/documents/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -421,9 +430,7 @@ async def delete_document(
             status_code=422,
             detail=f"Impossible de supprimer un document d'un ATI en statut terminal ({ati.statut}).",
         )
-    file_path = Path(doc.chemin_stockage)
-    if file_path.exists():
-        file_path.unlink()
+    _storage().delete(doc.chemin_stockage)
     db.delete(doc)
     write_audit_event(
         db,
