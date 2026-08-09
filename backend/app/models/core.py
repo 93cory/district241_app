@@ -138,7 +138,9 @@ class LoginHistoryORM(Base):
     __tablename__ = "login_history"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    username: Mapped[str] = mapped_column(String(80), ForeignKey("user_accounts.username"), nullable=False, index=True)
+    # Keep the attempted identifier even when no account exists. A foreign key
+    # would make logging unknown-user failures impossible.
+    username: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(String(500), nullable=True)
     method: Mapped[str] = mapped_column(String(20), nullable=False, server_default="password")

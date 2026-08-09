@@ -35,6 +35,7 @@ from .routers.polls import router as polls_router
 from .routers.push import router as push_router
 from .routers.reminders import router as reminders_router
 from .routers.reports import router as reports_router
+from .routers.rin import router as rin_router
 from .routers.scheduled_reports import router as scheduled_reports_router
 from .routers.search import router as search_router
 from .routers.templates import router as templates_router
@@ -67,6 +68,7 @@ _all_routers = [
     messages_router,
     calendar_router,
     reports_router,
+    rin_router,
     templates_router,
     workflows_router,
     heatmap_router,

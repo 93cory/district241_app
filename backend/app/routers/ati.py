@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 import logging
 import os
 import uuid
@@ -11,12 +12,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, status
 from fastapi.responses import Response as FastAPIResponse
+from pydantic import BaseModel as _BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-
-logger = logging.getLogger("pnpi")
-
-from pydantic import BaseModel as _BaseModel
 
 from ..core.audit import write_audit_event
 from ..core.auth import Role, User, get_current_user, require_roles
@@ -27,14 +25,35 @@ from ..core.risk_assessment import assess_risk
 from ..database import as_utc, get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
+    ATIBusinessRuleORM,
     ATICommentORM,
+    ATIComplementRequestORM,
     ATITagORM,
+    ATITechnicalOpinionORM,
     ATITransitionORM,
+    DocumentDossierORM,
     InspectionConformiteORM,
     OperateurIndustrielORM,
     UserFavoriteORM,
 )
-from ..schemas.pnpi import ATIBrief, ATICreate, ATIRead, ATIStatusUpdate, ATITransitionRead
+from ..schemas.pnpi import (
+    ATIBrief,
+    ATIBusinessRuleCreate,
+    ATIBusinessRuleRead,
+    ATIBusinessRuleUpdate,
+    ATIComplementRequestCreate,
+    ATIComplementRequestRead,
+    ATIComplementResponse,
+    ATICreate,
+    ATIRead,
+    ATIStatusUpdate,
+    ATITechnicalOpinionCreate,
+    ATITechnicalOpinionRead,
+    ATITechnicalOpinionUpdate,
+    ATITransitionRead,
+)
+
+logger = logging.getLogger("pnpi")
 
 
 class _BulkAssignPayload(_BaseModel):
@@ -77,6 +96,80 @@ def _enforce_signature_before_approval(ati: AgrementTechniqueIndustrielORM) -> N
 
 
 _REQUIRED_DOC_TYPES = {"statuts", "bilan", "plan_site", "certification"}
+_ATI_DEMANDE_TYPES = {
+    "creation": {
+        "label": "Creation",
+        "description": "Premiere demande d'autorisation technique industrielle.",
+        "documents": ["statuts", "bilan", "plan_site", "certification"],
+    },
+    "renouvellement": {
+        "label": "Renouvellement",
+        "description": "Renouveler une ATI avant son echeance.",
+        "documents": ["ancienne_ati", "bilan", "certification"],
+    },
+    "extension": {
+        "label": "Extension",
+        "description": "Ajouter une activite, un site ou une capacite industrielle.",
+        "documents": ["statuts", "plan_site", "note_extension", "certification"],
+    },
+    "modification": {
+        "label": "Modification",
+        "description": "Modifier les informations administratives ou techniques d'une ATI.",
+        "documents": ["statuts", "justificatif_modification"],
+    },
+    "duplicata": {
+        "label": "Duplicata",
+        "description": "Demander une copie officielle apres perte ou deterioration.",
+        "documents": ["declaration_perte", "ancienne_ati"],
+    },
+    "suspension": {
+        "label": "Suspension",
+        "description": "Suspendre temporairement une autorisation.",
+        "documents": ["motif_suspension", "ancienne_ati"],
+    },
+    "cloture": {
+        "label": "Cloture",
+        "description": "Clore une autorisation en fin d'activite ou de procedure.",
+        "documents": ["motif_cloture", "ancienne_ati"],
+    },
+}
+
+
+def _json_loads(value: str | None, fallback):
+    if not value:
+        return fallback
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return fallback
+
+
+def _required_docs_for_ati(ati: AgrementTechniqueIndustrielORM, db: Session) -> set[str]:
+    """Documents requis : regles configurees d'abord, puis defaults metier."""
+    rules = (
+        db.execute(
+            select(ATIBusinessRuleORM).where(
+                ATIBusinessRuleORM.rule_type == "documents_requis",
+                ATIBusinessRuleORM.is_active.is_(True),
+            )
+        )
+        .scalars()
+        .all()
+    )
+    selected: list[str] = []
+    for rule in rules:
+        if rule.demande_type and rule.demande_type != getattr(ati, "type_demande", "creation"):
+            continue
+        if rule.secteur and rule.secteur != ati.secteur:
+            continue
+        config = _json_loads(rule.config, {})
+        docs = config.get("documents") if isinstance(config, dict) else None
+        if isinstance(docs, list):
+            selected.extend(str(doc).strip() for doc in docs if str(doc).strip())
+    if selected:
+        return set(selected)
+    type_demande = getattr(ati, "type_demande", "creation") or "creation"
+    return set(_ATI_DEMANDE_TYPES.get(type_demande, _ATI_DEMANDE_TYPES["creation"])["documents"])
 
 
 def _enforce_dossier_complet(ati_id: str, db: Session) -> None:
@@ -89,13 +182,14 @@ def _enforce_dossier_complet(ati_id: str, db: Session) -> None:
     flag = os.getenv("PNPI_FF_REQUIRE_COMPLETE_DOSSIER", "1").lower()
     if flag in ("0", "false", "no", "off"):
         return
-    from ..models.pnpi import DocumentDossierORM
-
     present = {
         d.type_document
         for d in db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati_id)).scalars().all()
     }
-    missing = _REQUIRED_DOC_TYPES - present
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    missing = _required_docs_for_ati(ati, db) - present
     if missing:
         raise HTTPException(
             status_code=422,
@@ -104,6 +198,160 @@ def _enforce_dossier_complet(ati_id: str, db: Session) -> None:
                 "Uploader via POST /pnpi/ati/{id}/documents avant de passer en_validation."
             ),
         )
+
+
+def _document_diagnostic(ati: AgrementTechniqueIndustrielORM, db: Session) -> dict[str, object]:
+    documents = db.execute(select(DocumentDossierORM).where(DocumentDossierORM.ati_id == ati.id)).scalars().all()
+    present = {doc.type_document for doc in documents}
+    required = _required_docs_for_ati(ati, db)
+    missing = sorted(required - present)
+    extra = sorted(present - required)
+    completion = round((len(required - set(missing)) / max(len(required), 1)) * 100)
+    return {
+        "required": sorted(required),
+        "present": sorted(present),
+        "missing": missing,
+        "extra": extra,
+        "documents_count": len(documents),
+        "completion_pct": completion,
+        "is_complete": not missing,
+    }
+
+
+def _ati_control_card(ati: AgrementTechniqueIndustrielORM, db: Session) -> dict[str, object]:
+    doc = _document_diagnostic(ati, db)
+    complements = (
+        db.execute(
+            select(ATIComplementRequestORM)
+            .where(ATIComplementRequestORM.ati_id == ati.id)
+            .order_by(ATIComplementRequestORM.requested_at.desc())
+        )
+        .scalars()
+        .all()
+    )
+    opinions = (
+        db.execute(
+            select(ATITechnicalOpinionORM)
+            .where(ATITechnicalOpinionORM.ati_id == ati.id)
+            .order_by(ATITechnicalOpinionORM.requested_at.desc())
+        )
+        .scalars()
+        .all()
+    )
+    transitions = (
+        db.execute(
+            select(ATITransitionORM)
+            .where(ATITransitionORM.ati_id == ati.id)
+            .order_by(ATITransitionORM.changed_at.asc())
+        )
+        .scalars()
+        .all()
+    )
+    open_complements = [item for item in complements if item.status in {"ouvert", "repondu"}]
+    pending_opinions = [item for item in opinions if item.status in {"demande", "reserve"}]
+    has_signature = _has_decision_signature(ati.id)
+    blockers: list[str] = []
+    warnings: list[str] = []
+    if doc["missing"]:
+        blockers.append(f"Pièces requises manquantes: {', '.join(doc['missing'])}")
+    if open_complements:
+        blockers.append(f"{len(open_complements)} demande(s) de complément ouverte(s)")
+    if pending_opinions:
+        blockers.append(f"{len(pending_opinions)} avis technique(s) attendu(s)")
+    if ati.statut == "en_validation" and not has_signature:
+        blockers.append("Signature ministérielle requise avant approbation")
+    if _ati_is_overdue(ati):
+        warnings.append("Dossier en dépassement SLA")
+    if not ati.instructeur_username and ati.statut in {"soumis", "en_instruction"}:
+        warnings.append("Instructeur non assigné")
+
+    workflow_position = {
+        "soumis": 20,
+        "en_instruction": 45,
+        "en_validation": 70,
+        "approuve": 100,
+        "rejete": 100,
+        "expire": 100,
+    }.get(ati.statut, 10)
+    readiness = round(
+        (int(doc["completion_pct"]) * 0.45)
+        + (workflow_position * 0.25)
+        + ((100 if not open_complements else 45) * 0.1)
+        + ((100 if not pending_opinions else 50) * 0.1)
+        + ((100 if ati.statut != "en_validation" or has_signature else 35) * 0.1)
+    )
+    urgency = min(
+        100,
+        (35 if _ati_is_overdue(ati) else 0)
+        + (25 if blockers else 0)
+        + (20 if ati.priorite in {"urgente", "elevee", "haute"} else 0)
+        + min(20, max(_ati_age_jours(ati) - ati.sla_jours + 10, 0)),
+    )
+    if blockers:
+        decision_state = "bloqué"
+        next_action = blockers[0]
+    elif ati.statut == "soumis":
+        decision_state = "recevable"
+        next_action = "Affecter le dossier et lancer l'instruction."
+    elif ati.statut == "en_instruction":
+        decision_state = "instruction possible"
+        next_action = "Finaliser l'analyse puis transmettre en validation."
+    elif ati.statut == "en_validation":
+        decision_state = "prêt pour décision"
+        next_action = "Signer puis approuver ou rejeter avec motivation."
+    elif ati.statut == "approuve":
+        decision_state = "décidé"
+        next_action = "Notifier, archiver et suivre l'échéance de renouvellement."
+    else:
+        decision_state = "terminé"
+        next_action = "Conserver l'historique et traiter une éventuelle resoumission."
+
+    return {
+        "generated_at": now_utc().isoformat(),
+        "ati_id": ati.id,
+        "numero_ati": ati.numero_ati,
+        "score_preparation": readiness,
+        "score_urgence": urgency,
+        "decision_state": decision_state,
+        "next_action": next_action,
+        "responsible": ati.instructeur_username or ("Opérateur" if doc["missing"] else "Service ATI"),
+        "documents": doc,
+        "blockers": blockers,
+        "warnings": warnings,
+        "control_points": [
+            {
+                "label": "Dossier documentaire",
+                "status": "ok" if doc["is_complete"] else "bloquant",
+                "detail": f"{doc['completion_pct']}% complet",
+            },
+            {
+                "label": "Compléments",
+                "status": "ok" if not open_complements else "bloquant",
+                "detail": f"{len(open_complements)} ouvert(s)",
+            },
+            {
+                "label": "Avis techniques",
+                "status": "ok" if not pending_opinions else "attente",
+                "detail": f"{len(pending_opinions)} attendu(s)",
+            },
+            {
+                "label": "Signature",
+                "status": "ok" if ati.statut != "en_validation" or has_signature else "bloquant",
+                "detail": "présente" if has_signature else "à apposer",
+            },
+            {
+                "label": "Traçabilité",
+                "status": "ok" if transitions else "attente",
+                "detail": f"{len(transitions)} transition(s)",
+            },
+        ],
+        "workflow_guardrails": [
+            "Le dossier ne passe pas en validation si les pièces requises sont absentes.",
+            "L'approbation exige une signature lorsque le contrôle est activé.",
+            "Chaque transition est historisée avec acteur, date et note.",
+            "Les avis et compléments restent rattachés au dossier.",
+        ],
+    }
 
 
 def check_ati_access(ati: AgrementTechniqueIndustrielORM, current_user: User) -> None:
@@ -157,11 +405,14 @@ def _to_ati_read(ati: AgrementTechniqueIndustrielORM) -> ATIRead:
         id=ati.id,
         numero_ati=ati.numero_ati,
         operateur_id=ati.operateur_id,
+        type_demande=getattr(ati, "type_demande", "creation"),
         type_activite=ati.type_activite,
         secteur=ati.secteur,
         statut=ati.statut,
         etape=ati.etape,
         priorite=ati.priorite,
+        payment_status=getattr(ati, "payment_status", "prototype"),
+        payment_reference=getattr(ati, "payment_reference", None),
         instructeur_username=ati.instructeur_username,
         date_soumission=ati.date_soumission,
         date_decision=ati.date_decision,
@@ -181,12 +432,16 @@ def _to_ati_read(ati: AgrementTechniqueIndustrielORM) -> ATIRead:
 def _to_ati_brief(ati: AgrementTechniqueIndustrielORM) -> ATIBrief:
     return ATIBrief(
         id=ati.id,
+        operateur_id=ati.operateur_id,
         numero_ati=ati.numero_ati,
+        type_demande=getattr(ati, "type_demande", "creation"),
         type_activite=ati.type_activite,
         secteur=ati.secteur,
         statut=ati.statut,
         etape=ati.etape,
         priorite=ati.priorite,
+        payment_status=getattr(ati, "payment_status", "prototype"),
+        payment_reference=getattr(ati, "payment_reference", None),
         instructeur_username=ati.instructeur_username,
         date_soumission=ati.date_soumission,
         age_jours=_ati_age_jours(ati),
@@ -305,6 +560,12 @@ async def create_ati(
     current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre, Role.operateur)),
     db: Session = Depends(get_db),
 ) -> ATIRead:
+    type_demande = payload.type_demande.strip().lower()
+    if type_demande not in _ATI_DEMANDE_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Type de demande invalide. Valeurs autorisees: {', '.join(_ATI_DEMANDE_TYPES)}",
+        )
     operateur = db.get(OperateurIndustrielORM, payload.operateur_id)
     if not operateur:
         raise HTTPException(status_code=404, detail="Operateur industriel introuvable.")
@@ -316,11 +577,13 @@ async def create_ati(
         id=f"ATI-{uuid.uuid4().hex[:12].upper()}",
         numero_ati=numero_ati,
         operateur_id=payload.operateur_id,
+        type_demande=type_demande,
         type_activite=payload.type_activite.strip(),
         secteur=payload.secteur.strip(),
         statut="soumis",
         etape="reception",
         priorite=payload.priorite,
+        payment_status="prototype",
         instructeur_username=payload.instructeur_username,
         date_soumission=now,
         sla_jours=payload.sla_jours,
@@ -338,7 +601,7 @@ async def create_ati(
         new_statut="soumis",
         previous_etape=None,
         new_etape="reception",
-        note="Creation ATI",
+        note=f"Creation ATI · type={type_demande}",
         changed_at=now,
     )
     db.add(transition)
@@ -584,6 +847,260 @@ async def get_triage_queue(
     return {"queue": scored, "total": len(scored)}
 
 
+@router.get("/ati/request-types", summary="Types de demandes ATI disponibles")
+async def get_ati_request_types(
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
+):
+    return [
+        {
+            "key": key,
+            "label": meta["label"],
+            "description": meta["description"],
+            "documents_requis": meta["documents"],
+        }
+        for key, meta in _ATI_DEMANDE_TYPES.items()
+    ]
+
+
+@router.get("/ati/payment-prototype", summary="Prototype du volet paiement ATI")
+async def get_payment_prototype(
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
+):
+    return {
+        "mode": "prototype",
+        "is_blocking": False,
+        "label": "Paiement administratif ATI",
+        "message": (
+            "Le paiement est volontairement en prototype : il presente le parcours cible "
+            "sans bloquer le workflow tant que le cadre de perception n'est pas confirme."
+        ),
+        "statuts": ["prototype", "non_applicable", "en_attente", "paye", "exonere"],
+    }
+
+
+def _business_rule_to_read(rule: ATIBusinessRuleORM) -> ATIBusinessRuleRead:
+    return ATIBusinessRuleRead(
+        id=rule.id,
+        rule_type=rule.rule_type,
+        demande_type=rule.demande_type,
+        secteur=rule.secteur,
+        label=rule.label,
+        config=_json_loads(rule.config, {}),
+        is_active=rule.is_active,
+        updated_by=rule.updated_by,
+        updated_at=rule.updated_at,
+    )
+
+
+@router.get("/ati/business-rules", response_model=list[ATIBusinessRuleRead], summary="Regles metier ATI")
+async def list_ati_business_rules(
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+) -> list[ATIBusinessRuleRead]:
+    rules = (
+        db.execute(select(ATIBusinessRuleORM).order_by(ATIBusinessRuleORM.rule_type, ATIBusinessRuleORM.label))
+        .scalars()
+        .all()
+    )
+    if rules:
+        return [_business_rule_to_read(rule) for rule in rules]
+    now = now_utc()
+    return [
+        ATIBusinessRuleRead(
+            id=f"default-{key}",
+            rule_type="documents_requis",
+            demande_type=key,
+            secteur=None,
+            label=f"Pieces requises · {meta['label']}",
+            config={"documents": meta["documents"]},
+            is_active=True,
+            updated_by="system",
+            updated_at=now,
+        )
+        for key, meta in _ATI_DEMANDE_TYPES.items()
+    ]
+
+
+@router.post("/ati/business-rules", response_model=ATIBusinessRuleRead, status_code=status.HTTP_201_CREATED)
+async def create_ati_business_rule(
+    payload: ATIBusinessRuleCreate,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> ATIBusinessRuleRead:
+    rule = ATIBusinessRuleORM(
+        id=f"ATIR-{uuid.uuid4().hex[:10].upper()}",
+        rule_type=payload.rule_type.strip(),
+        demande_type=payload.demande_type.strip().lower() if payload.demande_type else None,
+        secteur=payload.secteur.strip().lower() if payload.secteur else None,
+        label=payload.label.strip(),
+        config=json.dumps(payload.config, ensure_ascii=False),
+        is_active=payload.is_active,
+        updated_by=current_user.username,
+        updated_at=now_utc(),
+    )
+    db.add(rule)
+    write_audit_event(db, actor=current_user.username, action="ati.rule.create", target=rule.id, details=rule.label)
+    db.commit()
+    db.refresh(rule)
+    return _business_rule_to_read(rule)
+
+
+@router.patch("/ati/business-rules/{rule_id}", response_model=ATIBusinessRuleRead)
+async def update_ati_business_rule(
+    rule_id: str,
+    payload: ATIBusinessRuleUpdate,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur)),
+    db: Session = Depends(get_db),
+) -> ATIBusinessRuleRead:
+    rule = db.get(ATIBusinessRuleORM, rule_id)
+    if not rule:
+        raise HTTPException(status_code=404, detail="Regle ATI introuvable.")
+    if payload.label is not None:
+        rule.label = payload.label.strip()
+    if payload.config is not None:
+        rule.config = json.dumps(payload.config, ensure_ascii=False)
+    if payload.is_active is not None:
+        rule.is_active = payload.is_active
+    rule.updated_by = current_user.username
+    rule.updated_at = now_utc()
+    write_audit_event(db, actor=current_user.username, action="ati.rule.update", target=rule.id, details=rule.label)
+    db.commit()
+    db.refresh(rule)
+    return _business_rule_to_read(rule)
+
+
+@router.get("/ati/processing-center", summary="Centre de traitement operationnel ATI")
+async def get_ati_processing_center(
+    current_user: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+):
+    atis = (
+        db.execute(
+            select(AgrementTechniqueIndustrielORM)
+            .where(AgrementTechniqueIndustrielORM.statut.notin_(list(_TERMINAL_STATUTS)))
+            .order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())
+        )
+        .scalars()
+        .all()
+    )
+    open_complements = (
+        db.execute(select(ATIComplementRequestORM).where(ATIComplementRequestORM.status.in_(["ouvert", "repondu"])))
+        .scalars()
+        .all()
+    )
+    pending_opinions = (
+        db.execute(select(ATITechnicalOpinionORM).where(ATITechnicalOpinionORM.status.in_(["demande", "reserve"])))
+        .scalars()
+        .all()
+    )
+    complements_by_ati: dict[str, list[ATIComplementRequestORM]] = {}
+    opinions_by_ati: dict[str, list[ATITechnicalOpinionORM]] = {}
+    for complement in open_complements:
+        complements_by_ati.setdefault(complement.ati_id, []).append(complement)
+    for opinion in pending_opinions:
+        opinions_by_ati.setdefault(opinion.ati_id, []).append(opinion)
+
+    buckets: dict[str, list[dict]] = {
+        "urgents": [],
+        "incomplets": [],
+        "complements": [],
+        "avis_attendus": [],
+        "a_signer": [],
+        "en_instruction": [],
+        "en_validation": [],
+    }
+    items: list[dict] = []
+    for ati in atis:
+        control = _ati_control_card(ati, db)
+        missing_docs = list(control["documents"]["missing"])  # type: ignore[index]
+        blocking_reasons = []
+        if missing_docs:
+            blocking_reasons.append(f"Pieces manquantes: {', '.join(missing_docs)}")
+        if complements_by_ati.get(ati.id):
+            blocking_reasons.append("Demande de complement ouverte")
+        if opinions_by_ati.get(ati.id):
+            blocking_reasons.append("Avis technique attendu")
+        if ati.statut == "en_validation" and not _has_decision_signature(ati.id):
+            blocking_reasons.append("Signature ministerielle a apposer")
+
+        next_action = "Suivre le workflow"
+        responsible = ati.instructeur_username or "Service ATI"
+        if missing_docs:
+            next_action = "Completer les pieces requises"
+            responsible = ati.created_by or "Operateur"
+        elif complements_by_ati.get(ati.id):
+            next_action = "Repondre/closer la demande de complement"
+        elif opinions_by_ati.get(ati.id):
+            next_action = "Relancer ou enregistrer l'avis technique"
+        elif ati.statut == "en_validation":
+            next_action = "Signer puis approuver/rejeter"
+            responsible = "Directeur / Ministre"
+        elif ati.statut == "soumis":
+            next_action = "Affecter et passer en instruction"
+
+        item = {
+            "id": ati.id,
+            "numero_ati": ati.numero_ati,
+            "operateur": ati.operateur.raison_sociale if ati.operateur else ati.operateur_id,
+            "secteur": ati.secteur,
+            "type_demande": getattr(ati, "type_demande", "creation"),
+            "statut": ati.statut,
+            "etape": ati.etape,
+            "priorite": ati.priorite,
+            "age_jours": _ati_age_jours(ati),
+            "sla_jours": ati.sla_jours,
+            "is_overdue": _ati_is_overdue(ati),
+            "blocking_reasons": blocking_reasons,
+            "next_action": next_action,
+            "responsible": responsible,
+            "missing_documents": missing_docs,
+            "score_preparation": control["score_preparation"],
+            "score_urgence": control["score_urgence"],
+            "decision_state": control["decision_state"],
+        }
+        items.append(item)
+        if item["is_overdue"] or item["priorite"] in {"urgente", "elevee", "haute"}:
+            buckets["urgents"].append(item)
+        if missing_docs:
+            buckets["incomplets"].append(item)
+        if complements_by_ati.get(ati.id):
+            buckets["complements"].append(item)
+        if opinions_by_ati.get(ati.id):
+            buckets["avis_attendus"].append(item)
+        if ati.statut == "en_validation" and not _has_decision_signature(ati.id):
+            buckets["a_signer"].append(item)
+        if ati.statut == "en_instruction":
+            buckets["en_instruction"].append(item)
+        if ati.statut == "en_validation":
+            buckets["en_validation"].append(item)
+
+    return {
+        "generated_at": now_utc().isoformat(),
+        "stats": {
+            "total_actifs": len(items),
+            "urgents": len(buckets["urgents"]),
+            "incomplets": len(buckets["incomplets"]),
+            "complements_ouverts": len(buckets["complements"]),
+            "avis_attendus": len(buckets["avis_attendus"]),
+            "a_signer": len(buckets["a_signer"]),
+            "preparation_moyenne": round(
+                sum(int(item["score_preparation"]) for item in items) / max(len(items), 1),
+                1,
+            ),
+            "urgence_moyenne": round(
+                sum(int(item["score_urgence"]) for item in items) / max(len(items), 1),
+                1,
+            ),
+        },
+        "buckets": buckets,
+        "items": sorted(items, key=lambda item: (not item["is_overdue"], -item["age_jours"])),
+    }
+
+
 # ─── Parameterized /ati/{ati_id} routes below ─────────────────────────────
 
 
@@ -600,6 +1117,244 @@ async def get_ati(
         raise HTTPException(status_code=404, detail="ATI introuvable.")
     check_ati_access(ati, current_user)
     return _to_ati_read(ati)
+
+
+@router.get("/ati/{ati_id}/control-card", summary="Carte de contrôle opérationnel d'un ATI")
+async def get_ati_control_card(
+    ati_id: str,
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
+    return _ati_control_card(ati, db)
+
+
+def _opinion_to_read(opinion: ATITechnicalOpinionORM) -> ATITechnicalOpinionRead:
+    return ATITechnicalOpinionRead.model_validate(opinion)
+
+
+def _complement_to_read(complement: ATIComplementRequestORM) -> ATIComplementRequestRead:
+    return ATIComplementRequestRead(
+        id=complement.id,
+        ati_id=complement.ati_id,
+        requested_by=complement.requested_by,
+        requested_at=complement.requested_at,
+        due_at=complement.due_at,
+        status=complement.status,
+        motif=complement.motif,
+        requested_documents=_json_loads(complement.requested_documents, []),
+        response_note=complement.response_note,
+        responded_by=complement.responded_by,
+        responded_at=complement.responded_at,
+    )
+
+
+@router.get("/ati/{ati_id}/technical-opinions", response_model=list[ATITechnicalOpinionRead])
+async def list_technical_opinions(
+    ati_id: str,
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
+    db: Session = Depends(get_db),
+) -> list[ATITechnicalOpinionRead]:
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
+    opinions = (
+        db.execute(
+            select(ATITechnicalOpinionORM)
+            .where(ATITechnicalOpinionORM.ati_id == ati_id)
+            .order_by(ATITechnicalOpinionORM.requested_at.desc())
+        )
+        .scalars()
+        .all()
+    )
+    return [_opinion_to_read(opinion) for opinion in opinions]
+
+
+@router.post(
+    "/ati/{ati_id}/technical-opinions", response_model=ATITechnicalOpinionRead, status_code=status.HTTP_201_CREATED
+)
+async def create_technical_opinion(
+    ati_id: str,
+    payload: ATITechnicalOpinionCreate,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> ATITechnicalOpinionRead:
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    opinion = ATITechnicalOpinionORM(
+        id=f"AVIS-{uuid.uuid4().hex[:10].upper()}",
+        ati_id=ati_id,
+        direction=payload.direction.strip(),
+        requested_by=current_user.username,
+        requested_at=now_utc(),
+        due_at=payload.due_at,
+        status="demande",
+        motivation=payload.motivation,
+    )
+    db.add(opinion)
+    db.add(
+        ATITransitionORM(
+            id=f"ATIT-{uuid.uuid4().hex[:10].upper()}",
+            ati_id=ati.id,
+            changed_by=current_user.username,
+            previous_statut=ati.statut,
+            new_statut=ati.statut,
+            previous_etape=ati.etape,
+            new_etape=ati.etape,
+            note=f"Avis technique demande: {opinion.direction}",
+            changed_at=now_utc(),
+        )
+    )
+    write_audit_event(
+        db, actor=current_user.username, action="ati.opinion.request", target=ati.id, details=opinion.direction
+    )
+    db.commit()
+    db.refresh(opinion)
+    return _opinion_to_read(opinion)
+
+
+@router.patch("/ati/{ati_id}/technical-opinions/{opinion_id}", response_model=ATITechnicalOpinionRead)
+async def update_technical_opinion(
+    ati_id: str,
+    opinion_id: str,
+    payload: ATITechnicalOpinionUpdate,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> ATITechnicalOpinionRead:
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    opinion = db.get(ATITechnicalOpinionORM, opinion_id)
+    if not ati or not opinion or opinion.ati_id != ati_id:
+        raise HTTPException(status_code=404, detail="Avis technique introuvable.")
+    if payload.status not in {"demande", "favorable", "reserve", "defavorable"}:
+        raise HTTPException(status_code=422, detail="Statut d'avis invalide.")
+    opinion.status = payload.status
+    opinion.motivation = payload.motivation
+    if payload.status != "demande":
+        opinion.signed_by = current_user.username
+        opinion.signed_at = now_utc()
+    write_audit_event(
+        db, actor=current_user.username, action="ati.opinion.update", target=ati.id, details=payload.status
+    )
+    db.commit()
+    db.refresh(opinion)
+    return _opinion_to_read(opinion)
+
+
+@router.get("/ati/{ati_id}/complements", response_model=list[ATIComplementRequestRead])
+async def list_complement_requests(
+    ati_id: str,
+    current_user: User = Depends(
+        require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
+    ),
+    db: Session = Depends(get_db),
+) -> list[ATIComplementRequestRead]:
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    check_ati_access(ati, current_user)
+    complements = (
+        db.execute(
+            select(ATIComplementRequestORM)
+            .where(ATIComplementRequestORM.ati_id == ati_id)
+            .order_by(ATIComplementRequestORM.requested_at.desc())
+        )
+        .scalars()
+        .all()
+    )
+    return [_complement_to_read(complement) for complement in complements]
+
+
+@router.post("/ati/{ati_id}/complements", response_model=ATIComplementRequestRead, status_code=status.HTTP_201_CREATED)
+async def create_complement_request(
+    ati_id: str,
+    payload: ATIComplementRequestCreate,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+) -> ATIComplementRequestRead:
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    if not ati:
+        raise HTTPException(status_code=404, detail="ATI introuvable.")
+    complement = ATIComplementRequestORM(
+        id=f"COMP-{uuid.uuid4().hex[:10].upper()}",
+        ati_id=ati_id,
+        requested_by=current_user.username,
+        requested_at=now_utc(),
+        due_at=payload.due_at,
+        status="ouvert",
+        motif=payload.motif.strip(),
+        requested_documents=json.dumps(payload.requested_documents, ensure_ascii=False),
+    )
+    db.add(complement)
+    db.add(
+        ATITransitionORM(
+            id=f"ATIT-{uuid.uuid4().hex[:10].upper()}",
+            ati_id=ati.id,
+            changed_by=current_user.username,
+            previous_statut=ati.statut,
+            new_statut=ati.statut,
+            previous_etape=ati.etape,
+            new_etape=ati.etape,
+            note=f"Complement demande: {', '.join(payload.requested_documents) or payload.motif[:80]}",
+            changed_at=now_utc(),
+        )
+    )
+    write_audit_event(
+        db, actor=current_user.username, action="ati.complement.request", target=ati.id, details=complement.motif
+    )
+    db.commit()
+    db.refresh(complement)
+    return _complement_to_read(complement)
+
+
+@router.post("/ati/{ati_id}/complements/{request_id}/respond", response_model=ATIComplementRequestRead)
+async def respond_complement_request(
+    ati_id: str,
+    request_id: str,
+    payload: ATIComplementResponse,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur, Role.operateur)),
+    db: Session = Depends(get_db),
+) -> ATIComplementRequestRead:
+    ati = db.get(AgrementTechniqueIndustrielORM, ati_id)
+    complement = db.get(ATIComplementRequestORM, request_id)
+    if not ati or not complement or complement.ati_id != ati_id:
+        raise HTTPException(status_code=404, detail="Demande de complement introuvable.")
+    check_ati_access(ati, current_user)
+    complement.status = "repondu"
+    complement.response_note = payload.response_note
+    complement.responded_by = current_user.username
+    complement.responded_at = now_utc()
+    write_audit_event(
+        db, actor=current_user.username, action="ati.complement.respond", target=ati.id, details=request_id
+    )
+    db.commit()
+    db.refresh(complement)
+    return _complement_to_read(complement)
+
+
+@router.post("/ati/{ati_id}/complements/{request_id}/close", response_model=ATIComplementRequestRead)
+async def close_complement_request(
+    ati_id: str,
+    request_id: str,
+    current_user: User = Depends(require_roles(Role.admin, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+) -> ATIComplementRequestRead:
+    complement = db.get(ATIComplementRequestORM, request_id)
+    if not complement or complement.ati_id != ati_id:
+        raise HTTPException(status_code=404, detail="Demande de complement introuvable.")
+    complement.status = "clos"
+    write_audit_event(db, actor=current_user.username, action="ati.complement.close", target=ati_id, details=request_id)
+    db.commit()
+    db.refresh(complement)
+    return _complement_to_read(complement)
 
 
 @router.patch(
@@ -2452,6 +3207,7 @@ async def renew_ati(
         id=str(uuid.uuid4()),
         numero_ati=numero,
         operateur_id=original.operateur_id,
+        type_demande="renouvellement",
         secteur=original.secteur,
         type_activite=data.get("type_activite", original.type_activite),
         observations=data.get("observations", f"Renouvellement de {original.numero_ati}"),
@@ -2459,6 +3215,7 @@ async def renew_ati(
         etape="reception",
         date_soumission=now,
         sla_jours=original.sla_jours,
+        payment_status="prototype",
         # created_by indispensable pour preserver l'acces operateur via check_ati_access.
         created_by=current_user.username,
         updated_at=now,

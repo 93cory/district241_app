@@ -14,7 +14,11 @@ BASE = "http://127.0.0.1:8000"
 
 
 def _pwd(role: str, default: str) -> str:
-    return os.environ.get(f"PNPI_SMOKE_{role.upper()}_PWD", default)
+    role_name = role.upper()
+    return os.environ.get(
+        f"PNPI_SMOKE_{role_name}_PWD",
+        os.environ.get(f"PNPI_{role_name}_PASSWORD", default),
+    )
 
 
 def login(client: httpx.Client, username: str, password: str) -> str | None:
@@ -47,7 +51,9 @@ def main() -> int:
         # === MINISTRE: rapport executif ===
         print("\n--- MINISTRE: actions critiques ---")
         t = login(client, "ministre", _pwd("ministre", "Ministre@PNPI2026!"))
-        if t:
+        if not t:
+            fails += 1
+        else:
             r = client.get(
                 f"{BASE}/pnpi/dashboard/comparison"
                 "?period1_start=2026-01-01&period1_end=2026-01-31"
@@ -66,7 +72,9 @@ def main() -> int:
         # === DIRECTEUR: liste, search, mes-stats ===
         print("\n--- DIRECTEUR: actions critiques ---")
         t = login(client, "directeur", _pwd("directeur", "Directeur@PNPI2026!"))
-        if t:
+        if not t:
+            fails += 1
+        else:
             r = client.get(f"{BASE}/pnpi/ati?page=1&page_size=10", headers=header(t))
             if not check("GET /pnpi/ati paginated", r.status_code):
                 fails += 1
@@ -80,7 +88,9 @@ def main() -> int:
         # === INSTRUCTEUR: ATI list + detail ===
         print("\n--- INSTRUCTEUR: actions critiques ---")
         t = login(client, "instructeur", _pwd("instructeur", "Instructeur@PNPI2026!"))
-        if t:
+        if not t:
+            fails += 1
+        else:
             r = client.get(f"{BASE}/pnpi/ati?page=1&page_size=5", headers=header(t))
             if not check("GET /pnpi/ati first page", r.status_code):
                 fails += 1
@@ -101,7 +111,9 @@ def main() -> int:
         # === INSPECTEUR: inspections + carte ===
         print("\n--- INSPECTEUR: actions critiques ---")
         t = login(client, "inspecteur", _pwd("inspecteur", "Inspecteur@PNPI2026!"))
-        if t:
+        if not t:
+            fails += 1
+        else:
             r = client.get(f"{BASE}/pnpi/inspections", headers=header(t))
             if not check("GET /pnpi/inspections", r.status_code):
                 fails += 1
@@ -112,7 +124,9 @@ def main() -> int:
         # === OPERATEUR: mes ATI + verify public ===
         print("\n--- OPERATEUR: actions critiques ---")
         t = login(client, "operateur", _pwd("operateur", "Operateur@PNPI2026!"))
-        if t:
+        if not t:
+            fails += 1
+        else:
             r = client.get(f"{BASE}/pnpi/me/stats", headers=header(t))
             if not check("GET /pnpi/me/stats", r.status_code):
                 fails += 1
@@ -126,7 +140,9 @@ def main() -> int:
         # === ADMIN: backups, audit, integrations ===
         print("\n--- ADMIN: actions critiques ---")
         t = login(client, "admin", _pwd("admin", "Admin@PNPI2026!"))
-        if t:
+        if not t:
+            fails += 1
+        else:
             r = client.get(f"{BASE}/admin/users?page=1&page_size=10", headers=header(t))
             if not check("GET /admin/users paginated", r.status_code):
                 fails += 1
@@ -141,7 +157,9 @@ def main() -> int:
         print("\n--- SECURITE: protection IDOR ---")
         t_op = login(client, "operateur", _pwd("operateur", "Operateur@PNPI2026!"))
         t_inst = login(client, "instructeur", _pwd("instructeur", "Instructeur@PNPI2026!"))
-        if t_op and t_inst:
+        if not t_op or not t_inst:
+            fails += 1
+        else:
             r = client.get(f"{BASE}/pnpi/ati?page=1&page_size=20", headers=header(t_inst))
             if r.status_code == 200:
                 payload = r.json()

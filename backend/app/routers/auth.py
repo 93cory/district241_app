@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import secrets
 import uuid
 
@@ -11,6 +13,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..config import settings
 from ..core.audit import write_audit_event
 from ..core.auth import (
     RefreshTokenRequest,
@@ -28,22 +31,11 @@ from ..core.auth import (
 )
 from ..core.badges import compute_badges
 from ..core.cache import cache
+from ..core.client_ip import get_client_ip
 from ..core.digest import generate_daily_digest
 from ..database import as_utc, get_db, now_utc
 from ..models.core import LoginHistoryORM, RefreshTokenORM, UserAccountORM
 from ..models.pnpi import InstructorRatingORM
-
-
-def get_client_ip(request: Request) -> str:
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        first = forwarded_for.split(",")[0].strip()
-        if first:
-            return first
-    if request.client and request.client.host:
-        return request.client.host
-    return "unknown"
-
 
 router = APIRouter(tags=["Authentification"])
 
@@ -121,10 +113,20 @@ async def login(
     user, error_detail = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         await _bump_ip_failure(client_ip)
+        account_exists = db.get(UserAccountORM, form_data.username) is not None
+        if account_exists:
+            history_username = form_data.username[:80]
+        else:
+            digest = hmac.new(
+                settings.secret_key.encode(),
+                form_data.username.strip().casefold().encode(),
+                hashlib.sha256,
+            ).hexdigest()[:32]
+            history_username = f"unknown:{digest}"
         failed_record = LoginHistoryORM(
             id=str(uuid.uuid4()),
-            username=form_data.username,
-            ip_address=request.client.host if request.client else None,
+            username=history_username,
+            ip_address=client_ip,
             user_agent=request.headers.get("user-agent", "")[:500],
             method="password",
             success=False,
@@ -149,7 +151,7 @@ async def login(
     login_record = LoginHistoryORM(
         id=str(uuid.uuid4()),
         username=user.username,
-        ip_address=request.client.host if request.client else None,
+        ip_address=client_ip,
         user_agent=request.headers.get("user-agent", "")[:500],
         method="password",
         success=True,

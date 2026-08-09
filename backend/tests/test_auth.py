@@ -11,6 +11,36 @@ from app.main import app
 client = TestClient(app)
 
 
+def test_rate_limit_from_middleware_returns_json_429(monkeypatch):
+    """A limiter rejection must be an HTTP response, not an ASGI crash."""
+    from app import main
+
+    async def reject_request(*args, **kwargs):
+        raise main.HTTPException(
+            status_code=429,
+            detail="Trop de requetes.",
+            headers={"Retry-After": "60"},
+        )
+
+    monkeypatch.setattr(main, "enforce_rate_limit", reject_request)
+    response = client.get("/auth/captcha")
+
+    assert response.status_code == 429
+    assert response.json() == {"detail": "Trop de requetes."}
+    assert response.headers["retry-after"] == "60"
+    assert response.headers["x-content-type-options"] == "nosniff"
+
+
+def test_unknown_username_returns_401_instead_of_database_error():
+    response = client.post(
+        "/auth/token",
+        data={"username": "compte-inexistant", "password": "incorrect"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Identifiants invalides."
+
+
 def auth_headers(username: str, password: str) -> dict[str, str]:
     response = client.post("/auth/token", data={"username": username, "password": password})
     assert response.status_code == 200

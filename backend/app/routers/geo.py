@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import Counter, defaultdict
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -10,7 +12,15 @@ from sqlalchemy.orm import Session
 
 from ..core.auth import Role, User, require_roles
 from ..database import get_db, now_utc
-from ..models.pnpi import AgrementTechniqueIndustrielORM, InspectionConformiteORM, OperateurIndustrielORM
+from ..models.pnpi import (
+    PROVINCES_GABON,
+    AgrementTechniqueIndustrielORM,
+    InspectionConformiteORM,
+    ONIPeriodicDeclarationORM,
+    OperateurIndustrielORM,
+    RINInvestissementORM,
+    RINSiteIndustrielORM,
+)
 
 # ---------------------------------------------------------------------------
 # Province centroids (fallback when coordinates are missing)
@@ -61,6 +71,198 @@ class InspectionHeatPoint(BaseModel):
 # ---------------------------------------------------------------------------
 
 router = APIRouter(prefix="/geo", tags=["Geospatial"])
+
+
+def _label(value: str | None) -> str:
+    if not value:
+        return "non_precise"
+    return value.strip().lower().replace(" ", "_")
+
+
+def _pct(value: int | float, total: int | float) -> int:
+    if total <= 0:
+        return 0
+    return round((value / total) * 100)
+
+
+@router.get("/cockpit", summary="Cockpit SIG national du PNPI")
+async def geo_cockpit(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur)),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    """Vue géographique consolidée du tissu industriel.
+
+    Le cockpit ne remplace pas une couche SIG complète, mais fournit une
+    lecture décisionnelle : couverture géographique, déséquilibres
+    provinciaux, inspections, zones/sites, investissements et priorités.
+    """
+
+    operators = (
+        db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.deleted_at.is_(None))).scalars().all()
+    )
+    atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    inspections = db.execute(select(InspectionConformiteORM)).scalars().all()
+    sites = db.execute(select(RINSiteIndustrielORM).where(RINSiteIndustrielORM.deleted_at.is_(None))).scalars().all()
+    investments = (
+        db.execute(select(RINInvestissementORM).where(RINInvestissementORM.deleted_at.is_(None))).scalars().all()
+    )
+    declarations = db.execute(select(ONIPeriodicDeclarationORM)).scalars().all()
+
+    operators_by_id = {op.id: op for op in operators}
+    province_ops = Counter(_label(op.province) for op in operators)
+    province_geocoded = Counter(
+        _label(op.province) for op in operators if op.latitude is not None and op.longitude is not None
+    )
+    province_sites = Counter(_label(site.province) for site in sites)
+    province_surface: dict[str, float] = defaultdict(float)
+    for site in sites:
+        province_surface[_label(site.province)] += site.superficie_ha or 0
+    province_atis = Counter(
+        _label(operators_by_id.get(ati.operateur_id).province if operators_by_id.get(ati.operateur_id) else None)
+        for ati in atis
+    )
+    province_approved_atis = Counter(
+        _label(operators_by_id.get(ati.operateur_id).province if operators_by_id.get(ati.operateur_id) else None)
+        for ati in atis
+        if ati.statut == "approuve"
+    )
+    province_inspections = Counter(
+        _label(operators_by_id.get(insp.operateur_id).province if operators_by_id.get(insp.operateur_id) else None)
+        for insp in inspections
+    )
+    province_non_conform = Counter(
+        _label(operators_by_id.get(insp.operateur_id).province if operators_by_id.get(insp.operateur_id) else None)
+        for insp in inspections
+        if insp.statut_conformite == "non_conforme"
+    )
+    province_invest: dict[str, int] = defaultdict(int)
+    for investment in investments:
+        op = operators_by_id.get(investment.operateur_id)
+        province_invest[_label(op.province if op else None)] += investment.montant_fcfa or 0
+    province_production: dict[str, float] = defaultdict(float)
+    for declaration in declarations:
+        op = operators_by_id.get(declaration.operateur_id)
+        province_production[_label(op.province if op else None)] += declaration.production_volume or 0
+
+    all_provinces = sorted(set(PROVINCES_GABON) | set(province_ops) | set(province_sites) | set(province_inspections))
+    province_cards = []
+    for province in all_provinces:
+        ops = province_ops[province]
+        geocoded = province_geocoded[province]
+        inspections_count = province_inspections[province]
+        non_conform = province_non_conform[province]
+        inspection_gap = max(0, ops - inspections_count)
+        geocoding_rate = _pct(geocoded, ops)
+        non_conform_rate = _pct(non_conform, inspections_count)
+        pressure_score = min(
+            100,
+            round(
+                ops * 3
+                + province_sites[province] * 4
+                + min(25, province_invest[province] / 1_000_000_000 * 5)
+                + min(20, non_conform_rate / 2)
+                + (15 if geocoding_rate < 50 and ops else 0),
+                1,
+            ),
+        )
+        province_cards.append(
+            {
+                "province": province,
+                "label": province.replace("_", " ").title(),
+                "centroid": PROVINCE_CENTROIDS.get(province, {"lat": 0.0, "lng": 11.0}),
+                "operateurs": ops,
+                "operateurs_geocodes": geocoded,
+                "taux_geocodage": geocoding_rate,
+                "atis": province_atis[province],
+                "atis_approuves": province_approved_atis[province],
+                "inspections": inspections_count,
+                "non_conformites": non_conform,
+                "taux_non_conformite": non_conform_rate,
+                "sites": province_sites[province],
+                "superficie_ha": round(province_surface[province], 2),
+                "investissements_fcfa": province_invest[province],
+                "production_declaree": round(province_production[province], 2),
+                "gap_inspection": inspection_gap,
+                "pression_industrielle": pressure_score,
+                "priorite": "haute" if pressure_score >= 55 or inspection_gap >= 3 else "normale" if ops else "veille",
+            }
+        )
+    province_cards.sort(key=lambda item: (item["priorite"] == "haute", item["pression_industrielle"]), reverse=True)
+
+    geocoded_total = sum(1 for op in operators if op.latitude is not None and op.longitude is not None)
+    provinces_with_ops = sum(1 for province in PROVINCES_GABON if province_ops[province] > 0)
+    coverage_score = round(
+        _pct(geocoded_total, len(operators)) * 0.35
+        + _pct(provinces_with_ops, len(PROVINCES_GABON)) * 0.25
+        + min(100, len(sites) * 8) * 0.2
+        + min(100, len(inspections) * 4) * 0.2
+    )
+
+    return {
+        "generated_at": now_utc().isoformat(),
+        "score_sig": coverage_score,
+        "grade": "A" if coverage_score >= 90 else "B" if coverage_score >= 75 else "C" if coverage_score >= 60 else "D",
+        "stats": {
+            "operateurs": len(operators),
+            "operateurs_geocodes": geocoded_total,
+            "provinces_couvertes": provinces_with_ops,
+            "sites_industriels": len(sites),
+            "inspections": len(inspections),
+            "investissements": len(investments),
+            "montant_investissements_fcfa": sum(item.montant_fcfa or 0 for item in investments),
+            "declarations_oni": len(declarations),
+        },
+        "provinces": province_cards,
+        "clusters": [
+            {
+                "province": province,
+                "label": province.replace("_", " ").title(),
+                "lat": PROVINCE_CENTROIDS.get(province, {"lat": 0.0})["lat"],
+                "lng": PROVINCE_CENTROIDS.get(province, {"lng": 11.0})["lng"],
+                "weight": province_ops[province],
+                "risk": province_non_conform[province],
+            }
+            for province in PROVINCES_GABON
+        ],
+        "layers": [
+            {
+                "name": "Opérateurs industriels",
+                "status": "actif",
+                "source": "operateurs_industriels",
+                "count": len(operators),
+            },
+            {"name": "Sites / zones RIN", "status": "actif", "source": "rin_sites_industriels", "count": len(sites)},
+            {"name": "Inspections", "status": "actif", "source": "inspections_conformite", "count": len(inspections)},
+            {"name": "Investissements", "status": "actif", "source": "rin_investissements", "count": len(investments)},
+            {
+                "name": "Déclarations ONI",
+                "status": "actif",
+                "source": "oni_periodic_declarations",
+                "count": len(declarations),
+            },
+            {
+                "name": "Limites administratives",
+                "status": "cible",
+                "source": "SIG national / shapefiles",
+                "count": len(PROVINCES_GABON),
+            },
+        ],
+        "exports": [
+            {"label": "Opérateurs GeoJSON", "href": "/geo/export/operateurs.geojson"},
+            {"label": "Inspections GeoJSON", "href": "/geo/export/inspections.geojson"},
+            {"label": "Export filtrable GeoJSON", "href": "/geo/export.geojson"},
+        ],
+        "priority_actions": [
+            "Géocoder les opérateurs industriels encore sans coordonnées.",
+            "Relier les sites RIN à un référentiel formel zone → parcelle → infrastructure.",
+            "Superposer inspections, non-conformités et investissements pour prioriser les missions terrain.",
+            "Importer les limites administratives officielles afin de passer d'une carte ponctuelle à un vrai SIG ministériel.",
+        ],
+        "lecture_executive": (
+            "Le cockpit SIG transforme les données PNPI en lecture territoriale : couverture provinciale, "
+            "opérateurs géocodés, sites, inspections, investissements et zones de priorité deviennent comparables."
+        ),
+    }
 
 
 @router.get(

@@ -18,7 +18,11 @@ BASE = os.environ.get("PNPI_SMOKE_BASE_URL", "http://127.0.0.1:8000")
 
 
 def _pwd(role: str) -> str:
-    return os.environ.get(f"PNPI_SMOKE_{role.upper()}_PWD", f"{role.title()}@PNPI2026!")
+    role_name = role.upper()
+    return os.environ.get(
+        f"PNPI_SMOKE_{role_name}_PWD",
+        os.environ.get(f"PNPI_{role_name}_PASSWORD", f"{role.title()}@PNPI2026!"),
+    )
 
 
 def login(client: httpx.Client, username: str) -> str | None:
@@ -54,8 +58,9 @@ def run(client: httpx.Client, audit: Audit) -> None:
     # --- RBAC operateur sur endpoints prives ------------------------------
     print("\n--- RBAC operateur sur endpoints admin ---")
     t_op = login(client, "operateur")
+    audit.expect("login operateur", t_op is not None)
     if t_op:
-        for path in ("/admin/users", "/admin/audit-events", "/admin/notifications"):
+        for path in ("/admin/users", "/admin/audit-logs"):
             r = client.get(f"{BASE}{path}", headers=H(t_op), timeout=10.0)
             audit.expect(
                 f"GET {path} (operateur) -> 401/403",
@@ -66,6 +71,7 @@ def run(client: httpx.Client, audit: Audit) -> None:
     # --- IDOR : operateur sur ATI d'autrui --------------------------------
     print("\n--- IDOR sur /pnpi/ati/{id}/* ---")
     t_inst = login(client, "instructeur")
+    audit.expect("login instructeur", t_inst is not None)
     if t_op and t_inst:
         r = client.get(f"{BASE}/pnpi/ati?limit=200", headers=H(t_inst), timeout=10.0)
         items = r.json() if (r.status_code == 200 and isinstance(r.json(), list)) else []

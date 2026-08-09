@@ -15,6 +15,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from ..core.cache import cache
+from ..core.client_ip import get_client_ip
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -33,7 +34,7 @@ async def _rate_limit_public(request: Request) -> None:
     """30 req / 60 s par IP sur les endpoints open-data."""
     from ..main import enforce_rate_limit
 
-    ip = request.client.host if request.client else "unknown"
+    ip = get_client_ip(request)
     await enforce_rate_limit(key=f"open-data:{ip}", limit=30, window_seconds=60)
 
 
@@ -95,13 +96,20 @@ def _yearly_rows(db: Session) -> list[dict[str, Any]]:
 
 def _delai_moyen_jours(db: Session) -> float | None:
     """Delai moyen (en jours) entre soumission et decision, calcule en SQL."""
-    avg = db.execute(
-        select(
-            func.avg(
-                func.julianday(AgrementTechniqueIndustrielORM.date_decision)
-                - func.julianday(AgrementTechniqueIndustrielORM.date_soumission)
+    if db.get_bind().dialect.name == "postgresql":
+        duration_days = (
+            func.extract(
+                "epoch",
+                AgrementTechniqueIndustrielORM.date_decision - AgrementTechniqueIndustrielORM.date_soumission,
             )
-        ).where(AgrementTechniqueIndustrielORM.date_decision.is_not(None))
+            / 86400.0
+        )
+    else:
+        duration_days = func.julianday(AgrementTechniqueIndustrielORM.date_decision) - func.julianday(
+            AgrementTechniqueIndustrielORM.date_soumission
+        )
+    avg = db.execute(
+        select(func.avg(duration_days)).where(AgrementTechniqueIndustrielORM.date_decision.is_not(None))
     ).scalar()
     if avg is None:
         return None

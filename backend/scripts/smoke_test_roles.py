@@ -17,7 +17,11 @@ import httpx
 
 def _pwd(role: str, default: str) -> str:
     """Lit le mot de passe smoke depuis l'env, fallback sur le default seed."""
-    return os.environ.get(f"PNPI_SMOKE_{role.upper()}_PWD", default)
+    role_name = role.upper()
+    return os.environ.get(
+        f"PNPI_SMOKE_{role_name}_PWD",
+        os.environ.get(f"PNPI_{role_name}_PASSWORD", default),
+    )
 
 
 ROLES: list[dict[str, Any]] = [

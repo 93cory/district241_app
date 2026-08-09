@@ -16,6 +16,7 @@ from enum import StrEnum
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
@@ -34,6 +35,7 @@ from .core.auth import (
     require_roles,
     roles_to_csv,
 )
+from .core.client_ip import get_client_ip
 from .core.correlation_middleware import CorrelationMiddleware
 from .core.error_handlers import register_error_handlers
 from .core.logging_config import setup_logging
@@ -113,17 +115,6 @@ def log_action(actor: str, action: str, details: str) -> None:
 # ---------------------------------------------------------------------------
 # Rate limiting
 # ---------------------------------------------------------------------------
-
-
-def get_client_ip(request: Request) -> str:
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        first = forwarded_for.split(",")[0].strip()
-        if first:
-            return first
-    if request.client and request.client.host:
-        return request.client.host
-    return "unknown"
 
 
 async def enforce_rate_limit(
@@ -2619,9 +2610,15 @@ async def request_context_middleware(request: Request, call_next):
                 limit=SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
             )
         response = await call_next(request)
-    except HTTPException:
-        _request_metrics[f"{request.method} {path} status:429"] += 1
-        raise
+    except HTTPException as exc:
+        # Exceptions raised from middleware do not reach FastAPI's registered
+        # exception handlers. Return a normal response so rate limiting never
+        # tears down the HTTP connection.
+        response = JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers=exc.headers,
+        )
     duration_ms = (now_utc() - started_at).total_seconds() * 1000
     status_code = response.status_code
     _request_metrics[f"{request.method} {path} status:{status_code}"] += 1
@@ -2667,25 +2664,32 @@ from .routers.api_keys import router as api_keys_router
 from .routers.appeals import router as appeals_router
 from .routers.ati import router as ati_router
 from .routers.auth import router as auth_router
+from .routers.business_model import router as business_model_router
 from .routers.calendar import router as calendar_router
+from .routers.capital_humain import router as capital_humain_router
 from .routers.chat import router as chat_router
 from .routers.checklists import router as checklists_router
 from .routers.conventions import router as conventions_router
 from .routers.delegations import router as delegations_router
 from .routers.doc_versions import router as doc_versions_router
 from .routers.documents import router as documents_router
+from .routers.durabilite import router as durabilite_router
 from .routers.exports import router as exports_router
 from .routers.feedback import router as feedback_router
+from .routers.filieres import router as filieres_router
 from .routers.geo import router as geo_router
 from .routers.graphql_api import router as graphql_router
 from .routers.health import router as health_router
 from .routers.heatmap import router as heatmap_router
+from .routers.industrial_assets import router as industrial_assets_router
+from .routers.innovation import router as innovation_router
 from .routers.inspections import router as inspections_router
 from .routers.integration import router as integration_router
 from .routers.integration_health import router as integration_health_router
 from .routers.messages import router as messages_router
 from .routers.notes import router as notes_router
 from .routers.notifications import router as notifications_router
+from .routers.oni import router as oni_router
 from .routers.open_data import router as open_data_router
 from .routers.operateurs import router as operateurs_router
 from .routers.pilotage import router as pilotage_router
@@ -2694,8 +2698,10 @@ from .routers.polls import router as polls_router
 from .routers.push import router as push_router
 from .routers.reminders import router as reminders_router
 from .routers.reports import router as reports_router
+from .routers.rin import router as rin_router
 from .routers.scheduled_reports import router as scheduled_reports_router
 from .routers.search import router as search_router
+from .routers.security_ops import router as security_ops_router
 from .routers.templates import router as templates_router
 from .routers.totp import router as totp_router
 from .routers.units import router as units_router
@@ -2712,14 +2718,21 @@ app.include_router(admin_router)
 app.include_router(health_router)
 app.include_router(exports_router)
 app.include_router(pnpi_dashboard_router)
+app.include_router(business_model_router)
 app.include_router(ati_router)
 app.include_router(appeals_router)
 app.include_router(operateurs_router)
 app.include_router(chat_router)
 app.include_router(inspections_router)
+app.include_router(oni_router)
+app.include_router(filieres_router)
+app.include_router(innovation_router)
+app.include_router(capital_humain_router)
+app.include_router(industrial_assets_router)
 app.include_router(notifications_router)
 app.include_router(open_data_router)
 app.include_router(documents_router)
+app.include_router(durabilite_router)
 app.include_router(geo_router)
 app.include_router(totp_router)
 app.include_router(ws_router)
@@ -2727,6 +2740,7 @@ app.include_router(integration_router)
 app.include_router(messages_router)
 app.include_router(calendar_router)
 app.include_router(reports_router)
+app.include_router(rin_router)
 app.include_router(templates_router)
 app.include_router(workflows_router)
 app.include_router(heatmap_router)
@@ -2745,6 +2759,7 @@ app.include_router(graphql_router)
 app.include_router(conventions_router)
 app.include_router(search_router)
 app.include_router(api_keys_router)
+app.include_router(security_ops_router)
 
 
 @app.get("/metrics/usage", include_in_schema=False)

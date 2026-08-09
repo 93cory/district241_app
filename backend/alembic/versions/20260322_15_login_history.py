@@ -9,7 +9,7 @@ def upgrade():
     op.create_table(
         "login_history",
         sa.Column("id", sa.String(36), primary_key=True),
-        sa.Column("username", sa.String(80), sa.ForeignKey("user_accounts.username"), nullable=False, index=True),
+        sa.Column("username", sa.String(80), nullable=False, index=True),
         sa.Column("ip_address", sa.String(45), nullable=True),
         sa.Column("user_agent", sa.String(500), nullable=True),
         sa.Column("method", sa.String(20), nullable=False, server_default="password"),

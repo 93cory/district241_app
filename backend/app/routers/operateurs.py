@@ -70,8 +70,10 @@ def _to_operateur_brief(op: OperateurIndustrielORM) -> OperateurBrief:
 def _to_ati_brief(ati: AgrementTechniqueIndustrielORM) -> ATIBrief:
     return ATIBrief(
         id=ati.id,
+        operateur_id=ati.operateur_id,
         numero_ati=ati.numero_ati,
         type_activite=ati.type_activite,
+        secteur=ati.secteur,
         statut=ati.statut,
         etape=ati.etape,
         priorite=ati.priorite,
@@ -195,6 +197,13 @@ async def list_operateurs(
         query = query.where(OperateurIndustrielORM.province == province)
     if is_active is not None:
         query = query.where(OperateurIndustrielORM.is_active.is_(is_active))
+    if operateur_only:
+        linked_operateurs = (
+            select(AgrementTechniqueIndustrielORM.operateur_id)
+            .where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
+            .distinct()
+        )
+        query = query.where(OperateurIndustrielORM.id.in_(linked_operateurs))
     # Exclude soft-deleted by default
     query = query.where(OperateurIndustrielORM.deleted_at.is_(None))
     query = query.order_by(OperateurIndustrielORM.raison_sociale).offset(skip).limit(limit)

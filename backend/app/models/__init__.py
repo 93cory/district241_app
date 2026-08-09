@@ -18,6 +18,11 @@ from .pnpi import (
     DocumentDossierORM,
     InspectionConformiteORM,
     OperateurIndustrielORM,
+    RINInvestissementORM,
+    RINProduitORM,
+    RINRepresentantORM,
+    RINRessourceORM,
+    RINSiteIndustrielORM,
 )
 
 __all__ = [
@@ -33,6 +38,11 @@ __all__ = [
     "OperateurIndustrielORM",
     "ProjectDossierORM",
     "ProjectDossierTransitionORM",
+    "RINInvestissementORM",
+    "RINProduitORM",
+    "RINRepresentantORM",
+    "RINRessourceORM",
+    "RINSiteIndustrielORM",
     "RefreshTokenORM",
     "TraceBatchORM",
     "UnitORM",

@@ -16,4 +16,4 @@ COPY backend/scripts /app/scripts
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python -m alembic upgrade head && python scripts/seed_db.py || true && python scripts/seed_pnpi.py || true && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python -m alembic upgrade head && if [ \"$PNPI_ENV\" != \"production\" ]; then (python scripts/seed_db.py || true) && (python scripts/seed_pnpi.py || true); fi && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]

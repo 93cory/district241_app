@@ -1,7 +1,7 @@
 """Add composite indexes for common query patterns."""
 
 revision = "20260401_32"
-down_revision = "20260322_31"
+down_revision = "20260401_31a"
 
 from alembic import op
 

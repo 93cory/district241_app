@@ -29,16 +29,35 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from passlib.context import CryptContext
+from passlib.context import CryptContext  # noqa: E402
 
-from app.database import Base, SessionLocal, engine, now_utc
-from app.models import NotificationORM, UserAccountORM
-from app.models.pnpi import (
+from app.database import Base, SessionLocal, engine, now_utc  # noqa: E402
+from app.models import NotificationORM, UserAccountORM  # noqa: E402
+from app.models.pnpi import (  # noqa: E402
     AgrementTechniqueIndustrielORM,
     AnnouncementORM,
+    ATIAppealORM,
+    ATIComplementRequestORM,
+    ATITechnicalOpinionORM,
     ATITransitionORM,
+    DocumentDossierORM,
+    InspectionAnnualPlanORM,
+    InspectionCampaignORM,
+    InspectionChecklistTemplateORM,
     InspectionConformiteORM,
+    InspectionCorrectiveActionORM,
+    InspectionFindingORM,
+    InspectionMissionOrderORM,
+    InspectionPhotoORM,
+    InspectionSanctionORM,
+    InnovationProjectORM,
+    ONIPeriodicDeclarationORM,
     OperateurIndustrielORM,
+    RINInvestissementORM,
+    RINProduitORM,
+    RINRepresentantORM,
+    RINRessourceORM,
+    RINSiteIndustrielORM,
 )
 
 # ---------------------------------------------------------------------------
@@ -1043,9 +1062,28 @@ def main() -> None:
     try:
         # Nettoyage
         nb_an = db.query(AnnouncementORM).delete()
+        db.query(RINInvestissementORM).delete()
+        db.query(RINRessourceORM).delete()
+        db.query(RINProduitORM).delete()
+        db.query(RINSiteIndustrielORM).delete()
+        db.query(RINRepresentantORM).delete()
+        db.query(InspectionCorrectiveActionORM).delete()
+        db.query(InspectionFindingORM).delete()
+        db.query(InspectionSanctionORM).delete()
+        db.query(InspectionPhotoORM).delete()
+        db.query(InspectionMissionOrderORM).delete()
+        db.query(InspectionCampaignORM).delete()
+        db.query(InspectionAnnualPlanORM).delete()
+        db.query(InspectionChecklistTemplateORM).delete()
         nb_i = db.query(InspectionConformiteORM).delete()
+        db.query(ATIAppealORM).delete()
+        db.query(ATIComplementRequestORM).delete()
+        db.query(ATITechnicalOpinionORM).delete()
+        db.query(DocumentDossierORM).delete()
         nb_t = db.query(ATITransitionORM).delete()
         nb_a = db.query(AgrementTechniqueIndustrielORM).delete()
+        db.query(ONIPeriodicDeclarationORM).delete()
+        db.query(InnovationProjectORM).delete()
         nb_o = db.query(OperateurIndustrielORM).delete()
         db.commit()
         print(f"  [nettoyage] {nb_o} operateurs, {nb_a} ATIs, {nb_t} transitions, {nb_i} inspections, {nb_an} annonces")
@@ -1231,6 +1269,47 @@ def main() -> None:
         db.flush()
         print(f"       OK : {nb_transitions} transitions")
 
+        # 4b. Documents de demonstration
+        print("  [4b/5] Documents ATI de demonstration...")
+        demo_upload_root = Path(os.getenv("PNPI_UPLOAD_DIR", "uploads/ati"))
+        doc_types = ["statuts", "bilan", "plan_site", "certification"]
+        nb_docs = 0
+        for ati in atis:
+            if ati.statut not in {"en_validation", "approuve"}:
+                continue
+            # Les dossiers en validation/approuves doivent raconter une histoire
+            # complete pendant la demo : pieces obligatoires presentes, coffre
+            # documentaire alimente, verification possible.
+            ati_dir = demo_upload_root / ati.id
+            ati_dir.mkdir(parents=True, exist_ok=True)
+            for doc_type in doc_types:
+                doc_id = uid("DOC")
+                filename = f"{ati.numero_ati}_{doc_type}.pdf"
+                stored_path = ati_dir / f"{doc_id}.pdf"
+                content = (
+                    "%PDF-1.4\n"
+                    f"% PNPI document demo {doc_type}\n"
+                    f"% ATI {ati.numero_ati}\n"
+                    "1 0 obj<<>>endobj\n"
+                    "trailer<<>>\n%%EOF\n"
+                ).encode("utf-8")
+                stored_path.write_bytes(content)
+                db.add(
+                    DocumentDossierORM(
+                        id=doc_id,
+                        ati_id=ati.id,
+                        nom_fichier=filename,
+                        type_document=doc_type,
+                        taille_octets=len(content),
+                        chemin_stockage=str(stored_path),
+                        uploaded_at=(ati.date_soumission or now_utc()) + timedelta(days=3),
+                        uploaded_by=ati.created_by or "operateur",
+                    )
+                )
+                nb_docs += 1
+        db.flush()
+        print(f"       OK : {nb_docs} documents")
+
         # 5. Inspections
         print("  [5/5] Inspections (10)...")
         nb_inspections = 0
@@ -1258,8 +1337,98 @@ def main() -> None:
         db.flush()
         print(f"       OK : {nb_inspections} inspections")
 
+        # 6. RIN · sous-fiches industrielles
+        print("  [6/8] Referentiel Industriel National...")
+        rin_seed_count = 0
+        for idx, op in enumerate(operateurs[:12]):
+            db.add(
+                RINRepresentantORM(
+                    id=uid("RINREP"),
+                    operateur_id=op.id,
+                    nom_complet=f"Responsable industriel {idx + 1:02d}",
+                    fonction=["Directeur industriel", "Responsable HSE", "Responsable production"][idx % 3],
+                    email=op.contact_email,
+                    telephone=op.contact_telephone,
+                    est_contact_principal=idx % 2 == 0,
+                    created_by="admin",
+                    created_at=days_ago(30 + idx),
+                )
+            )
+            db.add(
+                RINSiteIndustrielORM(
+                    id=uid("RINSITE"),
+                    operateur_id=op.id,
+                    nom_site=f"Site principal · {op.ville}",
+                    type_site="usine",
+                    province=op.province,
+                    ville=op.ville,
+                    adresse=f"Zone industrielle de {op.ville}",
+                    latitude=op.latitude,
+                    longitude=op.longitude,
+                    superficie_ha=round(3.5 + idx * 0.8, 2),
+                    statut="actif",
+                    created_by="admin",
+                    created_at=days_ago(28 + idx),
+                )
+            )
+            produit_nom = {
+                "bois": "Bois transformé",
+                "mines": "Minerai traité",
+                "agroalimentaire": "Produit agro-industriel",
+                "btp": "Matériaux de construction",
+                "petrole": "Service pétrolier",
+                "services": "Prestation industrielle",
+            }.get(op.secteur, "Produit industriel")
+            db.add(
+                RINProduitORM(
+                    id=uid("RINPROD"),
+                    operateur_id=op.id,
+                    nom_produit=produit_nom,
+                    categorie=op.secteur,
+                    unite="tonne" if op.secteur in {"mines", "agroalimentaire"} else "unite",
+                    capacite_annuelle=1000 + idx * 350,
+                    production_annuelle=700 + idx * 250,
+                    marche_cible="local_export" if idx % 3 == 0 else "local",
+                    certification="AGANOR / ISO à vérifier" if idx % 4 == 0 else None,
+                    created_by="admin",
+                    created_at=days_ago(26 + idx),
+                )
+            )
+            db.add(
+                RINRessourceORM(
+                    id=uid("RINRES"),
+                    operateur_id=op.id,
+                    type_ressource="energie",
+                    libelle="Electricité réseau / groupe",
+                    origine="Gabon",
+                    consommation_annuelle=250 + idx * 45,
+                    unite="MWh",
+                    dependance_import=False,
+                    created_by="admin",
+                    created_at=days_ago(24 + idx),
+                )
+            )
+            if idx < 8:
+                db.add(
+                    RINInvestissementORM(
+                        id=uid("RININV"),
+                        operateur_id=op.id,
+                        intitule="Modernisation de l’outil de production",
+                        montant_fcfa=500_000_000 + idx * 125_000_000,
+                        statut=["planifie", "en_cours", "realise"][idx % 3],
+                        annee=2026,
+                        emplois_prevus=20 + idx * 7,
+                        description="Projet de renforcement des capacités industrielles déclaré dans le RIN.",
+                        created_by="admin",
+                        created_at=days_ago(20 + idx),
+                    )
+                )
+            rin_seed_count += 1
+        db.flush()
+        print(f"       OK : {rin_seed_count} profils RIN enrichis")
+
         # 6. Annonces officielles
-        print("  [6/7] Annonces officielles...")
+        print("  [7/8] Annonces officielles...")
         nb_annonces = 0
         for a in ANNOUNCEMENTS_DATA:
             db.add(
@@ -1280,7 +1449,7 @@ def main() -> None:
         print(f"       OK : {nb_annonces} annonces")
 
         # 7. Notifications variees
-        print("  [7/7] Notifications (dashboard)...")
+        print("  [8/8] Notifications (dashboard)...")
         nb_notifs = 0
         for n in NOTIFICATIONS_DATA:
             if not db.query(NotificationORM).filter(NotificationORM.notification_key == n["key"]).first():
@@ -1344,7 +1513,10 @@ def main() -> None:
         print()
         print("  Comptes utilisateurs :")
         for u in USERS_DATA:
-            print(f"    {u['username']:15s} ({u['roles_csv']:12s}) · pwd: {u['password']}")
+            print(
+                f"    {u['username']:15s} ({u['roles_csv']:12s}) · "
+                f"pwd: {_resolve_password(u['username'], u['password'])}"
+            )
         print("=" * 60)
 
     except Exception as exc:

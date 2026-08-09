@@ -64,6 +64,7 @@ class OperateurBrief(BaseModel):
 
 class ATICreate(BaseModel):
     operateur_id: str = Field(..., examples=["op-abc123"])
+    type_demande: str = Field("creation", examples=["creation", "renouvellement", "extension"])
     type_activite: str = Field(..., examples=["Scierie et transformation premiere du bois"])
     secteur: str = Field(..., examples=["bois"])
     priorite: str = Field("normale", examples=["normale", "haute", "urgente"])
@@ -76,11 +77,14 @@ class ATIRead(BaseModel):
     id: str
     numero_ati: str
     operateur_id: str
+    type_demande: str = "creation"
     type_activite: str
     secteur: str
     statut: str
     etape: str
     priorite: str
+    payment_status: str = "prototype"
+    payment_reference: str | None = None
     instructeur_username: str | None = None
     date_soumission: datetime
     date_decision: datetime | None = None
@@ -100,12 +104,16 @@ class ATIRead(BaseModel):
 
 class ATIBrief(BaseModel):
     id: str
+    operateur_id: str
     numero_ati: str
+    type_demande: str = "creation"
     type_activite: str
     secteur: str
     statut: str
     etape: str
     priorite: str
+    payment_status: str = "prototype"
+    payment_reference: str | None = None
     instructeur_username: str | None = None
     date_soumission: datetime
     age_jours: int
@@ -159,10 +167,14 @@ class InspectionRead(BaseModel):
     operateur_nom: str = ""
     ati_id: str | None = None
     ati_numero: str | None = None
+    mission_order_id: str | None = None
+    campaign_id: str | None = None
     inspecteur_username: str
     inspecteur_nom: str = ""
     date_inspection: datetime
+    workflow_status: str = "rapport"
     statut_conformite: str
+    score_conformite: int | None = None
     observations: str
     mesures_correctives: str | None = None
     latitude: float | None = None
@@ -172,6 +184,266 @@ class InspectionRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ATITechnicalOpinionCreate(BaseModel):
+    direction: str = Field(..., examples=["Direction de la Normalisation"])
+    due_at: datetime | None = None
+    motivation: str | None = Field(None, examples=["Avis requis sur la certification produit."])
+
+
+class ATITechnicalOpinionUpdate(BaseModel):
+    status: str = Field(..., examples=["favorable", "reserve", "defavorable"])
+    motivation: str | None = None
+
+
+class ATITechnicalOpinionRead(BaseModel):
+    id: str
+    ati_id: str
+    direction: str
+    requested_by: str
+    requested_at: datetime
+    due_at: datetime | None = None
+    status: str
+    motivation: str | None = None
+    signed_by: str | None = None
+    signed_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ATIComplementRequestCreate(BaseModel):
+    motif: str = Field(..., examples=["Le plan du site transmis est illisible."])
+    requested_documents: list[str] = Field(default_factory=list, examples=[["plan_site", "certification"]])
+    due_at: datetime | None = None
+
+
+class ATIComplementResponse(BaseModel):
+    response_note: str = Field(..., examples=["Les pieces demandees ont ete ajoutees au dossier."])
+
+
+class ATIComplementRequestRead(BaseModel):
+    id: str
+    ati_id: str
+    requested_by: str
+    requested_at: datetime
+    due_at: datetime | None = None
+    status: str
+    motif: str
+    requested_documents: list[str] = Field(default_factory=list)
+    response_note: str | None = None
+    responded_by: str | None = None
+    responded_at: datetime | None = None
+
+
+class ATIBusinessRuleCreate(BaseModel):
+    rule_type: str = Field(..., examples=["documents_requis"])
+    demande_type: str | None = Field(None, examples=["creation"])
+    secteur: str | None = Field(None, examples=["bois"])
+    label: str = Field(..., examples=["Pieces creation ATI bois"])
+    config: dict = Field(..., examples=[{"documents": ["statuts", "bilan", "plan_site", "certification"]}])
+    is_active: bool = True
+
+
+class ATIBusinessRuleUpdate(BaseModel):
+    label: str | None = None
+    config: dict | None = None
+    is_active: bool | None = None
+
+
+class ATIBusinessRuleRead(BaseModel):
+    id: str
+    rule_type: str
+    demande_type: str | None = None
+    secteur: str | None = None
+    label: str
+    config: dict
+    is_active: bool
+    updated_by: str | None = None
+    updated_at: datetime | None = None
+
+
+# ---------------------------------------------------------------------------
+# RIN · Referentiel Industriel National
+# ---------------------------------------------------------------------------
+
+
+class RINRepresentantCreate(BaseModel):
+    nom_complet: str = Field(..., examples=["Marie MBOUMBA"])
+    fonction: str = Field(..., examples=["Directrice industrielle"])
+    email: str | None = Field(None, examples=["direction@example.ga"])
+    telephone: str | None = Field(None, examples=["+241 77 00 00 00"])
+    est_contact_principal: bool = False
+
+
+class RINRepresentantUpdate(BaseModel):
+    nom_complet: str | None = None
+    fonction: str | None = None
+    email: str | None = None
+    telephone: str | None = None
+    est_contact_principal: bool | None = None
+
+
+class RINRepresentantRead(RINRepresentantCreate):
+    id: str
+    operateur_id: str
+    created_at: datetime
+    created_by: str | None = None
+    statut_validation: str = "brouillon"
+    updated_at: datetime | None = None
+    validated_by: str | None = None
+    validated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RINSiteCreate(BaseModel):
+    nom_site: str = Field(..., examples=["Usine principale de Nkok"])
+    type_site: str = Field("usine", examples=["usine", "entrepot", "carriere"])
+    province: str = Field(..., examples=["estuaire"])
+    ville: str = Field(..., examples=["Nkok"])
+    adresse: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    superficie_ha: float | None = None
+    statut: str = Field("actif", examples=["actif", "en_construction", "suspendu"])
+
+
+class RINSiteUpdate(BaseModel):
+    nom_site: str | None = None
+    type_site: str | None = None
+    province: str | None = None
+    ville: str | None = None
+    adresse: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    superficie_ha: float | None = None
+    statut: str | None = None
+
+
+class RINSiteRead(RINSiteCreate):
+    id: str
+    operateur_id: str
+    created_at: datetime
+    created_by: str | None = None
+    statut_validation: str = "brouillon"
+    updated_at: datetime | None = None
+    validated_by: str | None = None
+    validated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RINProduitCreate(BaseModel):
+    nom_produit: str = Field(..., examples=["Contreplaqué okoumé"])
+    categorie: str = Field(..., examples=["Bois transformé"])
+    unite: str = Field("tonne", examples=["tonne", "m3", "unite"])
+    capacite_annuelle: float | None = Field(None, examples=[12000])
+    production_annuelle: float | None = Field(None, examples=[8400])
+    marche_cible: str | None = Field(None, examples=["local_export"])
+    certification: str | None = Field(None, examples=["FSC"])
+
+
+class RINProduitUpdate(BaseModel):
+    nom_produit: str | None = None
+    categorie: str | None = None
+    unite: str | None = None
+    capacite_annuelle: float | None = None
+    production_annuelle: float | None = None
+    marche_cible: str | None = None
+    certification: str | None = None
+
+
+class RINProduitRead(RINProduitCreate):
+    id: str
+    operateur_id: str
+    created_at: datetime
+    created_by: str | None = None
+    statut_validation: str = "brouillon"
+    updated_at: datetime | None = None
+    validated_by: str | None = None
+    validated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RINRessourceCreate(BaseModel):
+    type_ressource: str = Field(..., examples=["matiere_premiere", "energie"])
+    libelle: str = Field(..., examples=["Grumes okoumé"])
+    origine: str | None = Field(None, examples=["Gabon"])
+    consommation_annuelle: float | None = Field(None, examples=[15000])
+    unite: str | None = Field(None, examples=["m3"])
+    dependance_import: bool = False
+
+
+class RINRessourceUpdate(BaseModel):
+    type_ressource: str | None = None
+    libelle: str | None = None
+    origine: str | None = None
+    consommation_annuelle: float | None = None
+    unite: str | None = None
+    dependance_import: bool | None = None
+
+
+class RINRessourceRead(RINRessourceCreate):
+    id: str
+    operateur_id: str
+    created_at: datetime
+    created_by: str | None = None
+    statut_validation: str = "brouillon"
+    updated_at: datetime | None = None
+    validated_by: str | None = None
+    validated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RINInvestissementCreate(BaseModel):
+    intitule: str = Field(..., examples=["Extension ligne de transformation"])
+    montant_fcfa: int | None = Field(None, examples=[2500000000])
+    statut: str = Field("planifie", examples=["planifie", "en_cours", "realise"])
+    annee: int | None = Field(None, examples=[2026])
+    emplois_prevus: int | None = Field(None, examples=[120])
+    description: str | None = None
+
+
+class RINInvestissementUpdate(BaseModel):
+    intitule: str | None = None
+    montant_fcfa: int | None = None
+    statut: str | None = None
+    annee: int | None = None
+    emplois_prevus: int | None = None
+    description: str | None = None
+
+
+class RINInvestissementRead(RINInvestissementCreate):
+    id: str
+    operateur_id: str
+    created_at: datetime
+    created_by: str | None = None
+    statut_validation: str = "brouillon"
+    updated_at: datetime | None = None
+    validated_by: str | None = None
+    validated_at: datetime | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RINProfileRead(BaseModel):
+    operateur_id: str
+    score_structuration: int
+    representants: list[RINRepresentantRead]
+    sites: list[RINSiteRead]
+    produits: list[RINProduitRead]
+    ressources: list[RINRessourceRead]
+    investissements: list[RINInvestissementRead]
+    manques: list[str]
+    workflow_counts: dict[str, int] = Field(default_factory=dict)
+
+
+class RINTransitionUpdate(BaseModel):
+    statut_validation: str = Field(..., examples=["soumis", "verifie", "valide", "archive"])
+    note: str | None = None
 
 
 # ---------------------------------------------------------------------------

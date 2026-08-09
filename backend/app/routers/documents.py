@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
@@ -16,8 +17,8 @@ from ..core.audit import write_audit_event
 from ..core.auth import Role, User, require_roles
 from ..core.upload_validation import BLOCKED_EXTENSIONS
 from ..database import get_db, now_utc
-from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM
-from .ati import check_ati_access
+from ..models.pnpi import AgrementTechniqueIndustrielORM, DocumentDossierORM, DocumentVersionORM, OperateurIndustrielORM
+from .ati import _required_docs_for_ati, check_ati_access
 
 router = APIRouter(prefix="/pnpi", tags=["Documents"])
 
@@ -34,6 +35,7 @@ ALLOWED_CONTENT_TYPES = {
 }
 TYPE_DOCUMENT_VALUES = {"statuts", "bilan", "plan_site", "certification", "autre"}
 _TERMINAL_STATUTS = {"approuve", "rejete", "expire"}
+SENSITIVE_DOCUMENT_TYPES = {"statuts", "bilan", "certification"}
 
 
 class DocumentRead(BaseModel):
@@ -58,6 +60,194 @@ def _to_doc_read(doc: DocumentDossierORM) -> DocumentRead:
         uploaded_at=doc.uploaded_at.isoformat(),
         uploaded_by=doc.uploaded_by,
     )
+
+
+def _status_for(score: int, warn: int = 75, critical: int = 50) -> str:
+    if score >= warn:
+        return "ok"
+    if score >= critical:
+        return "warning"
+    return "critical"
+
+
+def _document_classification(type_document: str) -> str:
+    if type_document in {"statuts", "bilan"}:
+        return "confidentiel"
+    if type_document == "certification":
+        return "officiel"
+    if type_document == "plan_site":
+        return "sensible"
+    return "interne"
+
+
+@router.get("/documents/cockpit", summary="Cockpit national du coffre documentaire PNPI")
+async def documents_cockpit(
+    _: User = Depends(require_roles(Role.admin, Role.ministre, Role.directeur, Role.instructeur)),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    """Vue transverse du coffre documentaire.
+
+    Cette route donne une lecture de gouvernance : pieces jointes, couverture
+    des dossiers ATI, documents sensibles, versioning, orphelins et actions
+    de remédiation. Elle ne lit pas le contenu des fichiers.
+    """
+
+    docs = db.execute(select(DocumentDossierORM)).scalars().all()
+    atis = db.execute(select(AgrementTechniqueIndustrielORM)).scalars().all()
+    operators = {
+        op.id: op
+        for op in db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.deleted_at.is_(None)))
+        .scalars()
+        .all()
+    }
+    versions = db.execute(select(DocumentVersionORM)).scalars().all()
+
+    ati_ids = {ati.id for ati in atis}
+    docs_by_ati: dict[str, list[DocumentDossierORM]] = defaultdict(list)
+    by_type = Counter()
+    by_classification = Counter()
+    by_uploader = Counter()
+    total_size = 0
+    missing_by_type = Counter()
+    dossier_summaries: list[dict[str, object]] = []
+
+    for doc in docs:
+        docs_by_ati[doc.ati_id].append(doc)
+        by_type[doc.type_document] += 1
+        by_classification[_document_classification(doc.type_document)] += 1
+        by_uploader[doc.uploaded_by] += 1
+        total_size += doc.taille_octets or 0
+
+    complete_atis = 0
+    locked_evidence = 0
+    for ati in atis:
+        required = _required_docs_for_ati(ati, db)
+        present = {doc.type_document for doc in docs_by_ati.get(ati.id, [])}
+        missing = sorted(required - present)
+        for item in missing:
+            missing_by_type[item] += 1
+        if not missing:
+            complete_atis += 1
+        if ati.statut in _TERMINAL_STATUTS and docs_by_ati.get(ati.id):
+            locked_evidence += 1
+        if missing or ati.statut in {"en_validation", "approuve"}:
+            op = operators.get(ati.operateur_id)
+            dossier_summaries.append(
+                {
+                    "ati_id": ati.id,
+                    "numero_ati": ati.numero_ati,
+                    "operateur": op.raison_sociale if op else ati.operateur_id,
+                    "statut": ati.statut,
+                    "type_demande": ati.type_demande,
+                    "documents": len(docs_by_ati.get(ati.id, [])),
+                    "required": sorted(required),
+                    "missing": missing,
+                    "preuve_verrouillee": ati.statut in _TERMINAL_STATUTS,
+                }
+            )
+
+    orphan_docs = [doc for doc in docs if doc.ati_id not in ati_ids]
+    physical_missing = [doc for doc in docs if doc.chemin_stockage and not Path(doc.chemin_stockage).exists()]
+    documents_with_versions = {version.document_id for version in versions}
+    versioned_docs = sum(1 for doc in docs if doc.id in documents_with_versions)
+    coverage_score = round((complete_atis / max(len(atis), 1)) * 100) if atis else 100
+    integrity_score = (
+        round(((len(docs) - len(orphan_docs) - len(physical_missing)) / max(len(docs), 1)) * 100) if docs else 100
+    )
+    version_score = round((versioned_docs / max(len(docs), 1)) * 100) if docs else 100
+    preservation_score = round(
+        (locked_evidence / max(len([ati for ati in atis if ati.statut in _TERMINAL_STATUTS]), 1)) * 100
+    )
+    global_score = round(
+        (coverage_score * 0.35) + (integrity_score * 0.3) + (version_score * 0.15) + (preservation_score * 0.2)
+    )
+
+    return {
+        "generated_at": now_utc().isoformat(),
+        "score_coffre": global_score,
+        "grade": "A" if global_score >= 90 else "B" if global_score >= 75 else "C" if global_score >= 60 else "D",
+        "stats": {
+            "documents": len(docs),
+            "atis": len(atis),
+            "atis_complets": complete_atis,
+            "taille_totale_mo": round(total_size / (1024 * 1024), 2),
+            "versions": len(versions),
+            "documents_versionnes": versioned_docs,
+            "documents_orphelins": len(orphan_docs),
+            "fichiers_physiques_manquants": len(physical_missing),
+            "preuves_verrouillees": locked_evidence,
+        },
+        "scores": [
+            {
+                "label": "Couverture des pièces requises",
+                "score": coverage_score,
+                "status": _status_for(coverage_score, 80, 50),
+                "description": f"{complete_atis}/{len(atis)} ATI disposent de toutes les pièces attendues selon le type de demande.",
+            },
+            {
+                "label": "Intégrité de rattachement",
+                "score": integrity_score,
+                "status": _status_for(integrity_score, 95, 80),
+                "description": "Les documents doivent être rattachés à une ATI existante et à un fichier physique disponible.",
+            },
+            {
+                "label": "Versioning documentaire",
+                "score": version_score,
+                "status": _status_for(version_score, 60, 25),
+                "description": f"{versioned_docs}/{len(docs)} documents disposent d'au moins une trace de version.",
+            },
+            {
+                "label": "Préservation des preuves",
+                "score": preservation_score,
+                "status": _status_for(preservation_score, 80, 50),
+                "description": "Les dossiers décidés conservent leurs pièces comme preuves administratives non supprimables.",
+            },
+        ],
+        "par_type": [{"type_document": key, "count": value} for key, value in by_type.most_common()],
+        "par_classification": [
+            {"classification": key, "count": value} for key, value in by_classification.most_common()
+        ],
+        "pieces_manquantes": [{"type_document": key, "count": value} for key, value in missing_by_type.most_common()],
+        "top_uploadeurs": [{"username": key, "count": value} for key, value in by_uploader.most_common(8)],
+        "dossiers_prioritaires": sorted(
+            dossier_summaries,
+            key=lambda item: (len(item["missing"]), item["statut"] in {"en_validation", "approuve"}),
+            reverse=True,
+        )[:12],
+        "anomalies": [
+            {
+                "severity": "critical",
+                "title": "Documents orphelins",
+                "count": len(orphan_docs),
+                "detail": "Documents rattachés à une ATI inexistante.",
+                "action": "Réindexer ou placer en quarantaine documentaire.",
+            },
+            {
+                "severity": "critical",
+                "title": "Fichiers physiques manquants",
+                "count": len(physical_missing),
+                "detail": "Métadonnées présentes mais fichier absent du stockage.",
+                "action": "Restaurer depuis sauvegarde ou marquer comme preuve indisponible.",
+            },
+            {
+                "severity": "warning",
+                "title": "Pièces requises manquantes",
+                "count": sum(missing_by_type.values()),
+                "detail": "Écart entre les règles ATI et les documents déposés.",
+                "action": "Notifier les opérateurs ou demander les compléments.",
+            },
+        ],
+        "principes": [
+            "Un document n'est une preuve que s'il est rattaché, daté, typé et traçable.",
+            "Les pièces sensibles doivent rester accessibles uniquement aux rôles habilités.",
+            "Les dossiers décidés conservent leurs preuves : suppression bloquée côté API.",
+            "Le versioning permet de comprendre l'évolution d'un dossier sans perdre l'historique.",
+        ],
+        "lecture_executive": (
+            "Le coffre documentaire PNPI consolide les pièces ATI et leurs preuves de dépôt. "
+            "Le cockpit mesure la complétude, l'intégrité, le versioning et les anomalies avant décision ou archivage."
+        ),
+    }
 
 
 @router.get("/ati/{ati_id}/documents", response_model=list[DocumentRead])
