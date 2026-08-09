@@ -82,7 +82,7 @@ def _resolve_atis(db: Session, args: dict) -> list[dict]:
             "date_soumission": a.date_soumission.isoformat(),
             "sla_jours": a.sla_jours,
             "operateur_nom": a.operateur.raison_sociale if a.operateur else None,
-            "operateur_nif": a.operateur.nif_gabon if a.operateur else None,
+            "operateur_nif": a.operateur.nif if a.operateur else None,
         }
         for a in atis
     ]
@@ -101,7 +101,7 @@ def _resolve_operateurs(db: Session, args: dict) -> list[dict]:
         {
             "id": o.id,
             "raison_sociale": o.raison_sociale,
-            "nif_gabon": o.nif_gabon,
+            "nif_gabon": o.nif,
             "secteur": o.secteur,
             "province": o.province,
             "ville": o.ville,

@@ -473,7 +473,7 @@ def _build_360_profile(db: Session, op: OperateurIndustrielORM) -> dict[str, obj
         "generated_at": now_utc().isoformat(),
         "operateur": {
             "id": op.id,
-            "nif_gabon": op.nif_gabon,
+            "nif_gabon": op.nif,
             "raison_sociale": op.raison_sociale,
             "secteur": op.secteur,
             "province": op.province,

@@ -29,6 +29,13 @@ async def search_global(
     """Recherche full-text sur les ATI et operateurs.
 
     Recherche dans: numero_ati, type_activite, raison_sociale, nif_gabon, secteur, province.
+
+    Note NIF : `nif_gabon` est chiffre at-rest (cf `core/encryption.py`), la
+    colonne en base ne contient plus que les 4 derniers caracteres visibles
+    (le reste masque). La recherche partielle sur le NIF ne fonctionne donc
+    que sur ce suffixe visible, pas sur le NIF complet — limitation
+    deliberee (pas de recherche substring possible sur une valeur chiffree
+    sans la stocker en clair).
     """
     term = f"%{q.strip().lower()}%"
     results = []
@@ -82,7 +89,7 @@ async def search_global(
                     "type": "operateur",
                     "id": op.id,
                     "title": op.raison_sociale,
-                    "subtitle": f"{op.secteur} | {op.province} | NIF: {op.nif_gabon}",
+                    "subtitle": f"{op.secteur} | {op.province} | NIF: {op.nif}",
                     "url": f"/pnpi/operateurs/{op.id}",
                 }
             )

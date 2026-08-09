@@ -1363,7 +1363,7 @@ async def download_inspection_report_pdf(
     pdf = generate_inspection_report(
         numero_inspection=insp.id[:12].upper(),
         operateur=op.raison_sociale if op else "Inconnu",
-        nif=op.nif_gabon if op else "",
+        nif=(op.nif or "") if op else "",
         province=op.province if op else "",
         site=insp.site_inspecte if hasattr(insp, "site_inspecte") else "",
         inspecteur=insp.inspecteur_username,

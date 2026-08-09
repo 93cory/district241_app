@@ -70,27 +70,30 @@ class OperateurIndustrielORM(Base):
 
     def set_nif(self, value: str | None) -> None:
         """Setter unifie : chiffre dans `nif_gabon_encrypted`, calcule
-        l'empreinte de recherche dans `nif_gabon_hash`, ET ecrit `nif_gabon`
-        en clair tant que la migration n'est pas finalisee (cf
-        `docs/audit-deep/db-integrity.md`).
+        l'empreinte de recherche dans `nif_gabon_hash`, et n'ecrit dans
+        `nif_gabon` (colonne NOT NULL historique) que la version masquee
+        (derniers caracteres visibles, cf `core.encryption.mask_tail`) —
+        jamais le clair complet, des lors que le chiffrement est actif.
 
         A utiliser systematiquement a la creation/mise a jour d'un operateur
         — ne jamais assigner `nif_gabon=` directement, sinon le chiffrement
         et l'empreinte ne sont pas calcules pour cette ligne.
 
-        Une migration future supprimera/masquera la colonne en clair une
-        fois 100% des lignes migrees (cf `scripts/encrypt_existing_nifs.py`).
+        En dev/test sans `PNPI_FIELD_ENCRYPTION_KEY` (chiffrement inactif,
+        mode pass-through), `nif_gabon` recoit encore le clair — coherent
+        avec le comportement pass-through documente dans `core/encryption.py`,
+        et sans consequence puisqu'aucune donnee reelle n'y transite.
         """
-        from ..core.encryption import encrypt_str, hash_for_lookup
+        from ..core.encryption import encrypt_str, hash_for_lookup, is_encryption_enabled, mask_tail
 
         if value is None:
             self.nif_gabon = ""  # NOT NULL contrainte legacy
             self.nif_gabon_encrypted = None
             self.nif_gabon_hash = None
             return
-        self.nif_gabon = value
         self.nif_gabon_encrypted = encrypt_str(value)
         self.nif_gabon_hash = hash_for_lookup(value)
+        self.nif_gabon = mask_tail(value) if is_encryption_enabled() else value
 
     agrements: Mapped[list[AgrementTechniqueIndustrielORM]] = relationship(
         back_populates="operateur",

@@ -157,3 +157,48 @@ def test_mask_tail_keeps_only_last_chars(fresh_module):
     assert enc.mask_tail("GA-NIF-2024-00123") == "*************0123"
     assert enc.mask_tail("abc") == "abc"  # trop court pour masquer
     assert enc.mask_tail(None) is None
+
+
+def test_set_nif_masks_when_encryption_enabled(fresh_module):
+    """Regression D-003 : quand le chiffrement est actif, set_nif() ne doit
+    plus jamais laisser le NIF en clair dans nif_gabon (colonne persistee)."""
+    from app.models.pnpi import OperateurIndustrielORM
+
+    key = _make_key()
+    fresh_module({"PNPI_FIELD_ENCRYPTION_KEY": key, "PNPI_ENV": "development"})
+
+    op = OperateurIndustrielORM()
+    op.set_nif("GA-NIF-2024-00123")
+
+    assert op.nif_gabon != "GA-NIF-2024-00123"  # jamais le clair complet
+    assert op.nif_gabon.endswith("0123")  # suffixe visible conserve (affichage/recherche)
+    assert op.nif_gabon_encrypted is not None
+    assert op.nif_gabon_hash is not None
+    assert op.nif == "GA-NIF-2024-00123"  # la property continue de dechiffrer correctement
+
+
+def test_set_nif_hash_stable_across_masking(fresh_module):
+    """L'empreinte de recherche doit rester la meme pour deux operateurs
+    crees separement avec le meme NIF (sert a la detection de doublon)."""
+    key = _make_key()
+    fresh_module({"PNPI_FIELD_ENCRYPTION_KEY": key, "PNPI_ENV": "development"})
+    from app.models.pnpi import OperateurIndustrielORM
+
+    op1 = OperateurIndustrielORM()
+    op1.set_nif("GA-NIF-2024-00123")
+    op2 = OperateurIndustrielORM()
+    op2.set_nif("GA-NIF-2024-00123")
+
+    assert op1.nif_gabon_hash == op2.nif_gabon_hash
+
+
+def test_set_nif_passthrough_without_key(fresh_module):
+    """Sans cle (dev), nif_gabon reste en clair — comportement pass-through
+    coherent avec le reste de core/encryption.py, sans donnee reelle en jeu."""
+    fresh_module({"PNPI_ENV": "development"})
+    from app.models.pnpi import OperateurIndustrielORM
+
+    op = OperateurIndustrielORM()
+    op.set_nif("GA-NIF-2024-00123")
+    assert op.nif_gabon == "GA-NIF-2024-00123"
+    assert op.nif_gabon_hash is not None  # toujours calcule, cle ou pas

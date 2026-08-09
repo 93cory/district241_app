@@ -1,28 +1,34 @@
-"""PNPI · Migration des NIF existants vers `nif_gabon_encrypted` +
-`nif_gabon_hash`.
+"""PNPI · Finalisation du chiffrement NIF : `nif_gabon_encrypted` +
+`nif_gabon_hash` + masquage de `nif_gabon`.
 
 Usage :
     PNPI_FIELD_ENCRYPTION_KEY="..." python backend/scripts/encrypt_existing_nifs.py
 
-Ce script :
-1. Charge tous les operateurs ou `nif_gabon_encrypted` IS NULL ou
-   `nif_gabon_hash` IS NULL (lignes creees avant que `set_nif()` soit
-   effectivement appele partout, ou lignes legacy pre-migration 37/48).
-2. Chiffre `nif_gabon` (clair) -> `nif_gabon_encrypted` si manquant.
-3. Calcule l'empreinte HMAC de recherche -> `nif_gabon_hash` si manquant.
-4. Conserve `nif_gabon` en clair pour la phase de transition (les
-   migrations alembic 37/48 ne le suppriment PAS ; le code applicatif lit
-   en priorite la colonne chiffree via la property `nif`).
+Ce script traite CHAQUE operateur (pas seulement les lignes incompletes,
+car le masquage doit s'appliquer meme aux lignes deja partiellement
+migrees) :
 
-Idempotent : peut etre relance sans risque, les lignes deja completes sont
-ignorees.
+1. Determine la valeur en clair de reference :
+   - si `nif_gabon_encrypted` est deja renseigne -> on dechiffre (source de
+     verite pour une ligne deja migree, meme partiellement) ;
+   - sinon -> `nif_gabon` est suppose encore en clair (ligne legacy jamais
+     touchee par `set_nif()`).
+   Cette distinction est essentielle : si on relit `nif_gabon` alors qu'il
+   est deja masque, le hash/chiffre recalcule a partir du masque serait
+   corrompu (ne represente plus le vrai NIF).
+2. (Re)calcule `nif_gabon_encrypted` et `nif_gabon_hash` si manquants.
+3. Ecrit la version masquee (derniers caracteres visibles, cf
+   `core.encryption.mask_tail`) dans `nif_gabon` — jamais le clair complet.
+   Idempotent : masquer une valeur deja masquee redonne le meme masque
+   (les derniers caracteres ne changent pas).
 
-Une fois 100% des lignes migrees ET un cycle complet de prod sans incident,
-une migration future pourra dropper/masquer `nif_gabon` — cf le plan detaille
-dans `docs/audit-deep/db-integrity.md` (section chiffrement NIF). Ce dernier
-pas n'est PAS fait par ce script : il touche la recherche/l'affichage/les
-API d'integration externes (cf `routers/integration.py`) et merite un passage
-dedie plutot qu'un effet de bord d'un backfill.
+Conserve la colonne `nif_gabon` (pas de DROP) : ~25 sites de lecture en
+dependent encore comme fallback (`nif` property) ou pour la recherche
+partielle (suffixe visible uniquement desormais) — cf
+`docs/audit-deep/db-integrity.md` pour le detail des sites concernes et
+`AGENTS.md`/`CLAUDE.md` pour la doc des nouvelles variables.
+
+Idempotent : peut etre relance sans risque a tout moment.
 """
 
 from __future__ import annotations
@@ -34,9 +40,9 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 
-from app.core.encryption import encrypt_str, hash_for_lookup, is_encryption_enabled
+from app.core.encryption import decrypt_str, encrypt_str, hash_for_lookup, is_encryption_enabled, mask_tail
 from app.database import SessionLocal
 from app.models.pnpi import OperateurIndustrielORM
 
@@ -53,27 +59,20 @@ def main() -> int:
     skipped = 0
     failed = 0
     with SessionLocal() as db:
-        ops = (
-            db.execute(
-                select(OperateurIndustrielORM).where(
-                    or_(
-                        OperateurIndustrielORM.nif_gabon_encrypted.is_(None),
-                        OperateurIndustrielORM.nif_gabon_hash.is_(None),
-                    )
-                )
-            )
-            .scalars()
-            .all()
-        )
+        ops = db.execute(select(OperateurIndustrielORM)).scalars().all()
         for op in ops:
             try:
-                if not op.nif_gabon:
+                reference = decrypt_str(op.nif_gabon_encrypted) if op.nif_gabon_encrypted else (op.nif_gabon or None)
+
+                if not reference:
                     skipped += 1
                     continue
+
                 if op.nif_gabon_encrypted is None:
-                    op.nif_gabon_encrypted = encrypt_str(op.nif_gabon)
+                    op.nif_gabon_encrypted = encrypt_str(reference)
                 if op.nif_gabon_hash is None:
-                    op.nif_gabon_hash = hash_for_lookup(op.nif_gabon)
+                    op.nif_gabon_hash = hash_for_lookup(reference)
+                op.nif_gabon = mask_tail(reference)
                 migrated += 1
             except Exception as exc:
                 print(f"[ERROR] op {op.id}: {exc}")

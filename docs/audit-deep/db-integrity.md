@@ -339,38 +339,43 @@ WHERE expires_at < datetime('now', '-7 days') OR revoked_at IS NOT NULL;
 
 ---
 
-## [MOYENNE] — NIF stockes en clair en parallele du chiffre (legacy preserve)
+## [RESOLU lot 89/91] — NIF stockes en clair en parallele du chiffre
 
 **Categorie** : 4 (champs sensibles non chiffres)
 **Fichier** :
-- `backend/app/models/pnpi.py:33-36` — `nif_gabon` (clair) + `nif_gabon_encrypted`
-- `backend/alembic/versions/20260427_37_nif_encrypted.py` — migration non destructive
-- `backend/scripts/encrypt_existing_nifs.py` — script de migration
+- `backend/app/models/pnpi.py` — `nif_gabon` (masque), `nif_gabon_encrypted`,
+  `nif_gabon_hash` (empreinte HMAC pour recherche exacte/unicite)
+- `backend/alembic/versions/20260427_37_nif_encrypted.py`,
+  `20260809_48_nif_gabon_hash.py` — migrations non destructives
+- `backend/scripts/encrypt_existing_nifs.py` — backfill + masquage des
+  lignes existantes
+- `backend/app/core/encryption.py` — `hash_for_lookup()`, `mask_tail()`
 
-**Requete SQL** :
-```sql
-SELECT COUNT(*) AS total,
-       SUM(CASE WHEN nif_gabon_encrypted IS NULL THEN 1 ELSE 0 END) AS unencrypted,
-       SUM(CASE WHEN nif_gabon = '' THEN 1 ELSE 0 END) AS blank_legacy
-FROM operateurs_industriels;
-```
+**Constat initial (toujours utile pour comprendre la trajectoire)** : deux
+problemes distincts avaient ete identifies :
+1. `set_nif()` n'etait appele nulle part dans le code — tous les chemins de
+   creation ecrivaient `nif_gabon=` directement, contournant totalement le
+   chiffrement (`nif_gabon_encrypted` restait NULL pour toute nouvelle
+   ligne). **Corrige lot 89** — 4 sites de creation reecrits.
+2. Meme quand chiffre, `nif_gabon` (clair) restait aussi peuple en
+   parallele — "chiffrement at-rest" techniquement vrai (Fernet) mais sans
+   effet reel puisque le clair complet restait lisible directement.
+   **Corrige lot 91** — `nif_gabon` ne recoit plus que la valeur masquee
+   (derniers caracteres visibles) des lors que le chiffrement est actif ;
+   une empreinte HMAC deterministe (`nif_gabon_hash`) permet toujours la
+   recherche exacte / l'unicite sans jamais comparer de clair. ~14 fichiers
+   de lecture (recherche, exports, API d'integration DGDI/DGI/MTEPS,
+   cockpits) mis a jour pour lire la valeur dechiffree (`op.nif`) plutot
+   que la colonne masquee quand l'affichage du NIF complet est requis.
 
-**Probleme** : la colonne `nif_gabon` (clair) reste **NOT NULL** et est
-toujours ecrite en parallele de `nif_gabon_encrypted`. Sur ordi non chiffre,
-c'est equivalent a "rien chiffrer". La presentation au ministre annonce
-"chiffrement at-rest des NIF" — c'est techniquement vrai (Fernet) mais le
-NIF clair est aussi stocke et indexe (`ix_operateurs_nif`).
+**Limitation assumee** : la recherche partielle (ILIKE) sur le NIF ne
+fonctionne plus que sur le suffixe visible (derniers caracteres) — une
+recherche substring sur une valeur chiffree n'est pas possible sans la
+stocker en clair. Documente dans `routers/search.py`.
 
-**Fix propose** :
-1. Lancer `encrypt_existing_nifs.py` une fois pour s'assurer que tous les
-   `nif_gabon_encrypted` sont peuples.
-2. Documenter clairement dans la note technique que le NIF clair est
-   conserve pendant la phase de transition jusqu'a une future migration
-   `20260501_39_drop_nif_clear.py` qui :
-   - Verifie que 100% des rows ont `nif_gabon_encrypted IS NOT NULL`.
-   - Drope la colonne `nif_gabon`.
-   - Drope l'index `ix_operateurs_nif`.
-3. **Ne pas** faire ce drop avant la demo (risque de regression).
+**Reste a faire (hors code, decision operationnelle)** : lancer
+`encrypt_existing_nifs.py` en production pour masquer les lignes creees
+avant ce correctif (idempotent, sans risque a relancer).
 
 ---
 

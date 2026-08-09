@@ -1841,7 +1841,7 @@ async def download_ati_pdf(
             )
             story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e5e7eb")))
             op_data = [
-                ["Raison sociale", op.raison_sociale, "NIF", op.nif_gabon],
+                ["Raison sociale", op.raison_sociale, "NIF", op.nif],
                 ["Province", op.province.replace("_", " ").capitalize(), "Ville", op.ville or "·"],
                 ["Secteur", op.secteur.capitalize(), "Effectif", str(op.effectif_declare or "·")],
             ]
@@ -1939,7 +1939,7 @@ async def download_ati_certificate(
         pdf = generate_ati_certificate(
             numero_ati=ati.numero_ati,
             operateur=op_name,
-            nif=op.nif_gabon if op else "",
+            nif=(op.nif or "") if op else "",
             secteur=ati.secteur,
             province=op.province if op else "",
             type_activite=ati.type_activite,
@@ -2894,8 +2894,8 @@ async def verify_ati_public(numero_ati: str, db: Session = Depends(get_db)):
     # Masquage du NIF en public : seuls les 4 derniers chars sont visibles.
     # Format ex: "GA-NIF-12345678" -> "***-****-5678"
     nif_masked = None
-    if op and op.nif_gabon:
-        last4 = op.nif_gabon[-4:] if len(op.nif_gabon) >= 4 else op.nif_gabon
+    if op and op.nif:
+        last4 = op.nif[-4:] if len(op.nif) >= 4 else op.nif
         nif_masked = f"***-****-{last4}"
 
     return {

@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..core.encryption import hash_for_lookup
 from ..database import get_db
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -54,7 +55,9 @@ async def verify_operateur_by_nif(
     db: Session = Depends(get_db),
 ):
     """Verify an operator by NIF. Used by customs and tax systems."""
-    op = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)).scalar_one_or_none()
+    op = db.execute(
+        select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon_hash == hash_for_lookup(nif))
+    ).scalar_one_or_none()
 
     if not op:
         return {"found": False, "nif": nif}
@@ -120,7 +123,7 @@ async def list_active_operateurs(
         "filters": {"secteur": secteur, "province": province},
         "operateurs": [
             {
-                "nif": op.nif_gabon,
+                "nif": op.nif,
                 "raison_sociale": op.raison_sociale,
                 "secteur": op.secteur,
                 "province": op.province,
@@ -139,7 +142,9 @@ async def check_conformite(
     db: Session = Depends(get_db),
 ):
     """Check compliance status for an operator by NIF. Used by all external systems."""
-    op = db.execute(select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)).scalar_one_or_none()
+    op = db.execute(
+        select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon_hash == hash_for_lookup(nif))
+    ).scalar_one_or_none()
 
     if not op:
         return {"found": False, "nif": nif}

@@ -431,7 +431,7 @@ async def export_operateurs_csv(
         rows.append(
             [
                 op.id,
-                op.nif_gabon,
+                op.nif,
                 op.raison_sociale,
                 op.secteur,
                 op.province,
@@ -816,7 +816,7 @@ async def export_atis_xlsx(
         values = [
             ati.numero_ati,
             op.raison_sociale if op else "",
-            op.nif_gabon if op else "",
+            (op.nif or "") if op else "",
             ati.secteur,
             (op.province if op else "").replace("_", " ").title(),
             ati.type_activite,
@@ -908,7 +908,7 @@ async def export_operateurs_xlsx(
     for row_idx, op in enumerate(ops, 2):
         values = [
             op.raison_sociale,
-            op.nif_gabon,
+            op.nif,
             op.secteur,
             op.province.replace("_", " ").title() if op.province else "",
             op.ville or "",
@@ -1135,7 +1135,7 @@ async def export_signed_certificate(
     pdf_content = generate_ati_certificate(
         numero_ati=ati.numero_ati,
         operateur=op.raison_sociale if op else "Inconnu",
-        nif=op.nif_gabon if op else "",
+        nif=(op.nif or "") if op else "",
         secteur=ati.secteur,
         province=op.province if op else "",
         type_activite=ati.type_activite,
@@ -1720,7 +1720,7 @@ async def create_digital_archive(
             {
                 "numero_ati": a.numero_ati,
                 "operateur": a.operateur.raison_sociale if a.operateur else None,
-                "nif": a.operateur.nif_gabon if a.operateur else None,
+                "nif": a.operateur.nif if a.operateur else None,
                 "secteur": a.secteur,
                 "type_activite": a.type_activite,
                 "statut": a.statut,

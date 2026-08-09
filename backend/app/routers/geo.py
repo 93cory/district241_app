@@ -462,7 +462,7 @@ async def export_operateurs_geojson(
                 "properties": {
                     "id": op.id,
                     "raison_sociale": op.raison_sociale,
-                    "nif_gabon": op.nif_gabon,
+                    "nif_gabon": op.nif,
                     "secteur": op.secteur,
                     "province": op.province,
                     "ville": op.ville,
@@ -569,7 +569,7 @@ async def export_geojson(
             "type": "operateur",
             "id": op.id,
             "raison_sociale": op.raison_sociale,
-            "nif": op.nif_gabon,
+            "nif": op.nif,
             "secteur": op.secteur,
             "province": op.province,
             "ville": op.ville or "",

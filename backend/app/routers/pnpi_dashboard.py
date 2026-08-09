@@ -495,7 +495,10 @@ async def data_quality_score(
                 critical=80,
             )
 
-            nif_counts = Counter(str(o.nif_gabon).strip().lower() for o in ops if o.nif_gabon)
+            # nif_gabon_hash (pas nif_gabon, masque) : deux operateurs distincts
+            # partageant les memes derniers caracteres visibles ne doivent pas
+            # etre comptes comme doublons.
+            nif_counts = Counter(o.nif_gabon_hash for o in ops if o.nif_gabon_hash)
             name_counts = Counter(str(o.raison_sociale).strip().lower() for o in ops if o.raison_sociale)
             duplicate_nifs = sum(count - 1 for count in nif_counts.values() if count > 1)
             duplicate_names = sum(count - 1 for count in name_counts.values() if count > 1)
@@ -1035,7 +1038,7 @@ async def pnpi_search(
                 type="operateur",
                 id=op.id,
                 title=op.raison_sociale,
-                subtitle=f"{op.secteur.capitalize()} · {op.province.replace('_', ' ')} · NIF: {op.nif_gabon}",
+                subtitle=f"{op.secteur.capitalize()} · {op.province.replace('_', ' ')} · NIF: {op.nif}",
                 href=f"/pnpi/operateurs/{op.id}",
             )
         )
@@ -1470,7 +1473,7 @@ async def advanced_search(
                         ati.secteur,
                         ati.observations if hasattr(ati, "observations") else "",
                         op.raison_sociale if op else "",
-                        op.nif_gabon if op else "",
+                        (op.nif or "") if op else "",
                     ],
                 )
             ).lower()
@@ -1501,7 +1504,7 @@ async def advanced_search(
                     None,
                     [
                         op.raison_sociale,
-                        op.nif_gabon,
+                        op.nif,
                         op.secteur,
                         op.province,
                         op.ville,

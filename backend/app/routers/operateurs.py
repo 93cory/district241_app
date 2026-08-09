@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
 from ..core.auth import Role, User, get_current_user, require_roles
+from ..core.encryption import hash_for_lookup
 from ..core.pagination import PaginatedResponse, PaginationParams
 from ..core.scoring import compute_all_scores, compute_operator_score
 from ..database import get_db, now_utc
@@ -38,7 +39,7 @@ def _ati_is_overdue(ati: AgrementTechniqueIndustrielORM) -> bool:
 def _to_operateur_read(op: OperateurIndustrielORM) -> OperateurRead:
     return OperateurRead(
         id=op.id,
-        nif_gabon=op.nif_gabon,
+        nif_gabon=op.nif or "",
         raison_sociale=op.raison_sociale,
         secteur=op.secteur,
         province=op.province,
@@ -57,7 +58,7 @@ def _to_operateur_read(op: OperateurIndustrielORM) -> OperateurRead:
 def _to_operateur_brief(op: OperateurIndustrielORM) -> OperateurBrief:
     return OperateurBrief(
         id=op.id,
-        nif_gabon=op.nif_gabon,
+        nif_gabon=op.nif or "",
         raison_sociale=op.raison_sociale,
         secteur=op.secteur,
         province=op.province,
@@ -122,9 +123,9 @@ async def import_operateurs_csv(
                 skipped += 1
                 continue
 
-            # Check duplicate NIF
+            # Check duplicate NIF (empreinte : nif_gabon est masque, pas comparable en clair)
             existing = db.execute(
-                select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == nif)
+                select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon_hash == hash_for_lookup(nif))
             ).scalar_one_or_none()
 
             if existing:
@@ -260,9 +261,11 @@ async def create_operateur(
     current_user: User = Depends(require_roles(Role.admin, Role.instructeur, Role.ministre)),
     db: Session = Depends(get_db),
 ) -> OperateurRead:
-    # Check NIF uniqueness
+    # Check NIF uniqueness (empreinte : nif_gabon est masque, pas comparable en clair)
     existing = db.execute(
-        select(OperateurIndustrielORM).where(OperateurIndustrielORM.nif_gabon == payload.nif_gabon)
+        select(OperateurIndustrielORM).where(
+            OperateurIndustrielORM.nif_gabon_hash == hash_for_lookup(payload.nif_gabon)
+        )
     ).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=409, detail="Un operateur avec ce NIF existe deja.")
