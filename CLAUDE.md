@@ -124,6 +124,12 @@ cd backend && pip install pre-commit && cd .. && pre-commit install
   `scripts/backup_s3.py`)
 - `PNPI_S3_DOCUMENTS_BUCKET` : bucket documents/photos (default
   `pnpi-documents`, distinct de `PNPI_S3_BUCKET` = sauvegardes DB)
+- `PNPI_VAULT_ADDR`, `PNPI_VAULT_TOKEN` : optionnel (dette D-012) — si
+  defini, `PNPI_SECRET_KEY` et `PNPI_FIELD_ENCRYPTION_KEY` sont lus depuis
+  HashiCorp Vault en priorite (cf `core/secrets.py`). Vide = comportement
+  historique (variables d'environnement) inchange. Le Vault de
+  `docker-compose.prod.yml` (profil `vault`) tourne en mode dev — voir
+  avertissements dans `core/secrets.py` avant tout usage production reel.
 - `PNPI_FIELD_ENCRYPTION_KEY` : cle Fernet pour chiffrement at-rest des champs
   sensibles (NIF, etc. — cf `core/encryption.py`). Obligatoire en production
   (RuntimeError au demarrage sinon) ; pass-through clair en dev si absente.

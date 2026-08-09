@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import os
 
+from .core.secrets import resolve_secret
+
 
 class Settings:
-    secret_key: str = os.getenv("PNPI_SECRET_KEY", os.getenv("PNPI_SECRET_KEY", "change-me-in-production"))
+    # Resolu via Vault si PNPI_VAULT_ADDR est configure, sinon variable
+    # d'environnement (cf core/secrets.py — dette D-012).
+    secret_key: str = resolve_secret("PNPI_SECRET_KEY", "change-me-in-production")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = int(os.getenv("PNPI_ACCESS_TOKEN_EXPIRE_MINUTES", "480"))  # 8h par defaut
     refresh_token_expire_days: int = int(
@@ -35,8 +39,8 @@ class Settings:
     sla_high_days: int = int(os.getenv("PNPI_SLA_HIGH_DAYS", os.getenv("PNPI_SLA_HIGH_DAYS", "21")))
 
     def __init__(self) -> None:
-        # Re-evaluate at instantiation time so env vars are read dynamically
-        self.secret_key = os.getenv("PNPI_SECRET_KEY", os.getenv("PNPI_SECRET_KEY", "change-me-in-production"))
+        # Re-evaluate at instantiation time so env vars / Vault are read dynamically
+        self.secret_key = resolve_secret("PNPI_SECRET_KEY", "change-me-in-production")
         self.algorithm = "HS256"
         self.access_token_expire_minutes = int(os.getenv("PNPI_ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
         self.refresh_token_expire_days = int(

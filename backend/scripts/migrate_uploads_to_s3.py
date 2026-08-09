@@ -67,9 +67,19 @@ def _build_target_storage() -> S3Storage:
     return S3Storage(endpoint=endpoint, access_key=access_key, secret_key=secret_key, bucket=bucket, region=region)
 
 
-def _migrate_column(db, model, ref_column: str, key_prefix: str, target: S3Storage) -> tuple[int, int]:
+def _migrate_column(
+    db, model, ref_column: str, key_prefix: str, target: S3Storage, *, nested: bool = True
+) -> tuple[int, int]:
     """Migre toutes les lignes de `model` dont `ref_column` pointe vers un
-    fichier local. Retourne (migrated, failed)."""
+    fichier local. Retourne (migrated, failed).
+
+    `nested=True` (documents ATI, photos inspection) : preserve le
+    sous-dossier `{entity_id}/{fichier}` du stockage local, pour matcher
+    exactement la structure de cle produite par un nouvel upload une fois
+    S3 actif (cf `routers/documents.py` / `routers/inspections.py`,
+    `f"{entity_id}/{stored_name}"`). `nested=False` (rapports terrain) :
+    le stockage local historique est deja plat (pas de sous-dossier).
+    """
     migrated = 0
     failed = 0
     rows = db.execute(select(model)).scalars().all()
@@ -82,7 +92,12 @@ def _migrate_column(db, model, ref_column: str, key_prefix: str, target: S3Stora
             continue  # deja signale par les checks d'integrite existants
         try:
             content = local_path.read_bytes()
-            new_ref = target.save(f"{key_prefix}/{local_path.name}", content)
+            key = (
+                f"{key_prefix}/{local_path.parent.name}/{local_path.name}"
+                if nested
+                else f"{key_prefix}/{local_path.name}"
+            )
+            new_ref = target.save(key, content)
             setattr(row, ref_column, new_ref)
             migrated += 1
         except Exception as exc:
@@ -120,12 +135,12 @@ def main() -> int:
     total_failed = 0
 
     with SessionLocal() as db:
-        for model, column, prefix in (
-            (DocumentDossierORM, "chemin_stockage", "ati"),
-            (InspectionPhotoORM, "chemin_stockage", "inspections"),
-            (FieldReportORM, "photo_path", "field-reports"),
+        for model, column, prefix, nested in (
+            (DocumentDossierORM, "chemin_stockage", "ati", True),
+            (InspectionPhotoORM, "chemin_stockage", "inspections", True),
+            (FieldReportORM, "photo_path", "field-reports", False),
         ):
-            migrated, failed = _migrate_column(db, model, column, prefix, target)
+            migrated, failed = _migrate_column(db, model, column, prefix, target, nested=nested)
             print(f"[OK] {model.__name__}: migrated={migrated} failed={failed}")
             total_migrated += migrated
             total_failed += failed

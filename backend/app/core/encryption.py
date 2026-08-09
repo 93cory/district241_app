@@ -93,8 +93,10 @@ def _get_fernet():
         )
         return None
 
-    primary = os.getenv(ENV_KEY, "").strip()
-    secondary = os.getenv(ENV_KEY_OLD, "").strip()
+    from .secrets import resolve_secret
+
+    primary = resolve_secret(ENV_KEY, "").strip()
+    secondary = resolve_secret(ENV_KEY_OLD, "").strip()
 
     if not primary:
         if os.getenv("PNPI_ENV", "development").strip().lower() == "production":

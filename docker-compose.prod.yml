@@ -40,6 +40,27 @@ services:
     networks:
       - pnpi-net
 
+  # Coffre-fort de secrets (dette D-012). Mode DEV UNIQUEMENT (donnees en
+  # memoire, pas de scellement reel) — point de depart pour valider
+  # l'integration applicative (core/secrets.py), pas un Vault de production.
+  # Desactive par defaut : PNPI_SECRET_KEY / PNPI_FIELD_ENCRYPTION_KEY
+  # restent lus depuis .env.prod tant que PNPI_VAULT_ADDR n'est pas defini
+  # sur le service backend. Cf core/secrets.py pour la checklist de
+  # durcissement avant un usage production reel.
+  vault:
+    image: hashicorp/vault:latest
+    container_name: pnpi-vault
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${PNPI_VAULT_TOKEN:-pnpi_vault_dev_root_token}
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    networks:
+      - pnpi-net
+    profiles:
+      - vault
+
   backend:
     image: ghcr.io/${GHCR_OWNER:-pnpi}/pnpi-backend:${IMAGE_TAG:-latest}
     container_name: pnpi-backend
@@ -52,6 +73,11 @@ services:
         condition: service_healthy
     environment:
       PNPI_SECRET_KEY: ${PNPI_SECRET_KEY:?Set PNPI_SECRET_KEY in .env.prod}
+      # Optionnel (dette D-012) : si defini, PNPI_SECRET_KEY et
+      # PNPI_FIELD_ENCRYPTION_KEY sont lus depuis Vault en priorite (cf
+      # core/secrets.py). Vide par defaut = comportement historique inchange.
+      PNPI_VAULT_ADDR: ${PNPI_VAULT_ADDR:-}
+      PNPI_VAULT_TOKEN: ${PNPI_VAULT_TOKEN:-}
       PNPI_ADMIN_PASSWORD: ${PNPI_ADMIN_PASSWORD:?Set PNPI_ADMIN_PASSWORD in .env.prod}
       PNPI_MINISTRE_PASSWORD: ${PNPI_MINISTRE_PASSWORD:?Set PNPI_MINISTRE_PASSWORD in .env.prod}
       PNPI_OPERATEUR_PASSWORD: ${PNPI_OPERATEUR_PASSWORD:?Set PNPI_OPERATEUR_PASSWORD in .env.prod}
