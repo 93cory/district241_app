@@ -112,6 +112,15 @@ cd backend && pip install pre-commit && cd .. && pre-commit install
 - `PNPI_FF_*` : Feature flags (ex: PNPI_FF_GRAPHQL_API=0)
 - `PNPI_ACCESS_TOKEN_EXPIRE_MINUTES` : TTL JWT (default 480 = 8h, match cookie)
 - `PNPI_UPLOAD_DIR` : Dossier stockage documents ATI (default `uploads/ati`)
+- `PNPI_FIELD_ENCRYPTION_KEY` : cle Fernet pour chiffrement at-rest des champs
+  sensibles (NIF, etc. — cf `core/encryption.py`). Obligatoire en production
+  (RuntimeError au demarrage sinon) ; pass-through clair en dev si absente.
+  `PNPI_FIELD_ENCRYPTION_KEY_OLD` : ancienne cle pendant une rotation.
+- `PNPI_TRUSTED_PROXY_NETWORKS` : CIDR des proxys de confiance dont le header
+  `X-Forwarded-For` est accepte (cf `core/client_ip.py`) ; sinon IP directe du
+  client retenue (anti-spoofing).
+- `PNPI_REDIS_PASSWORD` : mot de passe Redis (niveau docker-compose, injecte
+  dans `PNPI_REDIS_URL`) ; Redis n'est plus joignable sans authentification.
 - `NEXT_PUBLIC_BACKEND_URL` : URL backend pour le proxy Next.js (default `http://localhost:8000`)
 
 ## Frontend — Composants reutilisables

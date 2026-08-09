@@ -23,6 +23,23 @@ services:
     networks:
       - pnpi-net
 
+  redis:
+    image: redis:7-alpine
+    container_name: pnpi-redis
+    restart: always
+    # Pas de port publie : uniquement joignable par le backend sur pnpi-net.
+    command: redis-server --requirepass ${PNPI_REDIS_PASSWORD:?Set PNPI_REDIS_PASSWORD in .env.prod}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${PNPI_REDIS_PASSWORD:?Set PNPI_REDIS_PASSWORD in .env.prod}", "--no-auth-warning", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pnpi-net
+
   backend:
     image: ghcr.io/${GHCR_OWNER:-pnpi}/pnpi-backend:${IMAGE_TAG:-latest}
     container_name: pnpi-backend
@@ -30,6 +47,8 @@ services:
     env_file: .env.prod
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       PNPI_SECRET_KEY: ${PNPI_SECRET_KEY:?Set PNPI_SECRET_KEY in .env.prod}
@@ -41,6 +60,7 @@ services:
       PNPI_INSTRUCTEUR_PASSWORD: ${PNPI_INSTRUCTEUR_PASSWORD:?Set PNPI_INSTRUCTEUR_PASSWORD in .env.prod}
       PNPI_TRUSTED_PROXY_NETWORKS: ${PNPI_TRUSTED_PROXY_NETWORKS:-172.16.0.0/12}
       PNPI_DATABASE_URL: postgresql://${POSTGRES_USER:-pnpi_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pnpi}
+      PNPI_REDIS_URL: redis://:${PNPI_REDIS_PASSWORD:?Set PNPI_REDIS_PASSWORD in .env.prod}@redis:6379/0
       PNPI_ENV: production
       PNPI_CORS_ALLOW_ORIGINS: ${PNPI_CORS_ALLOW_ORIGINS:-https://pnpi.gouv.ga}
       PNPI_S3_ENDPOINT: http://minio:9000
@@ -153,6 +173,7 @@ services:
 
 volumes:
   pnpi_postgres_data:
+  redis_data:
   pnpi_nginx_logs:
   minio_data:
   prometheus_data:

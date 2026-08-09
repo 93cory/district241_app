@@ -22,10 +22,12 @@ services:
     image: redis:7-alpine
     container_name: pnpi-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # Pas de port expose sur l'hote : seul le backend (meme reseau compose)
+    # doit pouvoir joindre Redis. `docker exec -it pnpi-redis redis-cli` pour
+    # debug local si besoin.
+    command: redis-server --requirepass ${PNPI_REDIS_PASSWORD:-pnpi_redis_dev_change_me}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${PNPI_REDIS_PASSWORD:-pnpi_redis_dev_change_me}", "--no-auth-warning", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,7 +51,7 @@ services:
       PNPI_OPERATEUR_PASSWORD: ${PNPI_OPERATEUR_PASSWORD:?Set PNPI_OPERATEUR_PASSWORD in .env}
       PNPI_INSPECTEUR_PASSWORD: ${PNPI_INSPECTEUR_PASSWORD:?Set PNPI_INSPECTEUR_PASSWORD in .env}
       PNPI_DATABASE_URL: postgresql://${POSTGRES_USER:-pnpi_user}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pnpi}
-      PNPI_REDIS_URL: redis://redis:6379/0
+      PNPI_REDIS_URL: redis://:${PNPI_REDIS_PASSWORD:-pnpi_redis_dev_change_me}@redis:6379/0
       PNPI_ENV: ${PNPI_ENV:-development}
     ports:
       - "8000:8000"
