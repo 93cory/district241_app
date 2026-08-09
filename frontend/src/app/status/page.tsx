@@ -34,7 +34,7 @@ export default async function StatusPage() {
             Statut du systeme PNPI
           </h1>
           <p style={{ color: "var(--text-soft, #526175)", fontSize: 13, margin: 0 }}>
-            Plateforme Nationale de la Politique Industrielle
+            Plateforme Nationale de Pilotage Industriel
           </p>
         </div>
 

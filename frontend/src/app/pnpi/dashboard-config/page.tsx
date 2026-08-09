@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "../../components/Toast";
+import { getCurrentUsernameFallback, userScopedStorageKey } from "../../../lib/user-scoped-storage";
 
 interface WidgetConfig {
   id: string;
@@ -29,9 +30,17 @@ export default function DashboardConfigPage() {
   const { showToast } = useToast();
   const [widgets, setWidgets] = useState<WidgetConfig[]>([]);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [storageKey, setStorageKey] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    getCurrentUsernameFallback().then((username) =>
+      setStorageKey(userScopedStorageKey(STORAGE_KEY, username)),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!storageKey) return;
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as WidgetConfig[];
@@ -48,7 +57,7 @@ export default function DashboardConfigPage() {
     } else {
       setWidgets([...DEFAULT_WIDGETS]);
     }
-  }, []);
+  }, [storageKey]);
 
   const toggle = (id: string) => {
     setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, enabled: !w.enabled } : w)));
@@ -73,13 +82,13 @@ export default function DashboardConfigPage() {
   };
 
   const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
+    if (storageKey) localStorage.setItem(storageKey, JSON.stringify(widgets));
     showToast("Configuration du dashboard enregistree", "success");
   };
 
   const reset = () => {
     setWidgets([...DEFAULT_WIDGETS]);
-    localStorage.removeItem(STORAGE_KEY);
+    if (storageKey) localStorage.removeItem(storageKey);
     showToast("Configuration reinitalisee", "info");
   };
 

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import { fetchBackendProfile } from "../lib/backend";
 import { getDefaultRouteForRoles } from "../lib/role-routing";
+import { PNPILogo } from "./components/PNPILogo";
 
 export const metadata = {
   title: "PNPI · Plateforme Nationale de Pilotage Industriel · République Gabonaise",
@@ -49,6 +49,9 @@ const VITRINE_CSS = `
   .vitrine-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -16px rgba(0,0,0,0.18); }
   .vitrine-card h3 { font-family: "Playfair Display", serif; font-size: 21px; font-weight: 700; margin-bottom: 12px; }
   .vitrine-card p { font-size: 14px; color: #526175; line-height: 1.65; }
+  .vitrine-module-card { display: flex; flex-direction: column; min-height: 190px; }
+  .vitrine-module-icon { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(0,158,96,0.1); font-size: 24px; margin-bottom: 16px; }
+  .vitrine-module-link { margin-top: auto; color: #003DA5; font-size: 13px; font-weight: 800; text-decoration: none; }
   .vitrine-cta-bottom { background: linear-gradient(135deg, #009E60 0%, #006d3e 100%); color: #fff; padding: 80px 32px; text-align: center; position: relative; overflow: hidden; }
   .vitrine-cta-bottom::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 0%, rgba(252,209,22,0.18) 0%, transparent 60%); }
   .vitrine-cta-bottom-inner { max-width: 720px; margin: 0 auto; position: relative; }
@@ -104,6 +107,51 @@ const FEATURES = [
   },
 ];
 
+const STRATEGIC_MODULES = [
+  {
+    title: "RIN national",
+    desc: "Référentiel industriel, DIUN, sites, produits, ressources et fiche entreprise 360°.",
+    icon: "🏭",
+    href: "/pnpi/rin",
+    accent: "#009E60",
+  },
+  {
+    title: "Filières & chaînes de valeur",
+    desc: "Lecture de souveraineté productive, maillons critiques, territoires et opportunités.",
+    icon: "🔗",
+    href: "/pnpi/filieres",
+    accent: "#003DA5",
+  },
+  {
+    title: "Innovation 4.0",
+    desc: "Technologies, projets pilotes, acteurs de l'écosystème et maturité numérique.",
+    icon: "⚙️",
+    href: "/pnpi/innovation",
+    accent: "#7c3aed",
+  },
+  {
+    title: "Capital humain",
+    desc: "Emplois, compétences, métiers en tension et formations adaptées aux rôles.",
+    icon: "🎓",
+    href: "/pnpi/capital-humain",
+    accent: "#0c7eb4",
+  },
+  {
+    title: "Industrie durable",
+    desc: "Énergie, matières, circularité, carbone et risques climatiques territorialisés.",
+    icon: "🌿",
+    href: "/pnpi/durabilite",
+    accent: "#006233",
+  },
+  {
+    title: "Sécurité SOC",
+    desc: "Supervision sécurité, MFA, audit, alertes et réponse aux incidents.",
+    icon: "🛡️",
+    href: "/pnpi/securite",
+    accent: "#b42318",
+  },
+];
+
 export default async function HomePage() {
   try {
     const profile = await fetchBackendProfile();
@@ -128,7 +176,19 @@ export default async function HomePage() {
         </div>
         <div className="vitrine-hero-inner">
           <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 36 }}>
-            <Image src="/pnpi-logo-mark.svg" alt="PNPI" width={64} height={64} />
+            <div
+              style={{
+                width: 76,
+                height: 76,
+                borderRadius: 22,
+                background: "rgba(255,255,255,0.96)",
+                display: "grid",
+                placeItems: "center",
+                boxShadow: "0 12px 30px rgba(0,0,0,0.25)",
+              }}
+            >
+              <PNPILogo size={68} priority />
+            </div>
             <div>
               <div style={{ fontSize: 13, opacity: 0.85, letterSpacing: "0.06em" }}>
                 République Gabonaise
@@ -180,6 +240,34 @@ export default async function HomePage() {
             <div key={f.title} className="vitrine-card" style={{ ["--accent" as never]: f.accent }}>
               <h3>{f.title}</h3>
               <p>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="vitrine-section" style={{ paddingTop: 0 }}>
+        <h2>
+          Des modules <em>stratégiques</em> déjà démontrables.
+        </h2>
+        <p className="sub">
+          Au-delà du guichet administratif, la PNPI devient un système national de connaissance,
+          de pilotage et d'aide à la décision pour l'industrie gabonaise.
+        </p>
+        <div className="vitrine-grid">
+          {STRATEGIC_MODULES.map((module) => (
+            <div
+              key={module.title}
+              className="vitrine-card vitrine-module-card"
+              style={{ ["--accent" as never]: module.accent }}
+            >
+              <div className="vitrine-module-icon" aria-hidden="true">
+                {module.icon}
+              </div>
+              <h3>{module.title}</h3>
+              <p>{module.desc}</p>
+              <Link href={module.href} className="vitrine-module-link">
+                Voir le module après connexion →
+              </Link>
             </div>
           ))}
         </div>

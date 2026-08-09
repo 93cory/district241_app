@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export default function AnnualReportPage() {
   const currentYear = new Date().getFullYear();
@@ -8,18 +8,18 @@ export default function AnnualReportPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/pnpi/dashboard/annual-report/${year}`);
       if (res.ok) setData(await res.json());
     } catch {}
     setLoading(false);
-  };
+  }, [year]);
 
   useEffect(() => {
     load();
-  }, [year]);
+  }, [load]);
 
   const s = data?.summary || {};
   const MONTH_NAMES = [

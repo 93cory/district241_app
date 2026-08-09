@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 
 import { WebLogoutButton } from "./components/WebLogoutButton";
 import { SessionStatusBadge } from "./components/SessionStatusBadge";
 import { NotificationsBell } from "./components/NotificationsBell";
 import { MegaNav } from "./components/MegaNav";
+import { PNPILogo } from "./components/PNPILogo";
 import { MobileNav } from "./components/MobileNav";
 import { RepubliqueBand } from "./components/RepubliqueBand";
 import { ImpersonateBanner } from "./components/ImpersonateBanner";
@@ -30,14 +30,17 @@ import "./globals.css";
 // Temporarily disabled: import "leaflet/dist/leaflet.css";
 
 export const metadata = {
-  title: "PNPI | Plateforme Nationale de Pilotage Industriel",
+  title: {
+    default: "PNPI | Plateforme Nationale de Pilotage Industriel",
+    template: "%s | PNPI",
+  },
   description: "Ministere de l'Industrie du Gabon · Plateforme Nationale de Pilotage Industriel.",
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/pnpi_logo.png", sizes: "32x32" },
+      { url: "/favicon.svg?v=20260730b", type: "image/svg+xml" },
+      { url: "/pnpi-logo-officiel.png?v=20260730b", sizes: "512x512", type: "image/png" },
     ],
-    apple: "/pnpi-logo-mark.svg",
+    apple: "/pnpi-logo-officiel.png?v=20260730b",
   },
 };
 
@@ -60,8 +63,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="fr" data-theme="light">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="apple-touch-icon" href="/pnpi-logo-mark.svg" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20260730b" />
+        <link rel="icon" type="image/png" href="/pnpi-logo-officiel.png?v=20260730b" />
+        <link rel="apple-touch-icon" href="/pnpi-logo-officiel.png?v=20260730b" />
         <meta name="theme-color" content="#1E3A8A" />
         <meta name="color-scheme" content="light" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -76,13 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <RepubliqueBand />
             <nav className="top-nav" aria-label="Navigation principale">
               <Link href={homeHref} className="nav-brand" aria-label="Accueil PNPI">
-                <Image
-                  src="/pnpi-logo-mark.svg"
-                  alt="PNPI"
-                  width={36}
-                  height={36}
-                  style={{ borderRadius: 8 }}
-                />
+                <PNPILogo size={56} priority />
                 <span>PNPI</span>
               </Link>
               <MobileNav>

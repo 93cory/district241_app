@@ -19,7 +19,7 @@ export default function CGUPage() {
         {
           title: "1. Objet",
           content:
-            "Les presentes Conditions Generales d'Utilisation (CGU) regissent l'acces et l'utilisation de la Plateforme Nationale de la Politique Industrielle (PNPI), editee par le Ministere de l'Industrie et de la Transformation Locale de la Republique Gabonaise.",
+            "Les presentes Conditions Generales d'Utilisation (CGU) regissent l'acces et l'utilisation de la Plateforme Nationale de Pilotage Industriel (PNPI), editee par le Ministere de l'Industrie et de la Transformation Locale de la Republique Gabonaise.",
         },
         {
           title: "2. Acces a la plateforme",

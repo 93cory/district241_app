@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "../../components/Toast";
+import { getCurrentUsernameFallback, userScopedStorageKey } from "../../../lib/user-scoped-storage";
 
 interface Widget {
   id: string;
@@ -56,29 +57,39 @@ export default function BuilderPage() {
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [widgetData, setWidgetData] = useState<Record<string, any>>({});
   const [editing, setEditing] = useState(false);
+  const [storageKey, setStorageKey] = useState<string | null>(null);
+  const loadingWidgetIds = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    getCurrentUsernameFallback().then((username) =>
+      setStorageKey(userScopedStorageKey(STORAGE_KEY, username)),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!storageKey) return;
+    const saved = localStorage.getItem(storageKey);
     if (saved)
       try {
         setWidgets(JSON.parse(saved));
       } catch {}
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     widgets.forEach((w) => {
-      if (!widgetData[w.id]) {
-        fetch(w.endpoint)
-          .then((r) => r.json())
-          .then((d) => setWidgetData((prev) => ({ ...prev, [w.id]: d })))
-          .catch(() => {});
-      }
+      if (widgetData[w.id] || loadingWidgetIds.current.has(w.id)) return;
+      loadingWidgetIds.current.add(w.id);
+      fetch(w.endpoint)
+        .then((r) => r.json())
+        .then((d) => setWidgetData((prev) => ({ ...prev, [w.id]: d })))
+        .catch(() => {})
+        .finally(() => loadingWidgetIds.current.delete(w.id));
     });
-  }, [widgets]);
+  }, [widgets, widgetData]);
 
   const save = (ws: Widget[]) => {
     setWidgets(ws);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ws));
+    if (storageKey) localStorage.setItem(storageKey, JSON.stringify(ws));
   };
 
   const addWidget = (catalog: (typeof WIDGET_CATALOG)[0]) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Tag {
   id: string;
@@ -26,16 +26,16 @@ export function TagsManager({ atiId }: { atiId: string }) {
   const [newColor, setNewColor] = useState("#0c7eb4");
   const [adding, setAdding] = useState(false);
 
-  const load = () => {
+  const load = useCallback(() => {
     fetch(`/api/pnpi/ati/${atiId}/tags`)
       .then((r) => (r.ok ? r.json() : { tags: [] }))
       .then((d) => setTags(d.tags || []))
       .catch(() => {});
-  };
+  }, [atiId]);
 
   useEffect(() => {
     load();
-  }, [atiId]);
+  }, [load]);
 
   const add = async () => {
     if (!newLabel.trim()) return;

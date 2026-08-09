@@ -44,7 +44,7 @@ export default async function InvestorsPage() {
           Investir dans l&apos;industrie gabonaise
         </h1>
         <p style={{ fontSize: 16, opacity: 0.8, maxWidth: 600, margin: "0 auto" }}>
-          La Plateforme Nationale de la Politique Industrielle (PNPI) accompagne les operateurs et
+          La Plateforme Nationale de Pilotage Industriel (PNPI) accompagne les operateurs et
           investisseurs dans leurs projets industriels au Gabon.
         </p>
       </div>

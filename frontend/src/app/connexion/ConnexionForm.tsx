@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PNPILogo } from "../components/PNPILogo";
 import { TwoFactorForm } from "./TwoFactorForm";
 
 export const ConnexionForm = () => {
@@ -76,80 +77,10 @@ export const ConnexionForm = () => {
       </div>
 
       <div className="pnpi-login-container">
-        {/* En-tete institutionnel avec logo anime inspire du logo PNPI */}
+        {/* En-tete institutionnel avec logo officiel PNPI */}
         <header className="pnpi-login-header">
           <div className="pnpi-logo-circle">
-            <svg
-              viewBox="0 0 120 120"
-              xmlns="http://www.w3.org/2000/svg"
-              className="pnpi-logo-svg"
-              aria-hidden="true"
-            >
-              <defs>
-                <linearGradient id="pnpiFactory" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#4A90E2" />
-                  <stop offset="100%" stopColor="#1E3A8A" />
-                </linearGradient>
-                <linearGradient id="pnpiAmber" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#F2AF29" />
-                  <stop offset="100%" stopColor="#D98F0E" />
-                </linearGradient>
-                <radialGradient id="pnpiGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#FCD116" stopOpacity="0.55" />
-                  <stop offset="100%" stopColor="#FCD116" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-
-              {/* Halo central */}
-              <circle cx="60" cy="60" r="36" fill="url(#pnpiGlow)" />
-
-              {/* Engrenage central (tres gros) */}
-              <g className="pnpi-gear pnpi-gear--a" style={{ transformOrigin: "60px 46px" }}>
-                <path
-                  d="M60 32 l4 5 6 -2 2 6 6 2 -2 6 5 4 -5 4 2 6 -6 2 -2 6 -6 -2 -4 5 -4 -5 -6 2 -2 -6 -6 -2 2 -6 -5 -4 5 -4 -2 -6 6 -2 2 -6 6 2 z"
-                  fill="#1E3A8A"
-                />
-                <circle cx="60" cy="46" r="5" fill="#FFFFFF" />
-              </g>
-
-              {/* Petit engrenage gauche */}
-              <g className="pnpi-gear pnpi-gear--b" style={{ transformOrigin: "44px 62px" }}>
-                <path
-                  d="M44 52 l2.5 3 4 -1.2 1.2 4 4 1.2 -1.2 4 3 2.5 -3 2.5 1.2 4 -4 1.2 -1.2 4 -4 -1.2 -2.5 3 -2.5 -3 -4 1.2 -1.2 -4 -4 -1.2 1.2 -4 -3 -2.5 3 -2.5 -1.2 -4 4 -1.2 1.2 -4 4 1.2 z"
-                  fill="#1A4AA0"
-                />
-                <circle cx="44" cy="62" r="3" fill="#FFFFFF" />
-              </g>
-
-              {/* Petit engrenage droit */}
-              <g className="pnpi-gear pnpi-gear--c" style={{ transformOrigin: "76px 62px" }}>
-                <path
-                  d="M76 52 l2.5 3 4 -1.2 1.2 4 4 1.2 -1.2 4 3 2.5 -3 2.5 1.2 4 -4 1.2 -1.2 4 -4 -1.2 -2.5 3 -2.5 -3 -4 1.2 -1.2 -4 -4 -1.2 1.2 -4 -3 -2.5 3 -2.5 -1.2 -4 4 -1.2 1.2 -4 4 1.2 z"
-                  fill="#1A4AA0"
-                />
-                <circle cx="76" cy="62" r="3" fill="#FFFFFF" />
-              </g>
-
-              {/* Mini usine (gauche bas) */}
-              <g transform="translate(32, 78)">
-                <circle cx="6" cy="6" r="10" fill="#4A90E2" />
-                <path d="M1 10 L1 7 L3 7 L3 5 L5 7 L5 4 L7 6 L7 3 L11 3 L11 10 Z" fill="#FFFFFF" />
-              </g>
-
-              {/* Courbe croissante (droit bas) */}
-              <g transform="translate(72, 78)">
-                <circle cx="6" cy="6" r="10" fill="url(#pnpiAmber)" />
-                <path
-                  d="M1.5 10 L4 7.5 L6 8.5 L9 4.5 L10 5.5 L10.5 3.5"
-                  stroke="#FFFFFF"
-                  strokeWidth="1.4"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path d="M9 4 L11 3 L11 5 Z" fill="#FFFFFF" />
-              </g>
-            </svg>
+            <PNPILogo size={112} priority />
           </div>
           <h1 className="pnpi-login-title">PNPI</h1>
           <p className="pnpi-login-subtitle">Plateforme Nationale de Pilotage Industriel</p>
@@ -192,6 +123,7 @@ export const ConnexionForm = () => {
                 </svg>
                 <input
                   id="login-username"
+                  name="username"
                   className="pnpi-input"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -223,6 +155,7 @@ export const ConnexionForm = () => {
                 </svg>
                 <input
                   id="login-password"
+                  name="password"
                   className="pnpi-input pnpi-input-password"
                   type={showPassword ? "text" : "password"}
                   value={password}

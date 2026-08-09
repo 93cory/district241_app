@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PNPILogo } from "../components/PNPILogo";
 
 interface TwoFactorFormProps {
   username: string;
@@ -85,21 +86,18 @@ export const TwoFactorForm = ({ username, onBack }: TwoFactorFormProps) => {
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div
             style={{
-              width: "64px",
-              height: "64px",
-              borderRadius: "16px",
-              background: "linear-gradient(135deg, #009440, #FFCD00)",
+              width: "88px",
+              height: "88px",
+              borderRadius: "24px",
+              background: "rgba(255,255,255,0.96)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 1rem",
-              fontWeight: 900,
-              fontSize: "1.4rem",
-              color: "#003F8F",
               boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
             }}
           >
-            PN
+            <PNPILogo size={78} priority />
           </div>
           <h1
             style={{

@@ -69,7 +69,7 @@ export const backendRequest = async (path: string, init?: RequestInit): Promise<
   return fetch(`${BASE_URL}${path}`, {
     ...init,
     headers: requestHeaders,
-    next: { revalidate: 60 },
+    ...(init?.cache === "no-store" || init?.next ? {} : { next: { revalidate: 60 } }),
   });
 };
 

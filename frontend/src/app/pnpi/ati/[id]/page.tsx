@@ -1,9 +1,13 @@
 import Link from "next/link";
+/* eslint-disable @next/next/no-img-element -- QR codes are served by authenticated API routes. */
 import { redirect, notFound } from "next/navigation";
 import {
   fetchPNPIATI,
+  fetchPNPIATIComplements,
+  fetchPNPIATIControlCard,
   fetchPNPIATIHistorique,
   fetchPNPIATIDocuments,
+  fetchPNPIATITechnicalOpinions,
   fetchPNPIOperateur,
 } from "../../../../lib/api";
 import { fetchBackendProfile } from "../../../../lib/backend";
@@ -20,6 +24,8 @@ import { Checklist } from "./Checklist";
 import { FieldHistory } from "./FieldHistory";
 import { DocumentVersions } from "./DocumentVersions";
 import { Recommendation } from "./Recommendation";
+import { TechnicalOpinions } from "./TechnicalOpinions";
+import { ComplementRequests } from "./ComplementRequests";
 
 const PNPI_ROLES = new Set([
   "admin",
@@ -60,12 +66,18 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
   let ati: Awaited<ReturnType<typeof fetchPNPIATI>>;
   let historique: Awaited<ReturnType<typeof fetchPNPIATIHistorique>>;
   let documents: Awaited<ReturnType<typeof fetchPNPIATIDocuments>>;
+  let opinions: Awaited<ReturnType<typeof fetchPNPIATITechnicalOpinions>>;
+  let complements: Awaited<ReturnType<typeof fetchPNPIATIComplements>>;
+  let controlCard: Awaited<ReturnType<typeof fetchPNPIATIControlCard>> | null = null;
   let operateurNom = "";
   try {
-    [ati, historique, documents] = await Promise.all([
+    [ati, historique, documents, opinions, complements, controlCard] = await Promise.all([
       fetchPNPIATI(params.id),
       fetchPNPIATIHistorique(params.id),
       fetchPNPIATIDocuments(params.id),
+      fetchPNPIATITechnicalOpinions(params.id),
+      fetchPNPIATIComplements(params.id),
+      fetchPNPIATIControlCard(params.id).catch(() => null),
     ]);
     try {
       operateurNom = (await fetchPNPIOperateur(ati.operateur_id)).raison_sociale;
@@ -222,6 +234,67 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
         </div>
       </div>
 
+      {controlCard && (
+        <div
+          className="chart-card"
+          style={{
+            padding: "1.25rem",
+            marginBottom: "1.25rem",
+            background: "linear-gradient(135deg, rgba(0,63,143,0.08), rgba(0,148,64,0.08))",
+            border: "1px solid rgba(0,63,143,0.14)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+            <div style={{ maxWidth: 760 }}>
+              <p style={{ margin: "0 0 0.3rem", color: "#009440", fontWeight: 900, fontSize: "0.75rem", textTransform: "uppercase" }}>
+                Carte de contrôle ATI
+              </p>
+              <h3 style={{ margin: 0, color: "#003F8F" }}>
+                {controlCard.decision_state} · prochaine action
+              </h3>
+              <p style={{ margin: "0.4rem 0 0", color: "#374151", lineHeight: 1.5 }}>
+                {controlCard.next_action}
+              </p>
+              <p style={{ margin: "0.25rem 0 0", color: "#6b7280", fontSize: "0.82rem" }}>
+                Responsable : <strong>{controlCard.responsible}</strong>
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <ScorePill label="Préparation" value={controlCard.score_preparation} color={controlCard.score_preparation >= 70 ? "#006233" : "#d97706"} />
+              <ScorePill label="Urgence" value={controlCard.score_urgence} color={controlCard.score_urgence >= 60 ? "#b42318" : "#003F8F"} />
+              <ScorePill label="Pièces" value={controlCard.documents.completion_pct} color={controlCard.documents.is_complete ? "#006233" : "#d97706"} />
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "0.75rem", marginTop: "1rem" }}>
+            {controlCard.control_points.map((point) => {
+              const pointColor = point.status === "ok" ? "#006233" : point.status === "bloquant" ? "#b42318" : "#d97706";
+              return (
+                <div key={point.label} style={{ padding: "0.75rem", background: "#fff", borderRadius: 12, border: "1px solid #e5e7eb" }}>
+                  <strong style={{ color: pointColor, fontSize: "0.82rem" }}>{point.label}</strong>
+                  <p style={{ margin: "0.25rem 0 0", color: "#526175", fontSize: "0.76rem" }}>{point.detail}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {(controlCard.blockers.length > 0 || controlCard.warnings.length > 0) && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "0.75rem", marginTop: "1rem" }}>
+              {controlCard.blockers.map((item) => (
+                <div key={item} style={{ padding: "0.75rem", background: "#fff1f2", borderRadius: 12, border: "1px solid #fecdd3", color: "#b42318", fontSize: "0.8rem", fontWeight: 800 }}>
+                  {item}
+                </div>
+              ))}
+              {controlCard.warnings.map((item) => (
+                <div key={item} style={{ padding: "0.75rem", background: "#fff7ed", borderRadius: 12, border: "1px solid #fed7aa", color: "#92400e", fontSize: "0.8rem", fontWeight: 800 }}>
+                  {item}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Compliance Checklist */}
       <div className="chart-card" style={{ padding: "1.25rem", marginBottom: "1.25rem" }}>
         <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>
@@ -268,6 +341,8 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
                 ["Date soumission", new Date(ati.date_soumission).toLocaleDateString("fr-FR")],
                 ["Age du dossier", `${ati.age_jours} jours`],
                 ["SLA contractuel", `${ati.sla_jours} jours`],
+                ["Type de demande", ati.type_demande],
+                ["Paiement", ati.payment_status === "prototype" ? "Prototype non bloquant" : ati.payment_status],
                 ["Instructeur", ati.instructeur_username ?? "Non assigne"],
                 [
                   "Date decision",
@@ -541,6 +616,35 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
         </div>
       </div>
 
+      {/* Payment prototype */}
+      <div
+        className="chart-card"
+        style={{
+          padding: "1.25rem",
+          marginTop: "1.25rem",
+          border: "1px dashed #f59e0b",
+          background: "#fffbeb",
+        }}
+      >
+        <h3 style={{ margin: "0 0 0.5rem", color: "#92400e", fontSize: "0.95rem" }}>
+          Paiement ATI · prototype
+        </h3>
+        <p style={{ margin: 0, color: "#78350f", fontSize: "0.86rem" }}>
+          Ce volet presente le parcours cible de paiement, mais ne bloque pas le workflow tant que
+          le cadre administratif de perception n&apos;est pas confirme. Statut courant :{" "}
+          <strong>{ati.payment_status}</strong>
+          {ati.payment_reference ? ` · Reference ${ati.payment_reference}` : ""}.
+        </p>
+      </div>
+
+      <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+        <TechnicalOpinions atiId={ati.id} initialOpinions={opinions} userRoles={userRoles} />
+      </div>
+
+      <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+        <ComplementRequests atiId={ati.id} initialComplements={complements} userRoles={userRoles} />
+      </div>
+
       {/* Timeline visualization */}
       <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
         <h3 style={{ margin: "0 0 1rem", color: "#003F8F", fontSize: "0.95rem" }}>
@@ -569,5 +673,14 @@ export default async function ATIDetailPage({ params }: { params: { id: string }
         <FieldHistory atiId={ati.id} />
       </div>
     </section>
+  );
+}
+
+function ScorePill({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div style={{ minWidth: 120, padding: "0.85rem", background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb" }}>
+      <div style={{ color: "#6b7280", fontSize: "0.7rem", fontWeight: 900, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ color, fontSize: "1.55rem", fontWeight: 950 }}>{value}/100</div>
+    </div>
   );
 }

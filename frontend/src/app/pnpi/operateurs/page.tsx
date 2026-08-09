@@ -130,7 +130,7 @@ export default async function OperateursPage({ searchParams }: { searchParams: S
                       "Ville",
                       "Effectif",
                       "Statut",
-                      "Dossier",
+                      "Fiche RIN",
                     ].map((h) => (
                       <th key={h}>{h}</th>
                     ))}
@@ -162,7 +162,7 @@ export default async function OperateursPage({ searchParams }: { searchParams: S
                       </td>
                       <td style={{ textAlign: "right" }}>
                         <Link href={`/pnpi/operateurs/${op.id}`} className="pnpi-row-action">
-                          Voir <span aria-hidden="true">&rarr;</span>
+                          Fiche RIN 360° <span aria-hidden="true">&rarr;</span>
                         </Link>
                       </td>
                     </tr>

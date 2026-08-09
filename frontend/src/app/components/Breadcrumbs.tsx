@@ -17,6 +17,11 @@ const ROUTE_LABELS: Record<string, string> = {
   about: "A propos",
   contact: "Contact",
   calendrier: "Calendrier",
+  institutions: "Institutions",
+  dossier: "Dossier industriel unifie",
+  aganor: "AGANOR",
+  ogapi: "OGAPI",
+  ministre: "Cockpit Ministre",
 };
 
 export function Breadcrumbs() {

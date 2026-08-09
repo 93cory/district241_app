@@ -30,15 +30,67 @@ const ALL_PNPI = ["admin", "ministre", "directeur", "instructeur"];
 const ALL_FIELD = ["admin", "ministre", "directeur", "instructeur", "inspecteur"];
 
 const NAV_ENTRIES: NavEntry[] = [
+  // Institutional ecosystem (Ministry + proposed AGANOR/OGAPI workspaces)
+  { href: "/pnpi/institutions", label: "Portail institutionnel", roles: ALL_PNPI },
+  {
+    href: "/pnpi/institutions/dossier",
+    label: "Dossier industriel unifie",
+    roles: ALL_PNPI,
+  },
+  { href: "/pnpi/institutions/aganor", label: "Espace AGANOR", roles: ALL_PNPI },
+  { href: "/pnpi/institutions/ogapi", label: "Espace OGAPI", roles: ALL_PNPI },
+  {
+    href: "/pnpi/institutions/ministre",
+    label: "Cockpit Ministre",
+    roles: ["admin", "ministre"],
+  },
+
   // Core PNPI
   { href: "/pnpi", label: "Dashboard PNPI", roles: ALL_PNPI },
+  { href: "/pnpi/modele-metier", label: "Modèle métier", roles: ALL_FIELD },
+  { href: "/pnpi/rin", label: "RIN national", roles: ALL_FIELD },
+  { href: "/pnpi/documents", label: "Coffre documentaire", roles: ALL_PNPI },
+  { href: "/pnpi/filieres", label: "Filières", roles: ALL_DECISION },
+  { href: "/pnpi/innovation", label: "Innovation 4.0", roles: ALL_DECISION },
+  { href: "/pnpi/capital-humain", label: "Capital humain", roles: ALL_DECISION },
+  { href: "/pnpi/investissements", label: "Investissements", roles: ALL_DECISION },
+  { href: "/pnpi/zones-industrielles", label: "Zones industrielles", roles: ALL_DECISION },
+  { href: "/pnpi/exploitation", label: "Exploitation PNPI", roles: ALL_DECISION },
+  { href: "/pnpi/interoperabilite", label: "Interopérabilité", roles: ALL_DECISION },
+  { href: "/pnpi/geographie", label: "SIG national", roles: ALL_FIELD },
+  { href: "/pnpi/analytique", label: "BI & IA", roles: ALL_DECISION },
+  { href: "/pnpi/portail", label: "Portail & UX", roles: ALL_DECISION },
   { href: "/pnpi/executive", label: "Synthese", roles: ALL_DECISION },
   { href: "/pnpi/live", label: "Temps reel", roles: ALL_DECISION },
   { href: "/pnpi/ati", label: "Agrements ATI", roles: ALL_FIELD },
-  { href: "/pnpi/operateurs", label: "Operateurs", roles: [...ALL_FIELD, "operateur"] },
+  {
+    href: "/pnpi/ati/processing-center",
+    label: "Centre ATI",
+    roles: ["admin", "ministre", "directeur", "instructeur"],
+  },
+  { href: "/pnpi/ati/business-rules", label: "Regles ATI", roles: ["admin", "directeur", "instructeur"] },
+  { href: "/pnpi/operateurs", label: "Opérateurs & fiches 360°", roles: [...ALL_FIELD, "operateur"] },
+  { href: "/pnpi/oni", label: "Observatoire ONI", roles: ALL_FIELD },
+  { href: "/pnpi/oni/declarations", label: "Declarations ONI", roles: [...ALL_FIELD, "operateur"] },
+  { href: "/pnpi/oni/inpi", label: "INPI", roles: ALL_FIELD },
   {
     href: "/pnpi/inspections",
     label: "Inspections",
+    roles: ["admin", "ministre", "directeur", "inspecteur"],
+  },
+  {
+    href: "/pnpi/inspections/control-center",
+    label: "Centre controle",
+    roles: ["admin", "ministre", "directeur", "inspecteur"],
+  },
+  {
+    href: "/pnpi/inspections/mission-orders",
+    label: "Ordres mission",
+    roles: ["admin", "ministre", "directeur", "inspecteur"],
+  },
+  {
+    href: "/pnpi/inspections/compliance-intelligence",
+    label: "INCI",
     roles: ["admin", "ministre", "directeur", "inspecteur"],
   },
   { href: "/pnpi/stats", label: "Statistiques", roles: ALL_FIELD },
@@ -46,6 +98,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { href: "/pnpi/calendar", label: "Calendrier", roles: [...ALL_PNPI, "inspecteur"] },
   { href: "/pnpi/reports", label: "Rapports", roles: ALL_DECISION },
   { href: "/pnpi/map", label: "Carte", roles: ["admin", "ministre", "directeur", "inspecteur"] },
+  { href: "/pnpi/securite", label: "Sécurité SOC", roles: ALL_DECISION },
 
   // Dashboard & Analytics
   { href: "/pnpi/comparison", label: "Comparaison", roles: ALL_DECISION.concat("ministre") },
@@ -56,7 +109,7 @@ const NAV_ENTRIES: NavEntry[] = [
     roles: ["admin", "ministre", "directeur", "inspecteur"],
   },
   { href: "/pnpi/kanban", label: "Kanban", roles: [...ALL_PNPI, "inspecteur"] },
-  { href: "/pnpi/data-quality", label: "Qualite", roles: ALL_DECISION },
+  { href: "/pnpi/data-quality", label: "Qualité & gouvernance", roles: ALL_DECISION },
   { href: "/pnpi/performance", label: "Performance", roles: ALL_DECISION },
   { href: "/pnpi/predictions", label: "Predictions", roles: ALL_DECISION },
   { href: "/pnpi/advanced-stats", label: "Stats+", roles: ALL_DECISION },
@@ -107,6 +160,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { href: "/pnpi/cemac", label: "CEMAC", roles: ALL_DECISION },
   { href: "/pnpi/social-impact", label: "Impact social", roles: ALL_DECISION },
   { href: "/pnpi/roi-simulator", label: "Simulateur ROI", roles: [...ALL_DECISION, "operateur"] },
+  { href: "/pnpi/durabilite", label: "Durabilité", roles: ALL_DECISION },
   { href: "/pnpi/carbon", label: "Carbone", roles: ALL_DECISION },
   { href: "/pnpi/roadmap", label: "Roadmap", roles: [...ALL_DECISION, "admin"] },
   { href: "/pnpi/budget", label: "Budget", roles: ALL_DECISION },
@@ -118,7 +172,7 @@ const NAV_ENTRIES: NavEntry[] = [
   { href: "/pilotage", label: "Pilotage", roles: ["admin", "ministre", "directeur"] },
   { href: "/briefing", label: "Briefing PNPI", roles: ["admin"] },
   { href: "/pnpi/briefing", label: "Briefing PNPI", roles: ["admin"] },
-  { href: "/pnpi/presentation", label: "Presentation", roles: ALL_DECISION },
+  { href: "/pnpi/presentation", label: "Présentation PNPI", roles: ALL_DECISION },
   { href: "/pnpi/activity", label: "Activite", roles: ["admin", "directeur"] },
   { href: "/kiosk", label: "Kiosque", roles: ["admin", "ministre"] },
 
@@ -255,6 +309,33 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
 
   const sections: MegaSection[] = [
     {
+      key: "institutions",
+      label: "Institutions",
+      href: "/pnpi/institutions",
+      description: "Espaces Ministere, AGANOR et OGAPI autour du dossier industriel unifie.",
+      icon: "seal",
+      groups: filterGroups([
+        {
+          title: "Ecosysteme industriel",
+          items: pick([
+            ["/pnpi/institutions", "Portail institutionnel"],
+            ["/pnpi/institutions/dossier", "Dossier industriel unifie"],
+          ]),
+        },
+        {
+          title: "Espaces metiers proposes",
+          items: pick([
+            ["/pnpi/institutions/aganor", "AGANOR · Prototype"],
+            ["/pnpi/institutions/ogapi", "OGAPI · Prototype"],
+          ]),
+        },
+        {
+          title: "Pilotage",
+          items: pick([["/pnpi/institutions/ministre", "Cockpit Ministre"]]),
+        },
+      ]),
+    },
+    {
       key: "dashboard",
       label: "Tableau de bord",
       href: "/pnpi",
@@ -265,6 +346,7 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
           title: "Vues d'ensemble",
           items: pick([
             ["/pnpi", "Dashboard PNPI"],
+            ["/pnpi/portail", "Portail & UX"],
             ["/pnpi/executive", "Synthese executive"],
             ["/pnpi/live", "Temps reel"],
             ["/pnpi/realtime-stats", "Statistiques live"],
@@ -275,7 +357,7 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
           items: pick([
             ["/briefing", "Briefing PNPI"],
             ["/pilotage", "Salle de pilotage"],
-            ["/pnpi/presentation", "Mode presentation"],
+            ["/pnpi/presentation", "Présentation PNPI"],
             ["/kiosk", "Mode kiosque"],
           ]),
         },
@@ -300,7 +382,11 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
           title: "Dossiers",
           items: pick([
             ["/pnpi/ati", "Agrements techniques"],
-            ["/pnpi/operateurs", "Operateurs"],
+            ["/pnpi/ati/processing-center", "Centre de traitement"],
+            ["/pnpi/ati/business-rules", "Regles ATI"],
+            ["/pnpi/rin", "Référentiel national"],
+            ["/pnpi/documents", "Coffre documentaire"],
+            ["/pnpi/operateurs", "Opérateurs & fiches 360°"],
             ["/pnpi/mes-dossiers", "Mes dossiers"],
             ["/pnpi/mes-stats", "Mes statistiques"],
             ["/pnpi/triage", "Triage"],
@@ -324,7 +410,8 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
           items: pick([
             ["/pnpi/conventions", "Conventions"],
             ["/pnpi/reglementation", "Reglementation"],
-            ["/pnpi/data-quality", "Qualite donnees"],
+            ["/pnpi/data-quality", "Qualité & gouvernance"],
+            ["/pnpi/documents", "Coffre documentaire"],
           ]),
         },
       ]),
@@ -340,6 +427,9 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
           title: "Inspections",
           items: pick([
             ["/pnpi/inspections", "Inspections"],
+            ["/pnpi/inspections/control-center", "Centre de controle"],
+            ["/pnpi/inspections/mission-orders", "Ordres de mission"],
+            ["/pnpi/inspections/compliance-intelligence", "INCI"],
             ["/pnpi/calendar", "Calendrier"],
           ]),
         },
@@ -347,6 +437,7 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
           title: "Geographie",
           items: pick([
             ["/pnpi/map", "Carte nationale"],
+            ["/pnpi/geographie", "Cockpit SIG"],
             ["/pnpi/heatmap", "Heatmap"],
             ["/pnpi/governor", "Par province"],
           ]),
@@ -368,7 +459,16 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
           title: "Rapports & Statistiques",
           items: pick([
             ["/pnpi/stats", "Statistiques"],
+            ["/pnpi/analytique", "Cockpit BI & IA"],
             ["/pnpi/advanced-stats", "Statistiques avancees"],
+            ["/pnpi/filieres", "Filières & chaînes de valeur"],
+            ["/pnpi/innovation", "Innovation 4.0"],
+            ["/pnpi/capital-humain", "Capital humain"],
+            ["/pnpi/investissements", "Investissements industriels"],
+            ["/pnpi/zones-industrielles", "Zones industrielles"],
+            ["/pnpi/oni", "Observatoire ONI"],
+            ["/pnpi/oni/declarations", "Declarations ONI"],
+            ["/pnpi/oni/inpi", "Indice INPI"],
             ["/pnpi/pivot", "Tableau croise"],
             ["/pnpi/reports", "Rapports"],
             ["/pnpi/annual-report", "Bilan annuel"],
@@ -392,6 +492,7 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
             ["/pnpi/impact", "Impact global"],
             ["/pnpi/economic-impact", "Impact economique"],
             ["/pnpi/social-impact", "Impact social"],
+            ["/pnpi/durabilite", "Durabilite industrielle"],
             ["/pnpi/carbon", "Empreinte carbone"],
             ["/pnpi/odd", "Objectifs ODD"],
             ["/pnpi/cemac", "CEMAC"],
@@ -418,11 +519,15 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
             ["/admin/raci", "Matrice RACI"],
             ["/admin/workflows", "Workflows"],
             ["/pnpi/activity", "Activite"],
+            ["/pnpi/exploitation", "Exploitation PNPI"],
+            ["/pnpi/interoperabilite", "Interopérabilité"],
+            ["/pnpi/geographie", "SIG national"],
           ]),
         },
         {
           title: "Securite & Audit",
           items: pick([
+            ["/pnpi/securite", "Securite SOC"],
             ["/admin/security", "Securite"],
             ["/admin/audit-log", "Journal d'audit"],
             ["/admin/backups", "Sauvegardes BD"],
@@ -432,6 +537,7 @@ export const getMegaNavForRoles = (roles: string[]): MegaNavData => {
           title: "Integrations & Technique",
           items: pick([
             ["/admin/integrations", "Integrations"],
+            ["/pnpi/interoperabilite", "Interopérabilité"],
             ["/admin/api-usage", "Usage API"],
             ["/api-docs", "Documentation API"],
             ["/embed", "Widgets"],

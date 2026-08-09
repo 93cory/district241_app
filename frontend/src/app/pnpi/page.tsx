@@ -77,6 +77,8 @@ export default async function PNPIDashboardPage() {
     const greeting = pickGreeting(new Date().getHours());
     const roleTitle = roleLabel(profile.roles ?? []);
     const today = formatDateLong();
+    const roles = (profile.roles ?? []) as string[];
+    const canSeeDecisionCockpits = roles.some((role) => ["admin", "ministre", "directeur"].includes(role));
 
     const overdue: ATIResume[] = (recents ?? [])
       .filter((a: ATIResume) => a.is_overdue)
@@ -244,6 +246,23 @@ export default async function PNPIDashboardPage() {
         {/* Acces rapides                                      */}
         {/* -------------------------------------------------- */}
         <section className="pnpi-brief-quick-grid" aria-label="Acces rapides">
+          {canSeeDecisionCockpits && (
+            <Link href="/pnpi/presentation" className="pnpi-brief-quick">
+              <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                🎙️
+              </div>
+              <div className="pnpi-brief-quick-body">
+                <div className="pnpi-brief-quick-title">Présentation PNPI</div>
+                <div className="pnpi-brief-quick-desc">
+                  Support officiel de présentation du projet, conçu pour une projection institutionnelle.
+                </div>
+              </div>
+              <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                &rarr;
+              </span>
+            </Link>
+          )}
+
           <Link href="/pnpi/ati" className="pnpi-brief-quick">
             <div className="pnpi-brief-quick-icon">
               <svg
@@ -324,6 +343,250 @@ export default async function PNPIDashboardPage() {
               &rarr;
             </span>
           </Link>
+
+          <Link href="/pnpi/rin" className="pnpi-brief-quick">
+            <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+              🏭
+            </div>
+            <div className="pnpi-brief-quick-body">
+              <div className="pnpi-brief-quick-title">RIN national</div>
+              <div className="pnpi-brief-quick-desc">
+                Fiche industrielle, DIUN, sites, produits, ressources et investissements.
+              </div>
+            </div>
+            <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+              &rarr;
+            </span>
+          </Link>
+
+          <Link href="/pnpi/operateurs" className="pnpi-brief-quick">
+            <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+              🧾
+            </div>
+            <div className="pnpi-brief-quick-body">
+              <div className="pnpi-brief-quick-title">Opérateurs & fiches 360°</div>
+              <div className="pnpi-brief-quick-desc">
+                Annuaire industriel, fiches entreprises, score 360°, risques et historique consolidé.
+              </div>
+            </div>
+            <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+              &rarr;
+            </span>
+          </Link>
+
+          {canSeeDecisionCockpits && (
+            <>
+              <Link href="/pnpi/filieres" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🔗
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Filières & chaînes de valeur</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Souveraineté productive, maillons critiques et opportunités industrielles.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/innovation" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  ⚙️
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Innovation 4.0</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Technologies, projets pilotes, acteurs et maturité numérique industrielle.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/capital-humain" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🎓
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Capital humain</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Emplois, compétences, métiers en tension et formations par rôle.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/investissements" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  💼
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Investissements</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Portefeuille national, montants, emplois, secteurs et provinces.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/zones-industrielles" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🗺️
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Zones industrielles</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Sites, occupation, superficies et capacités territoriales.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/data-quality" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  ✅
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Qualité & gouvernance</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Fiabilité RIN, ATI, ONI, documents, doublons et actions prioritaires.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/documents" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🗂️
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Coffre documentaire</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Preuves ATI, pièces requises, versioning et archivage administratif.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/exploitation" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🧭
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Exploitation PNPI</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Supervision, sauvegardes, runbooks, changements et alertes opérationnelles.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/interoperabilite" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🔌
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Interopérabilité</div>
+                  <div className="pnpi-brief-quick-desc">
+                    API partenaires, AGANOR, OGAPI, conventions et journal des échanges.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/geographie" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🛰️
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">SIG national</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Couverture provinciale, géocodage, inspections, zones et priorités territoriales.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/analytique" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🧠
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">BI & IA</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Tendances, alertes, secteurs moteurs, provinces à signal fort et recommandations.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/portail" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🧩
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Portail & UX</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Parcours par rôle, omnicanalité, formation, communication et adoption utilisateur.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/durabilite" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🌿
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Durabilité industrielle</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Énergie, matières, circularité, carbone et risques climatiques.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+
+              <Link href="/pnpi/securite" className="pnpi-brief-quick">
+                <div className="pnpi-brief-quick-icon" aria-hidden="true" style={{ fontSize: 26 }}>
+                  🛡️
+                </div>
+                <div className="pnpi-brief-quick-body">
+                  <div className="pnpi-brief-quick-title">Sécurité SOC</div>
+                  <div className="pnpi-brief-quick-desc">
+                    Risques, alertes, audit, MFA et supervision sécurité du PNPI.
+                  </div>
+                </div>
+                <span className="pnpi-brief-quick-arrow" aria-hidden="true">
+                  &rarr;
+                </span>
+              </Link>
+            </>
+          )}
         </section>
       </div>
     );

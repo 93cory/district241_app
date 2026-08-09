@@ -45,6 +45,10 @@ export default async function GuichetPage() {
     ]);
     const delays = delaysRes && delaysRes.ok ? await delaysRes.json() : [];
     const myATIs = atis.filter((a) => a.created_by === username);
+    const myOperateurIds = Array.from(new Set(myATIs.map((a) => a.operateur_id).filter(Boolean)));
+    const myOperateurs = myOperateurIds
+      .map((id) => operateurs.find((op) => op.id === id))
+      .filter(Boolean);
 
     return (
       <section className="section">
@@ -96,6 +100,68 @@ export default async function GuichetPage() {
               );
             },
           )}
+        </div>
+
+        {/* RIN 360 access */}
+        <div
+          className="chart-card"
+          style={{
+            padding: "1rem 1.25rem",
+            marginBottom: "1.25rem",
+            background:
+              "linear-gradient(135deg, rgba(0,98,51,0.08), rgba(12,126,180,0.07))",
+            border: "1px solid rgba(0,98,51,0.16)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: "1rem",
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ maxWidth: 620 }}>
+              <div
+                style={{
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "#006233",
+                  fontWeight: 800,
+                  fontSize: "0.72rem",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                Référentiel Industriel National
+              </div>
+              <h3 style={{ margin: 0, color: "#003F8F", fontSize: "1rem" }}>
+                Ma fiche RIN 360°
+              </h3>
+              <p style={{ margin: "0.35rem 0 0", color: "#526175", fontSize: "0.82rem" }}>
+                La fiche RIN 360° se trouve dans la fiche de votre entreprise industrielle :
+                identité, sites, produits, ressources, investissements et statut de validation.
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {myOperateurs.length > 0 ? (
+                myOperateurs.map((op) => (
+                  <Link
+                    key={op!.id}
+                    href={`/pnpi/operateurs/${op!.id}`}
+                    className="btn-secondary"
+                    style={{ textDecoration: "none" }}
+                  >
+                    Voir la fiche RIN · {op!.raison_sociale}
+                  </Link>
+                ))
+              ) : (
+                <span style={{ color: "#6b7280", fontSize: "0.8rem", fontWeight: 700 }}>
+                  Créez d’abord une demande ATI pour rattacher votre entreprise au RIN.
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Pipeline tracker */}

@@ -79,7 +79,7 @@ export default async function VerifyATIPage({ params }: Props) {
             Verification ATI
           </h1>
           <p style={{ fontSize: 13, color: "#526175", margin: 0 }}>
-            Plateforme Nationale de la Politique Industrielle
+            Plateforme Nationale de Pilotage Industriel
           </p>
         </div>
 

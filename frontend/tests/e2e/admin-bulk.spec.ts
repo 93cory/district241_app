@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { e2ePasswords } from "./helpers/credentials";
 
 const BASE = "http://localhost:3000";
 
@@ -6,7 +7,7 @@ test.describe("Admin Bulk Operations", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE}/connexion`);
     await page.fill('input[name="username"]', "admin");
-    await page.fill('input[name="password"]', "Demo1234!@#$");
+    await page.fill('input[name="password"]', e2ePasswords.admin);
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/(pnpi|admin)/);
   });

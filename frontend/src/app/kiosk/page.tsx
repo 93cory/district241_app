@@ -65,7 +65,7 @@ export default function KioskPage() {
     <div key="status" style={{ textAlign: "center", padding: "0 60px" }}>
       <div style={{ fontSize: 120, marginBottom: 16 }}>{"\U0001F1EC\U0001F1E6"}</div>
       <div style={{ fontSize: 32, fontWeight: 700, opacity: 0.8 }}>
-        Plateforme Nationale de la Politique Industrielle
+        Plateforme Nationale de Pilotage Industriel
       </div>
       <div style={{ fontSize: 20, opacity: 0.5, marginTop: 12 }}>
         Ministere de l&apos;Industrie et de la Transformation Locale

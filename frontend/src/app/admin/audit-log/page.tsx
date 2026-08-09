@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface AuditEvent {
   id: string;
@@ -40,7 +40,7 @@ export default function AuditLogPage() {
   const [page, setPage] = useState(0);
   const limit = 30;
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams();
     params.set("skip", String(page * limit));
@@ -60,15 +60,18 @@ export default function AuditLogPage() {
       }
     } catch {}
     setLoading(false);
-  };
+  }, [filters, page]);
 
   useEffect(() => {
     load();
-  }, [page]);
+  }, [load]);
 
   const search = () => {
+    if (page === 0) {
+      load();
+      return;
+    }
     setPage(0);
-    load();
   };
 
   const exportCsv = () => {

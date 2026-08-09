@@ -1,5 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
+
+import { PNPILogo } from "./PNPILogo";
 
 interface FooterLink {
   href: string;
@@ -54,13 +55,7 @@ export function Footer() {
       <div className="pnpi-footer-inner">
         <div className="pnpi-footer-brand">
           <div className="pnpi-footer-logo">
-            <Image
-              src="/pnpi_logo.png"
-              alt="Logo PNPI"
-              width={44}
-              height={44}
-              style={{ borderRadius: 10 }}
-            />
+            <PNPILogo size={52} />
             <div>
               <div className="pnpi-footer-brand-name">PNPI</div>
               <div className="pnpi-footer-brand-tagline">

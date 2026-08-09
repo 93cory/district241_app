@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import { fetchPNPIInspection } from "../../../../lib/api";
+import {
+  fetchInspectionCorrectiveActions,
+  fetchInspectionFindings,
+  fetchInspectionSanctions,
+  fetchPNPIInspection,
+} from "../../../../lib/api";
 import { fetchBackendProfile } from "../../../../lib/backend";
 import { PhotoGallery } from "./PhotoGallery";
+import { ComplianceFollowup } from "./ComplianceFollowup";
 
 const ALLOWED = new Set(["admin", "ministre", "directeur", "instructeur", "inspecteur"]);
 const CONF_LABELS: Record<string, string> = {
@@ -39,8 +45,16 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
   }
 
   let insp: Awaited<ReturnType<typeof fetchPNPIInspection>>;
+  let findings: Awaited<ReturnType<typeof fetchInspectionFindings>>;
+  let actions: Awaited<ReturnType<typeof fetchInspectionCorrectiveActions>>;
+  let sanctions: Awaited<ReturnType<typeof fetchInspectionSanctions>>;
   try {
-    insp = await fetchPNPIInspection(params.id);
+    [insp, findings, actions, sanctions] = await Promise.all([
+      fetchPNPIInspection(params.id),
+      fetchInspectionFindings(params.id),
+      fetchInspectionCorrectiveActions(params.id),
+      fetchInspectionSanctions(params.id),
+    ]);
   } catch {
     notFound();
   }
@@ -189,6 +203,8 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
                   ["Inspecteur", insp.inspecteur_nom || insp.inspecteur_username],
                   ["Operateur", opName],
                   ["Dossier ATI", insp.ati_numero ?? insp.ati_id ?? "·"],
+                  ["Workflow", insp.workflow_status],
+                  ["Score", insp.score_conformite != null ? `${insp.score_conformite}/100` : "·"],
                   ["Province", insp.province || "·"],
                   ["Secteur", insp.secteur || "·"],
                   ["Resultat", CONF_LABELS[insp.statut_conformite] ?? insp.statut_conformite],
@@ -398,6 +414,16 @@ export default async function InspectionDetailPage({ params }: { params: { id: s
 
       {/* Photo Gallery */}
       <PhotoGallery inspectionId={insp.id} />
+
+      <div className="chart-card" style={{ padding: "1.25rem", marginTop: "1.25rem" }}>
+        <ComplianceFollowup
+          inspectionId={insp.id}
+          findings={findings}
+          actions={actions}
+          sanctions={sanctions}
+          canEdit={canEdit}
+        />
+      </div>
     </section>
   );
 }

@@ -5,7 +5,7 @@ export default function AccessibilitePage() {
         Declaration d'Accessibilite
       </h1>
       <p style={{ color: "#526175", fontSize: 13, marginBottom: 24 }}>
-        PNPI · Plateforme Nationale de la Politique Industrielle
+        PNPI · Plateforme Nationale de Pilotage Industriel
       </p>
 
       {[

@@ -4,6 +4,7 @@ import { backendRequest } from "../../../lib/backend";
 
 export async function createATI(payload: {
   operateur_id: string;
+  type_demande?: string;
   type_activite: string;
   secteur: string;
   priorite: string;

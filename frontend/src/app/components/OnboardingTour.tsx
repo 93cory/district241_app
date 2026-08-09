@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { getCurrentUsernameFallback, userScopedStorageKey } from "../../lib/user-scoped-storage";
 
 interface TourStep {
   title: string;
@@ -13,7 +15,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     title: "Bienvenue sur PNPI !",
     description:
-      "La Plateforme Nationale de la Politique Industrielle vous permet de gerer les agrements techniques, suivre les inspections et piloter la politique industrielle du Gabon.",
+      "La Plateforme Nationale de Pilotage Industriel vous permet de gerer les agrements techniques, suivre les inspections et piloter la politique industrielle du Gabon.",
   },
   {
     title: "Navigation",
@@ -51,17 +53,34 @@ const TOUR_STEPS: TourStep[] = [
 const STORAGE_KEY = "pnpi_onboarding_done";
 
 export function OnboardingTour() {
+  const pathname = usePathname();
   const [active, setActive] = useState(false);
   const [step, setStep] = useState(0);
+  const [storageKey, setStorageKey] = useState<string | null>(null);
 
   useEffect(() => {
-    const done = localStorage.getItem(STORAGE_KEY);
+    getCurrentUsernameFallback().then((username) =>
+      setStorageKey(userScopedStorageKey(STORAGE_KEY, username)),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!storageKey) return;
+    const tourRequested = new URLSearchParams(window.location.search).get("tour") === "1";
+    const isAuthenticatedArea = ["/admin", "/briefing", "/pnpi", "/profil"].some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+    if (!isAuthenticatedArea || !tourRequested) {
+      setActive(false);
+      return;
+    }
+    const done = localStorage.getItem(storageKey);
     if (!done) {
       // Delay to let the page render first
       const timer = setTimeout(() => setActive(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [pathname, storageKey]);
 
   const next = () => {
     if (step < TOUR_STEPS.length - 1) {
@@ -77,7 +96,7 @@ export function OnboardingTour() {
 
   const finish = () => {
     setActive(false);
-    localStorage.setItem(STORAGE_KEY, "true");
+    if (storageKey) localStorage.setItem(storageKey, "true");
   };
 
   const skip = () => {

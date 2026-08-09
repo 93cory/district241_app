@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { getCurrentUsernameFallback, userScopedStorageKey } from "../../../lib/user-scoped-storage";
 
 interface AlertRule {
   id: string;
@@ -99,6 +100,7 @@ const DEFAULT_RULES: AlertRule[] = [
 export default function EmailAlertsPage() {
   const [rules, setRules] = useState<AlertRule[]>(DEFAULT_RULES);
   const [saved, setSaved] = useState(false);
+  const [storageKey, setStorageKey] = useState<string | null>(null);
 
   const toggle = (id: string) => {
     setRules((prev) => prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
@@ -108,20 +110,27 @@ export default function EmailAlertsPage() {
   const save = () => {
     // In production this would POST to /api/pnpi/email-alerts/preferences
     const prefs = Object.fromEntries(rules.map((r) => [r.id, r.enabled]));
-    localStorage.setItem("pnpi_email_alert_prefs", JSON.stringify(prefs));
+    if (storageKey) localStorage.setItem(storageKey, JSON.stringify(prefs));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   useEffect(() => {
+    getCurrentUsernameFallback().then((username) =>
+      setStorageKey(userScopedStorageKey("pnpi_email_alert_prefs", username)),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!storageKey) return;
     try {
-      const stored = localStorage.getItem("pnpi_email_alert_prefs");
+      const stored = localStorage.getItem(storageKey);
       if (stored) {
         const prefs = JSON.parse(stored);
         setRules((prev) => prev.map((r) => (r.id in prefs ? { ...r, enabled: prefs[r.id] } : r)));
       }
     } catch {}
-  }, []);
+  }, [storageKey]);
 
   const categories = Array.from(new Set(rules.map((r) => r.category)));
   const enabledCount = rules.filter((r) => r.enabled).length;

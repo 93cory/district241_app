@@ -1,5 +1,5 @@
 {
-  "name": "PNPI — Plateforme Nationale de la Politique Industrielle",
+  "name": "PNPI — Plateforme Nationale de Pilotage Industriel",
   "short_name": "PNPI",
   "description": "Suivi et tracabilite industrielle du Gabon",
   "start_url": "/",
@@ -9,13 +9,13 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/pnpi-logo-mark.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/pnpi-logo-officiel.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/pnpi-logo.png",
+      "src": "/icons/pnpi-logo-officiel.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

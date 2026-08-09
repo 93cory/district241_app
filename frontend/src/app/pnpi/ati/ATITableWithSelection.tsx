@@ -68,7 +68,7 @@ export function ATITableWithSelection({ atis }: { atis: ATI[] }) {
           Aucun ATI trouve avec ces filtres.
         </p>
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div className="table-scroll">
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.8rem" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid #f3f4f6" }}>

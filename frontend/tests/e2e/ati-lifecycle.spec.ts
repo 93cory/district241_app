@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { e2ePasswords } from "./helpers/credentials";
 
 const BASE = "http://localhost:3000";
 
@@ -13,7 +14,7 @@ async function login(page: any, username: string, password: string) {
 test.describe("ATI Full Lifecycle", () => {
   test("Operateur submits ATI, Instructeur processes, Directeur approves", async ({ page }) => {
     // Step 1: Login as instructeur to create an operator first
-    await login(page, "instructeur", "instructeur-dev-password");
+    await login(page, "instructeur", e2ePasswords.instructeur);
 
     // Navigate to operateurs
     await page.goto(`${BASE}/pnpi/operateurs`);
@@ -36,7 +37,7 @@ test.describe("ATI Full Lifecycle", () => {
   });
 
   test("Dashboard displays KPIs correctly", async ({ page }) => {
-    await login(page, "ministre", "ministre-dev-password");
+    await login(page, "ministre", e2ePasswords.ministre);
     await page.goto(`${BASE}/pnpi`);
 
     // KPI cards should be visible
@@ -50,7 +51,7 @@ test.describe("ATI Full Lifecycle", () => {
   });
 
   test("ATI filters work correctly", async ({ page }) => {
-    await login(page, "instructeur", "instructeur-dev-password");
+    await login(page, "instructeur", e2ePasswords.instructeur);
     await page.goto(`${BASE}/pnpi/ati`);
 
     // Should see filter controls
@@ -66,14 +67,14 @@ test.describe("ATI Full Lifecycle", () => {
   });
 
   test("Mes Dossiers page loads for instructeur", async ({ page }) => {
-    await login(page, "instructeur", "instructeur-dev-password");
+    await login(page, "instructeur", e2ePasswords.instructeur);
     await page.goto(`${BASE}/pnpi/mes-dossiers`);
 
     await expect(page.locator("h1")).toContainText(/[Mm]es [Dd]ossiers/);
   });
 
   test("Historique page with filters", async ({ page }) => {
-    await login(page, "ministre", "ministre-dev-password");
+    await login(page, "ministre", e2ePasswords.ministre);
     await page.goto(`${BASE}/pnpi/historique`);
 
     await expect(page.locator("h1")).toContainText(/[Hh]istorique/);
@@ -82,7 +83,7 @@ test.describe("ATI Full Lifecycle", () => {
   });
 
   test("Notifications page with severity tabs", async ({ page }) => {
-    await login(page, "ministre", "ministre-dev-password");
+    await login(page, "ministre", e2ePasswords.ministre);
     await page.goto(`${BASE}/pnpi/notifications`);
 
     // Severity filter tabs
@@ -90,7 +91,7 @@ test.describe("ATI Full Lifecycle", () => {
   });
 
   test("Profile page shows 2FA and password sections", async ({ page }) => {
-    await login(page, "ministre", "ministre-dev-password");
+    await login(page, "ministre", e2ePasswords.ministre);
     await page.goto(`${BASE}/profil`);
 
     // Should have 2FA section
@@ -101,14 +102,14 @@ test.describe("ATI Full Lifecycle", () => {
   });
 
   test("Stats page loads with charts", async ({ page }) => {
-    await login(page, "ministre", "ministre-dev-password");
+    await login(page, "ministre", e2ePasswords.ministre);
     await page.goto(`${BASE}/pnpi/stats`);
 
     await expect(page.locator("h1")).toContainText(/[Ss]tat/);
   });
 
   test("Exports work", async ({ page }) => {
-    await login(page, "ministre", "ministre-dev-password");
+    await login(page, "ministre", e2ePasswords.ministre);
 
     // Test CSV export
     const [download] = await Promise.all([
@@ -119,7 +120,7 @@ test.describe("ATI Full Lifecycle", () => {
   });
 
   test("Operateur cannot access admin pages", async ({ page }) => {
-    await login(page, "operateur", "operateur-dev-password");
+    await login(page, "operateur", e2ePasswords.operateur);
     await page.goto(`${BASE}/admin`);
 
     // Should be redirected or see access denied

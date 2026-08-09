@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, ReactNode } from "react";
+import { getCurrentUsernameFallback, userScopedStorageKey } from "../../../lib/user-scoped-storage";
 
 interface WidgetConfig {
   id: string;
@@ -19,16 +20,18 @@ export function DashboardRenderer({ widgetMap }: Props) {
   const [config, setConfig] = useState<WidgetConfig[] | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as WidgetConfig[];
-        parsed.sort((a, b) => a.order - b.order);
-        setConfig(parsed);
-      } catch {
-        setConfig(null);
+    getCurrentUsernameFallback().then((username) => {
+      const saved = localStorage.getItem(userScopedStorageKey(STORAGE_KEY, username));
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as WidgetConfig[];
+          parsed.sort((a, b) => a.order - b.order);
+          setConfig(parsed);
+        } catch {
+          setConfig(null);
+        }
       }
-    }
+    });
   }, []);
 
   if (!config) {

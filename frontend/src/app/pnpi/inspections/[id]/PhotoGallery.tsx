@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Inspection photos are private API images. */
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Photo {

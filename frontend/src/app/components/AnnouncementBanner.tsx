@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 interface Announcement {
   id: string;
@@ -18,15 +19,25 @@ const SEV_STYLES: Record<string, { bg: string; border: string; color: string; ic
 };
 
 export function AnnouncementBanner() {
+  const pathname = usePathname();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    fetch("/api/announcements/active")
+    const isAuthenticatedArea = ["/admin", "/briefing", "/inspecteur", "/pnpi", "/profil"].some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+    if (!isAuthenticatedArea) {
+      setAnnouncements([]);
+      return;
+    }
+    const controller = new AbortController();
+    fetch("/api/announcements/active", { signal: controller.signal })
       .then((r) => (r.ok ? r.json() : { announcements: [] }))
-      .then((d) => setAnnouncements(d.announcements || []))
+      .then((d) => setAnnouncements(Array.isArray(d?.announcements) ? d.announcements : []))
       .catch(() => {});
-  }, []);
+    return () => controller.abort();
+  }, [pathname]);
 
   const visible = announcements.filter((a) => !dismissed.has(a.id));
   if (visible.length === 0) return null;

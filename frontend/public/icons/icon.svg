@@ -1,5 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#006233"/>
-  <text x="256" y="320" text-anchor="middle" font-family="Arial,sans-serif" font-size="240" font-weight="800" fill="white">P</text>
-  <text x="256" y="440" text-anchor="middle" font-family="Arial,sans-serif" font-size="80" font-weight="700" fill="#F5D30F">PNPI</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Logo PNPI">
+  <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
+  <circle cx="256" cy="256" r="200" fill="#FFFFFF" stroke="#1F7A45" stroke-width="20"/>
+  <path d="M146 420a200 200 0 0 0 220 0" fill="none" stroke="#F8BD00" stroke-width="28" stroke-linecap="round"/>
+  <path d="M366 420a200 200 0 0 0 82-200" fill="none" stroke="#003F8F" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="126" cy="244" r="78" fill="#3294D1"/>
+  <path d="M82 276v-78h20v36l32-28v28l32-28v70z" fill="#FFFFFF"/>
+  <circle cx="386" cy="244" r="78" fill="#F8BD00"/>
+  <path d="M342 280h22v-42h-22zm38 0h22v-66h-22zm38 0h22v-94h-22z" fill="#FFFFFF"/>
+  <path d="M335 222c45-10 70-34 98-75" fill="none" stroke="#FFFFFF" stroke-width="17" stroke-linecap="round"/>
+  <path d="M433 147l6 47-42-20z" fill="#FFFFFF"/>
+  <g fill="#003F8F">
+    <circle cx="256" cy="126" r="49"/>
+    <circle cx="198" cy="174" r="32"/>
+    <circle cx="314" cy="174" r="32"/>
+    <circle cx="256" cy="126" r="20" fill="#FFFFFF"/>
+    <circle cx="198" cy="174" r="14" fill="#FFFFFF"/>
+    <circle cx="314" cy="174" r="14" fill="#FFFFFF"/>
+  </g>
+  <text x="256" y="318" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="92" fill="#003F8F">PNPI</text>
 </svg>

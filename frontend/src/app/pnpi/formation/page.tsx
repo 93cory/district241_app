@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getCurrentSessionUser, userScopedStorageKey } from "../../../lib/user-scoped-storage";
 
 interface Module {
   id: string;
@@ -8,6 +9,7 @@ interface Module {
   description: string;
   duration: string;
   difficulty: "debutant" | "intermediaire" | "avance";
+  roles?: string[];
   steps: {
     title: string;
     content: string;
@@ -55,6 +57,7 @@ const MODULES: Module[] = [
     description: "Guide complet pour deposer une demande d'agrement.",
     duration: "15 min",
     difficulty: "debutant",
+    roles: ["operateur", "instructeur", "admin"],
     steps: [
       {
         title: "Acces au guichet",
@@ -98,6 +101,7 @@ const MODULES: Module[] = [
     description: "Processus d'instruction pour les instructeurs PNPI.",
     duration: "20 min",
     difficulty: "intermediaire",
+    roles: ["instructeur", "directeur", "admin"],
     steps: [
       {
         title: "File d'attente",
@@ -136,6 +140,7 @@ const MODULES: Module[] = [
     description: "Guide terrain pour les inspecteurs de conformite.",
     duration: "15 min",
     difficulty: "intermediaire",
+    roles: ["inspecteur", "directeur", "admin"],
     steps: [
       {
         title: "Preparation",
@@ -160,6 +165,7 @@ const MODULES: Module[] = [
     description: "Gestion des utilisateurs, workflows et monitoring.",
     duration: "25 min",
     difficulty: "avance",
+    roles: ["admin", "directeur"],
     steps: [
       {
         title: "Utilisateurs",
@@ -187,6 +193,173 @@ const MODULES: Module[] = [
       },
     ],
   },
+  {
+    id: "rin-operateur",
+    title: "Gerer ma fiche RIN 360°",
+    description: "Comprendre les donnees industrielles a renseigner et leur validation.",
+    duration: "18 min",
+    difficulty: "debutant",
+    roles: ["operateur"],
+    steps: [
+      {
+        title: "Ou trouver ma fiche RIN ?",
+        content:
+          "Depuis Mon guichet, utilisez le bloc 'Ma fiche RIN 360°'. La fiche regroupe votre identite industrielle, vos sites, produits, ressources, investissements et donnees de validation.",
+      },
+      {
+        title: "Quelles donnees completer ?",
+        content:
+          "Priorisez les representants, le site principal, les produits fabriques, les capacites annuelles, les matieres premieres, l'energie et les investissements. Ces informations alimentent les statistiques du Ministere.",
+      },
+      {
+        title: "Bonnes pratiques",
+        content:
+          "Renseignez uniquement des informations exactes et actualisees. Si une donnee change, modifiez-la puis laissez l'administration verifier et valider la nouvelle version.",
+      },
+      {
+        title: "Quiz",
+        content: "Validez votre comprehension du RIN.",
+        quiz: {
+          question: "A quoi sert principalement la fiche RIN 360° ?",
+          options: [
+            "A decorer la page",
+            "A centraliser les donnees industrielles officielles de l'entreprise",
+            "A remplacer tous les documents juridiques",
+            "A supprimer le controle administratif",
+          ],
+          correct: 1,
+        },
+      },
+    ],
+  },
+  {
+    id: "operateur-suivi-ati",
+    title: "Suivre correctement mes ATI",
+    description: "Relire un dossier, comprendre les statuts et repondre aux demandes.",
+    duration: "14 min",
+    difficulty: "debutant",
+    roles: ["operateur"],
+    steps: [
+      {
+        title: "Mes demandes",
+        content:
+          "Dans Mon guichet, la colonne 'Mes demandes recentes' affiche les dossiers que vous avez soumis. Cliquez sur un dossier pour voir sa timeline, ses documents et ses commentaires.",
+      },
+      {
+        title: "Comprendre les statuts",
+        content:
+          "Soumis signifie que le dossier est depose. En instruction signifie qu'il est analyse. En validation signifie qu'il attend une decision. Approuve ou rejete cloturent la decision administrative.",
+      },
+      {
+        title: "Reagir aux demandes",
+        content:
+          "Si l'administration demande un complement, ajoutez le document ou corrigez l'information depuis le dossier concerne. Evitez les doublons et nommez clairement vos fichiers.",
+      },
+    ],
+  },
+  {
+    id: "instructeur-rin-validation",
+    title: "Verifier et valider les donnees RIN",
+    description: "Controle qualite des sous-fiches industrielles avant decision.",
+    duration: "20 min",
+    difficulty: "intermediaire",
+    roles: ["instructeur", "directeur", "admin"],
+    steps: [
+      {
+        title: "Lire la fiche 360°",
+        content:
+          "Depuis Operateurs > Fiche RIN 360°, verifiez la coherence entre identite, activites ATI, sites, produits, capacites, ressources et investissements.",
+      },
+      {
+        title: "Statuts de validation",
+        content:
+          "Brouillon indique une donnee interne ou non finalisee. Soumis vient generalement de l'operateur. Verifie signale une correction controlee. Valide signifie que la donnee est exploitable pour pilotage.",
+      },
+      {
+        title: "Traçabilite",
+        content:
+          "Chaque validation doit pouvoir etre expliquee. Ajoutez une note si necessaire et archivez les informations obsoletees au lieu de les supprimer brutalement.",
+      },
+      {
+        title: "Quiz",
+        content: "",
+        quiz: {
+          question: "Que faire si une donnee validee est modifiee ?",
+          options: [
+            "La laisser validee sans controle",
+            "La reverifier avant de la revalider",
+            "Supprimer toute la fiche",
+            "Ignorer le changement",
+          ],
+          correct: 1,
+        },
+      },
+    ],
+  },
+  {
+    id: "ministre-pilotage",
+    title: "Lire les tableaux de bord ministeriels",
+    description: "Utiliser les indicateurs pour arbitrer et piloter la politique industrielle.",
+    duration: "16 min",
+    difficulty: "intermediaire",
+    roles: ["ministre", "directeur", "admin"],
+    steps: [
+      {
+        title: "Vision d'ensemble",
+        content:
+          "Le Dashboard PNPI donne la situation nationale : ATIs, operateurs actifs, inspections, secteurs dynamiques et alertes prioritaires.",
+      },
+      {
+        title: "RIN national",
+        content:
+          "Le Cockpit RIN permet d'identifier les fiches completes, les fiches prioritaires et les manques structurants pour ameliorer la statistique industrielle.",
+      },
+      {
+        title: "Questions utiles en reunion",
+        content:
+          "Demandez : quels secteurs progressent ? quelles provinces sont sous-documentees ? quels dossiers bloquent ? quelles donnees manquent pour prendre une decision fiable ?",
+      },
+    ],
+  },
+  {
+    id: "admin-securite-isolation",
+    title: "Securite, roles et isolation des donnees",
+    description: "Comprendre les responsabilites admin sur les comptes et les donnees.",
+    duration: "22 min",
+    difficulty: "avance",
+    roles: ["admin"],
+    steps: [
+      {
+        title: "Principe de moindre privilege",
+        content:
+          "Chaque utilisateur doit disposer uniquement des droits necessaires : operateur pour ses dossiers, instructeur pour l'instruction, inspecteur pour le terrain, directeur/ministre pour le pilotage.",
+      },
+      {
+        title: "Postes partages",
+        content:
+          "Sur un poste partage, chaque agent doit se deconnecter apres usage. Les preferences personnelles de PNPI sont isolees par utilisateur, mais une session ouverte reste une session active.",
+      },
+      {
+        title: "Audit",
+        content:
+          "Les actions sensibles doivent rester tracables : creation, modification, validation, archivage et changement de statut. Le journal d'audit sert de piece de controle.",
+      },
+      {
+        title: "Quiz",
+        content: "",
+        quiz: {
+          question: "Quelle est la bonne pratique sur un poste partage ?",
+          options: [
+            "Partager le meme compte",
+            "Se deconnecter et utiliser son propre compte nominatif",
+            "Desactiver les mots de passe",
+            "Utiliser toujours le compte admin",
+          ],
+          correct: 1,
+        },
+      },
+    ],
+  },
 ];
 
 const DIFF_COLORS = { debutant: "#006233", intermediaire: "#0c7eb4", avance: "#7c3aed" };
@@ -195,22 +368,61 @@ export default function FormationPage() {
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
   const [quizAnswer, setQuizAnswer] = useState<number | null>(null);
-  const [completed, setCompleted] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
-    try {
-      return new Set(JSON.parse(localStorage.getItem("pnpi_training") || "[]"));
-    } catch {
-      return new Set();
-    }
-  });
+  const [username, setUsername] = useState<string | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const storageKey = useMemo(
+    () => (username ? userScopedStorageKey("pnpi_training", username) : null),
+    [username],
+  );
+  const visibleModules = useMemo(
+    () =>
+      MODULES.filter((module) => {
+        if (!module.roles || module.roles.length === 0) return true;
+        return module.roles.some((role) => roles.includes(role));
+      }),
+    [roles],
+  );
+  const visibleCompletedCount = visibleModules.filter((module) => completed.has(module.id)).length;
+  const roleLabel = roles.length ? roles.join(" · ") : "profil connecte";
 
-  const mod = MODULES.find((m) => m.id === activeModule);
+  useEffect(() => {
+    let mounted = true;
+    getCurrentSessionUser()
+      .then((user) => {
+        if (!mounted) return;
+        setUsername(user.username);
+        setRoles(user.roles);
+      })
+      .catch(() => {
+        if (mounted) {
+          setUsername("utilisateur");
+          setRoles([]);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!storageKey || typeof window === "undefined") return;
+    try {
+      setCompleted(new Set(JSON.parse(localStorage.getItem(storageKey) || "[]")));
+    } catch {
+      setCompleted(new Set());
+    }
+  }, [storageKey]);
+
+  const mod = visibleModules.find((m) => m.id === activeModule);
   const step = mod?.steps[stepIdx];
 
   const complete = (id: string) => {
     const next = new Set([...completed, id]);
     setCompleted(next);
-    localStorage.setItem("pnpi_training", JSON.stringify([...next]));
+    if (storageKey) {
+      localStorage.setItem(storageKey, JSON.stringify([...next]));
+    }
   };
 
   if (!mod) {
@@ -218,7 +430,7 @@ export default function FormationPage() {
       <div style={{ padding: "24px 32px", maxWidth: 800, margin: "0 auto" }}>
         <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 4px" }}>Formation PNPI</h1>
         <p style={{ color: "var(--text-soft)", fontSize: 13, margin: "0 0 4px" }}>
-          {completed.size}/{MODULES.length} modules completes
+          Parcours {roleLabel} · {visibleCompletedCount}/{visibleModules.length} modules completes
         </p>
         <div style={{ height: 6, borderRadius: 3, background: "var(--line)", marginBottom: 20 }}>
           <div
@@ -226,13 +438,13 @@ export default function FormationPage() {
               height: "100%",
               borderRadius: 3,
               background: "#006233",
-              width: `${(completed.size / MODULES.length) * 100}%`,
+              width: `${(visibleCompletedCount / Math.max(visibleModules.length, 1)) * 100}%`,
             }}
           />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {MODULES.map((m) => (
+          {visibleModules.map((m) => (
             <button
               key={m.id}
               onClick={() => {

@@ -25,7 +25,7 @@ export default function AboutPage() {
         </div>
         <h1 style={{ fontSize: 36, fontWeight: 800, margin: "0 0 8px" }}>A propos de la PNPI</h1>
         <p style={{ fontSize: 16, opacity: 0.8, maxWidth: 600, margin: "0 auto" }}>
-          Plateforme Nationale de la Politique Industrielle
+          Plateforme Nationale de Pilotage Industriel
         </p>
       </div>
 

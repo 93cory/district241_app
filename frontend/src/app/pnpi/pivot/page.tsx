@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const DIMS = [
   { value: "secteur", label: "Secteur" },
@@ -21,18 +21,18 @@ export default function PivotPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/reports/pivot?rows=${rows}&cols=${cols}&metric=${metric}`);
       if (res.ok) setData(await res.json());
     } catch {}
     setLoading(false);
-  };
+  }, [rows, cols, metric]);
 
   useEffect(() => {
     load();
-  }, [rows, cols, metric]);
+  }, [load]);
 
   const getColor = (val: number, max: number) => {
     if (!max || !val) return "transparent";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "../../../components/Toast";
 
 interface CheckItem {
@@ -29,7 +29,7 @@ export function Checklist({ atiId }: { atiId: string }) {
   const [checked, setChecked] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const load = () => {
+  const load = useCallback(() => {
     fetch(`/api/checklists/ati/${atiId}`)
       .then((r) => (r.ok ? r.json() : { items: [], total: 0, checked: 0, completion_pct: 0 }))
       .then((d) => {
@@ -39,11 +39,11 @@ export function Checklist({ atiId }: { atiId: string }) {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  };
+  }, [atiId]);
 
   useEffect(() => {
     load();
-  }, [atiId]);
+  }, [load]);
 
   const toggle = async (itemId: string, isChecked: boolean) => {
     await fetch(`/api/checklists/items/${itemId}`, {

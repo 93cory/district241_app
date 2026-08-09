@@ -15,9 +15,54 @@ const SECTEUR_LABELS: Record<string, string> = {
   petrole: "Petrole",
   services: "Services",
 };
+const DEMANDE_TYPES = [
+  {
+    key: "creation",
+    label: "Creation",
+    description: "Premiere demande d'autorisation technique industrielle.",
+    documents: ["statuts", "bilan", "plan_site", "certification"],
+  },
+  {
+    key: "renouvellement",
+    label: "Renouvellement",
+    description: "Renouveler une ATI arrivant a echeance.",
+    documents: ["ancienne_ati", "bilan", "certification"],
+  },
+  {
+    key: "extension",
+    label: "Extension",
+    description: "Ajouter un site, une capacite ou une activite.",
+    documents: ["statuts", "plan_site", "note_extension", "certification"],
+  },
+  {
+    key: "modification",
+    label: "Modification",
+    description: "Mettre a jour des informations administratives ou techniques.",
+    documents: ["statuts", "justificatif_modification"],
+  },
+  {
+    key: "duplicata",
+    label: "Duplicata",
+    description: "Obtenir une copie officielle.",
+    documents: ["declaration_perte", "ancienne_ati"],
+  },
+  {
+    key: "suspension",
+    label: "Suspension",
+    description: "Suspendre temporairement une autorisation.",
+    documents: ["motif_suspension", "ancienne_ati"],
+  },
+  {
+    key: "cloture",
+    label: "Cloture",
+    description: "Clore une autorisation ou une activite.",
+    documents: ["motif_cloture", "ancienne_ati"],
+  },
+];
 
 const STEPS = [
   { key: "operateur", label: "Operateur" },
+  { key: "type", label: "Type de demande" },
   { key: "activite", label: "Activite & secteur" },
   { key: "resume", label: "Confirmation" },
 ] as const;
@@ -26,6 +71,7 @@ type StepKey = (typeof STEPS)[number]["key"];
 
 interface FormData {
   operateur_id: string;
+  type_demande: string;
   type_activite: string;
   secteur: string;
   priorite: string;
@@ -54,6 +100,7 @@ export function ATIWizard({
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>({
     operateur_id: "",
+    type_demande: "creation",
     type_activite: "",
     secteur: "",
     priorite: "normale",
@@ -61,22 +108,26 @@ export function ATIWizard({
   });
 
   const selectedOperateur = operateurs.find((o) => o.id === form.operateur_id);
+  const selectedDemandeType = DEMANDE_TYPES.find((t) => t.key === form.type_demande);
   const delayEstimate = form.secteur ? delays.find((d) => d.secteur === form.secteur) : null;
 
   const canProceedFrom = (s: StepKey): boolean => {
     if (s === "operateur") return Boolean(form.operateur_id);
+    if (s === "type") return Boolean(form.type_demande);
     if (s === "activite") return Boolean(form.type_activite.trim() && form.secteur);
     return true;
   };
 
   const next = () => {
-    if (step === "operateur" && canProceedFrom("operateur")) setStep("activite");
+    if (step === "operateur" && canProceedFrom("operateur")) setStep("type");
+    else if (step === "type" && canProceedFrom("type")) setStep("activite");
     else if (step === "activite" && canProceedFrom("activite")) setStep("resume");
   };
 
   const prev = () => {
     if (step === "resume") setStep("activite");
-    else if (step === "activite") setStep("operateur");
+    else if (step === "activite") setStep("type");
+    else if (step === "type") setStep("operateur");
   };
 
   const submit = () => {
@@ -135,6 +186,43 @@ export function ATIWizard({
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+        )}
+
+        {step === "type" && (
+          <div className="pnpi-form-stack">
+            <h3 className="pnpi-card-subtitle">Quel type de demande ATI ?</h3>
+            <p className="pnpi-page-sub" style={{ marginTop: "-0.5rem" }}>
+              Le formulaire et les pieces attendues s&apos;adaptent au cycle de vie choisi.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "0.75rem" }}>
+              {DEMANDE_TYPES.map((type) => {
+                const selected = form.type_demande === type.key;
+                return (
+                  <button
+                    type="button"
+                    key={type.key}
+                    onClick={() => setForm((f) => ({ ...f, type_demande: type.key }))}
+                    style={{
+                      textAlign: "left",
+                      border: selected ? "2px solid #003F8F" : "1px solid #e5e7eb",
+                      borderRadius: "12px",
+                      background: selected ? "#eff6ff" : "white",
+                      padding: "0.9rem",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <strong style={{ color: "#003F8F" }}>{type.label}</strong>
+                    <p style={{ margin: "0.3rem 0 0", color: "#4b5563", fontSize: "0.82rem" }}>
+                      {type.description}
+                    </p>
+                    <small style={{ display: "block", marginTop: "0.5rem", color: "#6b7280" }}>
+                      Pieces : {type.documents.join(", ")}
+                    </small>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -235,6 +323,8 @@ export function ATIWizard({
               </dd>
               <dt>Secteur</dt>
               <dd>{SECTEUR_LABELS[form.secteur] ?? form.secteur}</dd>
+              <dt>Type de demande</dt>
+              <dd>{selectedDemandeType?.label ?? form.type_demande}</dd>
               <dt>Type d&apos;activite</dt>
               <dd>{form.type_activite}</dd>
               <dt>Priorite</dt>

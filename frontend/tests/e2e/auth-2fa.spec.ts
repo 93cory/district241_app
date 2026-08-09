@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { e2ePasswords } from "./helpers/credentials";
 
 const BASE = "http://localhost:3000";
 
@@ -15,7 +16,7 @@ test.describe("Authentication & Security", () => {
   test("Successful login redirects to dashboard", async ({ page }) => {
     await page.goto(`${BASE}/connexion`);
     await page.fill('input[name="username"]', "ministre");
-    await page.fill('input[name="password"]', "ministre-dev-password");
+    await page.fill('input[name="password"]', e2ePasswords.ministre);
     await page.click('button[type="submit"]');
 
     // Should redirect away from connexion
@@ -45,7 +46,7 @@ test.describe("Authentication & Security", () => {
     // This test just verifies the SessionTimeout component renders
     await page.goto(`${BASE}/connexion`);
     await page.fill('input[name="username"]', "ministre");
-    await page.fill('input[name="password"]', "ministre-dev-password");
+    await page.fill('input[name="password"]', e2ePasswords.ministre);
     await page.click('button[type="submit"]');
     await page.waitForURL((url) => !url.pathname.includes("/connexion"), { timeout: 10000 });
 

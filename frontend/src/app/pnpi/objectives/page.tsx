@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getCurrentUsernameFallback, userScopedStorageKey } from "../../../lib/user-scoped-storage";
 
 interface Objective {
   id: string;
@@ -33,9 +34,17 @@ const DEFAULT_OBJECTIVES: Objective[] = [
 
 export default function ObjectivesPage() {
   const [objectives, setObjectives] = useState<Objective[]>([]);
+  const [storageKey, setStorageKey] = useState<string | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    getCurrentUsernameFallback().then((username) =>
+      setStorageKey(userScopedStorageKey(STORAGE_KEY, username)),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!storageKey) return;
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         setObjectives(JSON.parse(saved));
@@ -45,11 +54,11 @@ export default function ObjectivesPage() {
     } else {
       setObjectives([...DEFAULT_OBJECTIVES]);
     }
-  }, []);
+  }, [storageKey]);
 
   const save = (objs: Objective[]) => {
     setObjectives(objs);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(objs));
+    if (storageKey) localStorage.setItem(storageKey, JSON.stringify(objs));
   };
 
   const updateTarget = (id: string, target: number) => {

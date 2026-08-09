@@ -1,7 +1,7 @@
 import { backendRequest } from "./backend";
 
 const request = async <T>(path: string): Promise<T> => {
-  const response = await backendRequest(path);
+  const response = await backendRequest(path, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Erreur API ${response.status}: ${response.statusText}`);
   }
@@ -331,16 +331,101 @@ export interface TransformationIndexData {
 
 export const fetchTransformationIndex = (): Promise<TransformationIndexData> =>
   request("/pnpi/dashboard/transformation-index");
+
+export interface BusinessModelObject {
+  code: string;
+  nom: string;
+  description: string;
+  systeme_responsable: string;
+  source: string;
+  niveau: string;
+  volume: number;
+  statut: string;
+}
+
+export interface BusinessModelRelationship {
+  from: string;
+  to: string;
+  relation: string;
+}
+
+export interface BusinessModelCockpit {
+  generated_at: string;
+  vision: string;
+  stats: Record<string, number>;
+  objects: BusinessModelObject[];
+  relationships: BusinessModelRelationship[];
+  principes: string[];
+  architecture_cible: string[];
+  lecture_executive: string;
+}
+
+export const fetchBusinessModelCockpit = (): Promise<BusinessModelCockpit> =>
+  request("/pnpi/modele-metier/cockpit");
+
+export interface SOCCockpit {
+  generated_at: string;
+  risk_score: number;
+  risk_level: string;
+  stats: Record<string, number>;
+  alerts: Array<{ severity: string; title: string; message: string }>;
+  top_failed_users: Array<{ username: string; count: number }>;
+  top_failed_ips: Array<{ ip: string; count: number }>;
+  recent_events: Array<{
+    id: string;
+    actor: string;
+    action: string;
+    target: string | null;
+    timestamp: string | null;
+  }>;
+  incident_cycle: string[];
+  rules: Array<{ code: string; libelle: string; statut: string; preuve: string }>;
+  lecture_executive: string;
+}
+
+export const fetchSOCCockpit = (): Promise<SOCCockpit> => request("/pnpi/securite/soc");
+
+export interface RINCockpitCoverageItem {
+  label: string;
+  statut: string;
+  couverture_pct: number;
+  elements: number;
+  total_reference: number;
+  description: string;
+}
+
+export interface RINCockpitPriority {
+  operateur_id: string;
+  raison_sociale: string;
+  secteur: string;
+  province: string;
+  score: number;
+  manques: string[];
+}
+
+export interface RINCockpit {
+  generated_at: string;
+  score_national: number;
+  stats: Record<string, number>;
+  coverage: RINCockpitCoverageItem[];
+  priorites: RINCockpitPriority[];
+  lecture_executive: string;
+}
+
+export const fetchRINCockpit = (): Promise<RINCockpit> => request("/pnpi/rin/cockpit");
 // ATI detail types
 export interface ATIRead {
   id: string;
   numero_ati: string;
   operateur_id: string;
+  type_demande: string;
   type_activite: string;
   secteur: string;
   statut: string;
   etape: string;
   priorite: string;
+  payment_status: string;
+  payment_reference: string | null;
   instructeur_username: string | null;
   date_soumission: string;
   date_decision: string | null;
@@ -357,12 +442,16 @@ export interface ATIRead {
 }
 export interface ATIBrief {
   id: string;
+  operateur_id: string;
   numero_ati: string;
+  type_demande: string;
   type_activite: string;
   secteur: string;
   statut: string;
   etape: string;
   priorite: string;
+  payment_status: string;
+  payment_reference: string | null;
   instructeur_username: string | null;
   date_soumission: string;
   age_jours: number;
@@ -378,6 +467,97 @@ export interface ATITransitionRead {
   new_etape: string | null;
   note: string;
   changed_at: string;
+}
+export interface ATIRequestType {
+  key: string;
+  label: string;
+  description: string;
+  documents_requis: string[];
+}
+export interface ATITechnicalOpinion {
+  id: string;
+  ati_id: string;
+  direction: string;
+  requested_by: string;
+  requested_at: string;
+  due_at: string | null;
+  status: string;
+  motivation: string | null;
+  signed_by: string | null;
+  signed_at: string | null;
+}
+export interface ATIComplementRequest {
+  id: string;
+  ati_id: string;
+  requested_by: string;
+  requested_at: string;
+  due_at: string | null;
+  status: string;
+  motif: string;
+  requested_documents: string[];
+  response_note: string | null;
+  responded_by: string | null;
+  responded_at: string | null;
+}
+export interface ATIBusinessRule {
+  id: string;
+  rule_type: string;
+  demande_type: string | null;
+  secteur: string | null;
+  label: string;
+  config: Record<string, unknown>;
+  is_active: boolean;
+  updated_by: string | null;
+  updated_at: string | null;
+}
+export interface ATIProcessingItem {
+  id: string;
+  numero_ati: string;
+  operateur: string;
+  secteur: string;
+  type_demande: string;
+  statut: string;
+  etape: string;
+  priorite: string;
+  age_jours: number;
+  sla_jours: number;
+  is_overdue: boolean;
+  blocking_reasons: string[];
+  next_action: string;
+  responsible: string;
+  missing_documents: string[];
+  score_preparation: number;
+  score_urgence: number;
+  decision_state: string;
+}
+export interface ATIProcessingCenter {
+  generated_at: string;
+  stats: Record<string, number>;
+  buckets: Record<string, ATIProcessingItem[]>;
+  items: ATIProcessingItem[];
+}
+export interface ATIControlCard {
+  generated_at: string;
+  ati_id: string;
+  numero_ati: string;
+  score_preparation: number;
+  score_urgence: number;
+  decision_state: string;
+  next_action: string;
+  responsible: string;
+  documents: {
+    required: string[];
+    present: string[];
+    missing: string[];
+    extra: string[];
+    documents_count: number;
+    completion_pct: number;
+    is_complete: boolean;
+  };
+  blockers: string[];
+  warnings: string[];
+  control_points: Array<{ label: string; status: string; detail: string }>;
+  workflow_guardrails: string[];
 }
 export interface OperateurBrief {
   id: string;
@@ -396,6 +576,125 @@ export interface OperateurRead extends OperateurBrief {
   contact_telephone: string | null;
   created_at: string;
   created_by: string | null;
+}
+export interface RINRepresentant {
+  id: string;
+  operateur_id: string;
+  nom_complet: string;
+  fonction: string;
+  email: string | null;
+  telephone: string | null;
+  est_contact_principal: boolean;
+  created_at: string;
+  created_by: string | null;
+  statut_validation: string;
+  updated_at: string | null;
+  validated_by: string | null;
+  validated_at: string | null;
+}
+export interface RINSite {
+  id: string;
+  operateur_id: string;
+  nom_site: string;
+  type_site: string;
+  province: string;
+  ville: string;
+  adresse: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  superficie_ha: number | null;
+  statut: string;
+  created_at: string;
+  created_by: string | null;
+  statut_validation: string;
+  updated_at: string | null;
+  validated_by: string | null;
+  validated_at: string | null;
+}
+export interface RINProduit {
+  id: string;
+  operateur_id: string;
+  nom_produit: string;
+  categorie: string;
+  unite: string;
+  capacite_annuelle: number | null;
+  production_annuelle: number | null;
+  marche_cible: string | null;
+  certification: string | null;
+  created_at: string;
+  created_by: string | null;
+  statut_validation: string;
+  updated_at: string | null;
+  validated_by: string | null;
+  validated_at: string | null;
+}
+export interface RINRessource {
+  id: string;
+  operateur_id: string;
+  type_ressource: string;
+  libelle: string;
+  origine: string | null;
+  consommation_annuelle: number | null;
+  unite: string | null;
+  dependance_import: boolean;
+  created_at: string;
+  created_by: string | null;
+  statut_validation: string;
+  updated_at: string | null;
+  validated_by: string | null;
+  validated_at: string | null;
+}
+export interface RINInvestissement {
+  id: string;
+  operateur_id: string;
+  intitule: string;
+  montant_fcfa: number | null;
+  statut: string;
+  annee: number | null;
+  emplois_prevus: number | null;
+  description: string | null;
+  created_at: string;
+  created_by: string | null;
+  statut_validation: string;
+  updated_at: string | null;
+  validated_by: string | null;
+  validated_at: string | null;
+}
+export interface RINProfile {
+  operateur_id: string;
+  score_structuration: number;
+  representants: RINRepresentant[];
+  sites: RINSite[];
+  produits: RINProduit[];
+  ressources: RINRessource[];
+  investissements: RINInvestissement[];
+  manques: string[];
+  workflow_counts: Record<string, number>;
+}
+export interface RINProfile360 {
+  generated_at: string;
+  operateur: {
+    id: string;
+    nif_gabon: string;
+    raison_sociale: string;
+    secteur: string;
+    province: string;
+    ville: string;
+    is_active: boolean;
+    effectif_declare: number | null;
+    geolocalise: boolean;
+  };
+  score_360: number;
+  grade: string;
+  niveau_risque: string;
+  stats: Record<string, number>;
+  synthese: Record<string, string>;
+  manques: string[];
+  risques: Array<{ niveau: string; titre: string; detail: string }>;
+  decisions_possibles: Array<{ decision: string; lecture: string; justification: string }>;
+  timeline: Array<{ date: string; type: string; titre: string; detail: string; niveau: string }>;
+  actions_prioritaires: Array<{ priorite: string; action: string }>;
+  lecture_executive: string;
 }
 // PNPI ATI + Operateurs fetch
 export const fetchPNPIATIs = (params?: {
@@ -416,6 +715,18 @@ export const fetchPNPIATIs = (params?: {
 };
 export const fetchPNPIATI = (id: string): Promise<ATIRead> =>
   request(`/pnpi/ati/${encodeURIComponent(id)}`);
+export const fetchPNPIATIRequestTypes = (): Promise<ATIRequestType[]> =>
+  request("/pnpi/ati/request-types");
+export const fetchPNPIATIProcessingCenter = (): Promise<ATIProcessingCenter> =>
+  request("/pnpi/ati/processing-center");
+export const fetchPNPIATIControlCard = (id: string): Promise<ATIControlCard> =>
+  request(`/pnpi/ati/${encodeURIComponent(id)}/control-card`);
+export const fetchPNPIATIBusinessRules = (): Promise<ATIBusinessRule[]> =>
+  request("/pnpi/ati/business-rules");
+export const fetchPNPIATITechnicalOpinions = (id: string): Promise<ATITechnicalOpinion[]> =>
+  request(`/pnpi/ati/${encodeURIComponent(id)}/technical-opinions`);
+export const fetchPNPIATIComplements = (id: string): Promise<ATIComplementRequest[]> =>
+  request(`/pnpi/ati/${encodeURIComponent(id)}/complements`);
 export const fetchPNPIATIHistorique = (id: string): Promise<ATITransitionRead[]> =>
   request(`/pnpi/ati/${encodeURIComponent(id)}/historique`);
 export const fetchPNPIOperateurs = (params?: {
@@ -436,6 +747,10 @@ export const fetchPNPIOperateur = (id: string): Promise<OperateurRead> =>
   request(`/pnpi/operateurs/${encodeURIComponent(id)}`);
 export const fetchPNPIOperateurATIs = (id: string): Promise<ATIBrief[]> =>
   request(`/pnpi/operateurs/${encodeURIComponent(id)}/ati`);
+export const fetchRINProfile = (id: string): Promise<RINProfile> =>
+  request(`/pnpi/rin/operateurs/${encodeURIComponent(id)}`);
+export const fetchRINProfile360 = (id: string): Promise<RINProfile360> =>
+  request(`/pnpi/rin/operateurs/${encodeURIComponent(id)}/360`);
 
 // ---------------------------------------------------------------------------
 // Inspections
@@ -447,10 +762,14 @@ export interface InspectionRead {
   operateur_nom: string;
   ati_id: string | null;
   ati_numero: string | null;
+  mission_order_id: string | null;
+  campaign_id: string | null;
   inspecteur_username: string;
   inspecteur_nom: string;
   date_inspection: string;
+  workflow_status: string;
   statut_conformite: string; // conforme, non_conforme, partiel
+  score_conformite: number | null;
   observations: string;
   mesures_correctives: string | null;
   latitude: number | null;
@@ -479,6 +798,936 @@ export const fetchPNPIInspections = async (params?: {
 
 export const fetchPNPIInspection = async (id: string): Promise<InspectionRead> =>
   request<InspectionRead>(`/pnpi/inspections/${id}`);
+
+export interface InspectionControlCenter {
+  generated_at: string;
+  headline: {
+    score_national: number;
+    grade: string;
+    risk_level: string;
+    taux_conformite: number;
+    taux_non_conformite: number;
+    couverture_globale: number;
+    couverture_annuelle: number;
+    execution_plan_annuel: number;
+    taux_cloture_actions: number;
+  };
+  stats: Record<string, number>;
+  buckets: Record<string, unknown[]>;
+  risk_queue: Array<{
+    operateur_id: string;
+    operateur: string;
+    province: string;
+    secteur: string;
+    last_inspection: string | null;
+    status: string;
+    score_conformite: number | null;
+    risk_score: number;
+    risk_level: string;
+    critical_findings: number;
+    open_actions: number;
+    next_action: string;
+  }>;
+  executive_alerts: Array<{ level: string; title: string; detail: string }>;
+  recommendations: string[];
+  by_province: Record<
+    string,
+    { total: number; conformes: number; non_conformes: number; partiels: number; score_moyen: number; taux_conformite: number }
+  >;
+  by_sector: Record<
+    string,
+    { total: number; conformes: number; non_conformes: number; partiels: number; score_moyen: number; taux_conformite: number }
+  >;
+}
+
+export interface InspectionMissionOrder {
+  id: string;
+  numero: string;
+  inspection_id: string | null;
+  campaign_id: string | null;
+  operateur_id: string;
+  operateur_nom: string;
+  inspecteurs: string[];
+  lieu: string | null;
+  objective: string;
+  scheduled_at: string;
+  duration_days: number;
+  status: string;
+  qr_code_data: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface InspectionFinding {
+  id: string;
+  inspection_id: string;
+  category: string;
+  severity: string;
+  description: string;
+  evidence_ref: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  due_at: string | null;
+  responsible: string | null;
+  status: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface InspectionCorrectiveAction {
+  id: string;
+  finding_id: string;
+  action: string;
+  due_at: string | null;
+  status: string;
+  operator_response: string | null;
+  validated_by: string | null;
+  validated_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface InspectionSanction {
+  id: string;
+  inspection_id: string;
+  sanction_type: string;
+  motive: string;
+  decision_reference: string | null;
+  status: string;
+  decided_by: string | null;
+  decided_at: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface ComplianceIntelligence {
+  generated_at: string;
+  inci_national: number;
+  operators: Array<{
+    operateur_id: string;
+    operateur: string;
+    province: string;
+    secteur: string;
+    score: number;
+    last_inspection: string;
+    critical_findings: number;
+    open_actions: number;
+    risk_level: string;
+  }>;
+  by_province: Record<string, number>;
+  by_sector: Record<string, number>;
+  methodology: Record<string, number>;
+}
+
+export const fetchInspectionControlCenter = (): Promise<InspectionControlCenter> =>
+  request("/pnpi/inspections/control-center");
+export const fetchInspectionMissionOrders = (): Promise<InspectionMissionOrder[]> =>
+  request("/pnpi/inspections/mission-orders");
+export const fetchComplianceIntelligence = (): Promise<ComplianceIntelligence> =>
+  request("/pnpi/inspections/compliance-intelligence");
+export const fetchInspectionFindings = (id: string): Promise<InspectionFinding[]> =>
+  request(`/pnpi/inspections/${encodeURIComponent(id)}/findings`);
+export const fetchInspectionCorrectiveActions = (id: string): Promise<InspectionCorrectiveAction[]> =>
+  request(`/pnpi/inspections/${encodeURIComponent(id)}/corrective-actions`);
+export const fetchInspectionSanctions = (id: string): Promise<InspectionSanction[]> =>
+  request(`/pnpi/inspections/${encodeURIComponent(id)}/sanctions`);
+
+// ---------------------------------------------------------------------------
+// Observatoire National de l'Industrie (ONI)
+// ---------------------------------------------------------------------------
+
+export interface ONIDeclaration {
+  id: string;
+  operateur_id: string;
+  operateur_nom: string;
+  province: string | null;
+  ville: string | null;
+  period_type: string;
+  period: string;
+  secteur: string;
+  production_volume: number;
+  production_unit: string;
+  capacity_installed: number;
+  capacity_used: number;
+  capacity_utilization_pct: number;
+  downtime_hours: number;
+  jobs_total: number;
+  jobs_created: number;
+  jobs_lost: number;
+  jobs_women: number;
+  jobs_youth: number;
+  investment_fcfa: number;
+  exports_value_fcfa: number;
+  imports_value_fcfa: number;
+  trade_balance_fcfa: number;
+  local_raw_material_pct: number;
+  imported_raw_material_pct: number;
+  energy_kwh: number;
+  stock_raw_material: number;
+  stock_finished_goods: number;
+  average_price_fcfa: number | null;
+  status: string;
+  anomaly_flags: Array<{ type: string; severity: string; label: string }>;
+  ai_summary: string | null;
+  submitted_by: string;
+  submitted_at: string | null;
+  validated_by: string | null;
+  validated_at: string | null;
+}
+
+export interface ONIAlert {
+  id: string;
+  declaration_id: string | null;
+  operateur_id: string | null;
+  severity: string;
+  alert_type: string;
+  title: string;
+  message: string;
+  status: string;
+  created_at: string | null;
+  resolved_by: string | null;
+  resolved_at: string | null;
+}
+
+export interface ONIAggregateBucket {
+  production: number;
+  emplois: number;
+  investissement_fcfa: number;
+  declarations: number;
+}
+
+export interface ONIIndicators {
+  generated_at: string;
+  declarations_total: number;
+  production_total: number;
+  jobs_total: number;
+  jobs_created: number;
+  jobs_lost: number;
+  investment_fcfa: number;
+  exports_value_fcfa: number;
+  imports_value_fcfa: number;
+  trade_balance_fcfa: number;
+  energy_kwh: number;
+  stock_raw_material: number;
+  stock_finished_goods: number;
+  capacity_utilization_avg: number;
+  local_raw_material_pct_avg: number;
+  by_sector: Record<string, ONIAggregateBucket>;
+  by_province: Record<string, ONIAggregateBucket>;
+  by_period: Record<string, ONIAggregateBucket>;
+}
+
+export interface ONIInpiOperator {
+  operateur_id: string;
+  operateur: string;
+  secteur: string;
+  province: string;
+  period: string;
+  score: number;
+  breakdown: Record<string, number>;
+}
+
+export interface ONIInpi {
+  generated_at: string;
+  inpi_national: number;
+  operators: ONIInpiOperator[];
+  by_sector: Record<string, number>;
+  by_province: Record<string, number>;
+  methodology: Record<string, number>;
+}
+
+export interface ONICockpit {
+  generated_at: string;
+  national_control_center: {
+    status: string;
+    narrative: string;
+    priorities: string[];
+  };
+  indicators: ONIIndicators;
+  inpi_national: number;
+  alerts: ONIAlert[];
+  latest_declarations: ONIDeclaration[];
+}
+
+export const fetchONICockpit = (): Promise<ONICockpit> => request("/pnpi/oni/cockpit");
+export const fetchONIDeclarations = (): Promise<ONIDeclaration[]> =>
+  request("/pnpi/oni/declarations");
+export const fetchONIInpi = (): Promise<ONIInpi> => request("/pnpi/oni/inpi");
+export const fetchONIReport = (kind = "mensuel"): Promise<Record<string, unknown>> =>
+  request(`/pnpi/oni/reports/${encodeURIComponent(kind)}`);
+
+// ---------------------------------------------------------------------------
+// Filières industrielles / chaînes de valeur
+// ---------------------------------------------------------------------------
+
+export interface FiliereStrategique {
+  id: string;
+  code: string;
+  nom: string;
+  description: string | null;
+  responsable: string | null;
+  statut: string;
+  vision: string | null;
+  objectifs: string[];
+  contraintes: string[];
+  opportunites: string[];
+  maturite_cible: number;
+  created_by: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface FiliereIndicator {
+  id: string;
+  filiere_id: string;
+  code: string;
+  libelle: string;
+  definition: string | null;
+  formule: string | null;
+  source: string | null;
+  unite: string | null;
+  periodicite: string;
+  niveau_diffusion: string;
+  responsable: string | null;
+  valeur_courante: number | null;
+  valeur_cible: number | null;
+  qualite_donnee: string;
+  methode_version: string;
+  updated_at: string | null;
+}
+
+export interface FiliereAction {
+  id: string;
+  filiere_id: string;
+  intitule: string;
+  objectif: string | null;
+  responsable: string | null;
+  partenaires: string[];
+  echeance: string | null;
+  statut: string;
+  indicateurs: string[];
+  risques: string[];
+  progression_pct: number;
+  created_by: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface FiliereRisk {
+  id: string;
+  filiere_id: string;
+  titre: string;
+  categorie: string;
+  probabilite: number;
+  impact: number;
+  criticite: string;
+  description: string | null;
+  mitigation: string | null;
+  statut: string;
+  created_by: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface FiliereMaturity {
+  score: number;
+  cible: number;
+  breakdown: Record<string, number>;
+}
+
+export interface FiliereSouverainete {
+  score: number;
+  niveau: string;
+  breakdown: Record<string, number>;
+}
+
+export interface FiliereRecommendation {
+  priorite: string;
+  titre: string;
+  action: string;
+  impact: string;
+}
+
+export interface FiliereValueChainStage {
+  key: string;
+  label: string;
+  enjeu: string;
+  score: number;
+  status: string;
+}
+
+export interface FiliereValueChain {
+  stages: FiliereValueChainStage[];
+  bottlenecks: FiliereValueChainStage[];
+  opportunities: string[];
+  depth_score: number;
+}
+
+export interface FiliereCockpitItem extends FiliereStrategique {
+  stats: Record<string, number | string[]>;
+  maturite: FiliereMaturity;
+  souverainete: FiliereSouverainete;
+  chaine_valeur: FiliereValueChain;
+  recommendations: FiliereRecommendation[];
+  risques_ouverts: number;
+  actions_en_cours: number;
+}
+
+export interface FiliereCockpit {
+  generated_at: string;
+  maturite_nationale: number;
+  souverainete_nationale: number;
+  profondeur_chaine_nationale: number;
+  stats: Record<string, number>;
+  filieres: FiliereCockpitItem[];
+  alertes: FiliereRisk[];
+  goulets_chaine: Array<{ filiere: string; key: string; label: string; enjeu: string; score: number; status: string }>;
+  opportunites_chaine: Array<{ filiere: string; opportunity: string }>;
+  territoires: Array<{ province: string; filieres: number }>;
+  lecture_executive: string;
+}
+
+export interface FiliereDetail extends FiliereStrategique {
+  stats: Record<string, number | string[]>;
+  maturite: FiliereMaturity;
+  souverainete: FiliereSouverainete;
+  chaine_valeur: FiliereValueChain;
+  recommendations: FiliereRecommendation[];
+  indicators: FiliereIndicator[];
+  actions: FiliereAction[];
+  risks: FiliereRisk[];
+}
+
+export const fetchFilieresCockpit = (): Promise<FiliereCockpit> =>
+  request("/pnpi/filieres/cockpit");
+export const fetchFilieres = (): Promise<FiliereStrategique[]> => request("/pnpi/filieres");
+export const fetchFiliereDetail = (id: string): Promise<FiliereDetail> =>
+  request(`/pnpi/filieres/${encodeURIComponent(id)}`);
+export const fetchFilieresReport = (): Promise<Record<string, unknown>> =>
+  request("/pnpi/filieres/reports/national");
+
+// ---------------------------------------------------------------------------
+// Innovation industrielle / Industrie 4.0
+// ---------------------------------------------------------------------------
+
+export interface InnovationTechnology {
+  id: string;
+  code: string;
+  nom: string;
+  domaine: string;
+  description: string | null;
+  niveau_maturite: number;
+  secteur_application: string | null;
+  cout_relatif: string | null;
+  complexite: string | null;
+  competences_requises: string[];
+  infrastructures_requises: string[];
+  adoption_nationale_pct: number;
+}
+
+export interface InnovationActor {
+  id: string;
+  nom: string;
+  type_organisation: string;
+  domaines_expertise: string[];
+  capacites_techniques: string[];
+  secteurs_couverts: string[];
+  equipements_disponibles: string[];
+  province: string | null;
+  contact: string | null;
+  statut: string;
+}
+
+export interface InnovationProject {
+  id: string;
+  titre: string;
+  operateur_id: string | null;
+  operateur_nom: string | null;
+  technologie_id: string | null;
+  technologie_nom: string | null;
+  filiere_code: string | null;
+  description: string | null;
+  objectif: string | null;
+  niveau_maturite: number;
+  budget_fcfa: number;
+  partenaires: string[];
+  besoins_financement: string | null;
+  resultats_attendus: string | null;
+  risques: string[];
+  statut: string;
+}
+
+export interface InnovationCockpit {
+  generated_at: string;
+  maturite_numerique: {
+    score: number;
+    niveau: string;
+    capacite_utilisee_pct: number;
+    breakdown: Record<string, number>;
+  };
+  diagnostic_industrie40: {
+    score: number;
+    dimensions: Array<{ key: string; label: string; description: string; score: number; status: string }>;
+    competences_critiques: Array<{ competence: string; count: number }>;
+    capacites_acteurs: Array<{ capacite: string; count: number }>;
+    roadmap: Array<{ phase: string; horizon: string; focus: string; status: string }>;
+  };
+  portefeuille_rd: {
+    status_counts: Array<{ status: string; count: number }>;
+    maturity_counts: Array<{ niveau: number; count: number }>;
+    by_filiere: Array<{ filiere: string; count: number }>;
+    total_budget_fcfa: number;
+    protected_candidates: Array<{
+      project: string;
+      technology: string | null;
+      filiere: string | null;
+      orientation: string;
+    }>;
+  };
+  stats: Record<string, number>;
+  technologies: InnovationTechnology[];
+  projects: InnovationProject[];
+  actors: InnovationActor[];
+  domaines: Array<{ domaine: string; count: number }>;
+  secteurs: Array<{ secteur: string; count: number }>;
+  territoires: Array<{ province: string; acteurs_et_operateurs: number }>;
+  recommendations: Array<{ priorite: string; titre: string; action: string }>;
+  institutional_links: Array<{ institution: string; role: string; usage: string; status: string }>;
+  lecture_executive: string;
+}
+
+export const fetchInnovationCockpit = (): Promise<InnovationCockpit> =>
+  request("/pnpi/innovation/cockpit");
+
+// ---------------------------------------------------------------------------
+// Capital humain industriel
+// ---------------------------------------------------------------------------
+
+export interface CapitalHumainCockpit {
+  generated_at: string;
+  maturite_capital_humain: {
+    score: number;
+    niveau: string;
+    breakdown: Record<string, number>;
+  };
+  stats: Record<string, number>;
+  secteurs: Array<{
+    secteur: string;
+    operateurs: number;
+    emplois_declares: number;
+    pression_competences: number;
+  }>;
+  territoires: Array<{
+    province: string;
+    operateurs: number;
+    emplois_declares: number;
+  }>;
+  metiers_en_tension: Array<{
+    competence: string;
+    occurrences: number;
+    niveau_tension: string;
+    source: string;
+  }>;
+  familles_competences: Array<{ famille: string; count: number }>;
+  competences_par_technologie: Array<{
+    technologie: string;
+    secteur: string;
+    niveau_maturite: number;
+    adoption_pct: number;
+    competences: string[];
+    familles: string[];
+  }>;
+  pipeline_emplois: Array<{ stage: string; value: number; description: string }>;
+  matrice_formation: Array<{
+    famille: string;
+    besoin: number;
+    offre_identifiee: number;
+    gap: number;
+    priorite: string;
+  }>;
+  actions_ministerielles: Array<{
+    niveau: string;
+    horizon: string;
+    action: string;
+    responsable: string;
+  }>;
+  parcours_formation: Array<{
+    role: string;
+    titre: string;
+    modules: string[];
+    objectif: string;
+  }>;
+  recommendations: Array<{
+    priorite: string;
+    titre: string;
+    action: string;
+  }>;
+  lecture_executive: string;
+  source_note: string;
+}
+
+export const fetchCapitalHumainCockpit = (): Promise<CapitalHumainCockpit> =>
+  request("/pnpi/capital-humain/cockpit");
+
+// ---------------------------------------------------------------------------
+// Industrie durable
+// ---------------------------------------------------------------------------
+
+export interface DurabiliteCockpit {
+  generated_at: string;
+  maturite_durable: {
+    score: number;
+    niveau: string;
+    breakdown: Record<string, number>;
+  };
+  stats: Record<string, number>;
+  secteurs: Array<{
+    secteur: string;
+    atis_approuves: number;
+    energie_kwh: number;
+    production: number;
+    intensite_energie: number;
+    co2_estime_tonnes: number;
+    matiere_importee_pct: number;
+  }>;
+  profils_sectoriels: Array<{
+    secteur: string;
+    priorite: string;
+    score_preparation: number;
+    pression_carbone: number;
+    leviers: string[];
+    risques_transition: string[];
+  }>;
+  territoires: Array<{
+    province: string;
+    operateurs: number;
+    niveau_risque: string;
+    risques: string[];
+  }>;
+  ressources: {
+    par_type: Array<{ type: string; count: number }>;
+    energie: number;
+    matieres: number;
+  };
+  taxonomie_durable: Array<{
+    axe: string;
+    couverture: number;
+    investissements: number;
+    ressources: number;
+    statut: string;
+  }>;
+  opportunites_circularite: Array<{
+    operateur: string;
+    secteur: string;
+    province: string;
+    opportunite: string;
+    ressources_cibles: string[];
+    gain_potentiel: string;
+    priorite: string;
+  }>;
+  securite_ressources: Array<{
+    type: string;
+    ressources: number;
+    dependance_import_pct: number;
+    niveau_risque: string;
+  }>;
+  trajectoire_carbone: Array<{
+    horizon: string;
+    co2_tonnes: number;
+    objectif: string;
+  }>;
+  actions_ministerielles: Array<{
+    chantier: string;
+    responsable: string;
+    delai: string;
+    livrable: string;
+  }>;
+  alertes: Array<{
+    niveau: string;
+    titre: string;
+    message: string;
+  }>;
+  recommendations: Array<{
+    priorite: string;
+    titre: string;
+    action: string;
+  }>;
+  trajectoire: Array<{
+    horizon: string;
+    objectif: string;
+  }>;
+  lecture_executive: string;
+  source_note: string;
+}
+
+export const fetchDurabiliteCockpit = (): Promise<DurabiliteCockpit> =>
+  request("/pnpi/durabilite/cockpit");
+
+// ---------------------------------------------------------------------------
+// Investissements industriels & zones
+// ---------------------------------------------------------------------------
+
+export interface InvestissementsCockpit {
+  generated_at: string;
+  score_portefeuille: number;
+  stats: Record<string, number>;
+  statuts: Array<{ statut: string; count: number }>;
+  par_annee: Array<{ annee: number; count: number; montant_fcfa: number; emplois_prevus: number }>;
+  par_secteur: Array<{ secteur: string; count: number; montant_fcfa: number; emplois_prevus: number }>;
+  par_province: Array<{ province: string; count: number; montant_fcfa: number; emplois_prevus: number }>;
+  projets: Array<{
+    id: string;
+    intitule: string;
+    operateur: string;
+    secteur: string;
+    province: string;
+    montant_fcfa: number;
+    emplois_prevus: number;
+    statut: string;
+    annee: number | null;
+  }>;
+  recommendations: string[];
+  lecture_executive: string;
+}
+
+export interface ZonesCockpit {
+  generated_at: string;
+  score_zones: number;
+  stats: Record<string, number>;
+  zones: Array<{
+    province: string;
+    operateurs: number;
+    sites: number;
+    superficie_ha: number;
+    taux_occupation_proxy: number;
+    niveau_priorite: string;
+  }>;
+  energie_par_secteur: Array<{ secteur: string; energie_kwh: number }>;
+  recommendations: string[];
+  lecture_executive: string;
+}
+
+export const fetchInvestissementsCockpit = (): Promise<InvestissementsCockpit> =>
+  request("/pnpi/pilotage-actifs/investissements");
+export const fetchZonesCockpit = (): Promise<ZonesCockpit> =>
+  request("/pnpi/pilotage-actifs/zones");
+
+// ---------------------------------------------------------------------------
+// Gouvernance & qualité des données
+// ---------------------------------------------------------------------------
+
+export interface DataQualityCheck {
+  name: string;
+  description: string;
+  score: number;
+  status: "ok" | "warning" | "critical" | string;
+  domain: string;
+  impact: string;
+  action: string;
+  total: number;
+  conformes: number;
+}
+
+export interface DataQualityCockpit {
+  generated_at: string;
+  global_score: number;
+  grade: string;
+  checks: DataQualityCheck[];
+  domains: Array<{ domain: string; score: number; checks: number; status: string }>;
+  anomalies: Array<{
+    severity: string;
+    domain: string;
+    title: string;
+    detail: string;
+    count: number;
+    action: string;
+  }>;
+  priority_actions: Array<{ title: string; domain: string; score: number; action: string }>;
+  lineage: Array<{ objet: string; source: string; usage: string }>;
+  governance_principles: string[];
+  lecture_executive: string;
+  stats: Record<string, number>;
+}
+
+export const fetchDataQualityCockpit = (): Promise<DataQualityCockpit> =>
+  request("/pnpi/dashboard/data-quality");
+
+export interface DocumentsCockpit {
+  generated_at: string;
+  score_coffre: number;
+  grade: string;
+  stats: Record<string, number>;
+  scores: Array<{ label: string; score: number; status: string; description: string }>;
+  par_type: Array<{ type_document: string; count: number }>;
+  par_classification: Array<{ classification: string; count: number }>;
+  pieces_manquantes: Array<{ type_document: string; count: number }>;
+  top_uploadeurs: Array<{ username: string; count: number }>;
+  dossiers_prioritaires: Array<{
+    ati_id: string;
+    numero_ati: string;
+    operateur: string;
+    statut: string;
+    type_demande: string;
+    documents: number;
+    required: string[];
+    missing: string[];
+    preuve_verrouillee: boolean;
+  }>;
+  anomalies: Array<{ severity: string; title: string; count: number; detail: string; action: string }>;
+  principes: string[];
+  lecture_executive: string;
+}
+
+export const fetchDocumentsCockpit = (): Promise<DocumentsCockpit> =>
+  request("/pnpi/documents/cockpit");
+
+export interface OperationsCockpit {
+  generated_at: string;
+  score_exploitation: number;
+  grade: string;
+  environment: string;
+  version: string;
+  stats: Record<string, number>;
+  components: Array<{ key: string; label: string; score: number; status: string; detail: string }>;
+  alerts: Array<{ severity: string; title: string; detail: string; action: string }>;
+  runbooks: Array<{ title: string; steps: string[] }>;
+  change_pipeline: Array<{ stage: string; owner: string; status: string }>;
+  principes: string[];
+  lecture_executive: string;
+}
+
+export const fetchOperationsCockpit = (): Promise<OperationsCockpit> =>
+  request("/admin/operations/cockpit");
+
+export interface InteroperabiliteCockpit {
+  generated_at: string;
+  score_interoperabilite: number;
+  grade: string;
+  stats: Record<string, number>;
+  partners: Array<{
+    code: string;
+    name: string;
+    type: string;
+    mode: string;
+    purpose: string;
+    endpoints: string[];
+    status: string;
+    configured: boolean;
+    data_sensitivity: string;
+    legal_basis: string;
+    data_domains: string[];
+    allowed_scopes: string[];
+    owner: string;
+    readiness_score: number;
+    blockers: string[];
+    next_step: string;
+  }>;
+  api_catalog: Array<{
+    domain: string;
+    endpoint: string;
+    consumers: string[];
+    security: string;
+    data_shared: string[];
+  }>;
+  exchange_flow: Array<{ step: string; detail: string }>;
+  maturity_matrix: Array<{ dimension: string; label: string; score: number; poids: number; statut: string }>;
+  risk_register: Array<{ risque: string; niveau: string; mesure: string }>;
+  roadmap: Array<{ horizon: string; objectif: string; livrable: string }>;
+  missing_conventions: string[];
+  events_by_action: Array<{ action: string; count: number }>;
+  recent_exchanges: Array<{ id: string; timestamp: string; actor: string; action: string; target: string | null }>;
+  governance_rules: string[];
+  priority_actions: string[];
+  lecture_executive: string;
+}
+
+export const fetchInteroperabiliteCockpit = (): Promise<InteroperabiliteCockpit> =>
+  request("/integration-health/cockpit");
+
+export interface GeoCockpit {
+  generated_at: string;
+  score_sig: number;
+  grade: string;
+  stats: Record<string, number>;
+  provinces: Array<{
+    province: string;
+    label: string;
+    centroid: { lat: number; lng: number };
+    operateurs: number;
+    operateurs_geocodes: number;
+    taux_geocodage: number;
+    atis: number;
+    atis_approuves: number;
+    inspections: number;
+    non_conformites: number;
+    taux_non_conformite: number;
+    sites: number;
+    superficie_ha: number;
+    investissements_fcfa: number;
+    production_declaree: number;
+    gap_inspection: number;
+    pression_industrielle: number;
+    priorite: string;
+  }>;
+  clusters: Array<{ province: string; label: string; lat: number; lng: number; weight: number; risk: number }>;
+  layers: Array<{ name: string; status: string; source: string; count: number }>;
+  exports: Array<{ label: string; href: string }>;
+  priority_actions: string[];
+  lecture_executive: string;
+}
+
+export const fetchGeoCockpit = (): Promise<GeoCockpit> => request("/geo/cockpit");
+
+export interface AnalyticsCockpit {
+  generated_at: string;
+  score_analytique: number;
+  grade: string;
+  stats: Record<string, number>;
+  scores: Array<{ label: string; score: number; status: string }>;
+  data_sources: Array<{ name: string; records: number; freshness: string; usage: string }>;
+  analytics_layers: Array<{ layer: string; status: string; score: number; detail: string }>;
+  insight_cards: Array<{ title: string; value: string; tone: string; detail: string }>;
+  top_sectors: Array<{
+    secteur: string;
+    score: number;
+    operateurs: number;
+    atis: number;
+    approuves: number;
+    production: number;
+    investissement_fcfa: number;
+  }>;
+  top_provinces: Array<{ province: string; operateurs: number; atis: number; inspections: number; score: number }>;
+  monthly_trend: Array<{ month: string; count: number }>;
+  decision_questions: string[];
+  recommendations: string[];
+  lecture_executive: string;
+}
+
+export const fetchAnalyticsCockpit = (): Promise<AnalyticsCockpit> =>
+  request("/pnpi/dashboard/analytics-cockpit");
+
+export interface PortalCockpit {
+  generated_at: string;
+  score_portail: number;
+  grade: string;
+  stats: Record<string, number>;
+  role_counts: Array<{ role: string; users: number }>;
+  role_journeys: Array<{
+    role: string;
+    entry: string;
+    mission: string;
+    coverage: number;
+    highlights: string[];
+  }>;
+  ux_capabilities: Array<{ name: string; score: number; status: string; detail: string }>;
+  channels: Array<{ channel: string; status: string; usage: string }>;
+  institutional_routes: Array<{ label: string; href: string; audience: string }>;
+  recommendations: string[];
+  lecture_executive: string;
+}
+
+export const fetchPortalCockpit = (): Promise<PortalCockpit> =>
+  request("/pnpi/dashboard/portal-cockpit");
 
 // ---------------------------------------------------------------------------
 // Documents dossier ATI

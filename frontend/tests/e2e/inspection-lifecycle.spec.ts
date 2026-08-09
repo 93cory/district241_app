@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { e2ePasswords } from "./helpers/credentials";
 
 const BASE = "http://localhost:3000";
 
@@ -7,16 +8,16 @@ test.describe("Inspection Lifecycle", () => {
     // Login as inspecteur
     await page.goto(`${BASE}/connexion`);
     await page.fill('input[name="username"]', "inspecteur");
-    await page.fill('input[name="password"]', "Demo1234!@#$");
+    await page.fill('input[name="password"]', e2ePasswords.inspecteur);
     await page.click('button[type="submit"]');
-    await page.waitForURL(/\/pnpi/);
+    await page.waitForURL(/\/(inspecteur|pnpi)/);
   });
 
   test("inspecteur can view inspections list", async ({ page }) => {
     await page.goto(`${BASE}/pnpi/inspections`);
     await expect(page.locator("h1, h2").first()).toContainText(/inspection/i);
-    // Table should be visible
-    await expect(page.locator("table, .table-card").first()).toBeVisible();
+    // La liste actuelle est rendue en cartes cliquables plutôt qu'en table.
+    await expect(page.locator("a[href*='/pnpi/inspections/']").first()).toBeVisible();
   });
 
   test("inspecteur can view inspection detail", async ({ page }) => {

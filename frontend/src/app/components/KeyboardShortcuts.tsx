@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 interface Shortcut {
@@ -13,20 +13,23 @@ export function KeyboardShortcuts() {
   const router = useRouter();
   const [showHelp, setShowHelp] = useState(false);
 
-  const shortcuts: Shortcut[] = [
-    { keys: "g d", label: "Dashboard", action: () => router.push("/pnpi") },
-    { keys: "g a", label: "ATI", action: () => router.push("/pnpi/ati") },
-    { keys: "g o", label: "Operateurs", action: () => router.push("/pnpi/operateurs") },
-    { keys: "g i", label: "Inspections", action: () => router.push("/pnpi/inspections") },
-    { keys: "g m", label: "Messages", action: () => router.push("/pnpi/messages") },
-    { keys: "g k", label: "Kanban", action: () => router.push("/pnpi/kanban") },
-    { keys: "g c", label: "Calendrier", action: () => router.push("/pnpi/calendar") },
-    { keys: "g s", label: "Recherche", action: () => router.push("/pnpi/search") },
-    { keys: "g n", label: "Notes", action: () => router.push("/pnpi/notes") },
-    { keys: "g p", label: "Profil", action: () => router.push("/profil") },
-    { keys: "g e", label: "Synthese", action: () => router.push("/pnpi/executive") },
-    { keys: "?", label: "Afficher les raccourcis", action: () => setShowHelp(true) },
-  ];
+  const shortcuts: Shortcut[] = useMemo(
+    () => [
+      { keys: "g d", label: "Dashboard", action: () => router.push("/pnpi") },
+      { keys: "g a", label: "ATI", action: () => router.push("/pnpi/ati") },
+      { keys: "g o", label: "Operateurs", action: () => router.push("/pnpi/operateurs") },
+      { keys: "g i", label: "Inspections", action: () => router.push("/pnpi/inspections") },
+      { keys: "g m", label: "Messages", action: () => router.push("/pnpi/messages") },
+      { keys: "g k", label: "Kanban", action: () => router.push("/pnpi/kanban") },
+      { keys: "g c", label: "Calendrier", action: () => router.push("/pnpi/calendar") },
+      { keys: "g s", label: "Recherche", action: () => router.push("/pnpi/search") },
+      { keys: "g n", label: "Notes", action: () => router.push("/pnpi/notes") },
+      { keys: "g p", label: "Profil", action: () => router.push("/profil") },
+      { keys: "g e", label: "Synthese", action: () => router.push("/pnpi/executive") },
+      { keys: "?", label: "Afficher les raccourcis", action: () => setShowHelp(true) },
+    ],
+    [router],
+  );
 
   const [buffer, setBuffer] = useState("");
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
@@ -64,7 +67,7 @@ export function KeyboardShortcuts() {
         if (timer) clearTimeout(timer);
       }
     },
-    [buffer, timer, shortcuts, router],
+    [buffer, timer, shortcuts],
   );
 
   useEffect(() => {

@@ -1,256 +1,314 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-interface Slide {
+type Kpis = {
+  atis_total?: number;
+  atis_en_cours?: number;
+  atis_en_retard?: number;
+  operateurs_actifs?: number;
+};
+
+type Slide = {
+  section: string;
   title: string;
-  content: React.ReactNode;
+  statement: string;
+  points?: readonly string[];
+  href?: string;
+  action?: string;
+  tone?: "opening" | "decision";
+  roles?: readonly {
+    name: string;
+    responsibility: string;
+  }[];
+};
+
+const SLIDES: readonly Slide[] = [
+  {
+    section: "Plateforme nationale de pilotage industriel · PNPI",
+    title: "Voir l’industrie. Décider avec méthode. Rendre compte.",
+    statement: "Une plateforme nationale pour relier la décision publique, les procédures industrielles et la réalité du terrain.",
+    tone: "opening",
+  },
+  {
+    section: "L’enjeu politique",
+    title: "Piloter sans vision consolidée, c’est décider trop tard.",
+    statement: "Lorsque dossiers, données opérateurs et constats terrain restent dispersés, les priorités nationales sont plus difficiles à lire, à arbitrer et à suivre.",
+    points: ["Une information fragmentée", "Des alertes tardives", "Une responsabilité difficile à retracer"],
+  },
+  {
+    section: "La vision",
+    title: "La PNPI transforme des données dispersées en capacité d’action.",
+    statement: "Un même socle relie le Cabinet, les directions, les contrôleurs et les opérateurs, tout en préservant les responsabilités de chacun.",
+    points: ["Voir : une lecture consolidée", "Agir : des procédures maîtrisées", "Rendre compte : des décisions traçables"],
+    href: "/pnpi",
+    action: "Voir la vision nationale",
+  },
+  {
+    section: "Gouvernance des usages",
+    title: "Une plateforme, six responsabilités, une même chaîne de confiance.",
+    statement: "Chacun voit et agit selon sa responsabilité. Ensemble, ces actions alimentent une chaîne nationale traçable, du dépôt jusqu’à la décision publique.",
+    roles: [
+      { name: "Opérateur", responsibility: "Dépose, complète et suit ses dossiers" },
+      { name: "Instructeur", responsibility: "Vérifie, instruit et demande les compléments" },
+      { name: "Inspecteur", responsibility: "Contrôle sur le terrain et documente les constats" },
+      { name: "Directeur", responsibility: "Répartit, supervise et arbitre" },
+      { name: "Ministre", responsibility: "Voit, priorise et décide" },
+      { name: "Administrateur", responsibility: "Gère comptes, rôles, workflows, sécurité et audit" },
+    ],
+    href: "/pnpi/portail",
+    action: "Voir les parcours utilisateurs",
+  },
+  {
+    section: "Démontrable aujourd’hui · Cockpit ministériel",
+    title: "Le Ministre voit l’essentiel et remonte jusqu’à la preuve.",
+    statement: "Le cockpit rassemble les indicateurs disponibles, fait apparaître les alertes et permet de revenir au dossier qui exige une action.",
+    href: "/pnpi",
+    action: "Voir le cockpit",
+  },
+  {
+    section: "À consolider pendant le pilote · Registre industriel national",
+    title: "Une seule référence pour connaître chaque opérateur industriel.",
+    statement: "Identité, sites, activités, produits, documents et historique sont réunis autour d’une fiche de référence appelée à être fiabilisée avec les métiers.",
+    points: ["Unicité de l’opérateur", "Lecture par site et activité", "Historique partagé et maîtrisé"],
+    href: "/pnpi/operateurs",
+    action: "Voir le registre industriel",
+  },
+  {
+    section: "Démontrable aujourd’hui · Agrément technique industriel",
+    title: "Chaque ATI devient lisible, suivi et reconstituable.",
+    statement: "Dépôt, recevabilité, instruction, compléments, validation et décision : le dossier progresse sans rupture de chaîne ni étape invisible.",
+    points: ["Un statut compréhensible", "Des responsabilités explicites", "Un historique reconstituable"],
+    href: "/pnpi/ati/processing-center",
+    action: "Voir le parcours ATI",
+  },
+  {
+    section: "À consolider pendant le pilote · Contrôle terrain",
+    title: "La décision administrative reste reliée à la réalité du terrain.",
+    statement: "Missions, constats, non-conformités et actions correctives s’inscrivent dans une même continuité de contrôle. L’usage mobile et hors connexion sera éprouvé pendant le pilote.",
+    points: ["Planifier la mission", "Structurer le constat", "Suivre la mise en conformité"],
+    href: "/pnpi/inspections/control-center",
+    action: "Voir le contrôle terrain",
+  },
+  {
+    section: "À consolider pendant le pilote · Observatoire national de l’industrie",
+    title: "Les dossiers deviennent une lecture de la politique industrielle.",
+    statement: "L’ONI transforme les données officiellement validées en lectures territoriales et sectorielles utiles au pilotage.",
+    points: ["Comparer les territoires", "Lire les dynamiques par filière", "Identifier les concentrations et alertes"],
+    href: "/pnpi/oni",
+    action: "Voir l’Observatoire",
+  },
+  {
+    section: "À consolider pendant le pilote · Coordination institutionnelle",
+    title: "Mieux coopérer, sans confondre les mandats.",
+    statement: "La PNPI prépare des échanges structurés et traçables. Chaque institution conserve ses compétences, ses validations et la responsabilité de ses décisions.",
+    points: ["Des rôles clairement séparés", "Des API partenaires à cadrer", "Aucun raccordement réel présumé"],
+    href: "/pnpi/institutions",
+    action: "Voir la coordination",
+  },
+  {
+    section: "Bénéfice ministériel",
+    title: "Voir plus tôt. Arbitrer plus vite. Exiger des résultats.",
+    statement: "La PNPI donne au Ministre une chaîne de confiance entre l’indicateur national, l’action des services et la preuve opérationnelle.",
+    points: ["Prioriser sur des faits", "Suivre l’exécution", "Rendre compte avec des preuves"],
+  },
+  {
+    section: "Trajectoire maîtrisée",
+    title: "Le futur se construit sur un socle fiable, pas sur une promesse.",
+    statement: "La généralisation n’intervient qu’après validation des usages, de la qualité des données, de la sécurité et de la gouvernance.",
+    points: ["Aujourd’hui : un socle démontrable", "Pilote : mobile hors connexion et API partenaires à consolider", "Perspective : automatisation et analyses avancées"],
+  },
+  {
+    section: "Perspective stratégique · Intelligence artificielle",
+    title: "L’IA assistera l’administration ; elle ne décidera jamais à sa place.",
+    statement: "À terme, des fonctions d’IA et d’OCR pourront détecter des incohérences, résumer un dossier et signaler un risque. Elles ne signeront, ne sanctionneront et ne prendront aucune décision administrative.",
+    points: ["Détecter et vérifier", "Résumer et alerter", "Décision humaine, habilitée et tracée"],
+    href: "/pnpi/predictions",
+    action: "Voir les analyses exploratoires",
+  },
+  {
+    section: "Souveraineté et sécurité",
+    title: "La confiance se décide avant la mise en production.",
+    statement: "Habilitations, journalisation et protection des données forment le socle actuel. Hébergement, continuité, homologation et gouvernance de l’IA devront être formellement arrêtés.",
+    points: ["Accès selon la responsabilité", "Actions sensibles traçables", "Déploiement soumis à validation de sécurité"],
+    href: "/pnpi/securite",
+    action: "Voir les garanties",
+  },
+  {
+    section: "Décision sollicitée",
+    title: "Autoriser un pilote pour transformer la preuve en capacité nationale.",
+    statement: "Valider le principe du pilote, désigner un sponsor et les référents métier, puis mandater l’atelier qui arrêtera le périmètre, les critères de succès et le calendrier.",
+    points: ["Valider le principe", "Désigner la gouvernance", "Engager l’atelier de cadrage"],
+    tone: "decision",
+  },
+];
+
+function safeNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value.toLocaleString("fr-FR") : "—";
 }
 
 export default function PresentationPage() {
-  const [kpis, setKpis] = useState<any>({});
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [active, setActive] = useState(0);
+  const [kpis, setKpis] = useState<Kpis>({});
+  const [kpiStatus, setKpiStatus] = useState<"loading" | "ready" | "partial" | "unavailable">("loading");
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
+
+  const goTo = useCallback((index: number) => {
+    setActive(Math.max(0, Math.min(SLIDES.length - 1, index)));
+  }, []);
 
   useEffect(() => {
     fetch("/api/pnpi/dashboard/kpis")
-      .then((r) => r.json())
-      .then(setKpis)
-      .catch(() => {});
+      .then((response) => {
+        if (!response.ok) throw new Error("Indicateurs indisponibles");
+        return response.json();
+      })
+      .then((data: unknown) => {
+        if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Format invalide");
+        const received = data as Kpis;
+        const values = [received.atis_total, received.atis_en_cours, received.atis_en_retard, received.operateurs_actifs];
+        const available = values.filter((value) => typeof value === "number" && Number.isFinite(value)).length;
+        setKpis(received);
+        setKpiStatus(available === values.length ? "ready" : available > 0 ? "partial" : "unavailable");
+      })
+      .catch(() => setKpiStatus("unavailable"));
   }, []);
 
-  const slides: Slide[] = [
-    {
-      title: "Plateforme Nationale de la Politique Industrielle",
-      content: (
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 14, opacity: 0.7, marginBottom: 12 }}>
-            Ministere de l&apos;Industrie et de la Transformation Locale
-          </div>
-          <div
-            style={{
-              display: "inline-block",
-              padding: "6px 20px",
-              borderRadius: 20,
-              background: "linear-gradient(90deg, #009E60, #FCD116, #003DA5)",
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 1,
-            }}
-          >
-            REPUBLIQUE GABONAISE
-          </div>
-          <div style={{ fontSize: 48, fontWeight: 800, margin: "24px 0 8px" }}>PNPI</div>
-          <div style={{ fontSize: 16, opacity: 0.8 }}>
-            Rapport d&apos;activite ·{" "}
-            {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Indicateurs Cles",
-      content: (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-          {[
-            { label: "ATIs total", value: kpis.atis_total || 0, color: "#0c7eb4" },
-            { label: "Approuves", value: kpis.atis_approuves_ce_mois || 0, color: "#006233" },
-            { label: "En retard", value: kpis.atis_en_retard || 0, color: "#b42318" },
-            { label: "En cours", value: kpis.atis_en_cours || 0, color: "#d97706" },
-            { label: "Taux SLA", value: `${kpis.taux_sla_pct || 0}%`, color: "#7c3aed" },
-            { label: "Operateurs actifs", value: kpis.operateurs_actifs || 0, color: "#0c7eb4" },
-          ].map((kpi) => (
-            <div
-              key={kpi.label}
-              style={{
-                padding: "20px 24px",
-                borderRadius: 16,
-                background: `${kpi.color}12`,
-                border: `2px solid ${kpi.color}30`,
-              }}
-            >
-              <div style={{ fontSize: 48, fontWeight: 800, color: kpi.color }}>{kpi.value}</div>
-              <div style={{ fontSize: 16, fontWeight: 600, opacity: 0.8 }}>{kpi.label}</div>
-            </div>
-          ))}
-        </div>
-      ),
-    },
-    {
-      title: "Performance SLA",
-      content: (
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 80, fontWeight: 800, color: "#006233" }}>
-            {kpis.taux_sla_pct || 0}%
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 600, opacity: 0.8, marginBottom: 20 }}>
-            Taux de respect du SLA
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 32 }}>
-            <div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: "#b42318" }}>
-                {kpis.atis_en_retard || 0}
-              </div>
-              <div style={{ fontSize: 14, opacity: 0.7 }}>Depassements</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: "#d97706" }}>
-                {kpis.delai_moyen_jours || 0}j
-              </div>
-              <div style={{ fontSize: 14, opacity: 0.7 }}>Delai moyen</div>
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Taux de Conformite",
-      content: (
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 80, fontWeight: 800, color: "#7c3aed" }}>
-            {kpis.taux_conformite_pct || 0}%
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 600, opacity: 0.8, marginBottom: 20 }}>
-            Taux de conformite des operateurs inspectes
-          </div>
-          <div style={{ fontSize: 14, opacity: 0.6 }}>
-            Base sur la derniere inspection de chaque operateur
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Merci",
-      content: (
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>&#127468;&#127462;</div>
-          <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Questions ?</div>
-          <div style={{ fontSize: 16, opacity: 0.7 }}>
-            pnpi-gabon.ga · Plateforme Nationale de la Politique Industrielle
-          </div>
-        </div>
-      ),
-    },
-  ];
-
-  const next = useCallback(
-    () => setCurrentSlide((s) => Math.min(s + 1, slides.length - 1)),
-    [slides.length],
-  );
-  const prev = useCallback(() => setCurrentSlide((s) => Math.max(s - 1, 0)), []);
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(document.fullscreenElement === stageRef.current);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === " ") next();
-      if (e.key === "ArrowLeft") prev();
-      if (e.key === "Escape") {
-        if (document.fullscreenElement) document.exitFullscreen();
-        setIsFullscreen(false);
+    const handleKey = (event: KeyboardEvent) => {
+      if ((event.target as HTMLElement | null)?.matches("a, button, input, textarea, select")) return;
+      if (["ArrowRight", "PageDown", " "].includes(event.key)) {
+        event.preventDefault();
+        goTo(active + 1);
       }
-      if (e.key === "f" || e.key === "F") {
-        document.documentElement.requestFullscreen?.();
-        setIsFullscreen(true);
+      if (["ArrowLeft", "PageUp"].includes(event.key)) {
+        event.preventDefault();
+        goTo(active - 1);
       }
+      if (event.key === "Home") goTo(0);
+      if (event.key === "End") goTo(SLIDES.length - 1);
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [next, prev]);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [active, goTo]);
 
-  const slide = slides[currentSlide];
+  useEffect(() => {
+    titleRef.current?.focus({ preventScroll: true });
+  }, [active]);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await stageRef.current?.requestFullscreen();
+    } catch {
+      setIsFullscreen(document.fullscreenElement === stageRef.current);
+    }
+  };
+
+  const slide = SLIDES[active];
+  const isCockpit = slide.section.includes("Cockpit ministériel");
+  const kpiCards = [
+    ["ATI suivies", kpis.atis_total],
+    ["Dossiers en cours", kpis.atis_en_cours],
+    ["Alertes de délai", kpis.atis_en_retard],
+    ["Opérateurs actifs", kpis.operateurs_actifs],
+  ] as const;
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #051B36 0%, #0C7EB4 50%, #006233 100%)",
-        color: "#fff",
-        display: "flex",
-        flexDirection: "column",
-        fontFamily: "Manrope, sans-serif",
-      }}
-    >
-      {/* Slide */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: "40px 60px",
-          maxWidth: 1000,
-          margin: "0 auto",
-          width: "100%",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: 32,
-            fontWeight: 800,
-            marginBottom: 32,
-            textAlign: "center",
-          }}
-        >
-          {slide.title}
-        </h2>
-        <div style={{ width: "100%" }}>{slide.content}</div>
-      </div>
-
-      {/* Controls */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "12px 32px",
-          background: "rgba(0,0,0,0.2)",
-        }}
-      >
-        <button
-          onClick={prev}
-          disabled={currentSlide === 0}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#fff",
-            fontSize: 20,
-            cursor: "pointer",
-            opacity: currentSlide === 0 ? 0.3 : 1,
-          }}
-        >
-          &#9664; Precedent
-        </button>
-        <div style={{ display: "flex", gap: 6 }}>
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentSlide(i)}
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                border: "none",
-                background: i === currentSlide ? "#fff" : "rgba(255, 255, 255, 0.72)",
-                cursor: "pointer",
-              }}
-            />
-          ))}
+    <main ref={stageRef} className={`demo-ministerielle demo-ministerielle--${slide.tone ?? "default"}`}>
+      <div className="demo-ministerielle-tricolore" aria-hidden="true" />
+      <header className="demo-ministerielle-topbar">
+        <Link href="/pnpi" className="demo-ministerielle-brand" aria-label="Retour à la PNPI">
+          <span>République Gabonaise</span>
+          <strong>PNPI</strong>
+        </Link>
+        <div className="demo-ministerielle-tools">
+          <span aria-live="polite">{String(active + 1).padStart(2, "0")} / {SLIDES.length}</span>
+          <button type="button" onClick={toggleFullscreen} aria-label={isFullscreen ? "Quitter le plein écran" : "Entrer en plein écran"}>
+            {isFullscreen ? "Quitter le plein écran" : "Entrer en plein écran"}
+          </button>
         </div>
-        <button
-          onClick={next}
-          disabled={currentSlide === slides.length - 1}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#fff",
-            fontSize: 20,
-            cursor: "pointer",
-            opacity: currentSlide === slides.length - 1 ? 0.3 : 1,
-          }}
-        >
-          Suivant &#9654;
-        </button>
-      </div>
-    </div>
+      </header>
+
+      <section className="demo-ministerielle-slide" aria-labelledby="demo-slide-title">
+        <div className="demo-ministerielle-copy">
+          <p className="demo-ministerielle-section">{slide.section}</p>
+          <h1 id="demo-slide-title" ref={titleRef} tabIndex={-1}>{slide.title}</h1>
+          <p className="demo-ministerielle-statement">{slide.statement}</p>
+
+          {isCockpit && (
+            <div className="demo-ministerielle-kpis" aria-label="Indicateurs du cockpit national">
+              {kpiCards.map(([label, value]) => (
+                <article key={label}>
+                  <strong>{kpiStatus === "loading" ? "…" : safeNumber(value)}</strong>
+                  <span>{label}</span>
+                </article>
+              ))}
+              <p className="demo-ministerielle-data-note">
+                {kpiStatus === "ready"
+                  ? "Données disponibles dans l’environnement de démonstration."
+                  : kpiStatus === "partial"
+                    ? "Données partielles dans l’environnement de démonstration — les valeurs absentes ne sont pas extrapolées."
+                    : kpiStatus === "loading"
+                      ? "Chargement des données de démonstration…"
+                      : "Données de démonstration indisponibles — aucune valeur n’est extrapolée."}
+              </p>
+            </div>
+          )}
+
+          {slide.points && (
+            <ul className="demo-ministerielle-points">
+              {slide.points.map((point, index) => <li key={point}><span>{String(index + 1).padStart(2, "0")}</span>{point}</li>)}
+            </ul>
+          )}
+
+          {slide.roles && (
+            <ol className="demo-ministerielle-role-chain" aria-label="Chaîne des responsabilités de la PNPI">
+              {slide.roles.map((role, index) => (
+                <li key={role.name}>
+                  <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
+                  <div>
+                    <strong>{role.name}</strong>
+                    <p>{role.responsibility}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          {slide.href && slide.action && (
+            <Link className="demo-ministerielle-demo-link" href={slide.href} target="_blank" rel="noreferrer">
+              {slide.action}<span aria-hidden="true">↗</span>
+            </Link>
+          )}
+        </div>
+        <div className="demo-ministerielle-mark" aria-hidden="true">
+          <span>{String(active + 1).padStart(2, "0")}</span>
+          <i />
+        </div>
+      </section>
+
+      <footer className="demo-ministerielle-footer">
+        <nav className="demo-ministerielle-dots" aria-label="Sommaire de la présentation">
+          {SLIDES.map((item, index) => (
+            <button key={item.title} type="button" onClick={() => goTo(index)} className={index === active ? "is-active" : ""} aria-current={index === active ? "step" : undefined} aria-label={`${index + 1}. ${item.section}`} />
+          ))}
+        </nav>
+        <div className="demo-ministerielle-nav">
+          <button type="button" onClick={() => goTo(active - 1)} disabled={active === 0}>Précédent</button>
+          <button type="button" className="is-primary" onClick={() => goTo(active + 1)} disabled={active === SLIDES.length - 1}>Suivant</button>
+        </div>
+      </footer>
+      <div className="demo-ministerielle-progress" aria-hidden="true"><span style={{ width: `${((active + 1) / SLIDES.length) * 100}%` }} /></div>
+    </main>
   );
 }
