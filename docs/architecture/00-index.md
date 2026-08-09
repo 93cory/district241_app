@@ -37,6 +37,8 @@ modèle financier.
 | ADR-003 | `adr-003-hebergement-souverain-aninf.md` | Hébergement souverain ANINF | Accepté |
 | ADR-004 | `adr-004-multi-tenant-cemac.md` | Stratégie multi-tenant CEMAC (instance dédiée) | Proposé |
 | ADR-005 | `adr-005-signature-electronique-qualifiee.md` | Signature électronique qualifiée et autorité de certification | Proposé |
+| Contexte | `master-context.md` | Contexte maître consolidé du Livre Blanc et des décisions PNPI | Vivant |
+| FAM | `fam-implementation-matrix.md` | Matrice domaines métier ↔ couverture applicative ↔ priorité démo | Vivant |
 | Dette | `dette-technique.md` | Backlog dette chiffré en jours-homme | Vivant |
 | Cible | `cible-12-mois.md` | Architecture cible à 12 mois | Vivant |
 | Plan | `plan-mise-en-prod-j0-j90.md` | Calendrier de mise en production J0–J+90 | Vivant |
