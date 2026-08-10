@@ -18,6 +18,7 @@ GeoAlchemy2>=0.15.0
 pyotp>=2.9.0
 boto3>=1.34
 hvac>=2.1  # client HashiCorp Vault (dette D-012, cf core/secrets.py) — optionnel a l'usage, requis pour l'activer
+sentry-sdk>=2.0  # monitoring d'erreurs Sentry/Glitchtip (dette D-009, cf core/error_tracking.py) — optionnel a l'usage
 openpyxl>=3.1
 python-pptx>=0.6.23
 redis>=5.0.0

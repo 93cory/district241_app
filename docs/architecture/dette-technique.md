@@ -158,12 +158,35 @@ en 18-22 semaines calendaires.
 - **Effort** : 5 j-h.
 - **Recommandation** : **Fix**.
 
-### D-009 — Pas de monitoring d'erreurs centralisé (Sentry-like)
+### D-009 — Pas de monitoring d'erreurs centralisé — CODE FAIT, infra a choisir (lot 97)
 - **Catégorie** : INFRA / QUA
-- **Description** : les erreurs sont logguées en JSON (Loki/Grafana) mais
-  sans outil de dédoublonnage ni d'alerting fin par release.
-- **Effort** : 6 j-h (Glitchtip ou Sentry self-hosted).
-- **Recommandation** : **Fix**.
+- **Description initiale** : les erreurs sont logguées en JSON (Loki/Grafana)
+  mais sans outil de dédoublonnage ni d'alerting fin par release.
+- **Fait** : `core/error_tracking.py` — client compatible protocole Sentry
+  (`sentry-sdk`), branché sur les handlers d'exception globaux
+  (`core/error_handlers.py` : toute exception non gérée + tout 5xx explicite,
+  les 4xx métier normaux ne sont pas remontés). Desactivable/optionnel :
+  sans `PNPI_SENTRY_DSN`, aucun comportement ne change. Verifie en
+  conditions reelles (pas mocke) : SDK initialise avec un DSN valide,
+  exception capturee -> requete HTTP reellement envoyee au format
+  protocole Sentry (`/api/1/envelope/`) vers un serveur de test local.
+- **Pas fait (decision d'ops, pas de code)** : deploiement d'un service
+  compatible Sentry. Deux options equivalentes cote code :
+  1. Sentry.io (SaaS, gratuit jusqu'a un certain volume) — juste renseigner
+     `PNPI_SENTRY_DSN`, zero infra a gerer.
+  2. Glitchtip self-hosted — plus lourd (Postgres dedie + Redis + web +
+     worker Celery), volontairement PAS ajoute a `docker-compose.prod.yml`
+     dans ce lot : le stack multi-conteneurs necessite sa propre base de
+     donnees (non creee automatiquement par le `postgres` existant) et
+     n'a pas pu etre valide en conditions reelles dans le temps imparti.
+     A faire dans un lot dedie si l'option self-hosted est retenue plutot
+     que Sentry.io SaaS.
+- **Effort restant** : 0 j-h si Sentry.io SaaS retenu (juste la variable
+  d'env) ; ~4 j-h si Glitchtip self-hosted retenu (compose + DB dediee +
+  validation).
+- **Recommandation** : **Fix** — trancher SaaS vs self-hosted (question
+  de souverainete des donnees d'erreur, a arbitrer avec le meme
+  raisonnement que l'hebergement ANINF).
 
 ### D-010 — Migration des fichiers Alembic non testée par bascule — VALIDE (lot 94)
 - **Catégorie** : DATA

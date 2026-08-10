@@ -167,6 +167,11 @@ cd backend && pip install pre-commit && cd .. && pre-commit install
   client retenue (anti-spoofing).
 - `PNPI_REDIS_PASSWORD` : mot de passe Redis (niveau docker-compose, injecte
   dans `PNPI_REDIS_URL`) ; Redis n'est plus joignable sans authentification.
+- `PNPI_SENTRY_DSN` : optionnel (dette D-009) — DSN d'un service compatible
+  protocole Sentry (Sentry.io SaaS ou Glitchtip self-hosted) pour le
+  monitoring d'erreurs centralise (cf `core/error_tracking.py`). Vide =
+  logs JSON uniquement (comportement historique). Choix/hebergement du
+  service Sentry-compatible = decision d'ops, pas couplee au code.
 - `NEXT_PUBLIC_BACKEND_URL` : URL backend pour le proxy Next.js (default `http://localhost:8000`)
 
 ## Frontend — Composants reutilisables

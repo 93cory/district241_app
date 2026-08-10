@@ -38,6 +38,7 @@ from .core.auth import (
 from .core.client_ip import get_client_ip
 from .core.correlation_middleware import CorrelationMiddleware
 from .core.error_handlers import register_error_handlers
+from .core.error_tracking import init_error_tracking
 from .core.logging_config import setup_logging
 from .core.metrics import MetricsMiddleware, metrics
 from .core.rate_limiter import rate_limiter
@@ -78,6 +79,7 @@ ALERT_ERROR_RATE_THRESHOLD = settings.alert_error_rate_threshold
 CORS_ALLOW_ORIGINS_RAW = settings.cors_origins
 
 setup_logging()
+init_error_tracking()  # no-op si PNPI_SENTRY_DSN non defini (dette D-009)
 logger = logging.getLogger("pnpi")
 
 _rate_limit_store: dict[str, list[datetime]] = defaultdict(list)
