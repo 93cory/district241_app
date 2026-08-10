@@ -847,17 +847,22 @@ def _compute_dashboard_alerts(db: Session) -> list[DashboardAlert]:
             )
         )
 
-    notifications = db.execute(select(NotificationORM)).scalars().all()
-    unread_high = [
-        entry for entry in notifications if not entry.is_read and entry.severity.lower() in {"high", "critical"}
-    ]
-    if unread_high:
+    # Dette D-014 : chargeait TOUTES les notifications en memoire juste
+    # pour en compter un sous-ensemble. Filtre desormais en SQL (COUNT),
+    # ne charge aucune ligne pour ce calcul.
+    unread_high_count = db.execute(
+        select(func.count(NotificationORM.id)).where(
+            NotificationORM.is_read.is_(False),
+            func.lower(NotificationORM.severity).in_(["high", "critical"]),
+        )
+    ).scalar_one()
+    if unread_high_count:
         alerts.append(
             DashboardAlert(
-                id=f"NOTIF-{len(unread_high)}",
+                id=f"NOTIF-{unread_high_count}",
                 severity="critical",
                 title="Notifications prioritaires non lues",
-                detail=f"{len(unread_high)} alertes critiques attendent un traitement.",
+                detail=f"{unread_high_count} alertes critiques attendent un traitement.",
                 source="notifications",
                 created_at=now_utc(),
             )

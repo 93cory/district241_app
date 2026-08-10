@@ -273,13 +273,35 @@ en 18-22 semaines calendaires.
 
 ## 5. Items MOYENS
 
-### D-014 — Pagination non systématique sur les listes longues
+### D-014 — Pagination non systématique — audite, 3 vrais points corriges (lot 102)
 - **Catégorie** : PERF
-- **Description** : `core/pagination.py` existe et est utilisé sur
-  certains routers. Quelques endpoints listant des sous-ressources
-  (commentaires, tags, historiques) renvoient encore des listes complètes.
-- **Effort** : 5 j-h.
-- **Recommandation** : **Fix**.
+- **Description initiale** : `core/pagination.py` existe et est utilisé
+  sur certains routers. Quelques endpoints listant des sous-ressources
+  (commentaires, tags, historiques) renverraient encore des listes
+  complètes.
+- **Audit effectué** : les sous-ressources scopées à un seul parent
+  (commentaires d'un ATI, tags d'un ATI, `/historique` déjà borné à
+  `limit<=500`) sont naturellement bornées par le volume réel possible —
+  pas un vrai risque. Recherche systématique des listes VRAIMENT globales
+  et non bornées (`select(X).scalars().all()` sans `.limit()`) à travers
+  tous les routers.
+- **3 points réels trouvés et corrigés** :
+  1. `GET /audit/events` (units.py) chargeait TOUS les événements d'audit
+     jamais enregistrés — un journal d'audit croît sans borne par nature,
+     c'était le plus critique. Confirmé en direct : passé de ~584+ lignes
+     (et en croissance continue) à 200 par défaut, `limit` paramétrable
+     (max 1000).
+  2. `GET /admin/notifications` (admin.py) chargeait toutes les
+     notifications avant filtrage par rôle en Python. Même fix (`limit`
+     par défaut 200, max 1000).
+  3. `main.py` (alertes dashboard) chargeait TOUTES les notifications en
+     mémoire juste pour compter celles non-lues à sévérité haute/critique
+     — remplacé par un `COUNT` SQL filtré, aucune ligne chargée. Pattern
+     déjà correct ailleurs (`health.py`), c'était le seul endroit encore
+     non filtré en SQL.
+- **Recommandation** : **Fait** pour les 3 cas réels identifiés. Les
+  sous-ressources scopées à un parent restent volontairement non
+  paginées (bornées naturellement).
 
 ### D-015 — Index PostgreSQL partiels — audite avec vraies donnees, corrige (lot 100)
 - **Catégorie** : PERF

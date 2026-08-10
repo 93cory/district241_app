@@ -163,6 +163,7 @@ async def delete_user_account(
 
 @router.get("/admin/notifications")
 async def list_notifications(
+    limit: int = Query(default=200, ge=1, le=1000),
     current_user: User = Depends(
         require_roles(
             Role.admin,
@@ -175,8 +176,13 @@ async def list_notifications(
     ),
     db: Session = Depends(get_db),
 ):
+    # Dette D-014 : cette liste n'etait pas bornee (charge TOUTES les
+    # notifications jamais creees). Le filtrage par role se fait encore
+    # en Python (target_role est une valeur libre, pas une colonne
+    # indexable simplement en SQL), mais on borne desormais la fenetre de
+    # candidats a `limit` (les plus recentes) avant filtrage.
     role_values = [role.value for role in current_user.roles]
-    rows = db.execute(select(NotificationORM).order_by(NotificationORM.created_at.desc())).scalars().all()
+    rows = db.execute(select(NotificationORM).order_by(NotificationORM.created_at.desc()).limit(limit)).scalars().all()
     filtered = [
         row
         for row in rows

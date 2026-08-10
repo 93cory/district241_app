@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -435,10 +435,15 @@ async def delete_field_report(
 
 @router.get("/audit/events")
 async def list_audit_events(
+    limit: int = Query(default=200, ge=1, le=1000),
     _: User = Depends(require_roles(Role.admin, Role.ministre)),
     db: Session = Depends(get_db),
 ):
-    rows = db.execute(select(AuditEventORM).order_by(AuditEventORM.timestamp.desc())).scalars().all()
+    # Dette D-014 : cette liste chargeait TOUS les evenements d'audit
+    # jamais enregistres, sans aucune limite — un journal d'audit croit
+    # sans borne par nature. Convention deja etablie ailleurs
+    # (security_ops.py, pnpi_dashboard.py) : limiter aux plus recents.
+    rows = db.execute(select(AuditEventORM).order_by(AuditEventORM.timestamp.desc()).limit(limit)).scalars().all()
     return [
         {
             "id": row.id,
