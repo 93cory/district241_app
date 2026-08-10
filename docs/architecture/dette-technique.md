@@ -262,12 +262,33 @@ en 18-22 semaines calendaires.
 - **Effort** : 5 j-h.
 - **Recommandation** : **Fix**.
 
-### D-015 — Index PostgreSQL composite `(status, deleted_at, created_at)` partiels
+### D-015 — Index PostgreSQL partiels — audite avec vraies donnees, corrige (lot 100)
 - **Catégorie** : PERF
-- **Description** : la migration 32 a ajouté des index composites mais
-  certaines requêtes du `pnpi_dashboard` font encore du seq scan.
-- **Effort** : 4 j-h (EXPLAIN + index ciblés).
-- **Recommandation** : **Fix**.
+- **Description initiale** : la migration 32 a ajouté des index composites
+  mais certaines requêtes du `pnpi_dashboard` feraient encore du seq scan.
+- **Methode** : jeu de données synthétique réaliste (~15k operateurs,
+  ~30k ATI, générés puis nettoyés) injecté dans le Postgres de dev — les
+  ~110 lignes réelles ne permettent aucun signal `EXPLAIN` significatif
+  (Postgres choisit à raison un seq scan sur une si petite table).
+- **Résultat de l'audit** :
+  - Les index composites de la migration 32
+    (`ix_ati_statut_date_soumission`, `ix_ati_instructeur_statut`) sont
+    **correctement utilisés** (Index Scan / Bitmap Heap Scan confirmés).
+  - `WHERE is_active = true` et les GROUP BY à faible sélectivité (ex:
+    `statut != 'expire'`) font du seq scan **à raison** — la requête
+    retourne 80-90% de la table, un index serait plus lent.
+  - **Vrai problème trouvé** : les recherches `ILIKE '%terme%'`
+    (`search.py`, `pnpi_dashboard.py`) sur `raison_sociale`, `ville`,
+    `numero_ati`, `type_activite` faisaient un seq scan complet (46ms à
+    15k lignes, dégradation linéaire avec le volume) — un index btree
+    standard ne peut pas accélérer un motif substring ILIKE.
+- **Fix** : migration `20260810_49` — extension `pg_trgm` + 4 index GIN
+  trigram. Vérifié avant/après (46ms → ~1-4ms, soit ~10-40x) et après un
+  cycle downgrade/upgrade complet sur la base réelle.
+- **Recommandation** : **Fait**. `nif_gabon` volontairement pas indexé en
+  trigram (masqué depuis D-003, majoritairement des astérisques — sans
+  valeur de recherche) ; `observations` (texte libre plus volumineux) à
+  évaluer séparément si besoin observé en usage réel.
 
 ### D-016 — Cache Redis sans politique TTL globale formalisée
 - **Catégorie** : PERF / DOC
