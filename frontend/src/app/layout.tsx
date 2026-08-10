@@ -27,7 +27,7 @@ import { Footer } from "./components/Footer";
 import { fetchBackendProfile } from "../lib/backend";
 import { getDefaultRouteForRoles, getMegaNavForRoles } from "../lib/role-routing";
 import "./globals.css";
-// Temporarily disabled: import "leaflet/dist/leaflet.css";
+import "leaflet/dist/leaflet.css";
 
 export const metadata = {
   title: {
