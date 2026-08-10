@@ -75,7 +75,14 @@ Ministère / ANINF dans les 12 mois.
 - **Description** : `uploads/ati` est un volume Docker local non répliqué.
   Une corruption disque = perte historique des justificatifs.
 - **P/I/Score** : 3/5/**15**
-- **Mitigation actuelle** : aucune réplication automatisée.
+- **Mitigation actuelle** : aucune réplication automatisée. Abstraction de
+  stockage S3/MinIO implémentée et testée (D-001, lot 90) mais pas encore
+  basculée en production.
+- **Confirmation empirique (lot 101, test PRA du 10/08/2026)** : le
+  premier test de restauration réel a confirmé que la procédure de
+  sauvegarde actuelle (`pg_dump`) ne couvre QUE la base de données — les
+  fichiers physiques ATI ne sont restaurés par aucun mécanisme testé.
+  Risque confirmé concret, pas seulement théorique.
 - **Plan** : **Réduit** — migration MinIO + réplication 3 nœuds + backup
   hors-site. Cf. dette D-001.
 - **Statut** : Ouvert. Date cible : T+30 jours.

@@ -1,5 +1,12 @@
 # PNPI PRA / PCA (essentiel)
 
+> **Test supervisé exécuté le 10 août 2026** — cf
+> [`pra-test-report-2026-08-10.md`](architecture/pra-test-report-2026-08-10.md)
+> pour le déroulé complet et les résultats. RTO technique mesuré : ~4,6 min
+> (cible 4h). Découverte notable : les fichiers physiques ATI ne sont pas
+> couverts par cette procédure (dépend de la finalisation D-001/S3) — la
+> bascule de trafic réelle (étape 5) reste à tester.
+
 ## Objectifs
 - RTO cible: 4 heures
 - RPO cible: 1 heure

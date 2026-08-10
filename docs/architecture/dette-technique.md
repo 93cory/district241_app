@@ -245,12 +245,31 @@ en 18-22 semaines calendaires.
 - **Effort** : 10 j-h (Vault self-hosted + intégration FastAPI).
 - **Recommandation** : **Fix**.
 
-### D-013 — Pas de plan de bascule (PRA) testé
+### D-013 — Pas de plan de bascule (PRA) testé — premier test execute (lot 101)
 - **Catégorie** : INFRA / CONF
-- **Description** : `docs/pra_pca.md` existe mais n'a jamais été exécuté
-  en grandeur réelle.
-- **Effort** : 10 j-h pour un test de bascule supervisé + rapport.
-- **Recommandation** : **Fix** — exigence audit ISO 22301.
+- **Description initiale** : `docs/pra_pca.md` existe mais n'avait jamais
+  été exécuté en grandeur réelle.
+- **Fait** : premier test de restauration supervisé, exécuté réellement
+  (pas relu sur papier) — cf rapport complet
+  [`pra-test-report-2026-08-10.md`](pra-test-report-2026-08-10.md).
+  RTO technique mesuré : ~4,6 min (cible documentée : 4h). Intégrité des
+  données confirmée exacte avant/après restauration. Test mené sur des
+  conteneurs Docker jetables, sans jamais toucher l'instance de dev
+  primaire.
+- **Découverte importante** : les fichiers physiques ATI (`uploads/ati`)
+  ne sont couverts par AUCUN mécanisme de sauvegarde testé ici —
+  confirmation empirique du risque déjà identifié en D-001/R-003.
+- **Limites explicitement documentées dans le rapport** (pas un test
+  complet) : scripts PowerShell documentés (`restore_db.ps1`) nécessitent
+  un poste avec client PostgreSQL, non vérifié ici ; bascule de trafic
+  réelle (nginx) non testée ; volume de données de test tres inferieur a
+  la production ; facteurs humains/organisationnels du RTO non mesurables
+  par un test technique solo.
+- **Effort restant** : ~4 j-h (bascule trafic nginx + test a plus grande
+  echelle + verification outils client sur poste d'astreinte reel).
+- **Recommandation** : **Fait partiellement** — le socle technique DB est
+  valide ; completer avec la bascule de trafic et regler la dependance
+  D-001 (fichiers) avant de considerer le PRA complet au sens ISO 22301.
 
 ## 5. Items MOYENS
 
