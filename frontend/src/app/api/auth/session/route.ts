@@ -62,7 +62,12 @@ export async function GET() {
         roles: profile.roles ?? [],
       },
     });
-  } catch {
+  } catch (err) {
+    // On journalise la cause reelle cote serveur : sans ca, un timeout ou une
+    // erreur reseau transitoire vers le backend est indiscernable d'une vraie
+    // session invalide dans les logs, ce qui a complique le diagnostic d'une
+    // regression de rate limiting sur /auth/me (cf request_context_middleware).
+    console.error("[/api/auth/session] fetchBackendProfile a echoue:", err);
     return NextResponse.json(
       {
         status: "invalide" as SessionState,

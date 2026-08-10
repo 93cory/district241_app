@@ -27,6 +27,17 @@ class Settings:
     sensitive_rate_limit_max: int = int(
         os.getenv("PNPI_SENSITIVE_RATE_LIMIT_MAX_REQUESTS", os.getenv("PNPI_SENSITIVE_RATE_LIMIT_MAX_REQUESTS", "60"))
     )
+    # /auth/me est appele plusieurs fois par navigation de page (SSR
+    # fetchBackendProfile() dans chaque page.tsx + SessionStatusBadge +
+    # WebSocketProvider cote client) : le plafond "sensitive" generique
+    # (60/60s) est trop bas pour cet usage legitime et provoquait des 429 en
+    # rafale qui, combines au pattern `catch { redirect("/connexion") }"
+    # present dans les pages FAM, deconnectaient silencieusement un
+    # utilisateur naviguant normalement (constate en direct lors de la
+    # revue des pages FAM du 2026-08-10).
+    auth_me_rate_limit_max: int = int(
+        os.getenv("PNPI_AUTH_ME_RATE_LIMIT_MAX_REQUESTS", os.getenv("PNPI_AUTH_ME_RATE_LIMIT_MAX_REQUESTS", "240"))
+    )
     alert_webhook_url: str = os.getenv("PNPI_ALERT_WEBHOOK_URL", os.getenv("PNPI_ALERT_WEBHOOK_URL", "")).strip()
     alert_overdue_threshold: int = int(os.getenv("PNPI_ALERT_OVERDUE_DOSSIERS_THRESHOLD", "9999"))
     alert_unread_critical_threshold: int = int(os.getenv("PNPI_ALERT_UNREAD_CRITICAL_THRESHOLD", "9999"))
@@ -58,6 +69,9 @@ class Settings:
             os.getenv(
                 "PNPI_SENSITIVE_RATE_LIMIT_MAX_REQUESTS", os.getenv("PNPI_SENSITIVE_RATE_LIMIT_MAX_REQUESTS", "60")
             )
+        )
+        self.auth_me_rate_limit_max = int(
+            os.getenv("PNPI_AUTH_ME_RATE_LIMIT_MAX_REQUESTS", os.getenv("PNPI_AUTH_ME_RATE_LIMIT_MAX_REQUESTS", "240"))
         )
         self.alert_webhook_url = os.getenv("PNPI_ALERT_WEBHOOK_URL", os.getenv("PNPI_ALERT_WEBHOOK_URL", "")).strip()
         self.alert_overdue_threshold = int(os.getenv("PNPI_ALERT_OVERDUE_DOSSIERS_THRESHOLD", "9999"))

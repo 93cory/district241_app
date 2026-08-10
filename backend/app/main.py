@@ -18,6 +18,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from jose import JWTError, jwt
 from pydantic import BaseModel, Field
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
@@ -72,6 +73,7 @@ PNPI_ENV = settings.env
 RATE_LIMIT_WINDOW_SECONDS = settings.rate_limit_window_seconds
 AUTH_RATE_LIMIT_MAX_REQUESTS = settings.auth_rate_limit_max
 SENSITIVE_RATE_LIMIT_MAX_REQUESTS = settings.sensitive_rate_limit_max
+AUTH_ME_RATE_LIMIT_MAX_REQUESTS = settings.auth_me_rate_limit_max
 # Seules routes exemptees de rate limiting : health checks / monitoring
 # (scrapes Prometheus frequents) et documentation API. Toute autre route
 # est desormais rate-limitee par defaut (dette D-021, cf
@@ -135,6 +137,42 @@ async def enforce_rate_limit(
     if "PYTEST_CURRENT_TEST" in os.environ:
         return
     await rate_limiter.check(key, limit, window_seconds)
+
+
+def _rate_limit_identity(request: Request, client_ip: str) -> str:
+    """Cle d'identite pour le rate limiting des routes appelees via le proxy
+    Next.js server-side (frontend/src/lib/backend.ts::backendRequest).
+
+    Ce proxy fait un fetch() Node.js cote serveur sans jamais transmettre
+    l'IP du navigateur d'origine : le backend voit systematiquement l'IP du
+    conteneur frontend comme "client_ip", identique pour TOUS les
+    utilisateurs. Pour une route tres frequemment appelee comme /auth/me
+    (polling SessionStatusBadge/WebSocketProvider), cela regroupe tous les
+    utilisateurs dans le meme compteur : un usage normal a plusieurs
+    utilisateurs simultanes suffit a declencher un 429 pour tout le monde
+    (confirme en direct : 394 x 429 sur /auth/me pour une seule session de
+    navigation lors de la revue des pages FAM, cote-a-cote avec des 200
+    legitimes venant du meme client_ip). On repartit donc par utilisateur
+    authentifie (sub du JWT) quand un Bearer token est present ; a defaut on
+    retombe sur l'IP (l'endpoint renverra de toute facon 401/403 lui-meme).
+    """
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        token = auth_header[7:].strip()
+        try:
+            payload = jwt.decode(
+                token,
+                settings.secret_key,
+                algorithms=[settings.algorithm],
+                options={"verify_exp": False},
+            )
+        except JWTError:
+            pass
+        else:
+            username = payload.get("sub")
+            if username:
+                return f"user:{username}"
+    return f"ip:{client_ip}"
 
 
 def _compute_error_rate() -> float:
@@ -2618,6 +2656,18 @@ async def request_context_middleware(request: Request, call_next):
             pass  # health checks / monitoring / docs : jamais throttles
         elif path.startswith("/auth/") and path != "/auth/me":
             await enforce_rate_limit(key=f"path:{path}:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
+        elif path == "/auth/me":
+            # Repartition par utilisateur authentifie, pas par IP : voir
+            # _rate_limit_identity (regression D-021 bis, confirmee en
+            # direct — cf revue des pages FAM du 2026-08-10). Plafond dedie
+            # (AUTH_ME_RATE_LIMIT_MAX_REQUESTS) plus haut que le defaut
+            # "sensitive" : cette route est appelee plusieurs fois par
+            # navigation (SSR + polling client), le plafond generique 60/60s
+            # se declenchait sur un usage normal.
+            await enforce_rate_limit(
+                key=f"path:{path}:{_rate_limit_identity(request, client_ip)}",
+                limit=AUTH_ME_RATE_LIMIT_MAX_REQUESTS,
+            )
         else:
             # Rate-limite par defaut TOUTE route restante (dette D-021).
             # Avant : liste d'INCLUSION (/admin/, /pilotage/, /pnpi/) — tout
