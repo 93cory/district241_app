@@ -106,6 +106,14 @@ Ministère / ANINF dans les 12 mois.
 - **Plan** : **Réduit** — WAF ANINF + monitoring d'anomalies + revoir la
   clé du rate limiter (JWT `sub` en plus de l'IP) pour les routes
   authentifiées `/pnpi/*` avant l'ouverture officielle.
+- **Mise à jour (lot 99, cf dette D-021)** : correctif appliqué — le rate
+  limiter couvrait en fait moins de la moitié des routeurs (liste
+  d'inclusion `/admin/`, `/pilotage/`, `/pnpi/` uniquement ; `/graphql`,
+  `/search`, `/push` et ~20 autres routeurs n'étaient PAS protégés,
+  confirmé par test direct). Basculé sur une liste d'exclusion : toute
+  route est protégée par défaut désormais. Réduit significativement le
+  score de ce risque côté surface d'attaque brute, la clé par IP (plutôt
+  que par utilisateur) reste le point ouvert.
 - **Statut** : En cours de mitigation.
 
 #### R-006 — Échec de migration Alembic en production

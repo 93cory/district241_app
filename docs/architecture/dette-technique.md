@@ -303,12 +303,39 @@ en 18-22 semaines calendaires.
 - **Effort** : 6 j-h.
 - **Recommandation** : **Fix**.
 
-### D-021 — GraphQL API exposée mais sans rate limiting fin
+### D-021 — GraphQL sans rate limiting fin — trou bien plus large que prevu, corrige (lot 99)
 - **Catégorie** : SEC / PERF
-- **Description** : `routers/graphql_api.py` est dérrière le rate limiter
-  global mais pas de query depth limit ni complexity analysis.
-- **Effort** : 5 j-h.
-- **Recommandation** : **Fix** — ou désactiver le flag `PNPI_FF_GRAPHQL_API`.
+- **Description initiale** : `routers/graphql_api.py` etait suppose derriere
+  le rate limiter global mais sans query depth limit ni complexity
+  analysis.
+- **Constat reel (verifie en direct)** : l'hypothese de depart etait
+  fausse — `/graphql` n'avait **aucun** rate limiting, pas juste un
+  rate limiting grossier. `request_context_middleware`
+  (`main.py`) utilisait une liste d'**inclusion** de prefixes
+  (`/admin/`, `/pilotage/`, `/pnpi/`) : tout router hors de cette liste
+  echappait silencieusement au throttling. Confirme par 70 requetes
+  consecutives vers `/search/global` toutes en 200 avant correctif.
+  Concerne au moins ces routers, tous montes hors `/pnpi/*` :
+  `graphql_api`, `search`, `push`, `scheduled_reports`, `announcements`,
+  `calendar`, `chat`, `checklists`, `conventions`, `delegations`,
+  `documents`, `feedback`, `geo`, `heatmap`, `integration`,
+  `integration_health`, `messages`, `notes`, `open_data`, `polls`,
+  `reminders`, `reports`, `templates`, `workflows`.
+- **Fix applique** : liste d'inclusion remplacee par une liste
+  d'**exclusion** (`_RATE_LIMIT_EXEMPT_PREFIXES` = `/health`, `/metrics`,
+  `/docs`, `/redoc`, `/openapi.json` + racine `/`) — toute route est
+  desormais rate-limitee par defaut, un nouveau router ne peut plus
+  echapper silencieusement au throttling comme les precedents. Verifie en
+  direct : `/search/global` et `/graphql` basculent en 429 apres 60
+  requetes/60s ; `/health` et `/metrics` restent illimites (necessaire
+  pour les sondes de sante et le scraping Prometheus).
+- **Reste ouvert** : le depth limit / complexity analysis GraphQL
+  specifique (empecher une requete imbriquee couteuse malgre un volume de
+  requetes sous le seuil) n'est pas fait — risque residuel plus faible
+  maintenant que le volume brut est plafonne.
+- **Effort restant** : ~3 j-h (depth limit GraphQL).
+- **Recommandation** : **Fix** partiellement applique — depth limit GraphQL
+  a traiter separement si l'API GraphQL reste exposee au-dela du prototype.
 
 ### D-022 — Pas de documentation OpenAPI publique versionnée
 - **Catégorie** : DOC

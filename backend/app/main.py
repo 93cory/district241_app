@@ -72,6 +72,11 @@ PNPI_ENV = settings.env
 RATE_LIMIT_WINDOW_SECONDS = settings.rate_limit_window_seconds
 AUTH_RATE_LIMIT_MAX_REQUESTS = settings.auth_rate_limit_max
 SENSITIVE_RATE_LIMIT_MAX_REQUESTS = settings.sensitive_rate_limit_max
+# Seules routes exemptees de rate limiting : health checks / monitoring
+# (scrapes Prometheus frequents) et documentation API. Toute autre route
+# est desormais rate-limitee par defaut (dette D-021, cf
+# request_context_middleware plus bas).
+_RATE_LIMIT_EXEMPT_PREFIXES = ("/health", "/metrics", "/docs", "/redoc", "/openapi.json")
 ALERT_WEBHOOK_URL = settings.alert_webhook_url
 ALERT_OVERDUE_THRESHOLD = settings.alert_overdue_threshold
 ALERT_UNREAD_CRITICAL_THRESHOLD = settings.alert_unread_critical_threshold
@@ -2604,9 +2609,20 @@ async def request_context_middleware(request: Request, call_next):
     path = request.url.path
     client_ip = get_client_ip(request)
     try:
-        if path.startswith("/auth/") and path != "/auth/me":
+        if path == "/" or path.startswith(_RATE_LIMIT_EXEMPT_PREFIXES):
+            pass  # health checks / monitoring / docs : jamais throttles
+        elif path.startswith("/auth/") and path != "/auth/me":
             await enforce_rate_limit(key=f"path:{path}:{client_ip}", limit=AUTH_RATE_LIMIT_MAX_REQUESTS)
-        elif path.startswith("/admin/") or path.startswith("/pilotage/") or path.startswith("/pnpi/"):
+        else:
+            # Rate-limite par defaut TOUTE route restante (dette D-021).
+            # Avant : liste d'INCLUSION (/admin/, /pilotage/, /pnpi/) — tout
+            # router hors de cette liste echappait silencieusement au rate
+            # limiting. C'etait le cas de /graphql, /search, /push,
+            # /scheduled-reports et une dizaine d'autres (aucun ne commence
+            # par un des 3 prefixes). Verifie en direct : 70/70 requetes
+            # consecutives vers /search/global passaient en 200 avant ce
+            # correctif. Desormais liste d'EXCLUSION (_RATE_LIMIT_EXEMPT_PREFIXES) :
+            # un nouveau router est proteg par defaut, pas l'inverse.
             await enforce_rate_limit(
                 key=f"path:{path}:{client_ip}",
                 limit=SENSITIVE_RATE_LIMIT_MAX_REQUESTS,
