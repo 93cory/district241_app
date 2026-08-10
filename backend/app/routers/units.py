@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
-from ..core.auth import Role, User, require_roles
+from ..core.auth import PRIVILEGED_ROLES, Role, User, require_roles, user_role_values
 from ..core.storage import get_storage
 from ..database import get_db, now_utc
 from ..models.core import AuditEventORM, DeclarationORM, FieldReportORM, TraceBatchORM, UnitORM
@@ -174,8 +174,8 @@ async def list_declarations(
     current_user: User = Depends(require_roles(Role.ministre, Role.operateur, Role.inspecteur)),
     db: Session = Depends(get_db),
 ):
-    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+    roles = user_role_values(current_user)
+    privileged = PRIVILEGED_ROLES
     query = select(DeclarationORM)
     # Operateur: ne voit que ses propres declarations (donnees concurrentielles).
     if not (roles & privileged) and "operateur" in roles:

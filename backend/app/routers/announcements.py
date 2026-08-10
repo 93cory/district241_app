@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..core.auth import Role, User, get_current_user, require_roles
+from ..core.auth import Role, User, get_current_user, require_roles, user_role_values
 from ..database import as_utc, get_db, now_utc
 from ..models.pnpi import AnnouncementORM
 
@@ -34,7 +34,7 @@ async def get_active_announcements(
     all_ann = db.execute(query).scalars().all()
 
     # Filter by expiration and role
-    user_roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+    user_roles = user_role_values(current_user)
     result = []
     for ann in all_ann:
         exp = as_utc(ann.expires_at)

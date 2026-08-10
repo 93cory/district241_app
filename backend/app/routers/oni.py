@@ -14,13 +14,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
-from ..core.auth import Role, User, require_roles
+from ..core.auth import PRIVILEGED_ROLES, Role, User, require_roles
+from ..core.auth import user_role_values as _role_values
 from ..database import get_db, now_utc
 from ..models.pnpi import ONIAlertORM, ONIPeriodicDeclarationORM, OperateurIndustrielORM
 
 router = APIRouter(prefix="/pnpi/oni", tags=["ONI"])
-
-PRIVILEGED_ROLES = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
 
 
 class ONIDeclarationPayload(BaseModel):
@@ -52,10 +51,6 @@ class ONIDeclarationPayload(BaseModel):
 class ONIValidationPayload(BaseModel):
     status: str = Field(..., pattern="^(validee|rejetee|a_corriger)$")
     note: str | None = None
-
-
-def _role_values(user: User) -> set[str]:
-    return {getattr(role, "value", str(role)) for role in (user.roles or [])}
 
 
 def _is_privileged(user: User) -> bool:

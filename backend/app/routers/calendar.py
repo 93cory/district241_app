@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..core.auth import User, get_current_user
+from ..core.auth import PRIVILEGED_ROLES, User, get_current_user, user_role_values
 from ..database import as_utc, get_db
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -17,12 +17,10 @@ from ..models.pnpi import (
 
 router = APIRouter(prefix="/calendar", tags=["Calendar"])
 
-_PRIVILEGED_ROLES = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
-
 
 def _is_operateur_only(current_user: User) -> bool:
-    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    return bool(roles) and not (roles & _PRIVILEGED_ROLES) and "operateur" in roles
+    roles = user_role_values(current_user)
+    return bool(roles) and not (roles & PRIVILEGED_ROLES) and "operateur" in roles
 
 
 @router.get("/events")

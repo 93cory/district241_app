@@ -12,7 +12,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
-from ..core.auth import Role, User, require_roles
+from ..core.auth import PRIVILEGED_ROLES, Role, User, require_roles
+from ..core.auth import user_role_values as _role_values
 from ..database import get_db, now_utc
 from ..models.pnpi import (
     AgrementTechniqueIndustrielORM,
@@ -51,7 +52,7 @@ router = APIRouter(prefix="/pnpi/rin", tags=["RIN"])
 _READ_ROLES = (Role.admin, Role.ministre, Role.directeur, Role.instructeur, Role.inspecteur, Role.operateur)
 _WRITE_ROLES = (Role.admin, Role.directeur, Role.instructeur, Role.operateur)
 _VALIDATE_ROLES = (Role.admin, Role.directeur, Role.instructeur)
-_PRIVILEGED = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+_PRIVILEGED = PRIVILEGED_ROLES  # cf core/auth.py (dette D-005)
 _VALID_STATUSES = {"brouillon", "soumis", "verifie", "valide", "archive"}
 
 
@@ -82,10 +83,6 @@ UPDATE_SCHEMA_BY_KIND = {
 
 def _new_id(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:12].upper()}"
-
-
-def _role_values(user: User) -> set[str]:
-    return {r.value if hasattr(r, "value") else str(r) for r in user.roles}
 
 
 def _ensure_operateur(db: Session, operateur_id: str) -> OperateurIndustrielORM:

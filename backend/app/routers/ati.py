@@ -16,7 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
-from ..core.auth import Role, User, get_current_user, require_roles
+from ..core.auth import PRIVILEGED_ROLES, Role, User, get_current_user, require_roles, user_role_values
 from ..core.decision_engine import recommend_decision
 from ..core.field_tracker import get_field_history
 from ..core.pagination import PaginatedResponse, PaginationParams
@@ -61,11 +61,10 @@ class _BulkAssignPayload(_BaseModel):
     instructeur_username: str
 
 
-_PRIVILEGED_ROLES = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
-
-
-def _user_role_values(current_user: User) -> set[str]:
-    return {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
+# Alias locaux : cf core/auth.py::PRIVILEGED_ROLES / user_role_values (dette D-005,
+# ex-copies dupliquees ici et dans 7 autres modules, desormais consolidees).
+_PRIVILEGED_ROLES = PRIVILEGED_ROLES
+_user_role_values = user_role_values
 
 
 def _has_decision_signature(ati_id: str) -> bool:

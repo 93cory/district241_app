@@ -9,11 +9,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .auth import user_role_values
+
 if TYPE_CHECKING:
     from .auth import User
 
 
-# Roles that bypass province filtering (see all data)
+# Roles that bypass province filtering (see all data) — sous-ensemble de
+# core.auth.PRIVILEGED_ROLES (pas instructeur/inspecteur, cf acces terrain
+# province-scope voulu pour ces roles).
 GLOBAL_ROLES = {"admin", "ministre", "directeur"}
 
 
@@ -26,7 +30,7 @@ def get_user_province(user: User) -> str | None:
     if not user:
         return None
 
-    role_values = {r.value if hasattr(r, "value") else str(r) for r in user.roles}
+    role_values = user_role_values(user)
     if role_values & GLOBAL_ROLES:
         return None  # Global access
 

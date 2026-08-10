@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
-from ..core.auth import Role, User, get_current_user, require_roles
+from ..core.auth import PRIVILEGED_ROLES, Role, User, get_current_user, require_roles, user_role_values
 from ..core.encryption import hash_for_lookup
 from ..core.pagination import PaginatedResponse, PaginationParams
 from ..core.scoring import compute_all_scores, compute_operator_score
@@ -189,8 +189,8 @@ async def list_operateurs(
     db: Session = Depends(get_db),
 ) -> list[OperateurBrief]:
     query = select(OperateurIndustrielORM)
-    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+    roles = user_role_values(current_user)
+    privileged = PRIVILEGED_ROLES
     operateur_only = not (roles & privileged) and "operateur" in roles
     if secteur is not None:
         query = query.where(OperateurIndustrielORM.secteur == secteur)
@@ -312,8 +312,8 @@ async def get_operateur(
         raise HTTPException(status_code=404, detail="Operateur introuvable.")
     # Operateur: detail complet uniquement pour les entreprises avec lesquelles il a interagi
     # (ATI deja soumis pour cet operateur). Sinon 403.
-    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+    roles = user_role_values(current_user)
+    privileged = PRIVILEGED_ROLES
     if not (roles & privileged) and "operateur" in roles:
         has_link = (
             db.execute(
@@ -424,8 +424,8 @@ async def list_operateur_atis(
 
     query = select(AgrementTechniqueIndustrielORM).where(AgrementTechniqueIndustrielORM.operateur_id == operateur_id)
     # Operateur ne voit que ses propres ATI, meme pour un operateur qu'il a cree.
-    roles = {r.value if hasattr(r, "value") else str(r) for r in current_user.roles}
-    privileged = {"admin", "ministre", "directeur", "instructeur", "inspecteur"}
+    roles = user_role_values(current_user)
+    privileged = PRIVILEGED_ROLES
     if not (roles & privileged) and "operateur" in roles:
         query = query.where(AgrementTechniqueIndustrielORM.created_by == current_user.username)
     atis = db.execute(query.order_by(AgrementTechniqueIndustrielORM.date_soumission.desc())).scalars().all()

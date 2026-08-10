@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from ..core.audit import write_audit_event
-from ..core.auth import User, get_current_user
+from ..core.auth import User, get_current_user, user_role_values
 from ..core.chat_assistant import ask_claude, is_enabled
 from ..database import get_db
 
@@ -38,7 +38,7 @@ async def chat_ask(
     db: Session = Depends(get_db),
 ):
     """Pose une question a l'assistant IA PNPI."""
-    role_values = [r.value if hasattr(r, "value") else str(r) for r in current_user.roles]
+    role_values = list(user_role_values(current_user))
     try:
         result = ask_claude(payload.question, current_user.username, role_values)
     except ValueError as e:

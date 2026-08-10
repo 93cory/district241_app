@@ -11,6 +11,42 @@ from app.main import app
 client = TestClient(app)
 
 
+def test_user_role_values_normalizes_role_enum():
+    """Regression D-005 : point d'entree unique de normalisation des roles
+    (remplace la meme fonction dupliquee independamment dans 8 modules)."""
+    from app.core.auth import Role, User, user_role_values
+
+    user = User(username="u", full_name="U", roles=[Role.admin, Role.instructeur])
+    assert user_role_values(user) == {"admin", "instructeur"}
+
+
+def test_user_role_values_tolerates_raw_strings():
+    """meme sans passer par le typage Pydantic list[Role] (construction
+    manuelle avec des str), le helper ne doit pas planter."""
+    from app.core.auth import user_role_values
+
+    class _FakeUser:
+        roles = ("admin", "operateur")
+
+    assert user_role_values(_FakeUser()) == {"admin", "operateur"}
+
+
+def test_user_role_values_empty_roles_returns_empty_set():
+    from app.core.auth import user_role_values
+
+    class _FakeUser:
+        roles = None
+
+    assert user_role_values(_FakeUser()) == set()
+
+
+def test_privileged_roles_excludes_operateur():
+    from app.core.auth import PRIVILEGED_ROLES
+
+    assert "operateur" not in PRIVILEGED_ROLES
+    assert {"admin", "ministre", "directeur", "instructeur", "inspecteur"} == PRIVILEGED_ROLES
+
+
 def test_rate_limit_from_middleware_returns_json_429(monkeypatch):
     """A limiter rejection must be an HTTP response, not an ASGI crash."""
     from app import main

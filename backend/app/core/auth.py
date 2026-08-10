@@ -34,6 +34,25 @@ class Role(StrEnum):
     operateur = "operateur"
 
 
+# Roles "metier" (non-operateur) ayant un acces large aux dossiers d'autrui.
+# Duplique historiquement (valeur identique, copiee-collee) dans 6 modules
+# (ati.py, calendar.py, operateurs.py x3, units.py) — dette D-005.
+PRIVILEGED_ROLES: frozenset[str] = frozenset({"admin", "ministre", "directeur", "instructeur", "inspecteur"})
+
+
+def user_role_values(user: User) -> set[str]:
+    """Normalise `user.roles` en `set[str]`.
+
+    `user.roles` est type `list[Role]` (StrEnum) cote Pydantic, mais ce
+    helper reste defensif (`r.value if hasattr(r, "value") else str(r)`)
+    pour tolerer un `Role` ou un `str` brut selon le chemin de construction
+    de l'objet `User`. Point d'entree unique — remplace la meme fonction
+    dupliquee independamment dans 8 modules (dette D-005) : ne jamais
+    reimplementer ce pattern inline, importer ce helper.
+    """
+    return {r.value if hasattr(r, "value") else str(r) for r in (user.roles or [])}
+
+
 # ---------------------------------------------------------------------------
 # Pydantic schemas
 # ---------------------------------------------------------------------------

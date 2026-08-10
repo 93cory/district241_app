@@ -87,14 +87,24 @@ en 18-22 semaines calendaires.
 
 ## 4. Items HAUTS
 
-### D-005 — Mix `Role` enum / chaîne dans la base
+### D-005 — Mix `Role` enum / chaîne dans la base — RESOLU (lot 94)
 - **Catégorie** : QUA / SEC
-- **Description** : les rôles utilisateurs sont stockés en `str` dans la
-  table `users.roles`, manipulés en `Role` (StrEnum) en Python. Le helper
-  `_user_role_values(user)` normalise — mais c'est une dette qu'il faut
-  consolider.
-- **Effort** : 4 j-h (migration colonne + tests).
-- **Recommandation** : **Fix**.
+- **Description initiale** : les rôles utilisateurs sont stockés en `str`
+  dans `users.roles_csv`, manipulés en `Role` (StrEnum) en Python. La
+  logique de normalisation (`{r.value if hasattr(r, "value") else str(r)
+  for r in current_user.roles}`) était **copiée-collée independamment dans
+  8 modules** (ati.py, calendar.py, chat.py, core/tenant.py, operateurs.py
+  x3, rin.py, units.py) — plus 2 constantes `PRIVILEGED_ROLES` dupliquees
+  (ati.py, calendar.py, operateurs.py x3, units.py, oni.py, rin.py).
+- **Fix applique** : point d'entree unique `core/auth.py::user_role_values()`
+  + `core/auth.py::PRIVILEGED_ROLES`. Les 8+7 duplications remplacees par
+  des imports (alias locaux la ou la fonction etait appelee de nombreuses
+  fois, pour minimiser le diff). Le schema DB (`roles_csv`) n'a pas ete
+  touche — la vraie dette etait la duplication de la couche de
+  normalisation Python, pas le stockage CSV lui-meme (deja converti
+  proprement via `csv_to_roles()`/`roles_to_csv()`).
+- **Effort reel** : ~2 j-h (recherche exhaustive des duplications + refactor
+  + 4 nouveaux tests).
 
 ### D-006 — Couverture de test backend ~50 % effective
 - **Catégorie** : QUA
@@ -125,11 +135,26 @@ en 18-22 semaines calendaires.
 - **Effort** : 6 j-h (Glitchtip ou Sentry self-hosted).
 - **Recommandation** : **Fix**.
 
-### D-010 — Migration des 36 fichiers Alembic non testée par bascule
+### D-010 — Migration des fichiers Alembic non testée par bascule — VALIDE (lot 94)
 - **Catégorie** : DATA
-- **Description** : les migrations s'appliquent sur des bases vierges
-  (CI). Aucune bascule réelle d'une base prod-like remplie n'a été
+- **Description initiale** : les migrations s'appliquent sur des bases vierges
+  (CI). Aucune bascule réelle d'une base prod-like remplie n'avait été
   rejouée bout-en-bout.
+- **Validation effectuee** : `scripts/test_migration_replay.sh` (nouveau,
+  reexecutable a volonte) automatise : pg_dump d'une base reelle (35
+  operateurs, 77 ATI, 176 documents, 513 evenements d'audit) -> restauration
+  dans un Postgres+PostGIS jetable isole -> verification des comptages de
+  lignes -> `alembic downgrade -1` puis `upgrade head` sur cette base
+  **remplie** (pas vide comme en CI) -> nouvelle verification des comptages.
+  Execute deux fois de suite avec succes, aucune perte de donnee, cycle
+  down/up propre sur une migration DDL reelle (ajout/suppression de
+  colonne).
+- **Limite assumee** : ce test valide le cycle backup/restore + le
+  comportement down/up de la *derniere* migration sur donnees reelles. Il
+  ne rejoue pas une bascule depuis un snapshot historique anterieur a
+  plusieurs migrations (aucun tel snapshot de prod n'existe encore — la
+  prod n'a pas ete ouverte). A relancer/etendre une fois des sauvegardes
+  de prod reelles disponibles.
 - **Effort** : 8 j-h (backup réel + replay + tests).
 - **Recommandation** : **Fix**.
 
