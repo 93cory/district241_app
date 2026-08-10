@@ -75,15 +75,45 @@ en 18-22 semaines calendaires.
 - **Bloquants** : choix d'un KMS (ANINF ou interne).
 - **Recommandation** : **Fix** — exigence CNPDCP.
 
-### D-004 — Tests de charge inexistants
+### D-004 — Tests de charge inexistants — OUTILLAGE EN PLACE, hypothese 1000 users NON validee (lot 96)
 - **Catégorie** : PERF
-- **Description** : aucun test de charge (k6, Locust) n'a été exécuté. Les
-  hypothèses de capacité (1000 utilisateurs concurrents, 100 ATI/jour) ne
-  sont pas validées.
-- **Effort** : 8 j-h (scénarios + jeu de données + remédiation des
-  *hot spots* trouvés).
-- **Bloquants** : environnement de pré-production iso-prod.
-- **Recommandation** : **Fix** — test de charge à J+25.
+- **Description initiale** : aucun test de charge (k6, Locust) n'avait été
+  exécuté. Les hypothèses de capacité (1000 utilisateurs concurrents,
+  100 ATI/jour) n'étaient pas validées.
+- **Ce qui a ete fait** : `scripts/load-test/k6-scenario.js` (scenarios
+  read_heavy + write_light, executable via `docker run grafana/k6`),
+  execute contre l'environnement de dev local reel (pas iso-prod).
+  Endpoints testes : dashboard, liste ATI, liste operateurs, KPIs,
+  recherche globale, creation operateur + ATI.
+- **Resultats obtenus (dev local, faible concurrence)** : latence read
+  p95 ≈ 33ms, write p95 ≈ 49ms — aucun signal de lenteur cote code aux
+  niveaux de charge testes.
+- **Decouverte architecturale importante** (pas un bug applicatif, mais un
+  risque reel a date) : le rate limiter (`core/rate_limiter.py`) est
+  keye par **chemin exact + IP source** (`path:{path}:{ip}`), avec un
+  budget de `PNPI_SENSITIVE_RATE_LIMIT_MAX_REQUESTS` (60 par defaut) par
+  `PNPI_RATE_LIMIT_WINDOW_SECONDS` (60s) — **par route**, pas un budget
+  global. Consequence : plusieurs dizaines d'utilisateurs legitimes
+  partageant une meme IP de sortie (NAT d'un batiment ministeriel,
+  proxy sortant) peuvent collectivement declencher des 429 les uns pour
+  les autres sur une route tres utilisee (ex: liste ATI), sans qu'aucun
+  d'eux n'abuse individuellement. C'est exactement le scenario "150-250
+  utilisateurs nominaux" vise par la cible 12 mois si une part notable
+  se trouve derriere le meme NAT.
+- **Hypothese "1000 utilisateurs concurrents" toujours NON validee** :
+  ce test s'est deliberement limite a une poignee de VUs (memes
+  contraintes de rate limiting per-IP en environnement de dev). Reste
+  bloquant : environnement iso-prod ET/OU generateur de charge
+  multi-IP (pour simuler des utilisateurs reellement distribues) ET/OU
+  une politique de rate limiting revue (cle par utilisateur authentifie
+  plutot que par IP, pour les routes post-authentification).
+- **Effort restant** : ~4 j-h (revoir la cle du rate limiter pour les
+  routes authentifiees + campagne de charge sur un environnement
+  iso-prod une fois disponible).
+- **Recommandation** : **Fix** — traiter la cle de rate limiting par
+  utilisateur (JWT `sub`) en plus de l'IP pour les routes `/pnpi/*`
+  avant l'ouverture officielle ; le test de charge complet reste
+  conditionne a un environnement iso-prod.
 
 ## 4. Items HAUTS
 

@@ -96,7 +96,16 @@ Ministère / ANINF dans les 12 mois.
 - **P/I/Score** : 3/4/12
 - **Mitigation actuelle** : rate limiter `core/rate_limiter.py`, CSRF,
   taille upload limitée.
-- **Plan** : **Réduit** — WAF ANINF + monitoring d'anomalies.
+- **Constat test de charge (lot 96, cf dette D-004)** : le rate limiter
+  est keyé par IP source, par route exacte (pas par utilisateur
+  authentifié). Effet de bord non anticipé : plusieurs dizaines
+  d'utilisateurs légitimes derrière un même NAT (bâtiment ministériel)
+  peuvent se bloquer mutuellement sur une route très sollicitée — un
+  faux positif de disponibilité, pas une vulnérabilité en soi, mais un
+  risque opérationnel réel une fois l'usage réel démarré.
+- **Plan** : **Réduit** — WAF ANINF + monitoring d'anomalies + revoir la
+  clé du rate limiter (JWT `sub` en plus de l'IP) pour les routes
+  authentifiées `/pnpi/*` avant l'ouverture officielle.
 - **Statut** : En cours de mitigation.
 
 #### R-006 — Échec de migration Alembic en production
