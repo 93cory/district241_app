@@ -136,13 +136,32 @@ en 18-22 semaines calendaires.
 - **Effort reel** : ~2 j-h (recherche exhaustive des duplications + refactor
   + 4 nouveaux tests).
 
-### D-006 — Couverture de test backend ~50 % effective
+### D-006 — Couverture de test backend ~50 % effective — 4 routers cibles couverts (lot 98)
 - **Catégorie** : QUA
-- **Description** : 18 fichiers de tests, ~43 tests, mais des routers
-  entiers (graphql_api, push, scheduled_reports, ws) ne sont pas couverts.
-- **Effort** : 15 j-h pour atteindre 75 % sur le périmètre régalien.
-- **Recommandation** : **Fix** — priorité aux routers manipulant des
-  décisions ATI.
+- **Description initiale** : 18 fichiers de tests, ~43 tests, mais des
+  routers entiers (graphql_api, push, scheduled_reports, ws) n'etaient pas
+  couverts.
+- **Fait** : les 4 routers explicitement cites sont maintenant couverts
+  (30 nouveaux tests) — auth/roles, cas nominaux, cas d'erreur, et
+  regressions de securite specifiques (vol d'abonnement push, endpoint SSRF
+  hors allowlist, WebSocket avec token invalide).
+- **Bug reel trouve et corrige en ecrivant ces tests** :
+  `graphql_api.py::_resolve_operateurs` lisait `o.email`/`o.telephone`,
+  des attributs qui n'existent pas sur `OperateurIndustrielORM` (vrais
+  noms : `contact_email`/`contact_telephone`) — 500 systematique sur
+  *toute* requete GraphQL `operateurs` depuis que ce resolver existe,
+  jamais detecte faute de test. Confirme en direct (curl contre le
+  backend reel) avant et apres correction.
+- **Reste a faire** : ce lot ferme le symptome explicitement cite dans la
+  description initiale, pas l'objectif global "75% sur le perimetre
+  regalien". ~35+ autres routers n'ont pas de fichier de test dedie
+  (certains sont couverts indirectement via test_api.py/test_idor_fixes.py
+  etc., d'autres pas du tout — audit exhaustif restant a faire).
+- **Effort restant** : ~12 j-h pour l'objectif 75% initial (le present lot
+  represente environ 2-3 j-h).
+- **Recommandation** : **Fix** — prioriser les routers manipulant des
+  decisions ATI et des donnees sensibles (business_model, security_ops,
+  admin) pour la prochaine tranche.
 
 ### D-007 — Pas de tests E2E mobile (Flutter)
 - **Catégorie** : MOB / QUA

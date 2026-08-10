@@ -105,8 +105,8 @@ def _resolve_operateurs(db: Session, args: dict) -> list[dict]:
             "secteur": o.secteur,
             "province": o.province,
             "ville": o.ville,
-            "email": o.email,
-            "telephone": o.telephone,
+            "email": o.contact_email,
+            "telephone": o.contact_telephone,
         }
         for o in ops
     ]
