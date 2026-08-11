@@ -18,13 +18,26 @@ Ce dossier regroupe les documents de consolidation destinés à transformer le L
 | 09 | [Budget réel et stratégie de contractualisation V5](./09-budget-reel-strategie-contractualisation-v5.md) | Fourchettes réalistes, scénarios et positionnement du porteur |
 | 10 | [Note protection et cadrage PNPI V5](./10-note-protection-cadrage-pnpi-v5.md) | Antériorité, portage initial, cadrage officiel et précautions de partage |
 
+## Exports Word / PDF / PowerPoint
+
+Les exports existent déjà, produits le 29-30 juillet 2026, dans `outputs/livrables-ministere-v5/`
+(dossier non suivi par git — présent uniquement sur ce poste). Versions finales à utiliser
+(dernier suffixe de révision) :
+
+| Contenu | Fichier final |
+|---|---|
+| Dossier complet (01 à 09 consolidés) | `PNPI_Livrables_Ministere_V5_2.docx` / `.pdf` |
+| Note de protection et cadrage (10) | `PNPI_Note_Protection_Cadrage_V5.docx` / `.pdf` |
+| Présentation PowerPoint | `PNPI_Presentation_Executive_V5_2_logo.pptx` |
+
+Les révisions intermédiaires (`V5`, `V5_1`) sont conservées dans le même dossier mais sont
+superseded par `V5_2` — ne pas les utiliser.
+
 ## Prochains documents à produire
 
-1. exporter les documents clés en Word/PDF ;
-2. générer la présentation PowerPoint V5 ;
-3. intégrer les domaines métiers 21 à 25 dès réception ;
-4. compléter FAM-PPP-001 après rédaction ;
-5. auditer les 8 écrans du parcours de démonstration.
+1. intégrer les domaines métiers 21 à 25 dès réception ;
+2. compléter FAM-PPP-001 après rédaction ;
+3. auditer les 8 écrans du parcours de démonstration.
 
 ## Version révisée du 29 juillet 2026
 

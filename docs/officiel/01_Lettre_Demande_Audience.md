@@ -1,3 +1,9 @@
+> 📌 **Document historique — déjà déposé et enregistré au Cabinet du Ministre (cf.
+> `docs/livrables-ministere/10-note-protection-cadrage-pnpi-v5.md`, section 1).**
+> À conserver tel quel comme preuve d'antériorité (avec le scan du courrier tamponné).
+> Ne pas renvoyer une nouvelle fois sans raison — la demande a déjà été formellement
+> reçue.
+
 # DEMANDE D'AUDIENCE
 
 ---

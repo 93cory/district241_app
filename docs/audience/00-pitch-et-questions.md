@@ -1,3 +1,11 @@
+> ⚠️ **Préparé pour une audience datée (semaine du 5-10 mai 2026) — à adapter avant
+> toute réutilisation.** Le ton de ce pitch d'ouverture ("déjà construite, entièrement
+> fonctionnelle, prête à servir l'État dès aujourd'hui") est plus affirmatif que la
+> formulation recommandée depuis dans `docs/livrables-ministere/10-note-protection-cadrage-pnpi-v5.md`
+> ("une base prototype avancée et démontrable... doit être cadrée, sécurisée, validée
+> métier et industrialisée"). Le conducteur de démo à jour est
+> `docs/livrables-ministere/03-conducteur-demo-v5.md`.
+
 # Audience Ministérielle — Pitch et Questions Anticipées
 
 **Plateforme Nationale de Pilotage Industriel (PNPI)**

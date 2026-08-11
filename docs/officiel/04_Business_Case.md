@@ -1,3 +1,8 @@
+> ⚠️ **Version antérieure (1er avril 2026) — conservée comme trace d'antériorité.**
+> Le document à jour et à remettre est `docs/livrables-ministere/09-budget-reel-strategie-contractualisation-v5.md`
+> (et son export `outputs/livrables-ministere-v5/PNPI_Livrables_Ministere_V5_2.docx`).
+> Ne pas transmettre cette version telle quelle.
+
 # PROPOSITION DE VALEUR
 
 ## Pourquoi le Gabon a besoin de la PNPI

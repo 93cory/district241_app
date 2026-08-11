@@ -1,3 +1,8 @@
+> ⚠️ **Version antérieure (1er avril 2026) — conservée comme trace d'antériorité.**
+> Le document à jour et à remettre est `docs/livrables-ministere/01-dossier-executif-v5.md`
+> (et son export `outputs/livrables-ministere-v5/PNPI_Livrables_Ministere_V5_2.docx`).
+> Ne pas transmettre cette version telle quelle.
+
 # NOTE CONCEPTUELLE
 
 ## Plateforme Nationale du Pilotage Industriel (PNPI)
