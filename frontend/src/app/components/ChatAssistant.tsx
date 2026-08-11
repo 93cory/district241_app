@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 interface Message {
   role: "user" | "bot";
@@ -103,6 +104,7 @@ function findAnswer(input: string): string {
 }
 
 export function ChatAssistant() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -127,6 +129,14 @@ export function ChatAssistant() {
       .then((d) => setAiEnabled(Boolean(d.enabled)))
       .catch(() => setAiEnabled(false));
   }, [open, aiEnabled]);
+
+  // Masque sur /pnpi/presentation : la bulle flottante (bottom:20/right:20,
+  // z-index 9997) se superpose au bouton "Suivant" de la presentation
+  // ministerielle plein ecran — constate en direct lors de la revue du
+  // module (elle intercepte meme les clics destines au bandeau cookies au
+  // meme endroit). Pas de place pour un widget de support pendant une
+  // demo officielle.
+  if (pathname === "/pnpi/presentation") return null;
 
   const askBackend = async (question: string): Promise<string> => {
     try {

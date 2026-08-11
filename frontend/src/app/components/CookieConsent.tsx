@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 const STORAGE_KEY = "pnpi_cookie_consent";
 
 export function CookieConsent() {
+  const pathname = usePathname();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -19,6 +21,13 @@ export function CookieConsent() {
     localStorage.setItem(STORAGE_KEY, "declined");
     setShow(false);
   };
+
+  // Masque sur /pnpi/presentation : le bandeau pleine largeur (bottom:0,
+  // z-index 9996) peut s'afficher par-dessus le contenu au tout premier
+  // chargement d'une presentation ministerielle plein ecran — mauvais
+  // effet en reunion officielle. Le consentement reste demande normalement
+  // sur toutes les autres pages ; rien n'est contourne, juste reporte.
+  if (pathname === "/pnpi/presentation") return null;
 
   if (!show) return null;
 
